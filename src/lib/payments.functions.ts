@@ -441,7 +441,7 @@ export const confirmOnlinePayment = createServerFn({ method: "POST" })
       if (po.status === "COMPLETED") {
         const cap = (po.purchase_units?.[0] as { payments?: { captures?: { status?: string; amount?: { value?: string } }[] } } | undefined)?.payments?.captures?.[0];
         const value = cap?.amount?.value ?? po.purchase_units?.[0]?.amount?.value;
-        if (Number(value) === Number(o.total) && (!cap || cap.status === "COMPLETED" || cap.status === "PENDING")) { await markPaid(o); return { status: "paid" as const }; }
+        if (Number(value) === Number(o.total) && (!cap || cap.status === "COMPLETED")) { await markPaid(o); return { status: "paid" as const }; }
         return { status: "pending" as const };
       }
       if (po.status === "VOIDED") return { status: "failed" as const };
