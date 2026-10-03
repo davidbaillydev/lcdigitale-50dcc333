@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 export const Route = createFileRoute("/connexion")({
   head: () => ({
     meta: [
-      { title: "Espace restaurant — Wok & Sushi" },
+      { title: "Espace restaurant — LC Digitale" },
       { name: "description", content: "Connexion de l'équipe Wok & Sushi à l'écran cuisine." },
       { property: "og:title", content: "Espace restaurant — Wok & Sushi" },
       { property: "og:description", content: "Connexion équipe." },
