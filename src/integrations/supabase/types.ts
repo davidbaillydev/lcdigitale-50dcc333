@@ -79,6 +79,7 @@ export type Database = {
           notes: string | null
           order_number: number
           payment_method: string
+          payment_ref: string | null
           payment_status: string
           phone: string
           postal_code: string | null
@@ -103,6 +104,7 @@ export type Database = {
           notes?: string | null
           order_number?: number
           payment_method: string
+          payment_ref?: string | null
           payment_status?: string
           phone: string
           postal_code?: string | null
@@ -127,6 +129,7 @@ export type Database = {
           notes?: string | null
           order_number?: number
           payment_method?: string
+          payment_ref?: string | null
           payment_status?: string
           phone?: string
           postal_code?: string | null
@@ -208,6 +211,41 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "restaurant_members_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurant_payment_providers: {
+        Row: {
+          credentials: Json
+          enabled: boolean
+          provider: string
+          restaurant_id: string
+          settings: Json
+          updated_at: string
+        }
+        Insert: {
+          credentials?: Json
+          enabled?: boolean
+          provider: string
+          restaurant_id: string
+          settings?: Json
+          updated_at?: string
+        }
+        Update: {
+          credentials?: Json
+          enabled?: boolean
+          provider?: string
+          restaurant_id?: string
+          settings?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_payment_providers_restaurant_id_fkey"
             columns: ["restaurant_id"]
             isOneToOne: false
             referencedRelation: "restaurants"
