@@ -23,7 +23,7 @@ async function readBanner(file: File): Promise<string> {
   } finally { bitmap.close(); }
 }
 
-export function RestaurantBannerUpload({ restaurant, onSaved }: { restaurant: Restaurant; onSaved?: () => void }) {
+export function RestaurantBannerUpload({ restaurant, onSaved }: { restaurant: Restaurant; onSaved?: (() => void) | undefined }) {
   const save = useServerFn(saveRestaurantBanner);
   const input = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null | undefined>(undefined);

@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { Restaurant } from "@/lib/shop";
 import { BrandLogo } from "@/lib/brand";
 
-export function RestaurantBanner({ restaurant, preview, className = "" }: { restaurant: Restaurant; preview?: string | null; className?: string }) {
+export function RestaurantBanner({ restaurant, preview, className = "" }: { restaurant: Restaurant; preview?: string | null | undefined; className?: string }) {
   const src = preview !== undefined ? preview : restaurant.brand.bannerPath ? `/api/public/restaurant-banner/${restaurant.id}?v=${encodeURIComponent(restaurant.brand.bannerPath)}` : null;
   const [failed, setFailed] = useState<string | null>(null);
   return (
