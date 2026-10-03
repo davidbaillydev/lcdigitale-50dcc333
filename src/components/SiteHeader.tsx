@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { CartSheet } from "@/components/CartSheet";
 import { useCart } from "@/lib/cart";
 import { BrandLogo } from "@/lib/brand";
+import { ThemeToggle } from "@/lib/theme";
 
 export function SiteHeader({ hideCart }: { hideCart?: boolean }) {
   const { restaurant } = useCart();
@@ -12,7 +13,10 @@ export function SiteHeader({ hideCart }: { hideCart?: boolean }) {
           <BrandLogo src={restaurant.logo_url} name={restaurant.name} />
           <span className="truncate">{restaurant.name}</span>
         </Link>
-        {!hideCart && <CartSheet />}
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          {!hideCart && <CartSheet />}
+        </div>
       </div>
     </header>
   );

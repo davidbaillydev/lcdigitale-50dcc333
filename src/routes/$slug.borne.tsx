@@ -103,10 +103,13 @@ function Kiosk() {
         <header className="flex items-center justify-between gap-4 border-b border-border px-6 py-4">
           <button onClick={reset} className="rounded-xl bg-muted px-6 py-4 text-xl font-semibold">Annuler</button>
           <p className="flex items-center gap-3 font-display text-4xl text-primary"><BrandLogo src={restaurant.logo_url} name={restaurant.name} className="h-12 w-12 object-contain" />{restaurant.name}</p>
-          <div className="flex rounded-xl bg-muted p-1 text-lg font-semibold">
-            {([["dine_in", "Sur place"], ["pickup", "À emporter"]] as const).map(([m, l]) => (
-              <button key={m} onClick={() => setMode(m)} className={cn("rounded-lg px-5 py-3", mode === m && "bg-primary text-primary-foreground")}>{l}</button>
-            ))}
+          <div className="flex items-center gap-3">
+            <ThemeToggle className="rounded-xl p-4" />
+            <div className="flex rounded-xl bg-muted p-1 text-lg font-semibold">
+              {([["dine_in", "Sur place"], ["pickup", "À emporter"]] as const).map(([m, l]) => (
+                <button key={m} onClick={() => setMode(m)} className={cn("rounded-lg px-5 py-3", mode === m && "bg-primary text-primary-foreground")}>{l}</button>
+              ))}
+            </div>
           </div>
         </header>
       )}
