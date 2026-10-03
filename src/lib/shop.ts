@@ -16,7 +16,13 @@ export type Restaurant = {
   /** 0 = dimanche. Plages en minutes depuis minuit (heure de Paris) */
   opening: Record<string, [number, number][]>;
   delivery: DeliveryConfig;
-  config: { slotMinutes?: number; lead?: { pickup: number; delivery: number }; hoursLabel?: string; tagline?: string };
+  config: {
+    slotMinutes?: number; lead?: { pickup: number; delivery: number }; hoursLabel?: string; tagline?: string;
+    /** Commandes acceptées automatiquement (sinon validation manuelle en cuisine) */
+    autoAccept?: boolean;
+    modes?: { pickup?: boolean; delivery?: boolean; dine_in?: boolean };
+    payments?: { on_site?: boolean; counter?: boolean; card_terminal?: boolean };
+  };
 };
 
 export const RESTAURANT_COLUMNS = "id, slug, name, city, address, phone, email, menu_key, logo_url, brand, menu, opening, delivery, config";
@@ -56,3 +62,7 @@ export function isValidSlot(r: Restaurant, mode: "pickup" | "delivery", iso: str
 
 export const fmtTime = (iso: string) =>
   new Date(iso).toLocaleTimeString("fr-FR", { timeZone: TZ, hour: "2-digit", minute: "2-digit" });
+
+/** Un mode/paiement est actif sauf s'il a été explicitement désactivé */
+export const modeEnabled = (r: Restaurant, m: "pickup" | "delivery" | "dine_in") => r.config.modes?.[m] !== false;
+export const paymentEnabled = (r: Restaurant, p: "on_site" | "counter" | "card_terminal") => r.config.payments?.[p] !== false;
