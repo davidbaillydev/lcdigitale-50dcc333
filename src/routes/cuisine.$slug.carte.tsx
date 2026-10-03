@@ -94,7 +94,7 @@ function MenuEditor() {
                     <div key={it.id} className={`grid gap-2 rounded-lg border border-border p-3 sm:grid-cols-[1fr_7rem_auto] ${it.hidden ? "opacity-50" : ""}`}>
                       <div className="space-y-2">
                         <Input value={it.name} onChange={(e) => setItem(ci, ii, { name: e.target.value })} aria-label="Nom du plat" />
-                        <Textarea rows={2} value={it.desc ?? ""} placeholder="Description" onChange={(e) => setItem(ci, ii, { desc: e.target.value || undefined })} />
+                        <Textarea rows={2} value={it.desc ?? ""} placeholder="Description" onChange={(e) => setItem(ci, ii, { desc: e.target.value })} />
                         {!!it.options?.length && <p className="text-xs text-muted-foreground">Options conservées : {it.options.map((o) => o.label).join(" · ")}</p>}
                       </div>
                       <div>
