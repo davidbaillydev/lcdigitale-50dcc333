@@ -35,13 +35,13 @@ function Team() {
   const rid = restaurant?.id ?? "";
   const { data } = useQuery({ queryKey: ["staff", rid], queryFn: () => list({ data: { restaurantId: rid } }), enabled: canManage });
 
-  if (loading) return null;
-  if (!canManage) return <p className="p-10 text-center">Réservé au gérant. <Link to="/espace" className="underline">Retour</Link></p>;
-
   const invite = useServerFn(inviteMember);
   const [email, setEmail] = useState("");
   const [role, setRoleSel] = useState<"kitchen" | "manager">("kitchen");
   const [busy, setBusy] = useState(false);
+  if (loading) return null;
+  if (!canManage) return <p className="p-10 text-center">Réservé au gérant. <Link to="/espace" className="underline">Retour</Link></p>;
+
   const sendInvite = async () => {
     setBusy(true);
     try {
