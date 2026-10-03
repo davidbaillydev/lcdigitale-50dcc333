@@ -9,6 +9,7 @@ import { euro } from "@/lib/menu";
 import { fmtTime } from "@/lib/shop";
 import { cn } from "@/lib/utils";
 import { BrandLogo, BrandTheme } from "@/lib/brand";
+import { ThemeToggle } from "@/lib/theme";
 
 export const Route = createFileRoute("/cuisine/$slug/")({
   head: () => ({
@@ -124,6 +125,7 @@ function Kitchen() {
         </Button>
         {isAdmin && <Button asChild variant="secondary"><Link to="/cuisine/$slug/carte" params={{ slug }}>Carte</Link></Button>}
         {isAdmin && <Button asChild variant="secondary"><Link to="/cuisine/$slug/equipe" params={{ slug }}><Users /> Équipe</Link></Button>}
+        <ThemeToggle />
         <Button variant="ghost" size="icon" onClick={() => supabase.auth.signOut()} aria-label="Déconnexion"><LogOut /></Button>
       </header>
       <div className="grid flex-1 gap-4 p-4 md:grid-cols-3">

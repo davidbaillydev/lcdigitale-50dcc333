@@ -14,3 +14,4 @@
 - Agency (global) role is `admin` in user_roles (first account via trigger); per-restaurant access (manager/kitchen) lives in `restaurant_members`.
 - Food photography is mapped by menu category in a presentation-only module, so shared menu/order pricing data stays image-free and visuals are clearly illustrative.
 - Restaurant branding (logo_url data-URL + brand jsonb colors) is applied via BrandTheme CSS-var overrides on site, kiosk and kitchen; agency console /agence writes restaurants through has_role-checked server functions. Why: one theme system, no per-restaurant CSS.
+- Light/dark theme toggle (src/lib/theme.tsx, localStorage "theme", .dark class on <html>): light tokens in :root, dark tokens in .dark in src/styles.css; toggle shown in SiteHeader, kiosk and kitchen headers. Why: users choose per device; brand colors still override via BrandTheme.
