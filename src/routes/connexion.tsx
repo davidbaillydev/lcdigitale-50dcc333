@@ -33,12 +33,18 @@ function Login() {
     if (mode === "in") {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       setBusy(false);
-      if (error) return toast.error("Identifiants incorrects");
+      if (error) {
+        toast.error("Identifiants incorrects");
+        return;
+      }
       navigate({ to: "/cuisine" });
     } else {
       const { error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/cuisine` } });
       setBusy(false);
-      if (error) return toast.error(error.message);
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
       toast.success("Compte créé. Confirmez votre email, puis demandez au gérant d'activer votre accès.");
       setMode("in");
     }

@@ -26,7 +26,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [lines]);
 
   const value = useMemo<Ctx>(() => {
-    const subtotal = lines.reduce((s, l) => s + unitPrice(ITEMS_BY_ID[l.itemId], l.sel) * l.qty, 0);
+    const subtotal = lines.reduce((s, l) => s + unitPrice(ITEMS_BY_ID[l.itemId]!, l.sel) * l.qty, 0);
     return {
       lines,
       count: lines.reduce((s, l) => s + l.qty, 0),

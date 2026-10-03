@@ -44,7 +44,7 @@ function slug(s: string) {
     .replace(/(^-|-$)/g, "");
 }
 const list = (prefix: string, rows: [string, number, string?][]): MenuItem[] =>
-  rows.map(([name, price, desc]) => ({ id: `${prefix}-${slug(name)}`, name, price, desc }));
+  rows.map(([name, price, desc]) => ({ id: `${prefix}-${slug(name)}`, name, price, ...(desc ? { desc } : {}) }));
 
 const VEG_MEATS = ["Végétarien", "Poulet", "Poulet katsu", "Bœuf", "Crevettes"];
 const SAUCES: Choice[] = [
@@ -226,7 +226,7 @@ export const CATEGORIES: Category[] = [
   ] },
 ];
 
-export const ITEMS_BY_ID: Record<string, MenuItem> = Object.fromEntries(
+export const ITEMS_BY_ID: Record<string, MenuItem | undefined> = Object.fromEntries(
   CATEGORIES.flatMap((c) => c.items.map((i) => [i.id, i])),
 );
 
@@ -248,7 +248,7 @@ export function validateSelections(item: MenuItem, sel: Selections): string | nu
     if (picked.length > g.max) return `${g.label} : ${g.max} choix maximum`;
   }
   if (item.id === "poke-compose") {
-    const n = (sel.proteines?.length ?? 0) + (sel.garnitures?.length ?? 0);
+    const n = (sel["proteines"]?.length ?? 0) + (sel["garnitures"]?.length ?? 0);
     if (n < 3) return "Compose ton poké : 3 ingrédients minimum";
   }
   return null;

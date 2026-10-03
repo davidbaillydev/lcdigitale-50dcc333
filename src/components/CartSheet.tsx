@@ -12,6 +12,7 @@ export function CartLines() {
     <ul className="divide-y divide-border">
       {lines.map((l) => {
         const item = ITEMS_BY_ID[l.itemId];
+        if (!item) return null;
         return (
           <li key={l.key} className="flex gap-3 py-3">
             <div className="min-w-0 flex-1">

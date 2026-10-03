@@ -39,9 +39,10 @@ export function deliveryFee(subtotal: number) {
 const TZ = "Europe/Paris";
 function parisParts(d: Date) {
   const f = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, weekday: "short", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
-  const p = Object.fromEntries(f.formatToParts(d).map((x) => [x.type, x.value]));
-  const wd = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(p.weekday);
-  return { wd, minutes: (+p.hour % 24) * 60 + +p.minute };
+  const p: Record<string, string> = Object.fromEntries(f.formatToParts(d).map((x) => [x.type, x.value]));
+  const g = (k: string) => p[k] ?? "0";
+  const wd = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(g("weekday"));
+  return { wd, minutes: (+g("hour") % 24) * 60 + +g("minute") };
 }
 
 /** Créneaux disponibles aujourd'hui (ISO strings) */

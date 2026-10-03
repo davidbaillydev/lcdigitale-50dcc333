@@ -40,7 +40,10 @@ export function ItemDialog({ item, onClose }: { item: MenuItem | null; onClose: 
 
   const submit = () => {
     const err = validateSelections(item, sel);
-    if (err) return toast.error(err);
+    if (err) {
+      toast.error(err);
+      return;
+    }
     add(item.id, sel, qty);
     toast.success(`${item.name} ajouté au panier`);
     onClose();
@@ -112,7 +115,7 @@ export function ItemDialog({ item, onClose }: { item: MenuItem | null; onClose: 
             {isLast ? (
               <Button onClick={submit} className="font-semibold">Ajouter · {euro(price * qty)}</Button>
             ) : (
-              <Button disabled={!stepOk(groups[step])} onClick={() => setStep(step + 1)}>Suivant · {euro(price)}</Button>
+              <Button disabled={!groups[step] || !stepOk(groups[step]!)} onClick={() => setStep(step + 1)}>Suivant · {euro(price)}</Button>
             )}
           </div>
         </div>
