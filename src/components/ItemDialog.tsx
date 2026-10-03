@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { euro, groupCost, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
 import { useCart } from "@/lib/cart";
+import { itemImage } from "@/lib/menu-images";
 
 export function ItemDialog({ item, onClose }: { item: MenuItem | null; onClose: () => void }) {
-  const { add } = useCart();
+  const { add, catalog } = useCart();
   const [sel, setSel] = useState<Selections>({});
   const [qty, setQty] = useState(1);
   const [step, setStep] = useState(0);
@@ -24,6 +25,7 @@ export function ItemDialog({ item, onClose }: { item: MenuItem | null; onClose: 
   const stepped = !!item.builder;
   const visible = stepped ? groups.slice(step, step + 1) : groups;
   const price = unitPrice(item, sel);
+  const image = itemImage(item.id, catalog.categories);
 
   const toggle = (g: OptionGroup, id: string) => {
     setSel((prev) => {
@@ -56,6 +58,7 @@ export function ItemDialog({ item, onClose }: { item: MenuItem | null; onClose: 
           <DialogTitle className="font-display text-3xl">{item.name}</DialogTitle>
           {item.desc && <DialogDescription>{item.desc}</DialogDescription>}
         </DialogHeader>
+        {image && <div><img src={image} alt={`Illustration pour ${item.name}`} loading="lazy" width={1024} height={768} className="h-36 w-full rounded-md object-cover sm:h-48" /><p className="mt-1 text-right text-xs text-muted-foreground">Photo d’illustration</p></div>}
 
         {stepped && (
           <div className="flex gap-1">
