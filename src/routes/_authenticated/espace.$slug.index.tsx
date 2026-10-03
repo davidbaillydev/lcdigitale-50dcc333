@@ -1,7 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, Bell, BellOff, Bike, Lock, LogOut, Phone, ShoppingBag, Users } from "lucide-react";
+import { ArrowLeft, Bell, BellOff, Bike, Lock, LogOut, Phone, Printer, ShoppingBag, Users } from "lucide-react";
+import { getTicketWidth, printTickets, setTicketWidth, type TicketWidth } from "@/lib/ticket";
 import { hasKitchenPin } from "@/lib/kitchen-pin.functions";
 import { KitchenLock } from "@/components/KitchenLock";
 import { toast } from "sonner";
@@ -58,6 +59,11 @@ function Kitchen() {
   const rid = restaurant?.id;
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
+  const [width, setWidth] = useState<TicketWidth>(80);
+  const [autoPrint, setAutoPrint] = useState(false);
+  const autoRef = useRef(false); autoRef.current = autoPrint;
+  const nameRef = useRef(""); nameRef.current = restaurant?.name ?? "";
+  useEffect(() => { setWidth(getTicketWidth()); setAutoPrint(localStorage.getItem("ticket-auto") === "1"); }, []);
   const [sound, setSound] = useState(false);
   const audio = useRef<AudioContext | null>(null);
   const checkPin = useServerFn(hasKitchenPin);
@@ -102,6 +108,7 @@ function Kitchen() {
         if (p.eventType === "INSERT") {
           toast.success(`Nouvelle commande n° ${(p.new as Order).order_number}`);
           if (audio.current) beep(audio.current);
+          if (autoRef.current) printTickets(p.new as Order, ["kitchen", "receipt"], nameRef.current);
         }
         load();
       })
@@ -154,6 +161,13 @@ function Kitchen() {
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/carte" params={{ slug }}>Carte</Link></Button>}
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/reglages" params={{ slug }}>Réglages</Link></Button>}
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/equipe" params={{ slug }}><Users /> Équipe</Link></Button>}
+        <div className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-sm">
+          <Printer className="h-4 w-4" />
+          <select aria-label="Largeur du ticket" className="bg-transparent" value={width} onChange={(e) => { const w = Number(e.target.value) as TicketWidth; setWidth(w); setTicketWidth(w); }}>
+            <option value={80}>80 mm</option><option value={58}>58 mm</option>
+          </select>
+          <label className="ml-1 flex items-center gap-1"><input type="checkbox" checked={autoPrint} onChange={(e) => { setAutoPrint(e.target.checked); localStorage.setItem("ticket-auto", e.target.checked ? "1" : ""); }} /> Auto</label>
+        </div>
         {pinEnabled && <Button variant="secondary" onClick={() => setLock(true)}><Lock /> Verrouiller</Button>}
         <ThemeToggle />
         <Button variant="ghost" size="icon" onClick={() => supabase.auth.signOut()} aria-label="Déconnexion"><LogOut /></Button>
@@ -198,6 +212,10 @@ function Kitchen() {
                     <div className="mt-3 flex gap-2">
                       <Button size="lg" className="flex-1 font-semibold" onClick={() => move(o, c.next)}>{c.action}</Button>
                       {c.s === "new" && <Button size="lg" variant="ghost" onClick={() => confirm("Refuser cette commande ?") && move(o, "cancelled")}>Refuser</Button>}
+                    </div>
+                    <div className="mt-2 flex gap-2">
+                      <Button size="sm" variant="secondary" className="flex-1" onClick={() => printTickets(o, ["kitchen"], restaurant?.name ?? "")}><Printer /> Cuisine</Button>
+                      <Button size="sm" variant="secondary" className="flex-1" onClick={() => printTickets(o, ["receipt"], restaurant?.name ?? "")}><Printer /> Caisse</Button>
                     </div>
                   </article>
                 ))}
