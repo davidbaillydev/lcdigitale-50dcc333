@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, Bell, BellOff, Bike, Lock, LogOut, Phone, Printer, ShoppingBag, Users } from "lucide-react";
-import { getTicketWidth, printTickets, setTicketWidth, type TicketWidth } from "@/lib/ticket";
+import { printTickets, printingDefaults, type PrintingConfig, type TicketKind } from "@/lib/ticket";
 import { hasKitchenPin } from "@/lib/kitchen-pin.functions";
 import { KitchenLock } from "@/components/KitchenLock";
 import { toast } from "sonner";
@@ -59,11 +59,15 @@ function Kitchen() {
   const rid = restaurant?.id;
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
-  const [width, setWidth] = useState<TicketWidth>(80);
-  const [autoPrint, setAutoPrint] = useState(false);
-  const autoRef = useRef(false); autoRef.current = autoPrint;
-  const nameRef = useRef(""); nameRef.current = restaurant?.name ?? "";
-  useEffect(() => { setWidth(getTicketWidth()); setAutoPrint(localStorage.getItem("ticket-auto") === "1"); }, []);
+  const printing = printingDefaults((restaurant?.config as { printing?: Partial<PrintingConfig> } | null)?.printing);
+  const [printState, setPrintState] = useState<Record<string, "ok" | "failed">>({});
+  const doPrint = useCallback(async (o: Order, kinds: TicketKind[]) => {
+    const shop = { name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null };
+    const ok = await printTickets(o, kinds, shop, printing.width, printing.kitchen);
+    setPrintState((p) => ({ ...p, [o.id]: ok ? "ok" : "failed" }));
+    if (!ok) toast.error(`Impression du ticket n° ${o.order_number} échouée`);
+  }, [restaurant, printing.width, printing.kitchen]);
+  const printRef = useRef({ auto: false, doPrint }); printRef.current = { auto: printing.auto, doPrint };
   const [sound, setSound] = useState(false);
   const audio = useRef<AudioContext | null>(null);
   const checkPin = useServerFn(hasKitchenPin);
@@ -108,7 +112,7 @@ function Kitchen() {
         if (p.eventType === "INSERT") {
           toast.success(`Nouvelle commande n° ${(p.new as Order).order_number}`);
           if (audio.current) beep(audio.current);
-          if (autoRef.current) printTickets(p.new as Order, ["kitchen", "receipt"], nameRef.current);
+          if (printRef.current.auto) void printRef.current.doPrint(p.new as Order, ["kitchen", "receipt"]);
         }
         load();
       })
@@ -161,13 +165,7 @@ function Kitchen() {
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/carte" params={{ slug }}>Carte</Link></Button>}
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/reglages" params={{ slug }}>Réglages</Link></Button>}
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/equipe" params={{ slug }}><Users /> Équipe</Link></Button>}
-        <div className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-sm">
-          <Printer className="h-4 w-4" />
-          <select aria-label="Largeur du ticket" className="bg-transparent" value={width} onChange={(e) => { const w = Number(e.target.value) as TicketWidth; setWidth(w); setTicketWidth(w); }}>
-            <option value={80}>80 mm</option><option value={58}>58 mm</option>
-          </select>
-          <label className="ml-1 flex items-center gap-1"><input type="checkbox" checked={autoPrint} onChange={(e) => { setAutoPrint(e.target.checked); localStorage.setItem("ticket-auto", e.target.checked ? "1" : ""); }} /> Auto</label>
-        </div>
+        <span className="flex items-center gap-1 text-sm text-muted-foreground"><Printer className="h-4 w-4" />{printing.width} mm · {printing.auto ? "auto" : "manuel"}</span>
         {pinEnabled && <Button variant="secondary" onClick={() => setLock(true)}><Lock /> Verrouiller</Button>}
         <ThemeToggle />
         <Button variant="ghost" size="icon" onClick={() => supabase.auth.signOut()} aria-label="Déconnexion"><LogOut /></Button>
@@ -214,9 +212,11 @@ function Kitchen() {
                       {c.s === "new" && <Button size="lg" variant="ghost" onClick={() => confirm("Refuser cette commande ?") && move(o, "cancelled")}>Refuser</Button>}
                     </div>
                     <div className="mt-2 flex gap-2">
-                      <Button size="sm" variant="secondary" className="flex-1" onClick={() => printTickets(o, ["kitchen"], restaurant?.name ?? "")}><Printer /> Cuisine</Button>
-                      <Button size="sm" variant="secondary" className="flex-1" onClick={() => printTickets(o, ["receipt"], restaurant?.name ?? "")}><Printer /> Caisse</Button>
+                      <Button size="sm" variant="secondary" className="flex-1" onClick={() => doPrint(o, ["kitchen"])}><Printer /> {printState[o.id] ? "Réimprimer cuisine" : "Cuisine"}</Button>
+                      <Button size="sm" variant="secondary" className="flex-1" onClick={() => doPrint(o, ["receipt"])}><Printer /> Caisse</Button>
                     </div>
+                    {printState[o.id] === "failed" && <p role="alert" className="mt-2 rounded bg-destructive/20 p-2 text-sm">Impression échouée — vérifiez l'imprimante puis réimprimez.</p>}
+                    {printState[o.id] === "ok" && <p className="mt-1 text-xs text-muted-foreground">Ticket envoyé à l'imprimante</p>}
                   </article>
                 ))}
                 {!list.length && <p className="py-8 text-center text-sm text-muted-foreground">Aucune commande</p>}
