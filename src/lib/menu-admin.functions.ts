@@ -35,5 +35,5 @@ export const loadMenu = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { data: row, error } = await context.supabase.from("restaurants").select("menu, menu_key").eq("id", data.restaurantId).single();
     if (error) throw new Error(error.message);
-    return row as unknown as { menu: unknown; menu_key: string };
+    return row as unknown as { menu: import("./menu").Category[] | null; menu_key: string };
   });
