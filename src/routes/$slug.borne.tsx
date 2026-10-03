@@ -14,9 +14,9 @@ import { RestaurantBanner } from "@/components/RestaurantBanner";
 export const Route = createFileRoute("/$slug/borne")({
   head: () => ({
     meta: [
-      { title: "Borne de commande" },
+      { title: "Borne de commande — LC Digitale" },
       { name: "description", content: "Borne de commande tactile en restaurant." },
-      { property: "og:title", content: "Borne de commande" },
+      { property: "og:title", content: "Borne de commande — LC Digitale" },
       { property: "og:description", content: "Commandez sur place ou à emporter depuis la borne." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

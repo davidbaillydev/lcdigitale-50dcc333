@@ -15,10 +15,11 @@ import { ThemeToggle } from "@/lib/theme";
 export const Route = createFileRoute("/_authenticated/espace/$slug/equipe")({
   head: () => ({
     meta: [
-      { title: "Équipe du restaurant" },
+      { title: "Équipe du restaurant — LC Digitale" },
       { name: "description", content: "Gestion des accès de l'équipe d'un restaurant." },
-      { property: "og:title", content: "Équipe du restaurant" },
+      { property: "og:title", content: "Équipe du restaurant — LC Digitale" },
       { property: "og:description", content: "Gestion des accès." },
+      { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
     ],
   }),
