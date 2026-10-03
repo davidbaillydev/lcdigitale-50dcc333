@@ -45,7 +45,11 @@ function Tracking() {
     queryFn: async () => {
       const o = await fn({ data: { id } });
       if (o?.status === "awaiting_payment") {
-        const r = await confirm({ data: { orderId: id } }).catch(() => null);
+        // Retour de PayPal (?annule=1) ou de Lyra (paramètres vads_* signés, revérifiés côté serveur)
+        const qs = typeof window === "undefined" ? new URLSearchParams() : new URLSearchParams(window.location.search);
+        const lyra: Record<string, string> = {};
+        qs.forEach((v, k) => { if (k.startsWith("vads_") || k === "signature") lyra[k] = v; });
+        const r = await confirm({ data: { orderId: id, cancelled: qs.get("annule") === "1", ...(lyra["signature"] ? { lyra } : {}) } }).catch(() => null);
         if (r?.status === "paid") return fn({ data: { id } });
         return { ...o, _pay: r?.status ?? "pending" };
       }
