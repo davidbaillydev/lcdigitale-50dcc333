@@ -19,19 +19,19 @@ export const analyzeMenu = createServerFn({ method: "POST" })
     const apiKey = process.env['LOVABLE_API_KEY'];
     if (!apiKey) throw new Error("L'analyse de carte est momentanément indisponible");
     const content = [
-      { type: "text", text: "Extrais la carte de restaurant jointe. Réponds UNIQUEMENT avec un JSON valide de forme {\"categories\":[{\"label\":\"...\",\"items\":[{\"name\":\"...\",\"desc\":\"...\",\"price\":12.5}]}]}. Reprends exclusivement les plats et prix clairement lisibles ; ne devine aucun prix, ne crée pas de plat. Ignore les lignes sans prix vérifiable. Prix en euros numériques, virgule décimale convertie en point. Regroupe sous des catégories appropriées. Les options ou suppléments incertains sont à vérifier humainement." },
+      { type: "input_text", text: "Extrais la carte de restaurant jointe. Réponds UNIQUEMENT avec un JSON valide de forme {\"categories\":[{\"label\":\"...\",\"items\":[{\"name\":\"...\",\"desc\":\"...\",\"price\":12.5}]}]}. Reprends exclusivement les plats et prix clairement lisibles ; ne devine aucun prix, ne crée pas de plat. Ignore les lignes sans prix vérifiable. Prix en euros numériques, virgule décimale convertie en point. Regroupe sous des catégories appropriées. Les options ou suppléments incertains sont à vérifier humainement." },
       ...data.pages.map((p) => p.type === "image"
-        ? { type: "image_url", image_url: { url: p.content } }
-        : { type: "text", text: p.content }),
+        ? { type: "input_image", image_url: p.content }
+        : { type: "input_text", text: p.content }),
     ];
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model: "google/gemini-3.7-flash", messages: [{ role: "user", content }], temperature: 0 }),
+      body: JSON.stringify({ model: "openai/gpt-6-astra", input: [{ role: "user", content }] }),
     });
     if (!response.ok) throw new Error(response.status === 429 ? "Trop de demandes, réessayez plus tard" : "Analyse impossible, réessayez avec un fichier plus net");
-    const result = await response.json() as { choices?: { message?: { content?: string } }[] };
-    const raw = result.choices?.[0]?.message?.content ?? "";
+    const result = await response.json() as { output?: { content?: { type: string; text?: string }[] }[] };
+    const raw = result.output?.flatMap((o) => o.content ?? []).filter((c) => c.type === "output_text").map((c) => c.text ?? "").join("") ?? "";
     let parsed: unknown;
     try { parsed = JSON.parse(raw.replace(/^```(?:json)?\s*|\s*```$/g, "")); }
     catch { throw new Error("La carte n'a pas pu être reconnue. Essayez un document plus lisible."); }
