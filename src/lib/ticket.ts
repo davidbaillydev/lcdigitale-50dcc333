@@ -16,17 +16,33 @@ const modeLabel = (m: string) => (m === "delivery" ? "LIVRAISON" : m === "dine_i
 const payLabel = (p: string) =>
   p === "online" ? "Payé en ligne" : p === "card_terminal" ? "CB au comptoir" : p === "counter" ? "Espèces/TR au comptoir" : "À encaisser";
 
+export type KitchenFields = { options: boolean; notes: boolean; customer: boolean; contact: boolean; prices: boolean };
+export type PrintingConfig = { width: TicketWidth; auto: boolean; kitchen: KitchenFields };
+export type TicketShop = { name: string; address?: string | null; phone?: string | null };
+
+export function printingDefaults(p?: Partial<PrintingConfig> | null): PrintingConfig {
+  return {
+    width: p?.width === 58 ? 58 : 80, auto: p?.auto ?? false,
+    kitchen: { options: true, notes: true, customer: true, contact: false, prices: false, ...(p?.kitchen ?? {}) },
+  };
+}
+
 export function getTicketWidth(): TicketWidth {
   if (typeof window === "undefined") return 80;
   return localStorage.getItem("ticket-width") === "58" ? 58 : 80;
 }
 export function setTicketWidth(w: TicketWidth) { localStorage.setItem("ticket-width", String(w)); }
 
-export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth, restaurant: string) {
+export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth, shopIn: TicketShop | string, fieldsIn?: Partial<KitchenFields>) {
+  const shop = typeof shopIn === "string" ? { name: shopIn } : shopIn;
+  const restaurant = shop.name;
+  const f: KitchenFields = kind === "receipt"
+    ? { options: true, notes: true, customer: true, contact: true, prices: true }
+    : { ...printingDefaults().kitchen, ...(fieldsIn ?? {}) };
   const big = width === 80 ? 15 : 12;
   const items = o.items.map((it) => `
-    <div class="row"><b>${it.qty}× ${esc(it.name)}</b>${kind === "receipt" && it.total != null ? `<span>${eur(it.total)}</span>` : ""}</div>
-    ${(it.details ?? []).map((d) => `<div class="det">${esc(d)}</div>`).join("")}`).join("");
+    <div class="row"><b>${it.qty}× ${esc(it.name)}</b>${f.prices && it.total != null ? `<span>${eur(it.total)}</span>` : ""}</div>
+    ${(f.options ? it.details ?? [] : []).map((d) => `<div class="det">${esc(d)}</div>`).join("")}`).join("");
   return `<!doctype html><html><head><meta charset="utf-8"><title>Ticket ${o.order_number}</title><style>
     @page { size: ${width}mm auto; margin: 0; }
     * { box-sizing: border-box; }
@@ -38,34 +54,41 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
     .note { border: 2px solid #000; padding: 4px; margin-top: 6px; font-weight: bold; }
   </style></head><body>
     <div class="c l">${esc(restaurant)}</div>
+    ${f.contact && (shop.address || shop.phone) ? `<div class="c">${esc(shop.address)}${shop.address && shop.phone ? "<br>" : ""}${esc(shop.phone)}</div>` : ""}
     <div class="c">${kind === "kitchen" ? "TICKET CUISINE" : "TICKET CLIENT"}</div>
     <hr><div class="c xl">N° ${o.order_number}</div>
     <div class="c l">${modeLabel(o.mode)}${o.source === "kiosk" ? " · BORNE" : ""}</div>
     <div class="c">Pour ${time(o.slot)}${o.created_at ? ` · reçue ${time(o.created_at)}` : ""}</div>
-    ${o.customer_name ? `<div class="c">${esc(o.customer_name)}${o.phone && o.phone !== "-" ? ` · ${esc(o.phone)}` : ""}</div>` : ""}
+    ${f.customer && o.customer_name ? `<div class="c">${esc(o.customer_name)}${o.phone && o.phone !== "-" ? ` · ${esc(o.phone)}` : ""}</div>` : ""}
     ${o.mode === "delivery" && o.address ? `<div class="c">${esc(o.address)}, ${esc(o.city)}</div>` : ""}
     <hr>${items}
-    ${o.notes ? `<div class="note">⚠ ${esc(o.notes)}</div>` : ""}
+    ${f.notes && o.notes ? `<div class="note">⚠ ${esc(o.notes)}</div>` : ""}
     <hr>
-    ${kind === "receipt" && Number(o.delivery_fee) > 0 ? `<div class="row"><span>Livraison</span><span>${eur(o.delivery_fee)}</span></div>` : ""}
-    <div class="row l"><span>TOTAL</span><span>${eur(o.total)}</span></div>
+    ${f.prices && Number(o.delivery_fee) > 0 ? `<div class="row"><span>Livraison</span><span>${eur(o.delivery_fee)}</span></div>` : ""}
+    ${f.prices ? `<div class="row l"><span>TOTAL</span><span>${eur(o.total)}</span></div>` : ""}
     <div>${payLabel(o.payment_method)}</div>
     ${kind === "receipt" ? `<hr><div class="c">Merci de votre commande !</div>` : ""}
     <div class="c" style="margin-top:6px">${new Date().toLocaleString("fr-FR")}</div>
   </body></html>`;
 }
 
-/** Imprime un ou plusieurs tickets via une iframe cachée. */
-export function printTickets(o: TicketOrder, kinds: TicketKind[], restaurant: string, width = getTicketWidth()) {
-  const html = kinds.map((k) => ticketHtml(o, k, width, restaurant)).join("");
-  const body = html.replace(/<\/body><\/html><!doctype html><html><head>[\s\S]*?<body>/g, '<div style="page-break-before:always"></div>');
-  const f = document.createElement("iframe");
-  f.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0";
-  document.body.appendChild(f);
-  const d = f.contentDocument!;
-  d.open(); d.write(body); d.close();
-  setTimeout(() => {
-    f.contentWindow?.focus(); f.contentWindow?.print();
-    setTimeout(() => f.remove(), 60_000);
-  }, 250);
+/** Imprime un ou plusieurs tickets via une iframe cachée. Renvoie false si l'impression n'a pas pu être lancée. */
+export function printTickets(o: TicketOrder, kinds: TicketKind[], shop: TicketShop | string, width: TicketWidth = getTicketWidth(), fields?: Partial<KitchenFields>): Promise<boolean> {
+  return new Promise((resolve) => {
+    try {
+      const html = kinds.map((k) => ticketHtml(o, k, width, shop, fields)).join("");
+      const body = html.replace(/<\/body><\/html><!doctype html><html><head>[\s\S]*?<body>/g, '<div style="page-break-before:always"></div>');
+      const fr = document.createElement("iframe");
+      fr.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0";
+      document.body.appendChild(fr);
+      const d = fr.contentDocument;
+      const w = fr.contentWindow;
+      if (!d || !w) { fr.remove(); return resolve(false); }
+      d.open(); d.write(body); d.close();
+      setTimeout(() => {
+        try { w.focus(); w.print(); resolve(true); } catch { resolve(false); }
+        setTimeout(() => fr.remove(), 60_000);
+      }, 250);
+    } catch { resolve(false); }
+  });
 }
