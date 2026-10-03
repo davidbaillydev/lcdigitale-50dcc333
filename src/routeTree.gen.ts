@@ -9,38 +9,80 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as SlugRouteImport } from './routes/$slug'
 import { Route as ConnexionRouteImport } from './routes/connexion'
+import { Route as SlugIndexRouteImport } from './routes/$slug.index'
 
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SlugRoute = SlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ConnexionRoute = ConnexionRouteImport.update({
   id: '/connexion',
   path: '/connexion',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SlugIndexRoute = SlugIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SlugRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
+  '/': typeof IndexRoute
+  '/$slug': typeof SlugRouteWithChildren
   '/connexion': typeof ConnexionRoute
+  '/$slug/': typeof SlugIndexRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof IndexRoute
   '/connexion': typeof ConnexionRoute
+  '/$slug': typeof SlugIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
+  '/$slug': typeof SlugRouteWithChildren
   '/connexion': typeof ConnexionRoute
+  '/$slug/': typeof SlugIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/connexion'
+  fullPaths: '/' | '/$slug' | '/connexion' | '/$slug/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/connexion'
-  id: '__root__' | '/connexion'
+  to: '/' | '/connexion' | '/$slug'
+  id: '__root__' | '/' | '/$slug' | '/connexion' | '/$slug/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
+  SlugRoute: typeof SlugRouteWithChildren
   ConnexionRoute: typeof ConnexionRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$slug': {
+      id: '/$slug'
+      path: '/$slug'
+      fullPath: '/$slug'
+      preLoaderRoute: typeof SlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/connexion': {
       id: '/connexion'
       path: '/connexion'
@@ -48,10 +90,29 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConnexionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$slug/': {
+      id: '/$slug/'
+      path: '/'
+      fullPath: '/$slug/'
+      preLoaderRoute: typeof SlugIndexRouteImport
+      parentRoute: typeof SlugRoute
+    }
   }
 }
 
+interface SlugRouteChildren {
+  SlugIndexRoute: typeof SlugIndexRoute
+}
+
+const SlugRouteChildren: SlugRouteChildren = {
+  SlugIndexRoute: SlugIndexRoute,
+}
+
+const SlugRouteWithChildren = SlugRoute._addFileChildren(SlugRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
+  SlugRoute: SlugRouteWithChildren,
   ConnexionRoute: ConnexionRoute,
 }
 export const routeTree = rootRouteImport
