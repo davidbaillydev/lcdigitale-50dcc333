@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CommandeRouteImport } from './routes/commande'
 import { Route as ConnexionRouteImport } from './routes/connexion'
+import { Route as CuisineIndexRouteImport } from './routes/cuisine.index'
+import { Route as CuisineEquipeRouteImport } from './routes/cuisine.equipe'
 import { Route as SuiviIdRouteImport } from './routes/suivi.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -29,6 +31,16 @@ const ConnexionRoute = ConnexionRouteImport.update({
   path: '/connexion',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CuisineIndexRoute = CuisineIndexRouteImport.update({
+  id: '/cuisine/',
+  path: '/cuisine/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CuisineEquipeRoute = CuisineEquipeRouteImport.update({
+  id: '/cuisine/equipe',
+  path: '/cuisine/equipe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SuiviIdRoute = SuiviIdRouteImport.update({
   id: '/suivi/$id',
   path: '/suivi/$id',
@@ -39,34 +51,61 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/commande': typeof CommandeRoute
   '/connexion': typeof ConnexionRoute
+  '/cuisine/equipe': typeof CuisineEquipeRoute
   '/suivi/$id': typeof SuiviIdRoute
+  '/cuisine/': typeof CuisineIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/commande': typeof CommandeRoute
   '/connexion': typeof ConnexionRoute
+  '/cuisine/equipe': typeof CuisineEquipeRoute
   '/suivi/$id': typeof SuiviIdRoute
+  '/cuisine': typeof CuisineIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/commande': typeof CommandeRoute
   '/connexion': typeof ConnexionRoute
+  '/cuisine/equipe': typeof CuisineEquipeRoute
   '/suivi/$id': typeof SuiviIdRoute
+  '/cuisine/': typeof CuisineIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/commande' | '/connexion' | '/suivi/$id'
+  fullPaths:
+    | '/'
+    | '/commande'
+    | '/connexion'
+    | '/cuisine/equipe'
+    | '/suivi/$id'
+    | '/cuisine/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/commande' | '/connexion' | '/suivi/$id'
-  id: '__root__' | '/' | '/commande' | '/connexion' | '/suivi/$id'
+  to:
+    | '/'
+    | '/commande'
+    | '/connexion'
+    | '/cuisine/equipe'
+    | '/suivi/$id'
+    | '/cuisine'
+  id:
+    | '__root__'
+    | '/'
+    | '/commande'
+    | '/connexion'
+    | '/cuisine/equipe'
+    | '/suivi/$id'
+    | '/cuisine/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CommandeRoute: typeof CommandeRoute
   ConnexionRoute: typeof ConnexionRoute
+  CuisineEquipeRoute: typeof CuisineEquipeRoute
   SuiviIdRoute: typeof SuiviIdRoute
+  CuisineIndexRoute: typeof CuisineIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -92,6 +131,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConnexionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cuisine/': {
+      id: '/cuisine/'
+      path: '/cuisine'
+      fullPath: '/cuisine/'
+      preLoaderRoute: typeof CuisineIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cuisine/equipe': {
+      id: '/cuisine/equipe'
+      path: '/cuisine/equipe'
+      fullPath: '/cuisine/equipe'
+      preLoaderRoute: typeof CuisineEquipeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/suivi/$id': {
       id: '/suivi/$id'
       path: '/suivi/$id'
@@ -106,7 +159,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CommandeRoute: CommandeRoute,
   ConnexionRoute: ConnexionRoute,
+  CuisineEquipeRoute: CuisineEquipeRoute,
   SuiviIdRoute: SuiviIdRoute,
+  CuisineIndexRoute: CuisineIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
