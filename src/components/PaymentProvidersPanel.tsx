@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { listPaymentProviders, pairSumupReader, savePaymentProvider, testSumup, type Provider } from "@/lib/payments.functions";
+import { listPaymentProviders, pairSumupReader, savePaymentProvider, testStripe, testSumup, type Provider } from "@/lib/payments.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,7 +16,13 @@ const META: Record<Provider, { name: string; desc: string; fields: { key: string
       { key: "merchantCode", label: "Code marchand", secret: false, placeholder: "MXXXXXXX" },
     ],
   },
-  stripe: { name: "Stripe", desc: "Paiement en ligne sur le site.", available: false, fields: [] },
+  stripe: {
+    name: "Stripe", desc: "Paiement en ligne sur le site : carte bancaire, Apple Pay, Google Pay.", available: true,
+    fields: [
+      { key: "publishableKey", label: "Clé publiable", secret: false, placeholder: "pk_test_..." },
+      { key: "secretKey", label: "Clé secrète", secret: true, placeholder: "sk_test_..." },
+    ],
+  },
   paypal: { name: "PayPal", desc: "Paiement en ligne PayPal.", available: false, fields: [] },
   lyra: { name: "Lyra / PayZen", desc: "Paiement en ligne via votre banque.", available: false, fields: [] },
 };
@@ -41,6 +47,7 @@ function ProviderCard({ restaurantId, p, onChange }: { restaurantId: string; p: 
   const m = META[p.provider];
   const save = useServerFn(savePaymentProvider);
   const test = useServerFn(testSumup);
+  const testS = useServerFn(testStripe);
   const pair = useServerFn(pairSumupReader);
   const [enabled, setEnabled] = useState(p.enabled);
   const [creds, setCreds] = useState<Record<string, string>>({});
@@ -76,11 +83,30 @@ function ProviderCard({ restaurantId, p, onChange }: { restaurantId: string; p: 
               </div>
             ))}
           </div>
+          {p.provider === "stripe" && (
+            <div className="max-w-xs">
+              <Label htmlFor="stripe-mode">Mode</Label>
+              <select id="stripe-mode" value={creds["mode"] ?? p.credentials["mode"] ?? "test"} onChange={(e) => setCreds({ ...creds, mode: e.target.value })}
+                className="mt-1 h-9 w-full rounded-md border border-input bg-background px-3 text-sm">
+                <option value="test">Test (aucun vrai paiement)</option>
+                <option value="live">Réel (live)</option>
+              </select>
+              <p className="mt-1 text-xs text-muted-foreground">Apple Pay et Google Pay s'affichent automatiquement s'ils sont activés dans votre compte Stripe.</p>
+            </div>
+          )}
           <div className="flex flex-wrap gap-2">
             <Button disabled={busy} onClick={() => run(async () => {
               await save({ data: { restaurantId, provider: p.provider, enabled, credentials: creds } });
               setCreds({}); toast.success(`${m.name} enregistré`); onChange();
             })}>Enregistrer</Button>
+            {p.provider === "stripe" && (
+              <Button variant="secondary" disabled={busy} onClick={() => run(async () => {
+                const r = await testS({ data: { restaurantId } });
+                setResult({ ok: r.chargesEnabled, msg: r.chargesEnabled
+                  ? `Connexion réussie · compte « ${r.name} » · mode ${r.live ? "réel" : "test"}`
+                  : `Clés valides (compte « ${r.name} »), mais ce compte ne peut pas encore encaisser : terminez son activation chez Stripe.` });
+              })}>Tester la connexion</Button>
+            )}
             {p.provider === "sumup" && (
               <Button variant="secondary" disabled={busy} onClick={() => run(async () => {
                 const r = await test({ data: { restaurantId } });

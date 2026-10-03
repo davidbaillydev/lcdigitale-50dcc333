@@ -112,7 +112,8 @@ function Kitchen() {
   const load = useCallback(async () => {
     const since = new Date(); since.setHours(0, 0, 0, 0);
     const { data } = await supabase.from("orders").select("*").eq("restaurant_id", rid ?? "").gte("created_at", since.toISOString()).order("slot");
-    setOrders((data ?? []) as unknown as Order[]);
+    const list = ((data ?? []) as unknown as Order[]).filter((o) => o.status !== "awaiting_payment");
+    setOrders(list);
     const ids = (data ?? []).map((o) => o.id);
     if (ids.length) {
       const { data: l } = await supabase.from("order_print_logs").select("id, order_id, kinds, status, reprint, auto, created_at").in("order_id", ids).order("created_at");
@@ -122,13 +123,17 @@ function Kitchen() {
     }
   }, [rid]);
 
+  const ordersRef = useRef<Order[]>([]);
+  ordersRef.current = orders;
   useEffect(() => {
     if (!isStaff || !rid) return;
     load();
     const ch = supabase
       .channel(`orders-kitchen-${rid}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `restaurant_id=eq.${rid}` }, (p) => {
-        if (p.eventType === "INSERT") {
+        const n = p.new as Order;
+        const becamePaid = p.eventType === "UPDATE" && n.status !== "awaiting_payment" && n.payment_method === "online" && n.payment_status === "paid" && !ordersRef.current.some((x) => x.id === n.id);
+        if ((p.eventType === "INSERT" && n.status !== "awaiting_payment") || becamePaid) {
           toast.success(`Nouvelle commande n° ${(p.new as Order).order_number}`);
           if (audio.current) beep(audio.current);
           if (printRef.current.auto) void printRef.current.doPrint(p.new as Order, ["kitchen", "receipt"], true);
@@ -224,7 +229,7 @@ function Kitchen() {
                     {o.mode === "delivery" && <p className="mt-2 text-sm">{o.address}, {o.city}</p>}
                     <div className="mt-2 flex items-center justify-between text-sm text-muted-foreground">
                       {o.source === "kiosk" ? <span /> : <a href={`tel:${o.phone}`} className="flex items-center gap-1"><Phone className="h-3 w-3" />{o.phone}</a>}
-                      <span>{euro(Number(o.total))} · {o.payment_status === "paid" ? "payé (terminal)" : o.payment_method === "online" ? "payé" : o.payment_method === "card_terminal" ? "CB au comptoir" : o.payment_method === "counter" ? "espèces/TR au comptoir" : "à encaisser"}</span>
+                      <span>{euro(Number(o.total))} · {o.payment_method === "online" && o.payment_status === "paid" ? "Payé en ligne (Stripe)" : o.payment_status === "paid" ? "payé (terminal)" : o.payment_method === "online" ? "payé" : o.payment_method === "card_terminal" ? "CB au comptoir" : o.payment_method === "counter" ? "espèces/TR au comptoir" : "à encaisser"}</span>
                     </div>
                     <div className="mt-3 flex gap-2">
                       <Button size="lg" className="flex-1 font-semibold" onClick={() => move(o, c.next)}>{c.action}</Button>

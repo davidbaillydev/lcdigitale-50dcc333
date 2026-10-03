@@ -13,6 +13,8 @@ import { useCart } from "@/lib/cart";
 import { euro } from "@/lib/menu";
 import { availableSlots, deliveryFee, fmtTime, modeEnabled } from "@/lib/shop";
 import { createOrder } from "@/lib/orders.functions";
+import { onlinePaymentInfo } from "@/lib/payments.functions";
+import { StripePayment } from "@/components/StripePayment";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/$slug/commande")({
@@ -39,6 +41,14 @@ function Checkout() {
   const [f, setF] = useState({ customer_name: "", phone: "", email: "", address: "", postal_code: "", notes: "" });
   const [pay, setPay] = useState<"on_site" | "online">("on_site");
   const [busy, setBusy] = useState(false);
+  const infoFn = useServerFn(onlinePaymentInfo);
+  const [online, setOnline] = useState<{ available: boolean; publishableKey: string | null }>({ available: false, publishableKey: null });
+  const [payment, setPayment] = useState<{ id: string; clientSecret: string } | null>(null);
+  const onSiteOk = restaurant.config.payments?.on_site !== false;
+
+  useEffect(() => {
+    infoFn({ data: { slug: restaurant.slug } }).then((r) => { setOnline(r); if (r.available && !onSiteOk) setPay("online"); }).catch(() => {});
+  }, [restaurant.slug, infoFn, onSiteOk]);
 
   useEffect(() => {
     const s = availableSlots(restaurant, mode);
@@ -63,6 +73,7 @@ function Checkout() {
       const res = await submitFn({
         data: { ...f, restaurant: restaurant.slug, mode, slot, payment_method: pay, lines: lines.map((l) => ({ itemId: l.itemId, qty: l.qty, sel: l.sel })) },
       });
+      if (res.clientSecret) { setPayment({ id: res.id, clientSecret: res.clientSecret }); return; }
       clear();
       navigate({ to: "/$slug/suivi/$id", params: { slug: restaurant.slug, id: res.id } });
     } catch (e) {
@@ -140,15 +151,15 @@ function Checkout() {
           <section>
             <h2 className="text-3xl">4. Paiement</h2>
             <div className="mt-3 grid grid-cols-2 gap-3">
-              <button onClick={() => setPay("on_site")} className={cn("rounded-xl border p-4 text-left", pay === "on_site" ? "border-primary bg-primary/10" : "border-border")}>
+              {onSiteOk && <button onClick={() => setPay("on_site")} className={cn("rounded-xl border p-4 text-left", pay === "on_site" ? "border-primary bg-primary/10" : "border-border")}>
                 <Store className="mb-2 h-6 w-6 text-primary" />
                 <p className="font-semibold">{mode === "delivery" ? "À la livraison" : "Au retrait"}</p>
                 <p className="text-xs text-muted-foreground">Espèces, CB ou tickets resto</p>
-              </button>
-              <button disabled className="cursor-not-allowed rounded-xl border border-border p-4 text-left opacity-50">
+              </button>}
+              <button disabled={!online.available} onClick={() => setPay("online")} className={cn("rounded-xl border p-4 text-left", !online.available && "cursor-not-allowed opacity-50", pay === "online" ? "border-primary bg-primary/10" : "border-border")}>
                 <CreditCard className="mb-2 h-6 w-6 text-primary" />
-                <p className="font-semibold">Carte en ligne</p>
-                <p className="text-xs text-muted-foreground">Bientôt disponible</p>
+                <p className="font-semibold">Payer en ligne</p>
+                <p className="text-xs text-muted-foreground">{online.available ? "Carte bancaire, Apple Pay, Google Pay" : "Non proposé par ce restaurant"}</p>
               </button>
             </div>
           </section>
@@ -163,9 +174,16 @@ function Checkout() {
             <div className="flex justify-between pt-2 text-lg font-bold"><span>Total</span><span className="text-primary">{euro(total)}</span></div>
           </div>
           {belowMin && <p className="mt-3 text-sm text-destructive">Minimum {DELIVERY.minOrder} € en livraison.</p>}
-          <Button size="lg" className="mt-4 w-full font-semibold" disabled={!canSubmit || busy} onClick={submit}>
-            {busy ? "Envoi…" : `Valider la commande · ${euro(total)}`}
-          </Button>
+          {payment && online.publishableKey ? (
+            <div className="mt-4">
+              <StripePayment publishableKey={online.publishableKey} clientSecret={payment.clientSecret} label={`Payer ${euro(total)}`}
+                returnUrl={`${window.location.origin}/${restaurant.slug}/suivi/${payment.id}`} onCancel={() => setPayment(null)} />
+            </div>
+          ) : (
+            <Button size="lg" className="mt-4 w-full font-semibold" disabled={!canSubmit || busy || (pay === "on_site" && !onSiteOk)} onClick={submit}>
+              {busy ? "Envoi…" : pay === "online" ? `Continuer vers le paiement · ${euro(total)}` : `Valider la commande · ${euro(total)}`}
+            </Button>
+          )}
         </aside>
       </div>
     </div>
