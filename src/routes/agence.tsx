@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ThemeToggle } from "@/lib/theme";
 
 export const Route = createFileRoute("/agence")({
   head: () => ({
@@ -63,6 +64,7 @@ function Console() {
           <h1 className="text-5xl">Console agence</h1>
         </div>
         <Button onClick={() => setForm({ ...EMPTY })}><Plus /> Nouveau restaurant</Button>
+        <ThemeToggle />
         <Button variant="ghost" size="icon" onClick={() => supabase.auth.signOut()} aria-label="Déconnexion"><LogOut /></Button>
       </header>
 

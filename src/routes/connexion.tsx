@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ThemeToggle } from "@/lib/theme";
 
 export const Route = createFileRoute("/connexion")({
   head: () => ({
@@ -51,8 +52,9 @@ function Login() {
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-border px-4 py-3">
+      <header className="flex items-center justify-between border-b border-border px-4 py-3">
         <Link to="/" className="font-display text-3xl">Nos restaurants</Link>
+        <ThemeToggle />
       </header>
       <form onSubmit={submit} className="mx-auto mt-16 max-w-sm space-y-4 rounded-xl border border-border bg-card p-6">
         <h1 className="text-4xl">{mode === "in" ? "Espace restaurant" : "Créer un compte équipe"}</h1>

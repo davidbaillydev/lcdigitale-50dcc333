@@ -4,6 +4,7 @@ import { LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useStaff } from "@/hooks/use-staff";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/lib/theme";
 
 export const Route = createFileRoute("/cuisine/")({
   head: () => ({
@@ -39,9 +40,10 @@ function Picker() {
     );
   return (
     <div className="mx-auto max-w-3xl p-6">
-      <div className="flex items-center">
+      <div className="flex items-center gap-2">
         <h1 className="mr-auto text-5xl">Vos restaurants</h1>
         {isAgency && <Button asChild variant="secondary"><Link to="/agence">Console agence</Link></Button>}
+        <ThemeToggle />
         <Button variant="ghost" size="icon" onClick={() => supabase.auth.signOut()} aria-label="Déconnexion"><LogOut /></Button>
       </div>
       <div className="mt-6 grid gap-3 sm:grid-cols-2">

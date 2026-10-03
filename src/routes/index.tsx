@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { MapPin } from "lucide-react";
 import { listRestaurants } from "@/lib/restaurants.functions";
+import { ThemeToggle } from "@/lib/theme";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -22,6 +23,7 @@ function Home() {
   const restaurants = Route.useLoaderData();
   return (
     <div className="mx-auto min-h-screen max-w-4xl px-4 py-16">
+      <div className="flex justify-end"><ThemeToggle /></div>
       <p className="inline-block -rotate-1 brush px-4 py-1 font-display text-xl">LC Digitale · Commande en ligne</p>
       <h1 className="mt-3 text-6xl leading-none sm:text-7xl">Nos restaurants</h1>
       <div className="mt-10 grid gap-4 sm:grid-cols-2">

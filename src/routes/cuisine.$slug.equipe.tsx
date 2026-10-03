@@ -7,6 +7,7 @@ import { useStaff } from "@/hooks/use-staff";
 import { listStaff, setStaffRole } from "@/lib/staff.functions";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { ThemeToggle } from "@/lib/theme";
 
 export const Route = createFileRoute("/cuisine/$slug/equipe")({
   head: () => ({
@@ -42,7 +43,7 @@ function Team() {
 
   return (
     <div className="mx-auto max-w-2xl p-6">
-      <Button asChild variant="ghost"><Link to="/cuisine/$slug" params={{ slug }}><ArrowLeft /> Écran cuisine</Link></Button>
+      <div className="flex items-center justify-between"><Button asChild variant="ghost"><Link to="/cuisine/$slug" params={{ slug }}><ArrowLeft /> Écran cuisine</Link></Button><ThemeToggle /></div>
       <h1 className="mt-4 text-5xl">Équipe · {restaurant?.name}</h1>
       <p className="text-sm text-muted-foreground">Les employés créent leur compte depuis « Espace restaurant », puis vous activez leur accès ici. Les comptes déjà rattachés à un autre restaurant n'apparaissent pas.</p>
       <ul className="mt-6 divide-y divide-border rounded-xl border border-border bg-card">

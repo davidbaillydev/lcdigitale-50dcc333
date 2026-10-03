@@ -83,7 +83,7 @@ function Kiosk() {
       {step === "welcome" && (
         <div role="button" tabIndex={0} className="relative flex flex-1 cursor-pointer flex-col items-center justify-center gap-10 overflow-hidden p-10 text-center" onClick={() => setStep("menu")}>
           <img src={welcomeFood} alt="" width={1024} height={768} className="absolute inset-0 h-full w-full object-cover opacity-30" />
-          <div className="absolute inset-0 bg-background/50" />
+          <div className="absolute inset-0 bg-background/75" />
           <BrandLogo src={restaurant.logo_url} name={restaurant.name} className="relative h-40 w-40 object-contain" />
           <p className="relative font-display text-8xl text-primary">{restaurant.name}</p>
           <p className="relative text-3xl text-foreground">Bienvenue !</p>
