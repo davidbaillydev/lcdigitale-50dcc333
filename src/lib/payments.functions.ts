@@ -217,7 +217,7 @@ export async function stripeCall(path: string, secret: string, form?: Record<str
   const res = await fetch(`${STRIPE}${path}`, {
     method: form ? "POST" : "GET",
     headers: { Authorization: `Bearer ${secret}`, ...(form ? { "Content-Type": "application/x-www-form-urlencoded" } : {}) },
-    body: form ? new URLSearchParams(form).toString() : undefined,
+    body: form ? new URLSearchParams(form).toString() : null,
   });
   const body = await res.json().catch(() => null) as { error?: { message?: string } } | null;
   if (!res.ok) {
