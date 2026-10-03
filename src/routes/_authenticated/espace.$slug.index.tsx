@@ -35,6 +35,9 @@ type Order = {
   payment_method: string; status: string; source?: string; created_at: string;
 };
 
+type PrintLog = { id: string; kinds: string; status: string; reprint: boolean; auto: boolean; created_at: string };
+const kindLabel = (k: string) => k.split(",").map((x) => (x === "kitchen" ? "cuisine" : "caisse")).join(" + ");
+
 const COLS = [
   { s: "new", label: "Nouvelles", next: "accepted", action: "Accepter" },
   { s: "accepted", label: "En préparation", next: "ready", action: "Prête" },
@@ -61,12 +64,21 @@ function Kitchen() {
   const [orders, setOrders] = useState<Order[]>([]);
   const printing = printingDefaults((restaurant?.config as { printing?: Partial<PrintingConfig> } | null)?.printing);
   const [printState, setPrintState] = useState<Record<string, "ok" | "failed">>({});
-  const doPrint = useCallback(async (o: Order, kinds: TicketKind[]) => {
+  const [logs, setLogs] = useState<Record<string, PrintLog[]>>({});
+  const [openLog, setOpenLog] = useState<string | null>(null);
+  const doPrint = useCallback(async (o: Order, kinds: TicketKind[], auto = false) => {
     const shop = { name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null };
     const ok = await printTickets(o, kinds, shop, printing.width, printing.kitchen);
     setPrintState((p) => ({ ...p, [o.id]: ok ? "ok" : "failed" }));
+    if (rid) {
+      const reprint = (logs[o.id] ?? []).length > 0;
+      const { data: row } = await supabase.from("order_print_logs")
+        .insert({ order_id: o.id, restaurant_id: rid, kinds: kinds.join(","), status: ok ? "ok" : "failed", reprint, auto })
+        .select("id, kinds, status, reprint, auto, created_at").single();
+      if (row) setLogs((p) => ({ ...p, [o.id]: [...(p[o.id] ?? []), row as PrintLog] }));
+    }
     if (!ok) toast.error(`Impression du ticket n° ${o.order_number} échouée`);
-  }, [restaurant, printing.width, printing.kitchen]);
+  }, [restaurant, rid, logs, printing.width, printing.kitchen]);
   const printRef = useRef({ auto: false, doPrint }); printRef.current = { auto: printing.auto, doPrint };
   const [sound, setSound] = useState(false);
   const audio = useRef<AudioContext | null>(null);
@@ -101,6 +113,13 @@ function Kitchen() {
     const since = new Date(); since.setHours(0, 0, 0, 0);
     const { data } = await supabase.from("orders").select("*").eq("restaurant_id", rid ?? "").gte("created_at", since.toISOString()).order("slot");
     setOrders((data ?? []) as unknown as Order[]);
+    const ids = (data ?? []).map((o) => o.id);
+    if (ids.length) {
+      const { data: l } = await supabase.from("order_print_logs").select("id, order_id, kinds, status, reprint, auto, created_at").in("order_id", ids).order("created_at");
+      const m: Record<string, PrintLog[]> = {};
+      (l ?? []).forEach((x) => { (m[x.order_id] ??= []).push(x as PrintLog); });
+      setLogs(m);
+    }
   }, [rid]);
 
   useEffect(() => {
@@ -112,7 +131,7 @@ function Kitchen() {
         if (p.eventType === "INSERT") {
           toast.success(`Nouvelle commande n° ${(p.new as Order).order_number}`);
           if (audio.current) beep(audio.current);
-          if (printRef.current.auto) void printRef.current.doPrint(p.new as Order, ["kitchen", "receipt"]);
+          if (printRef.current.auto) void printRef.current.doPrint(p.new as Order, ["kitchen", "receipt"], true);
         }
         load();
       })
@@ -212,11 +231,27 @@ function Kitchen() {
                       {c.s === "new" && <Button size="lg" variant="ghost" onClick={() => confirm("Refuser cette commande ?") && move(o, "cancelled")}>Refuser</Button>}
                     </div>
                     <div className="mt-2 flex gap-2">
-                      <Button size="sm" variant="secondary" className="flex-1" onClick={() => doPrint(o, ["kitchen"])}><Printer /> {printState[o.id] ? "Réimprimer cuisine" : "Cuisine"}</Button>
+                      <Button size="sm" variant="secondary" className="flex-1" onClick={() => doPrint(o, ["kitchen"])}><Printer /> {logs[o.id]?.length ? "Réimprimer cuisine" : "Cuisine"}</Button>
                       <Button size="sm" variant="secondary" className="flex-1" onClick={() => doPrint(o, ["receipt"])}><Printer /> Caisse</Button>
                     </div>
-                    {printState[o.id] === "failed" && <p role="alert" className="mt-2 rounded bg-destructive/20 p-2 text-sm">Impression échouée — vérifiez l'imprimante puis réimprimez.</p>}
-                    {printState[o.id] === "ok" && <p className="mt-1 text-xs text-muted-foreground">Ticket envoyé à l'imprimante</p>}
+                    {(printState[o.id] ?? logs[o.id]?.at(-1)?.status) === "failed" && <p role="alert" className="mt-2 rounded bg-destructive/20 p-2 text-sm">Impression échouée — vérifiez l'imprimante puis réimprimez.</p>}
+                    {!!logs[o.id]?.length && (
+                      <div className="mt-1">
+                        <button type="button" className="text-xs text-muted-foreground underline" onClick={() => setOpenLog(openLog === o.id ? null : o.id)}>
+                          Historique d'impression ({logs[o.id]!.length})
+                        </button>
+                        {openLog === o.id && (
+                          <ul className="mt-1 space-y-0.5 text-xs">
+                            {logs[o.id]!.map((l) => (
+                              <li key={l.id} className="flex justify-between gap-2">
+                                <span>{new Date(l.created_at).toLocaleTimeString("fr-FR")} · {l.reprint ? "Réimpression" : "Impression"} {kindLabel(l.kinds)}{l.auto ? " (auto)" : ""}</span>
+                                <span className={l.status === "ok" ? "text-primary" : "text-destructive"}>{l.status === "ok" ? "Envoyé" : "Échec"}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    )}
                   </article>
                 ))}
                 {!list.length && <p className="py-8 text-center text-sm text-muted-foreground">Aucune commande</p>}
