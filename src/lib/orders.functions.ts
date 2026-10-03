@@ -28,7 +28,7 @@ export const createOrder = createServerFn({ method: "POST" })
     const { data: rRow } = await supabaseAdmin.from("restaurants").select(RESTAURANT_COLUMNS).eq("slug", data.restaurant).eq("active", true).maybeSingle();
     const r = rRow as unknown as Restaurant | null;
     if (!r) throw new Error("Restaurant introuvable");
-    const catalog = getCatalog(r.menu_key);
+    const catalog = getCatalog(r);
 
     if (!isValidSlot(r, data.mode, data.slot)) throw new Error("Ce créneau n'est plus disponible, merci d'en choisir un autre.");
     if (data.payment_method === "online") throw new Error("Le paiement en ligne n'est pas encore activé.");
@@ -110,7 +110,7 @@ export const createKioskOrder = createServerFn({ method: "POST" })
     const { data: rRow } = await supabaseAdmin.from("restaurants").select(RESTAURANT_COLUMNS).eq("slug", data.restaurant).eq("active", true).maybeSingle();
     const r = rRow as unknown as Restaurant | null;
     if (!r) throw new Error("Restaurant introuvable");
-    const catalog = getCatalog(r.menu_key);
+    const catalog = getCatalog(r);
     const items = data.lines.map((l) => {
       const item = catalog.itemsById[l.itemId];
       if (!item) throw new Error("Article inconnu");
