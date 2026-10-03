@@ -14,6 +14,7 @@ import { Route as SlugRouteImport } from './routes/$slug'
 import { Route as CommandeRouteImport } from './routes/commande'
 import { Route as ConnexionRouteImport } from './routes/connexion'
 import { Route as SlugIndexRouteImport } from './routes/$slug.index'
+import { Route as SlugBorneRouteImport } from './routes/$slug.borne'
 import { Route as SlugCommandeRouteImport } from './routes/$slug.commande'
 import { Route as CuisineIndexRouteImport } from './routes/cuisine.index'
 import { Route as CuisineEquipeRouteImport } from './routes/cuisine.equipe'
@@ -45,6 +46,11 @@ const ConnexionRoute = ConnexionRouteImport.update({
 const SlugIndexRoute = SlugIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => SlugRoute,
+} as any)
+const SlugBorneRoute = SlugBorneRouteImport.update({
+  id: '/borne',
+  path: '/borne',
   getParentRoute: () => SlugRoute,
 } as any)
 const SlugCommandeRoute = SlugCommandeRouteImport.update({
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/$slug': typeof SlugRouteWithChildren
   '/commande': typeof CommandeRoute
   '/connexion': typeof ConnexionRoute
+  '/$slug/borne': typeof SlugBorneRoute
   '/$slug/commande': typeof SlugCommandeRoute
   '/cuisine/equipe': typeof CuisineEquipeRoute
   '/suivi/$id': typeof SuiviIdRoute
@@ -101,6 +108,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/commande': typeof CommandeRoute
   '/connexion': typeof ConnexionRoute
+  '/$slug/borne': typeof SlugBorneRoute
   '/$slug/commande': typeof SlugCommandeRoute
   '/cuisine/equipe': typeof CuisineEquipeRoute
   '/suivi/$id': typeof SuiviIdRoute
@@ -116,6 +124,7 @@ export interface FileRoutesById {
   '/$slug': typeof SlugRouteWithChildren
   '/commande': typeof CommandeRoute
   '/connexion': typeof ConnexionRoute
+  '/$slug/borne': typeof SlugBorneRoute
   '/$slug/commande': typeof SlugCommandeRoute
   '/cuisine/equipe': typeof CuisineEquipeRoute
   '/suivi/$id': typeof SuiviIdRoute
@@ -132,6 +141,7 @@ export interface FileRouteTypes {
     | '/$slug'
     | '/commande'
     | '/connexion'
+    | '/$slug/borne'
     | '/$slug/commande'
     | '/cuisine/equipe'
     | '/suivi/$id'
@@ -145,6 +155,7 @@ export interface FileRouteTypes {
     | '/'
     | '/commande'
     | '/connexion'
+    | '/$slug/borne'
     | '/$slug/commande'
     | '/cuisine/equipe'
     | '/suivi/$id'
@@ -159,6 +170,7 @@ export interface FileRouteTypes {
     | '/$slug'
     | '/commande'
     | '/connexion'
+    | '/$slug/borne'
     | '/$slug/commande'
     | '/cuisine/equipe'
     | '/suivi/$id'
@@ -218,6 +230,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SlugIndexRouteImport
       parentRoute: typeof SlugRoute
     }
+    '/$slug/borne': {
+      id: '/$slug/borne'
+      path: '/borne'
+      fullPath: '/$slug/borne'
+      preLoaderRoute: typeof SlugBorneRouteImport
+      parentRoute: typeof SlugRoute
+    }
     '/$slug/commande': {
       id: '/$slug/commande'
       path: '/commande'
@@ -271,12 +290,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface SlugRouteChildren {
+  SlugBorneRoute: typeof SlugBorneRoute
   SlugCommandeRoute: typeof SlugCommandeRoute
   SlugIndexRoute: typeof SlugIndexRoute
   SlugSuiviIdRoute: typeof SlugSuiviIdRoute
 }
 
 const SlugRouteChildren: SlugRouteChildren = {
+  SlugBorneRoute: SlugBorneRoute,
   SlugCommandeRoute: SlugCommandeRoute,
   SlugIndexRoute: SlugIndexRoute,
   SlugSuiviIdRoute: SlugSuiviIdRoute,
