@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { CheckCircle2, ChefHat, PackageCheck, Clock } from "lucide-react";
+import { CheckCircle2, ChefHat, PackageCheck, Clock, Printer } from "lucide-react";
+import { printTickets, type TicketOrder } from "@/lib/ticket";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { getOrderStatus } from "@/lib/orders.functions";
@@ -73,7 +74,10 @@ function Tracking() {
           ))}
           <li className="flex justify-between py-3 font-bold"><span>Total</span><span className="text-primary">{euro(Number(data.total))}</span></li>
         </ul>
-        <Button asChild variant="secondary" className="mt-6"><Link to="/$slug" params={{ slug }}>Retour à la carte</Link></Button>
+        <div className="mt-6 flex flex-wrap gap-2">
+          <Button asChild variant="secondary"><Link to="/$slug" params={{ slug }}>Retour à la carte</Link></Button>
+          <Button variant="outline" onClick={() => printTickets(data as unknown as TicketOrder, ["receipt"], "")}><Printer /> Imprimer le ticket</Button>
+        </div>
       </div>
     </div>
   );
