@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { ThemeToggle } from "@/lib/theme";
 
-export const Route = createFileRoute("/cuisine/$slug/equipe")({
+export const Route = createFileRoute("/_authenticated/espace/$slug/equipe")({
   head: () => ({
     meta: [
       { title: "Équipe du restaurant" },
@@ -34,7 +34,7 @@ function Team() {
   const { data } = useQuery({ queryKey: ["staff", rid], queryFn: () => list({ data: { restaurantId: rid } }), enabled: canManage });
 
   if (loading) return null;
-  if (!canManage) return <p className="p-10 text-center">Réservé au gérant. <Link to="/cuisine" className="underline">Retour</Link></p>;
+  if (!canManage) return <p className="p-10 text-center">Réservé au gérant. <Link to="/espace" className="underline">Retour</Link></p>;
 
   const toggle = async (userId: string, role: "kitchen" | "manager", grant: boolean) => {
     try { await setRole({ data: { restaurantId: rid, userId, role, grant } }); qc.invalidateQueries({ queryKey: ["staff", rid] }); }
@@ -43,7 +43,7 @@ function Team() {
 
   return (
     <div className="mx-auto max-w-2xl p-6">
-      <div className="flex items-center justify-between"><Button asChild variant="ghost"><Link to="/cuisine/$slug" params={{ slug }}><ArrowLeft /> Écran cuisine</Link></Button><ThemeToggle /></div>
+      <div className="flex items-center justify-between"><Button asChild variant="ghost"><Link to="/espace/$slug" params={{ slug }}><ArrowLeft /> Écran cuisine</Link></Button><ThemeToggle /></div>
       <h1 className="mt-4 text-5xl">Équipe · {restaurant?.name}</h1>
       <p className="text-sm text-muted-foreground">Les employés créent leur compte depuis « Espace restaurant », puis vous activez leur accès ici. Les comptes déjà rattachés à un autre restaurant n'apparaissent pas.</p>
       <ul className="mt-6 divide-y divide-border rounded-xl border border-border bg-card">

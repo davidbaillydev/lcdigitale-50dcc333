@@ -6,7 +6,7 @@ import { useStaff } from "@/hooks/use-staff";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/lib/theme";
 
-export const Route = createFileRoute("/cuisine/")({
+export const Route = createFileRoute("/_authenticated/espace/")({
   head: () => ({
     meta: [
       { title: "Espace restaurants — LC Digitale" },
@@ -26,7 +26,7 @@ function Picker() {
   const navigate = useNavigate();
   useEffect(() => { if (!loading && !user) navigate({ to: "/connexion" }); }, [loading, user, navigate]);
   useEffect(() => {
-    if (!loading && !isAgency && restaurants.length === 1) navigate({ to: "/cuisine/$slug", params: { slug: restaurants[0]!.slug }, replace: true });
+    if (!loading && !isAgency && restaurants.length === 1) navigate({ to: "/espace/$slug", params: { slug: restaurants[0]!.slug }, replace: true });
   }, [loading, isAgency, restaurants, navigate]);
 
   if (loading || !user) return <p className="p-10 text-center text-muted-foreground">Chargement…</p>;
@@ -42,13 +42,13 @@ function Picker() {
     <div className="mx-auto max-w-3xl p-6">
       <div className="flex items-center gap-2">
         <h1 className="mr-auto text-5xl">Vos restaurants</h1>
-        {isAgency && <Button asChild variant="secondary"><Link to="/agence">Console agence</Link></Button>}
+        {isAgency && <Button asChild variant="secondary"><Link to="/admin">Console agence</Link></Button>}
         <ThemeToggle />
         <Button variant="ghost" size="icon" onClick={() => supabase.auth.signOut()} aria-label="Déconnexion"><LogOut /></Button>
       </div>
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
         {restaurants.map((r) => (
-          <Link key={r.id} to="/cuisine/$slug" params={{ slug: r.slug }} className="rounded-xl border border-border bg-card p-5 hover:border-primary">
+          <Link key={r.id} to="/espace/$slug" params={{ slug: r.slug }} className="rounded-xl border border-border bg-card p-5 hover:border-primary">
             <p className="text-3xl">{r.name}</p>
             <p className="text-sm text-muted-foreground">{r.city} · {ROLE[r.role]}</p>
           </Link>

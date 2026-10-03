@@ -15,7 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ThemeToggle } from "@/lib/theme";
 
-export const Route = createFileRoute("/agence")({
+export const Route = createFileRoute("/_authenticated/admin/")({
   head: () => ({
     meta: [
       { title: "Console Agence LC Digitale — Réseau de restaurants" },
@@ -49,7 +49,7 @@ function Console() {
   if (!isAgency) return (
     <div className="mx-auto max-w-md p-10 text-center">
       <h1 className="text-4xl">Réservé à l'agence</h1>
-      <Button asChild className="mt-6"><Link to="/cuisine">Mes restaurants</Link></Button>
+      <Button asChild className="mt-6"><Link to="/espace">Mes restaurants</Link></Button>
     </div>
   );
 
@@ -102,9 +102,9 @@ function Console() {
               <div className="mt-4 flex flex-wrap gap-2">
                 <Button size="sm" variant="secondary" asChild><a href={`/${r.slug}`} target="_blank" rel="noreferrer"><ExternalLink /> Site</a></Button>
                 <Button size="sm" variant="secondary" asChild><a href={`/${r.slug}/borne`} target="_blank" rel="noreferrer"><Tablet /> Borne</a></Button>
-                <Button size="sm" variant="secondary" asChild><Link to="/cuisine/$slug" params={{ slug: r.slug }}><ChefHat /> Cuisine</Link></Button>
-                <Button size="sm" variant="secondary" asChild><Link to="/cuisine/$slug/equipe" params={{ slug: r.slug }}><Users /> Équipe</Link></Button>
-                <Button size="sm" variant="secondary" asChild><Link to="/cuisine/$slug/carte" params={{ slug: r.slug }}>Carte</Link></Button>
+                <Button size="sm" variant="secondary" asChild><Link to="/espace/$slug" params={{ slug: r.slug }}><ChefHat /> Cuisine</Link></Button>
+                <Button size="sm" variant="secondary" asChild><Link to="/espace/$slug/equipe" params={{ slug: r.slug }}><Users /> Équipe</Link></Button>
+                <Button size="sm" variant="secondary" asChild><Link to="/espace/$slug/carte" params={{ slug: r.slug }}>Carte</Link></Button>
                 <Button size="sm" onClick={() => setForm({ ...r })}><Pencil /> Modifier</Button>
               </div>
             </article>
