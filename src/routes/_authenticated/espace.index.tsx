@@ -13,6 +13,7 @@ export const Route = createFileRoute("/_authenticated/espace/")({
       { name: "description", content: "Accès aux écrans cuisine de vos restaurants." },
       { property: "og:title", content: "Espace restaurants" },
       { property: "og:description", content: "Choisissez un établissement." },
+      { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
     ],
   }),

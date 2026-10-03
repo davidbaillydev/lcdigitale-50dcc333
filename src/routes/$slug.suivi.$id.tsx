@@ -12,10 +12,11 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/$slug/suivi/$id")({
   head: () => ({
     meta: [
-      { title: "Suivi de commande" },
+      { title: "Suivi de commande — LC Digitale" },
       { name: "description", content: "Suivez l'avancement de votre commande en temps réel." },
-      { property: "og:title", content: "Suivi de commande" },
+      { property: "og:title", content: "Suivi de commande — LC Digitale" },
       { property: "og:description", content: "Suivez votre commande." },
+      { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
     ],
   }),

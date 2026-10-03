@@ -18,10 +18,11 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/$slug/commande")({
   head: () => ({
     meta: [
-      { title: "Finaliser ma commande" },
+      { title: "Finaliser ma commande — LC Digitale" },
       { name: "description", content: "Choisissez click & collect ou livraison, votre créneau et votre mode de paiement." },
-      { property: "og:title", content: "Finaliser ma commande" },
+      { property: "og:title", content: "Finaliser ma commande — LC Digitale" },
       { property: "og:description", content: "Click & collect ou livraison." },
+      { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Checkout,

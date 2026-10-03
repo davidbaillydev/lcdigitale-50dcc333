@@ -17,10 +17,11 @@ import { ThemeToggle } from "@/lib/theme";
 export const Route = createFileRoute("/_authenticated/espace/$slug/")({
   head: () => ({
     meta: [
-      { title: "Écran cuisine" },
+      { title: "Écran cuisine — LC Digitale" },
       { name: "description", content: "Tableau de bord des commandes en temps réel." },
-      { property: "og:title", content: "Écran cuisine" },
+      { property: "og:title", content: "Écran cuisine — LC Digitale" },
       { property: "og:description", content: "Commandes en temps réel." },
+      { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
     ],
   }),

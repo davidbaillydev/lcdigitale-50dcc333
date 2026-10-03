@@ -14,6 +14,7 @@ export const Route = createFileRoute("/_authenticated/espace/$slug/reglages")({
       { name: "description", content: "Horaires, commandes, paiements et livraison du restaurant." },
       { property: "og:title", content: "Réglages du restaurant" },
       { property: "og:description", content: "Horaires, commandes et livraison." },
+      { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
     ],
   }),

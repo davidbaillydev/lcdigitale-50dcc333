@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { RestaurantBannerUpload } from "@/components/RestaurantBannerUpload";
 
 const DAYS = [["1", "Lundi"], ["2", "Mardi"], ["3", "Mercredi"], ["4", "Jeudi"], ["5", "Vendredi"], ["6", "Samedi"], ["0", "Dimanche"]] as const;
 const toHHMM = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
@@ -61,6 +62,7 @@ export function RestaurantSettingsForm({ restaurant, onSaved }: { restaurant: Re
 
   return (
     <div className="space-y-5">
+      <RestaurantBannerUpload restaurant={restaurant} onSaved={onSaved} />
       <Section title="Horaires d'ouverture">
         <div className="space-y-3">
           {DAYS.map(([d, label]) => {

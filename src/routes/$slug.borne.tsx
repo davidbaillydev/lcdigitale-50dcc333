@@ -9,14 +9,14 @@ import { euro, groupCost, unitPrice, validateSelections, type MenuItem, type Opt
 import { itemImage, menuImage } from "@/lib/menu-images";
 import { BrandLogo } from "@/lib/brand";
 import { ThemeToggle } from "@/lib/theme";
-import welcomeFood from "@/assets/food-plateau.jpg";
+import { RestaurantBanner } from "@/components/RestaurantBanner";
 
 export const Route = createFileRoute("/$slug/borne")({
   head: () => ({
     meta: [
-      { title: "Borne de commande" },
+      { title: "Borne de commande — LC Digitale" },
       { name: "description", content: "Borne de commande tactile en restaurant." },
-      { property: "og:title", content: "Borne de commande" },
+      { property: "og:title", content: "Borne de commande — LC Digitale" },
       { property: "og:description", content: "Commandez sur place ou à emporter depuis la borne." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -85,7 +85,7 @@ function Kiosk() {
       )}
       {step === "welcome" && (
         <div role="button" tabIndex={0} className="relative flex flex-1 cursor-pointer flex-col items-center justify-center gap-10 overflow-hidden p-10 text-center" onClick={() => setStep("menu")}>
-          <img src={welcomeFood} alt="" width={1024} height={768} className="absolute inset-0 h-full w-full object-cover opacity-30" />
+          <RestaurantBanner restaurant={restaurant} />
           <div className="absolute inset-0 bg-background/75" />
           <BrandLogo src={restaurant.logo_url} name={restaurant.name} className="relative h-40 w-40 object-contain" />
           <p className="relative font-display text-8xl text-primary">{restaurant.name}</p>

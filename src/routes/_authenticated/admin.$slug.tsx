@@ -15,6 +15,7 @@ export const Route = createFileRoute("/_authenticated/admin/$slug")({
       { name: "description", content: "Configuration complète d'un restaurant partenaire." },
       { property: "og:title", content: "Fiche restaurant" },
       { property: "og:description", content: "Configuration d'un restaurant." },
+      { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
     ],
   }),

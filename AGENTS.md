@@ -22,3 +22,4 @@
 
 - New restaurants default to the blank menu_key `vierge` (no base catalog) so the menu is built via AI import or by hand; templates remain selectable.
 - Kitchen PIN lock: hashed PIN in `restaurant_kitchen_pins` (service-role only, no RLS policies), set by managers and verified by server functions with attempt lockout. Why: quick tablet unlock without exposing the hash to clients.
+- Restaurant banners use private Storage with a path in restaurants.brand; manager-checked uploads and an active-restaurant-only image endpoint serve the site and kiosk, with a shared brand/logo fallback. Agency brand edits preserve the banner path to avoid accidental removal.

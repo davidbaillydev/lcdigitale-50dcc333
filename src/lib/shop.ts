@@ -12,7 +12,7 @@ export type Restaurant = {
   menu_key: string;
   logo_url: string | null;
   menu: import("./menu").Category[] | null;
-  brand: { primary?: string; accent?: string };
+  brand: { primary?: string; accent?: string; bannerPath?: string };
   /** 0 = dimanche. Plages en minutes depuis minuit (heure de Paris) */
   opening: Record<string, [number, number][]>;
   delivery: DeliveryConfig;
