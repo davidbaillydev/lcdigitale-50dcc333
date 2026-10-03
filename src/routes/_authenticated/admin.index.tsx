@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useState } from "react";
-import { ChefHat, ExternalLink, LogOut, Pencil, Plus, Tablet, Users } from "lucide-react";
+import { ChefHat, ExternalLink, LogOut, Pencil, Plus, Settings, Tablet, Users } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useStaff } from "@/hooks/use-staff";
@@ -40,8 +40,8 @@ function Console() {
   const toggle = useServerFn(setRestaurantActive);
   const [rows, setRows] = useState<AgencyRestaurant[] | null>(null);
   const [form, setForm] = useState<Form | null>(null);
+  const [q, setQ] = useState("");
 
-  useEffect(() => { if (!loading && !user) navigate({ to: "/connexion" }); }, [loading, user, navigate]);
   const load = useCallback(() => list().then(setRows).catch((e) => toast.error(e.message)), [list]);
   useEffect(() => { if (isAgency) load(); }, [isAgency, load]);
 
@@ -65,8 +65,9 @@ function Console() {
         </div>
         <Button onClick={() => setForm({ ...EMPTY })}><Plus /> Nouveau restaurant</Button>
         <ThemeToggle />
-        <Button variant="ghost" size="icon" onClick={() => supabase.auth.signOut()} aria-label="Déconnexion"><LogOut /></Button>
+        <Button variant="ghost" size="icon" onClick={async () => { await supabase.auth.signOut(); navigate({ to: "/connexion", replace: true }); }} aria-label="Déconnexion"><LogOut /></Button>
       </header>
+      <Input className="mt-6" placeholder="Rechercher un restaurant (nom, ville, adresse web)…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher" />
 
       <div className="mt-6 grid grid-cols-3 gap-3">
         {[["Restaurants", rows?.length ?? 0], ["En ligne", active], ["Commandes aujourd'hui", today]].map(([l, v]) => (
@@ -78,7 +79,7 @@ function Console() {
 
       {!rows ? <p className="mt-10 text-center text-muted-foreground">Chargement du réseau…</p> : (
         <div className="mt-6 grid gap-4 md:grid-cols-2">
-          {rows.map((r) => (
+          {rows.filter((r) => `${r.name} ${r.city ?? ""} ${r.slug}`.toLowerCase().includes(q.toLowerCase())).map((r) => (
             <article key={r.id} style={brandVars(r.brand)} className="rounded-xl border border-border bg-card p-5">
               <div className="flex items-start gap-4">
                 {r.logo_url ? <BrandLogo src={r.logo_url} name={r.name} className="h-14 w-14 rounded-lg object-contain" />
@@ -105,6 +106,7 @@ function Console() {
                 <Button size="sm" variant="secondary" asChild><Link to="/espace/$slug" params={{ slug: r.slug }}><ChefHat /> Cuisine</Link></Button>
                 <Button size="sm" variant="secondary" asChild><Link to="/espace/$slug/equipe" params={{ slug: r.slug }}><Users /> Équipe</Link></Button>
                 <Button size="sm" variant="secondary" asChild><Link to="/espace/$slug/carte" params={{ slug: r.slug }}>Carte</Link></Button>
+                <Button size="sm" variant="secondary" asChild><Link to="/admin/$slug" params={{ slug: r.slug }}><Settings /> Réglages</Link></Button>
                 <Button size="sm" onClick={() => setForm({ ...r })}><Pencil /> Modifier</Button>
               </div>
             </article>
@@ -112,12 +114,12 @@ function Console() {
         </div>
       )}
 
-      <RestaurantDialog form={form} setForm={setForm} onSaved={load} />
+      <RestaurantDialog form={form} setForm={setForm} onSaved={(slug, created) => { load(); if (created) navigate({ to: "/admin/$slug", params: { slug } }); }} />
     </div>
   );
 }
 
-function RestaurantDialog({ form, setForm, onSaved }: { form: Form | null; setForm: (f: Form | null) => void; onSaved: () => void }) {
+function RestaurantDialog({ form, setForm, onSaved }: { form: Form | null; setForm: (f: Form | null) => void; onSaved: (slug: string, created: boolean) => void }) {
   const save = useServerFn(saveRestaurant);
   const [busy, setBusy] = useState(false);
   if (!form) return null;
@@ -135,7 +137,7 @@ function RestaurantDialog({ form, setForm, onSaved }: { form: Form | null; setFo
       const n = (s: string | null) => (s?.trim() ? s.trim() : null);
       await save({ data: { id: form.id, name: form.name, slug: form.slug, city: n(form.city), address: n(form.address), phone: n(form.phone), email: n(form.email), menu_key: form.menu_key, logo_url: form.logo_url, brand: form.brand, active: form.active } });
       toast.success(form.id ? "Restaurant mis à jour" : "Restaurant créé");
-      setForm(null); onSaved();
+      const created = !form.id; setForm(null); onSaved(form.slug, created);
     } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
   };
   return (
@@ -171,7 +173,7 @@ function RestaurantDialog({ form, setForm, onSaved }: { form: Form | null; setFo
           <span className="rounded-md bg-primary px-3 py-1 text-primary-foreground">Commander</span>
           <span className="rounded-md bg-accent px-3 py-1 text-accent-foreground">Valider</span>
         </div>
-        {!form.id && <p className="text-xs text-muted-foreground">Horaires par défaut : lun.–sam. 11h30–14h30 et 18h30–22h30 (modifiables ensuite).</p>}
+        {!form.id && <p className="text-xs text-muted-foreground">Horaires par défaut : lun.–sam. 11h30–14h30 et 18h30–22h30 — vous serez ensuite guidé pour régler horaires, commandes, livraison, carte et équipe.</p>}
         <Button onClick={submit} disabled={busy || !form.name || !form.slug}>{busy ? "Enregistrement…" : "Enregistrer"}</Button>
       </DialogContent>
     </Dialog>

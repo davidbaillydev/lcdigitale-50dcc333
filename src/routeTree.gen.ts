@@ -25,10 +25,12 @@ import { Route as CuisineSplatRouteImport } from './routes/cuisine.$'
 import { Route as SuiviIdRouteImport } from './routes/suivi.$id'
 import { Route as SlugSuiviIdRouteImport } from './routes/$slug.suivi.$id'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
+import { Route as AuthenticatedAdminSlugRouteImport } from './routes/_authenticated/admin.$slug'
 import { Route as AuthenticatedEspaceIndexRouteImport } from './routes/_authenticated/espace.index'
 import { Route as AuthenticatedEspaceSlugIndexRouteImport } from './routes/_authenticated/espace.$slug.index'
 import { Route as AuthenticatedEspaceSlugCarteRouteImport } from './routes/_authenticated/espace.$slug.carte'
 import { Route as AuthenticatedEspaceSlugEquipeRouteImport } from './routes/_authenticated/espace.$slug.equipe'
+import { Route as AuthenticatedEspaceSlugReglagesRouteImport } from './routes/_authenticated/espace.$slug.reglages'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -109,6 +111,11 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminSlugRoute = AuthenticatedAdminSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedEspaceIndexRoute =
   AuthenticatedEspaceIndexRouteImport.update({
     id: '/espace/',
@@ -133,6 +140,12 @@ const AuthenticatedEspaceSlugEquipeRoute =
     path: '/espace/$slug/equipe',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedEspaceSlugReglagesRoute =
+  AuthenticatedEspaceSlugReglagesRouteImport.update({
+    id: '/espace/$slug/reglages',
+    path: '/espace/$slug/reglages',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -149,10 +162,12 @@ export interface FileRoutesByFullPath {
   '/$slug/': typeof SlugIndexRoute
   '/cuisine/': typeof CuisineIndexRoute
   '/$slug/suivi/$id': typeof SlugSuiviIdRoute
+  '/admin/$slug': typeof AuthenticatedAdminSlugRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/espace/': typeof AuthenticatedEspaceIndexRoute
   '/espace/$slug/carte': typeof AuthenticatedEspaceSlugCarteRoute
   '/espace/$slug/equipe': typeof AuthenticatedEspaceSlugEquipeRoute
+  '/espace/$slug/reglages': typeof AuthenticatedEspaceSlugReglagesRoute
   '/espace/$slug/': typeof AuthenticatedEspaceSlugIndexRoute
 }
 export interface FileRoutesByTo {
@@ -168,10 +183,12 @@ export interface FileRoutesByTo {
   '/$slug': typeof SlugIndexRoute
   '/cuisine': typeof CuisineIndexRoute
   '/$slug/suivi/$id': typeof SlugSuiviIdRoute
+  '/admin/$slug': typeof AuthenticatedAdminSlugRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/espace': typeof AuthenticatedEspaceIndexRoute
   '/espace/$slug/carte': typeof AuthenticatedEspaceSlugCarteRoute
   '/espace/$slug/equipe': typeof AuthenticatedEspaceSlugEquipeRoute
+  '/espace/$slug/reglages': typeof AuthenticatedEspaceSlugReglagesRoute
   '/espace/$slug': typeof AuthenticatedEspaceSlugIndexRoute
 }
 export interface FileRoutesById {
@@ -191,10 +208,12 @@ export interface FileRoutesById {
   '/$slug/': typeof SlugIndexRoute
   '/cuisine/': typeof CuisineIndexRoute
   '/$slug/suivi/$id': typeof SlugSuiviIdRoute
+  '/_authenticated/admin/$slug': typeof AuthenticatedAdminSlugRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/espace/': typeof AuthenticatedEspaceIndexRoute
   '/_authenticated/espace/$slug/carte': typeof AuthenticatedEspaceSlugCarteRoute
   '/_authenticated/espace/$slug/equipe': typeof AuthenticatedEspaceSlugEquipeRoute
+  '/_authenticated/espace/$slug/reglages': typeof AuthenticatedEspaceSlugReglagesRoute
   '/_authenticated/espace/$slug/': typeof AuthenticatedEspaceSlugIndexRoute
 }
 export interface FileRouteTypes {
@@ -214,10 +233,12 @@ export interface FileRouteTypes {
     | '/$slug/'
     | '/cuisine/'
     | '/$slug/suivi/$id'
+    | '/admin/$slug'
     | '/admin/'
     | '/espace/'
     | '/espace/$slug/carte'
     | '/espace/$slug/equipe'
+    | '/espace/$slug/reglages'
     | '/espace/$slug/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -233,10 +254,12 @@ export interface FileRouteTypes {
     | '/$slug'
     | '/cuisine'
     | '/$slug/suivi/$id'
+    | '/admin/$slug'
     | '/admin'
     | '/espace'
     | '/espace/$slug/carte'
     | '/espace/$slug/equipe'
+    | '/espace/$slug/reglages'
     | '/espace/$slug'
   id:
     | '__root__'
@@ -255,10 +278,12 @@ export interface FileRouteTypes {
     | '/$slug/'
     | '/cuisine/'
     | '/$slug/suivi/$id'
+    | '/_authenticated/admin/$slug'
     | '/_authenticated/admin/'
     | '/_authenticated/espace/'
     | '/_authenticated/espace/$slug/carte'
     | '/_authenticated/espace/$slug/equipe'
+    | '/_authenticated/espace/$slug/reglages'
     | '/_authenticated/espace/$slug/'
   fileRoutesById: FileRoutesById
 }
@@ -388,6 +413,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/$slug': {
+      id: '/_authenticated/admin/$slug'
+      path: '/$slug'
+      fullPath: '/admin/$slug'
+      preLoaderRoute: typeof AuthenticatedAdminSlugRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/espace/': {
       id: '/_authenticated/espace/'
       path: '/espace'
@@ -416,14 +448,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEspaceSlugEquipeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/espace/$slug/reglages': {
+      id: '/_authenticated/espace/$slug/reglages'
+      path: '/espace/$slug/reglages'
+      fullPath: '/espace/$slug/reglages'
+      preLoaderRoute: typeof AuthenticatedEspaceSlugReglagesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminSlugRoute: typeof AuthenticatedAdminSlugRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminSlugRoute: AuthenticatedAdminSlugRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
 
@@ -435,6 +476,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEspaceIndexRoute: typeof AuthenticatedEspaceIndexRoute
   AuthenticatedEspaceSlugCarteRoute: typeof AuthenticatedEspaceSlugCarteRoute
   AuthenticatedEspaceSlugEquipeRoute: typeof AuthenticatedEspaceSlugEquipeRoute
+  AuthenticatedEspaceSlugReglagesRoute: typeof AuthenticatedEspaceSlugReglagesRoute
   AuthenticatedEspaceSlugIndexRoute: typeof AuthenticatedEspaceSlugIndexRoute
 }
 
@@ -443,6 +485,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEspaceIndexRoute: AuthenticatedEspaceIndexRoute,
   AuthenticatedEspaceSlugCarteRoute: AuthenticatedEspaceSlugCarteRoute,
   AuthenticatedEspaceSlugEquipeRoute: AuthenticatedEspaceSlugEquipeRoute,
+  AuthenticatedEspaceSlugReglagesRoute: AuthenticatedEspaceSlugReglagesRoute,
   AuthenticatedEspaceSlugIndexRoute: AuthenticatedEspaceSlugIndexRoute,
 }
 
