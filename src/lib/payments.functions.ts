@@ -57,7 +57,7 @@ export const listPaymentProviders = createServerFn({ method: "POST" })
       return {
         provider: p,
         enabled: r?.enabled ?? false,
-        credentials: Object.fromEntries(Object.entries(r?.credentials ?? {}).map(([k, v]) => [k, ["merchantCode", "publishableKey", "mode"].includes(k) ? v : mask(v)])),
+        credentials: Object.fromEntries(Object.entries(r?.credentials ?? {}).map(([k, v]) => [k, PUBLIC_FIELDS.includes(k) ? v : mask(v)])),
         settings: r?.settings ?? {},
       };
     });
@@ -73,7 +73,6 @@ export const savePaymentProvider = createServerFn({ method: "POST" })
   }).parse(d))
   .handler(async ({ data, context }) => {
     await assertManager(context.supabase, context.userId, data.restaurantId);
-    if (!["sumup", "stripe"].includes(data.provider) && data.enabled) throw new Error("Ce prestataire n'est pas encore disponible.");
     const prev = await getRow(data.restaurantId, data.provider);
     const credentials = { ...(prev?.credentials ?? {}) };
     for (const [k, v] of Object.entries(data.credentials)) if (v) credentials[k] = v;
@@ -87,6 +86,16 @@ export const savePaymentProvider = createServerFn({ method: "POST" })
       const mode = data.credentials["mode"] || credentials["mode"] || "test";
       credentials["mode"] = mode;
       if (pk && sk && (!pk.includes(`_${mode}_`) || !sk.includes(`_${mode}_`))) throw new Error(`Les clés ne correspondent pas au mode ${mode === "live" ? "réel" : "test"}.`);
+    }
+    if (data.provider === "paypal") {
+      credentials["mode"] = credentials["mode"] === "live" ? "live" : "sandbox";
+      if (data.enabled && (!credentials["clientId"] || !credentials["secret"])) throw new Error("Renseignez le Client ID et le Secret PayPal.");
+    }
+    if (data.provider === "lyra") {
+      credentials["mode"] = credentials["mode"] === "PRODUCTION" ? "PRODUCTION" : "TEST";
+      if (credentials["siteId"] && !/^\d{8}$/.test(credentials["siteId"])) throw new Error("L'identifiant boutique doit contenir 8 chiffres.");
+      if (credentials["gateway"] && !/^https:\/\/[a-z0-9.-]+\/vads-payment\/?$/i.test(credentials["gateway"])) throw new Error("Adresse de plateforme invalide (ex. https://secure.payzen.eu/vads-payment/).");
+      if (data.enabled && (!credentials["siteId"] || !credentials["key"])) throw new Error("Renseignez l'identifiant boutique et la clé Lyra.");
     }
     const db = await admin();
     const { error } = await db.from("restaurant_payment_providers").upsert({
