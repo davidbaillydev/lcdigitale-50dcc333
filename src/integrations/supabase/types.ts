@@ -133,12 +133,14 @@ export type Database = {
         Row: {
           active: boolean
           address: string | null
+          brand: Json
           city: string | null
           config: Json
           created_at: string
           delivery: Json
           email: string | null
           id: string
+          logo_url: string | null
           menu_key: string
           name: string
           opening: Json
@@ -149,12 +151,14 @@ export type Database = {
         Insert: {
           active?: boolean
           address?: string | null
+          brand?: Json
           city?: string | null
           config?: Json
           created_at?: string
           delivery?: Json
           email?: string | null
           id?: string
+          logo_url?: string | null
           menu_key: string
           name: string
           opening?: Json
@@ -165,12 +169,14 @@ export type Database = {
         Update: {
           active?: boolean
           address?: string | null
+          brand?: Json
           city?: string | null
           config?: Json
           created_at?: string
           delivery?: Json
           email?: string | null
           id?: string
+          logo_url?: string | null
           menu_key?: string
           name?: string
           opening?: Json

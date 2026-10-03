@@ -10,13 +10,15 @@ export type Restaurant = {
   phone: string | null;
   email: string | null;
   menu_key: string;
+  logo_url: string | null;
+  brand: { primary?: string; accent?: string };
   /** 0 = dimanche. Plages en minutes depuis minuit (heure de Paris) */
   opening: Record<string, [number, number][]>;
   delivery: DeliveryConfig;
   config: { slotMinutes?: number; lead?: { pickup: number; delivery: number }; hoursLabel?: string; tagline?: string };
 };
 
-export const RESTAURANT_COLUMNS = "id, slug, name, city, address, phone, email, menu_key, opening, delivery, config";
+export const RESTAURANT_COLUMNS = "id, slug, name, city, address, phone, email, menu_key, logo_url, brand, opening, delivery, config";
 
 export function deliveryFee(r: Restaurant, subtotal: number) {
   return subtotal >= r.delivery.freeFrom ? 0 : r.delivery.fee;

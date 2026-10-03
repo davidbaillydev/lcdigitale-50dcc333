@@ -13,3 +13,4 @@
 - Customer orders are inserted by a public server function with the admin client; staff read/update orders via RLS (`can_access_restaurant`) and Realtime filtered by restaurant_id.
 - Agency (global) role is `admin` in user_roles (first account via trigger); per-restaurant access (manager/kitchen) lives in `restaurant_members`.
 - Food photography is mapped by menu category in a presentation-only module, so shared menu/order pricing data stays image-free and visuals are clearly illustrative.
+- Restaurant branding (logo_url data-URL + brand jsonb colors) is applied via BrandTheme CSS-var overrides on site, kiosk and kitchen; agency console /agence writes restaurants through has_role-checked server functions. Why: one theme system, no per-restaurant CSS.
