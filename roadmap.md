@@ -1,0 +1,3 @@
+- [ ] Add secure per-restaurant banner upload and removal in restaurant settings.
+- [ ] Show the banner on the customer site and kiosk, with brand/logo fallback.
+- [ ] Verify upload, persistence, removal, fallback and current app errors.

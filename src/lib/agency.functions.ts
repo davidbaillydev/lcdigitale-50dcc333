@@ -10,7 +10,7 @@ async function assertAgency(supabase: any, userId: string) {
 
 export type AgencyRestaurant = {
   id: string; slug: string; name: string; city: string | null; address: string | null; phone: string | null; email: string | null;
-  menu_key: string; logo_url: string | null; brand: { primary?: string; accent?: string }; active: boolean; orders_today: number;
+  menu_key: string; logo_url: string | null; brand: { primary?: string; accent?: string; bannerPath?: string }; active: boolean; orders_today: number;
 };
 
 export const listAgencyRestaurants = createServerFn({ method: "GET" })
@@ -56,6 +56,10 @@ export const saveRestaurant = createServerFn({ method: "POST" })
     if (clash && clash.id !== data.id) throw new Error("Cette adresse est déjà utilisée");
     const { id, ...fields } = data;
     if (id) {
+      const { data: current, error: readError } = await supabaseAdmin.from("restaurants").select("brand").eq("id", id).single();
+      if (readError) throw new Error("Restaurant introuvable");
+      const existing = typeof current.brand === "object" && current.brand && !Array.isArray(current.brand) ? current.brand : {};
+      fields.brand = { ...existing, ...fields.brand };
       const { error } = await supabaseAdmin.from("restaurants").update(fields).eq("id", id);
       if (error) throw new Error(error.message);
       return { id };
