@@ -28,6 +28,7 @@ import { Route as SlugSuiviIdRouteImport } from './routes/$slug.suivi.$id'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminSlugRouteImport } from './routes/_authenticated/admin.$slug'
 import { Route as AuthenticatedEspaceIndexRouteImport } from './routes/_authenticated/espace.index'
+import { Route as ApiPublicLyraIpnRouteImport } from './routes/api/public/lyra-ipn'
 import { Route as AuthenticatedEspaceSlugIndexRouteImport } from './routes/_authenticated/espace.$slug.index'
 import { Route as AuthenticatedEspaceSlugCarteRouteImport } from './routes/_authenticated/espace.$slug.carte'
 import { Route as AuthenticatedEspaceSlugEquipeRouteImport } from './routes/_authenticated/espace.$slug.equipe'
@@ -129,6 +130,11 @@ const AuthenticatedEspaceIndexRoute =
     path: '/espace/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicLyraIpnRoute = ApiPublicLyraIpnRouteImport.update({
+  id: '/api/public/lyra-ipn',
+  path: '/api/public/lyra-ipn',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedEspaceSlugIndexRoute =
   AuthenticatedEspaceSlugIndexRouteImport.update({
     id: '/espace/$slug/',
@@ -177,6 +183,7 @@ export interface FileRoutesByFullPath {
   '/cuisine/': typeof CuisineIndexRoute
   '/$slug/suivi/$id': typeof SlugSuiviIdRoute
   '/admin/$slug': typeof AuthenticatedAdminSlugRoute
+  '/api/public/lyra-ipn': typeof ApiPublicLyraIpnRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/espace/': typeof AuthenticatedEspaceIndexRoute
   '/espace/$slug/carte': typeof AuthenticatedEspaceSlugCarteRoute
@@ -200,6 +207,7 @@ export interface FileRoutesByTo {
   '/cuisine': typeof CuisineIndexRoute
   '/$slug/suivi/$id': typeof SlugSuiviIdRoute
   '/admin/$slug': typeof AuthenticatedAdminSlugRoute
+  '/api/public/lyra-ipn': typeof ApiPublicLyraIpnRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/espace': typeof AuthenticatedEspaceIndexRoute
   '/espace/$slug/carte': typeof AuthenticatedEspaceSlugCarteRoute
@@ -227,6 +235,7 @@ export interface FileRoutesById {
   '/cuisine/': typeof CuisineIndexRoute
   '/$slug/suivi/$id': typeof SlugSuiviIdRoute
   '/_authenticated/admin/$slug': typeof AuthenticatedAdminSlugRoute
+  '/api/public/lyra-ipn': typeof ApiPublicLyraIpnRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/espace/': typeof AuthenticatedEspaceIndexRoute
   '/_authenticated/espace/$slug/carte': typeof AuthenticatedEspaceSlugCarteRoute
@@ -254,6 +263,7 @@ export interface FileRouteTypes {
     | '/cuisine/'
     | '/$slug/suivi/$id'
     | '/admin/$slug'
+    | '/api/public/lyra-ipn'
     | '/admin/'
     | '/espace/'
     | '/espace/$slug/carte'
@@ -277,6 +287,7 @@ export interface FileRouteTypes {
     | '/cuisine'
     | '/$slug/suivi/$id'
     | '/admin/$slug'
+    | '/api/public/lyra-ipn'
     | '/admin'
     | '/espace'
     | '/espace/$slug/carte'
@@ -303,6 +314,7 @@ export interface FileRouteTypes {
     | '/cuisine/'
     | '/$slug/suivi/$id'
     | '/_authenticated/admin/$slug'
+    | '/api/public/lyra-ipn'
     | '/_authenticated/admin/'
     | '/_authenticated/espace/'
     | '/_authenticated/espace/$slug/carte'
@@ -323,6 +335,7 @@ export interface RootRouteChildren {
   CuisineSplatRoute: typeof CuisineSplatRoute
   SuiviIdRoute: typeof SuiviIdRoute
   CuisineIndexRoute: typeof CuisineIndexRoute
+  ApiPublicLyraIpnRoute: typeof ApiPublicLyraIpnRoute
   ApiPublicRestaurantBannerIdRoute: typeof ApiPublicRestaurantBannerIdRoute
 }
 
@@ -461,6 +474,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEspaceIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/lyra-ipn': {
+      id: '/api/public/lyra-ipn'
+      path: '/api/public/lyra-ipn'
+      fullPath: '/api/public/lyra-ipn'
+      preLoaderRoute: typeof ApiPublicLyraIpnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/espace/$slug/': {
       id: '/_authenticated/espace/$slug/'
       path: '/espace/$slug'
@@ -562,6 +582,7 @@ const rootRouteChildren: RootRouteChildren = {
   CuisineSplatRoute: CuisineSplatRoute,
   SuiviIdRoute: SuiviIdRoute,
   CuisineIndexRoute: CuisineIndexRoute,
+  ApiPublicLyraIpnRoute: ApiPublicLyraIpnRoute,
   ApiPublicRestaurantBannerIdRoute: ApiPublicRestaurantBannerIdRoute,
 }
 export const routeTree = rootRouteImport
