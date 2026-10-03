@@ -26,6 +26,8 @@ async function getRow(restaurantId: string, provider: Provider): Promise<Row | n
   return data as Row | null;
 }
 const mask = (v?: string) => (v ? `••••${v.slice(-4)}` : "");
+// Champs non secrets, réaffichés en clair dans les réglages
+const PUBLIC_FIELDS = ["merchantCode", "publishableKey", "mode", "siteId", "gateway"];
 
 async function sumup(path: string, apiKey: string, init?: RequestInit) {
   const res = await fetch(`${SUMUP}${path}`, {
@@ -57,7 +59,7 @@ export const listPaymentProviders = createServerFn({ method: "POST" })
       return {
         provider: p,
         enabled: r?.enabled ?? false,
-        credentials: Object.fromEntries(Object.entries(r?.credentials ?? {}).map(([k, v]) => [k, ["merchantCode", "publishableKey", "mode"].includes(k) ? v : mask(v)])),
+        credentials: Object.fromEntries(Object.entries(r?.credentials ?? {}).map(([k, v]) => [k, PUBLIC_FIELDS.includes(k) ? v : mask(v)])),
         settings: r?.settings ?? {},
       };
     });
@@ -73,7 +75,6 @@ export const savePaymentProvider = createServerFn({ method: "POST" })
   }).parse(d))
   .handler(async ({ data, context }) => {
     await assertManager(context.supabase, context.userId, data.restaurantId);
-    if (!["sumup", "stripe"].includes(data.provider) && data.enabled) throw new Error("Ce prestataire n'est pas encore disponible.");
     const prev = await getRow(data.restaurantId, data.provider);
     const credentials = { ...(prev?.credentials ?? {}) };
     for (const [k, v] of Object.entries(data.credentials)) if (v) credentials[k] = v;
@@ -87,6 +88,16 @@ export const savePaymentProvider = createServerFn({ method: "POST" })
       const mode = data.credentials["mode"] || credentials["mode"] || "test";
       credentials["mode"] = mode;
       if (pk && sk && (!pk.includes(`_${mode}_`) || !sk.includes(`_${mode}_`))) throw new Error(`Les clés ne correspondent pas au mode ${mode === "live" ? "réel" : "test"}.`);
+    }
+    if (data.provider === "paypal") {
+      credentials["mode"] = credentials["mode"] === "live" ? "live" : "sandbox";
+      if (data.enabled && (!credentials["clientId"] || !credentials["secret"])) throw new Error("Renseignez le Client ID et le Secret PayPal.");
+    }
+    if (data.provider === "lyra") {
+      credentials["mode"] = credentials["mode"] === "PRODUCTION" ? "PRODUCTION" : "TEST";
+      if (credentials["siteId"] && !/^\d{8}$/.test(credentials["siteId"])) throw new Error("L'identifiant boutique doit contenir 8 chiffres.");
+      if (credentials["gateway"] && !/^https:\/\/[a-z0-9.-]+\/vads-payment\/?$/i.test(credentials["gateway"])) throw new Error("Adresse de plateforme invalide (ex. https://secure.payzen.eu/vads-payment/).");
+      if (data.enabled && (!credentials["siteId"] || !credentials["key"])) throw new Error("Renseignez l'identifiant boutique et la clé Lyra.");
     }
     const db = await admin();
     const { error } = await db.from("restaurant_payment_providers").upsert({
@@ -246,36 +257,202 @@ export const testStripe = createServerFn({ method: "POST" })
     return { name: acc.settings?.dashboard?.display_name ?? acc.id ?? "", chargesEnabled: !!acc.charges_enabled, live: r.credentials["secretKey"].startsWith("sk_live_") };
   });
 
-/** Indique au site si le paiement en ligne est disponible (renvoie seulement la clé publiable). */
+// ───────────── PayPal (Orders v2, redirection) ─────────────
+type PaypalCfg = { base: string; clientId: string; secret: string; live: boolean };
+async function paypalForRestaurant(restaurantId: string, requireEnabled = true): Promise<PaypalCfg | null> {
+  const r = await getRow(restaurantId, "paypal");
+  const c = r?.credentials ?? {};
+  if ((requireEnabled && !r?.enabled) || !c["clientId"] || !c["secret"]) return null;
+  const live = c["mode"] === "live";
+  return { base: live ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com", clientId: c["clientId"], secret: c["secret"], live };
+}
+async function paypalToken(p: PaypalCfg) {
+  const res = await fetch(`${p.base}/v1/oauth2/token`, {
+    method: "POST",
+    headers: { Authorization: `Basic ${Buffer.from(`${p.clientId}:${p.secret}`).toString("base64")}`, "Content-Type": "application/x-www-form-urlencoded" },
+    body: "grant_type=client_credentials",
+  });
+  const body = await res.json().catch(() => null) as { access_token?: string; error_description?: string } | null;
+  if (!res.ok || !body?.access_token) throw new Error(`PayPal : ${body?.error_description ?? `identifiants refusés (${res.status})`}`);
+  return body.access_token;
+}
+async function paypalCall(p: PaypalCfg, path: string, json?: unknown) {
+  const token = await paypalToken(p);
+  const res = await fetch(`${p.base}${path}`, {
+    method: json === undefined ? "GET" : "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: json === undefined ? null : JSON.stringify(json),
+  });
+  const body = await res.json().catch(() => null) as Record<string, unknown> | null;
+  if (!res.ok) {
+    console.error("PayPal", path, res.status, JSON.stringify(body).slice(0, 500));
+    throw new Error(`PayPal : ${(body as { message?: string } | null)?.message ?? `erreur ${res.status}`}`);
+  }
+  return body ?? {};
+}
+
+export const testPaypal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ restaurantId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertManager(context.supabase, context.userId, data.restaurantId);
+    const p = await paypalForRestaurant(data.restaurantId, false);
+    if (!p) throw new Error("Enregistrez d'abord le Client ID et le Secret.");
+    await paypalToken(p);
+    return { live: p.live };
+  });
+
+// ───────────── Lyra / PayZen (formulaire de paiement V2 signé HMAC-SHA-256) ─────────────
+type LyraCfg = { siteId: string; key: string; mode: "TEST" | "PRODUCTION"; gateway: string };
+async function lyraForRestaurant(restaurantId: string, requireEnabled = true): Promise<LyraCfg | null> {
+  const r = await getRow(restaurantId, "lyra");
+  const c = r?.credentials ?? {};
+  if ((requireEnabled && !r?.enabled) || !c["siteId"] || !c["key"]) return null;
+  return { siteId: c["siteId"], key: c["key"], mode: c["mode"] === "PRODUCTION" ? "PRODUCTION" : "TEST", gateway: c["gateway"] || "https://secure.payzen.eu/vads-payment/" };
+}
+async function lyraSign(fields: Record<string, string>, key: string) {
+  const { createHmac } = await import("crypto");
+  const payload = Object.keys(fields).filter((k) => k.startsWith("vads_")).sort().map((k) => fields[k]).join("+") + "+" + key;
+  return createHmac("sha256", key).update(payload, "utf8").digest("base64");
+}
+async function lyraVerify(fields: Record<string, string>, key: string) {
+  const { timingSafeEqual } = await import("crypto");
+  const a = Buffer.from(await lyraSign(fields, key)), b = Buffer.from(fields["signature"] ?? "");
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
+export const testLyra = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ restaurantId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertManager(context.supabase, context.userId, data.restaurantId);
+    const l = await lyraForRestaurant(data.restaurantId, false);
+    if (!l) throw new Error("Enregistrez d'abord l'identifiant boutique et la clé.");
+    let reachable = false;
+    try { reachable = (await fetch(l.gateway, { method: "GET" })).status < 500; } catch { reachable = false; }
+    if (!reachable) throw new Error("La plateforme de paiement ne répond pas : vérifiez son adresse.");
+    return { mode: l.mode, gateway: l.gateway };
+  });
+
+/** Prépare le paiement en ligne choisi pour une commande déjà enregistrée (appelé par createOrder). */
+export async function startOnlinePayment(provider: "paypal" | "lyra", o: { id: string; order_number: number; total: number; restaurant_id: string; email?: string | null }, restaurantName: string, returnBase: string) {
+  const db = await admin();
+  const amount = Math.round(Number(o.total) * 100);
+  if (provider === "paypal") {
+    const p = await paypalForRestaurant(o.restaurant_id);
+    if (!p) throw new Error("PayPal n'est pas disponible pour ce restaurant.");
+    const res = await paypalCall(p, "/v2/checkout/orders", {
+      intent: "CAPTURE",
+      purchase_units: [{ custom_id: o.id, description: `${restaurantName} — commande n° ${o.order_number}`.slice(0, 127), amount: { currency_code: "EUR", value: (amount / 100).toFixed(2) } }],
+      application_context: { brand_name: restaurantName.slice(0, 127), user_action: "PAY_NOW", shipping_preference: "NO_SHIPPING", locale: "fr-FR", return_url: returnBase, cancel_url: `${returnBase}?annule=1` },
+    }) as { id: string; links?: { rel: string; href: string }[] };
+    const url = res.links?.find((l) => l.rel === "approve" || l.rel === "payer-action")?.href;
+    if (!url) throw new Error("PayPal : lien de paiement manquant");
+    await db.from("orders").update({ payment_ref: `paypal:${res.id}` }).eq("id", o.id);
+    return { redirectUrl: url };
+  }
+  const l = await lyraForRestaurant(o.restaurant_id);
+  if (!l) throw new Error("Le paiement Lyra n'est pas disponible pour ce restaurant.");
+  const transId = String(Math.floor(Math.random() * 900000)).padStart(6, "0");
+  const d = new Date();
+  const p2 = (n: number) => String(n).padStart(2, "0");
+  const fields: Record<string, string> = {
+    vads_action_mode: "INTERACTIVE", vads_amount: String(amount), vads_ctx_mode: l.mode, vads_currency: "978",
+    vads_language: "fr", vads_order_id: o.id, vads_page_action: "PAYMENT", vads_payment_config: "SINGLE",
+    vads_return_mode: "GET", vads_site_id: l.siteId,
+    vads_trans_date: `${d.getUTCFullYear()}${p2(d.getUTCMonth() + 1)}${p2(d.getUTCDate())}${p2(d.getUTCHours())}${p2(d.getUTCMinutes())}${p2(d.getUTCSeconds())}`,
+    vads_trans_id: transId, vads_url_return: returnBase, vads_url_check: `${new URL(returnBase).origin}/api/public/lyra-ipn`, vads_version: "V2",
+    ...(o.email ? { vads_cust_email: o.email } : {}),
+  };
+  fields["signature"] = await lyraSign(fields, l.key);
+  await db.from("orders").update({ payment_ref: `lyra:${transId}` }).eq("id", o.id);
+  return { form: { action: l.gateway, fields } };
+}
+
+async function markPaid(o: { id: string; restaurant_id: string; status: string }) {
+  const db = await admin();
+  const { data: r } = await db.from("restaurants").select("config").eq("id", o.restaurant_id).maybeSingle();
+  const next = (r?.config as { autoAccept?: boolean } | null)?.autoAccept ? "accepted" : "new";
+  await db.from("orders").update({ payment_status: "paid", status: o.status === "awaiting_payment" ? next : o.status, updated_at: new Date().toISOString() }).eq("id", o.id);
+}
+
+const LYRA_OK = ["AUTHORISED", "CAPTURED", "ACCEPTED", "AUTHORISED_TO_VALIDATE"];
+const LYRA_KO = ["REFUSED", "ABANDONED", "CANCELLED", "EXPIRED", "NOT_CREATED"];
+
+/** Traite un retour Lyra signé (retour navigateur ou notification serveur). */
+export async function handleLyraResult(fields: Record<string, string>): Promise<"paid" | "failed" | "pending"> {
+  const db = await admin();
+  const { data: o } = await db.from("orders").select("id, restaurant_id, status, total, payment_method, payment_status, payment_ref").eq("id", fields["vads_order_id"] ?? "").maybeSingle();
+  if (!o || o.payment_method !== "online" || !String(o.payment_ref ?? "").startsWith("lyra:")) return "pending";
+  const l = await lyraForRestaurant(o.restaurant_id, false);
+  if (!l || fields["vads_site_id"] !== l.siteId || !(await lyraVerify(fields, l.key))) throw new Error("Signature de paiement invalide");
+  if (o.payment_status === "paid") return "paid";
+  if (fields["vads_trans_id"] !== String(o.payment_ref).slice(5)) return "pending";
+  const st = fields["vads_trans_status"] ?? "";
+  if (LYRA_OK.includes(st) && fields["vads_amount"] === String(Math.round(Number(o.total) * 100))) { await markPaid(o); return "paid"; }
+  if (LYRA_KO.includes(st)) return "failed";
+  return "pending";
+}
+
+/** Indique au site les paiements en ligne disponibles (renvoie seulement la clé publiable Stripe). */
 export const onlinePaymentInfo = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ slug: z.string().max(40) }).parse(d))
   .handler(async ({ data }) => {
     const db = await admin();
     const { data: r } = await db.from("restaurants").select("id").eq("slug", data.slug).eq("active", true).maybeSingle();
-    if (!r) return { available: false, publishableKey: null as string | null };
-    const s = await stripeForRestaurant(r.id);
-    return { available: !!s, publishableKey: s?.publishable ?? null };
+    if (!r) return { stripe: null as string | null, paypal: false, lyra: false };
+    const [s, p, l] = await Promise.all([stripeForRestaurant(r.id), paypalForRestaurant(r.id), lyraForRestaurant(r.id)]);
+    return { stripe: s?.publishable ?? null, paypal: !!p, lyra: !!l };
   });
 
-/** Vérifie auprès de Stripe le paiement d'une commande en ligne et l'envoie en cuisine si payé. */
+/** Vérifie auprès du prestataire le paiement d'une commande en ligne et l'envoie en cuisine si payé. */
 export const confirmOnlinePayment = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
+  .inputValidator((d: unknown) => z.object({
+    orderId: z.string().uuid(),
+    cancelled: z.boolean().optional(),
+    lyra: z.record(z.string().max(60), z.string().max(500)).optional(),
+  }).parse(d))
   .handler(async ({ data }) => {
     const db = await admin();
-    const { data: o } = await db.from("orders").select("id, restaurant_id, status, payment_method, payment_status, payment_ref").eq("id", data.orderId).maybeSingle();
+    const { data: o } = await db.from("orders").select("id, restaurant_id, status, total, payment_method, payment_status, payment_ref").eq("id", data.orderId).maybeSingle();
     if (!o || o.payment_method !== "online") throw new Error("Commande introuvable");
     if (o.payment_status === "paid") return { status: "paid" as const };
     if (!o.payment_ref) return { status: "failed" as const };
+    const ref = String(o.payment_ref);
+
+    if (ref.startsWith("lyra:")) {
+      if (data.lyra?.["vads_order_id"] === o.id) {
+        const r = await handleLyraResult(data.lyra!);
+        return { status: r === "failed" ? "retry" as const : r };
+      }
+      return { status: data.cancelled ? "retry" as const : "pending" as const };
+    }
+
+    if (ref.startsWith("paypal:")) {
+      const p = await paypalForRestaurant(o.restaurant_id, false);
+      if (!p) return { status: "pending" as const };
+      const id = encodeURIComponent(ref.slice(7));
+      let po = await paypalCall(p, `/v2/checkout/orders/${id}`) as { status?: string; purchase_units?: { custom_id?: string; amount?: { value?: string } }[] };
+      if (po.purchase_units?.[0]?.custom_id !== o.id) throw new Error("Paiement non reconnu");
+      if (po.status === "APPROVED") {
+        try { po = await paypalCall(p, `/v2/checkout/orders/${id}/capture`, {}) as typeof po; }
+        catch { return { status: "retry" as const }; }
+      }
+      if (po.status === "COMPLETED") {
+        const cap = (po.purchase_units?.[0] as { payments?: { captures?: { status?: string; amount?: { value?: string } }[] } } | undefined)?.payments?.captures?.[0];
+        const value = cap?.amount?.value ?? po.purchase_units?.[0]?.amount?.value;
+        if (Number(value) === Number(o.total) && (!cap || cap.status === "COMPLETED")) { await markPaid(o); return { status: "paid" as const }; }
+        return { status: "pending" as const };
+      }
+      if (po.status === "VOIDED") return { status: "failed" as const };
+      return { status: data.cancelled ? "retry" as const : "pending" as const };
+    }
+
     const s = await stripeForRestaurant(o.restaurant_id);
     if (!s) return { status: "pending" as const };
-    const pi = await stripeCall(`/payment_intents/${encodeURIComponent(o.payment_ref)}`, s.secret) as { status?: string; metadata?: { order_id?: string } };
+    const pi = await stripeCall(`/payment_intents/${encodeURIComponent(ref)}`, s.secret) as { status?: string; metadata?: { order_id?: string } };
     if (pi.metadata?.order_id !== o.id) throw new Error("Paiement non reconnu");
-    if (pi.status === "succeeded") {
-      const { data: r } = await db.from("restaurants").select("config").eq("id", o.restaurant_id).maybeSingle();
-      const next = (r?.config as { autoAccept?: boolean } | null)?.autoAccept ? "accepted" : "new";
-      await db.from("orders").update({ payment_status: "paid", status: o.status === "awaiting_payment" ? next : o.status, updated_at: new Date().toISOString() }).eq("id", o.id);
-      return { status: "paid" as const };
-    }
+    if (pi.status === "succeeded") { await markPaid(o); return { status: "paid" as const }; }
     if (pi.status === "canceled" || pi.status === "requires_payment_method") return { status: pi.status === "canceled" ? "failed" as const : "retry" as const };
     return { status: "pending" as const };
   });

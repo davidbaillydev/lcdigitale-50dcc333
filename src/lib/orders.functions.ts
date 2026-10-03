@@ -15,6 +15,8 @@ const orderSchema = z.object({
   postal_code: z.string().trim().max(10).optional(),
   notes: z.string().trim().max(500).optional(),
   payment_method: z.enum(["on_site", "online"]),
+  provider: z.enum(["stripe", "paypal", "lyra"]).optional(),
+  origin: z.string().url().max(200).regex(/^https?:\/\/[^/]+$/).optional(),
   lines: z
     .array(z.object({ itemId: z.string().max(80), qty: z.number().int().min(1).max(50), sel: z.record(z.string(), z.array(z.string().max(60)).max(12)) }))
     .min(1)
@@ -31,9 +33,11 @@ export const createOrder = createServerFn({ method: "POST" })
     const catalog = getCatalog(r);
 
     if (!isValidSlot(r, data.mode, data.slot)) throw new Error("Ce créneau n'est plus disponible, merci d'en choisir un autre.");
-    const { stripeForRestaurant, stripeCall } = await import("./payments.functions");
-    const stripe = data.payment_method === "online" ? await stripeForRestaurant(r.id) : null;
-    if (data.payment_method === "online" && !stripe) throw new Error("Le paiement en ligne n'est pas disponible pour ce restaurant.");
+    const { stripeForRestaurant, stripeCall, startOnlinePayment } = await import("./payments.functions");
+    const provider = data.payment_method === "online" ? (data.provider ?? "stripe") : null;
+    const stripe = provider === "stripe" ? await stripeForRestaurant(r.id) : null;
+    if (provider === "stripe" && !stripe) throw new Error("Le paiement en ligne n'est pas disponible pour ce restaurant.");
+    if ((provider === "paypal" || provider === "lyra") && !data.origin) throw new Error("Paiement en ligne indisponible.");
     if (!modeEnabled(r, data.mode)) throw new Error(data.mode === "delivery" ? "La livraison n'est pas proposée par ce restaurant." : "La vente à emporter n'est pas proposée.");
     if (data.payment_method === "on_site" && !paymentEnabled(r, "on_site")) throw new Error("Ce mode de paiement n'est pas accepté.");
 
@@ -76,7 +80,7 @@ export const createOrder = createServerFn({ method: "POST" })
         delivery_fee: fee,
         total: Math.round((subtotal + fee) * 100) / 100,
         payment_method: data.payment_method,
-        status: stripe ? "awaiting_payment" : r.config.autoAccept ? "accepted" : "new",
+        status: provider ? "awaiting_payment" : r.config.autoAccept ? "accepted" : "new",
       })
       .select("id, order_number, total")
       .single();
@@ -84,7 +88,12 @@ export const createOrder = createServerFn({ method: "POST" })
       console.error(error);
       throw new Error("Impossible d'enregistrer la commande.");
     }
-    if (!stripe) return { id: row.id, order_number: row.order_number, clientSecret: null as string | null };
+    const base = { id: row.id, order_number: row.order_number, clientSecret: null as string | null, redirectUrl: null as string | null, form: null as { action: string; fields: Record<string, string> } | null };
+    if (provider === "paypal" || provider === "lyra") {
+      const res = await startOnlinePayment(provider, { id: row.id, order_number: row.order_number, total: Number(row.total), restaurant_id: r.id, email: data.email || null }, r.name, `${data.origin}/${r.slug}/suivi/${row.id}`);
+      return { ...base, redirectUrl: "redirectUrl" in res ? res.redirectUrl : null, form: "form" in res ? res.form : null };
+    }
+    if (!stripe) return base;
     const pi = await stripeCall("/payment_intents", stripe.secret, {
       amount: String(Math.round(Number(row.total) * 100)),
       currency: "eur",
@@ -94,7 +103,7 @@ export const createOrder = createServerFn({ method: "POST" })
       ...(data.email ? { receipt_email: data.email } : {}),
     }) as { id: string; client_secret: string };
     await supabaseAdmin.from("orders").update({ payment_ref: pi.id }).eq("id", row.id);
-    return { id: row.id, order_number: row.order_number, clientSecret: pi.client_secret };
+    return { ...base, clientSecret: pi.client_secret };
   });
 
 export const getOrderStatus = createServerFn({ method: "GET" })
