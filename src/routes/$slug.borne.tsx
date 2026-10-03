@@ -7,6 +7,7 @@ import { useCart } from "@/lib/cart";
 import { createKioskOrder } from "@/lib/orders.functions";
 import { euro, groupCost, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
 import { itemImage, menuImage } from "@/lib/menu-images";
+import { BrandLogo } from "@/lib/brand";
 import welcomeFood from "@/assets/food-plateau.jpg";
 
 export const Route = createFileRoute("/$slug/borne")({
@@ -82,6 +83,7 @@ function Kiosk() {
         <div role="button" tabIndex={0} className="relative flex flex-1 cursor-pointer flex-col items-center justify-center gap-10 overflow-hidden p-10 text-center" onClick={() => setStep("menu")}>
           <img src={welcomeFood} alt="" width={1024} height={768} className="absolute inset-0 h-full w-full object-cover opacity-30" />
           <div className="absolute inset-0 bg-background/50" />
+          <BrandLogo src={restaurant.logo_url} name={restaurant.name} className="relative h-40 w-40 object-contain" />
           <p className="relative font-display text-8xl text-primary">{restaurant.name}</p>
           <p className="relative text-3xl text-foreground">Bienvenue !</p>
           <span className="relative animate-pulse rounded-full bg-primary px-14 py-8 font-display text-5xl text-primary-foreground">Touchez pour commander</span>
@@ -100,7 +102,7 @@ function Kiosk() {
       {step !== "welcome" && step !== "done" && (
         <header className="flex items-center justify-between gap-4 border-b border-border px-6 py-4">
           <button onClick={reset} className="rounded-xl bg-muted px-6 py-4 text-xl font-semibold">Annuler</button>
-          <p className="font-display text-4xl text-primary">{restaurant.name}</p>
+          <p className="flex items-center gap-3 font-display text-4xl text-primary"><BrandLogo src={restaurant.logo_url} name={restaurant.name} className="h-12 w-12 object-contain" />{restaurant.name}</p>
           <div className="flex rounded-xl bg-muted p-1 text-lg font-semibold">
             {([["dine_in", "Sur place"], ["pickup", "À emporter"]] as const).map(([m, l]) => (
               <button key={m} onClick={() => setMode(m)} className={cn("rounded-lg px-5 py-3", mode === m && "bg-primary text-primary-foreground")}>{l}</button>

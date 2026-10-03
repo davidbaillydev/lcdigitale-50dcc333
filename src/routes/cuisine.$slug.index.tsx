@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { euro } from "@/lib/menu";
 import { fmtTime } from "@/lib/shop";
 import { cn } from "@/lib/utils";
+import { BrandLogo, BrandTheme } from "@/lib/brand";
 
 export const Route = createFileRoute("/cuisine/$slug/")({
   head: () => ({
@@ -111,9 +112,11 @@ function Kitchen() {
 
   const done = orders.filter((o) => o.status === "done");
   return (
+    <BrandTheme brand={restaurant?.brand}>
     <div className="flex min-h-screen flex-col">
       <header className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3">
         {restaurants.length > 1 && <Button asChild variant="ghost" size="icon" aria-label="Mes restaurants"><Link to="/cuisine"><ArrowLeft /></Link></Button>}
+        <BrandLogo src={restaurant?.logo_url} name={restaurant?.name ?? ""} />
         <h1 className="mr-auto text-3xl">Cuisine <span className="text-primary">{restaurant?.name}</span></h1>
         <span className="text-sm text-muted-foreground">{done.length} terminée(s) · CA {euro(done.reduce((s, o) => s + Number(o.total), 0))}</span>
         <Button variant={sound ? "secondary" : "default"} onClick={sound ? () => setSound(false) : enableSound} className={cn(!sound && "animate-pulse")}>
@@ -172,5 +175,6 @@ function Kitchen() {
         })}
       </div>
     </div>
+    </BrandTheme>
   );
 }

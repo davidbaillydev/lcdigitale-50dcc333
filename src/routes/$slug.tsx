@@ -1,6 +1,7 @@
 import { createFileRoute, Link, notFound, Outlet } from "@tanstack/react-router";
 import { getRestaurant } from "@/lib/restaurants.functions";
 import { CartProvider } from "@/lib/cart";
+import { BrandTheme } from "@/lib/brand";
 
 export const Route = createFileRoute("/$slug")({
   loader: async ({ params }) => {
@@ -32,8 +33,10 @@ function Layout() {
   const { restaurant } = Route.useLoaderData();
   if (!restaurant) return null;
   return (
-    <CartProvider restaurant={restaurant}>
-      <Outlet />
-    </CartProvider>
+    <BrandTheme brand={restaurant.brand}>
+      <CartProvider restaurant={restaurant}>
+        <Outlet />
+      </CartProvider>
+    </BrandTheme>
   );
 }

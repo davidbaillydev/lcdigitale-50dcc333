@@ -15,3 +15,5 @@ const EMPTY: Catalog = { categories: [], itemsById: {} };
 export function getCatalog(menuKey: string): Catalog {
   return CATALOGS[menuKey] ?? EMPTY;
 }
+
+export const MENU_KEYS = Object.keys(CATALOGS);
