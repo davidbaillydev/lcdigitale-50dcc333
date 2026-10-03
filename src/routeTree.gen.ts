@@ -11,20 +11,19 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SlugRouteImport } from './routes/$slug'
-import { Route as AgenceRouteImport } from './routes/agence'
 import { Route as CommandeRouteImport } from './routes/commande'
 import { Route as ConnexionRouteImport } from './routes/connexion'
 import { Route as SlugIndexRouteImport } from './routes/$slug.index'
 import { Route as SlugBorneRouteImport } from './routes/$slug.borne'
 import { Route as SlugCommandeRouteImport } from './routes/$slug.commande'
 import { Route as SlugCuisineRouteImport } from './routes/$slug.cuisine'
-import { Route as CuisineIndexRouteImport } from './routes/cuisine.index'
-import { Route as CuisineEquipeRouteImport } from './routes/cuisine.equipe'
 import { Route as SuiviIdRouteImport } from './routes/suivi.$id'
 import { Route as SlugSuiviIdRouteImport } from './routes/$slug.suivi.$id'
-import { Route as CuisineSlugIndexRouteImport } from './routes/cuisine.$slug.index'
-import { Route as CuisineSlugCarteRouteImport } from './routes/cuisine.$slug.carte'
-import { Route as CuisineSlugEquipeRouteImport } from './routes/cuisine.$slug.equipe'
+import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
+import { Route as AuthenticatedEspaceIndexRouteImport } from './routes/_authenticated/espace.index'
+import { Route as AuthenticatedEspaceSlugIndexRouteImport } from './routes/_authenticated/espace.$slug.index'
+import { Route as AuthenticatedEspaceSlugCarteRouteImport } from './routes/_authenticated/espace.$slug.carte'
+import { Route as AuthenticatedEspaceSlugEquipeRouteImport } from './routes/_authenticated/espace.$slug.equipe'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,11 +33,6 @@ const IndexRoute = IndexRouteImport.update({
 const SlugRoute = SlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AgenceRoute = AgenceRouteImport.update({
-  id: '/agence',
-  path: '/agence',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CommandeRoute = CommandeRouteImport.update({
@@ -71,16 +65,6 @@ const SlugCuisineRoute = SlugCuisineRouteImport.update({
   path: '/cuisine',
   getParentRoute: () => SlugRoute,
 } as any)
-const CuisineIndexRoute = CuisineIndexRouteImport.update({
-  id: '/cuisine/',
-  path: '/cuisine/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CuisineEquipeRoute = CuisineEquipeRouteImport.update({
-  id: '/cuisine/equipe',
-  path: '/cuisine/equipe',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const SuiviIdRoute = SuiviIdRouteImport.update({
   id: '/suivi/$id',
   path: '/suivi/$id',
@@ -91,144 +75,151 @@ const SlugSuiviIdRoute = SlugSuiviIdRouteImport.update({
   path: '/suivi/$id',
   getParentRoute: () => SlugRoute,
 } as any)
-const CuisineSlugIndexRoute = CuisineSlugIndexRouteImport.update({
-  id: '/cuisine/$slug/',
-  path: '/cuisine/$slug/',
+const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
+  id: '/_authenticated/admin/',
+  path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CuisineSlugCarteRoute = CuisineSlugCarteRouteImport.update({
-  id: '/cuisine/$slug/carte',
-  path: '/cuisine/$slug/carte',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CuisineSlugEquipeRoute = CuisineSlugEquipeRouteImport.update({
-  id: '/cuisine/$slug/equipe',
-  path: '/cuisine/$slug/equipe',
-  getParentRoute: () => rootRouteImport,
-} as any)
+const AuthenticatedEspaceIndexRoute =
+  AuthenticatedEspaceIndexRouteImport.update({
+    id: '/_authenticated/espace/',
+    path: '/espace/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AuthenticatedEspaceSlugIndexRoute =
+  AuthenticatedEspaceSlugIndexRouteImport.update({
+    id: '/_authenticated/espace/$slug/',
+    path: '/espace/$slug/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AuthenticatedEspaceSlugCarteRoute =
+  AuthenticatedEspaceSlugCarteRouteImport.update({
+    id: '/_authenticated/espace/$slug/carte',
+    path: '/espace/$slug/carte',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AuthenticatedEspaceSlugEquipeRoute =
+  AuthenticatedEspaceSlugEquipeRouteImport.update({
+    id: '/_authenticated/espace/$slug/equipe',
+    path: '/espace/$slug/equipe',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$slug': typeof SlugRouteWithChildren
-  '/agence': typeof AgenceRoute
   '/commande': typeof CommandeRoute
   '/connexion': typeof ConnexionRoute
   '/$slug/borne': typeof SlugBorneRoute
   '/$slug/commande': typeof SlugCommandeRoute
   '/$slug/cuisine': typeof SlugCuisineRoute
-  '/cuisine/equipe': typeof CuisineEquipeRoute
   '/suivi/$id': typeof SuiviIdRoute
   '/$slug/': typeof SlugIndexRoute
-  '/cuisine/': typeof CuisineIndexRoute
   '/$slug/suivi/$id': typeof SlugSuiviIdRoute
-  '/cuisine/$slug/carte': typeof CuisineSlugCarteRoute
-  '/cuisine/$slug/equipe': typeof CuisineSlugEquipeRoute
-  '/cuisine/$slug/': typeof CuisineSlugIndexRoute
+  '/admin/': typeof AuthenticatedAdminIndexRoute
+  '/espace/': typeof AuthenticatedEspaceIndexRoute
+  '/espace/$slug/carte': typeof AuthenticatedEspaceSlugCarteRoute
+  '/espace/$slug/equipe': typeof AuthenticatedEspaceSlugEquipeRoute
+  '/espace/$slug/': typeof AuthenticatedEspaceSlugIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/agence': typeof AgenceRoute
   '/commande': typeof CommandeRoute
   '/connexion': typeof ConnexionRoute
   '/$slug/borne': typeof SlugBorneRoute
   '/$slug/commande': typeof SlugCommandeRoute
   '/$slug/cuisine': typeof SlugCuisineRoute
-  '/cuisine/equipe': typeof CuisineEquipeRoute
   '/suivi/$id': typeof SuiviIdRoute
   '/$slug': typeof SlugIndexRoute
-  '/cuisine': typeof CuisineIndexRoute
   '/$slug/suivi/$id': typeof SlugSuiviIdRoute
-  '/cuisine/$slug/carte': typeof CuisineSlugCarteRoute
-  '/cuisine/$slug/equipe': typeof CuisineSlugEquipeRoute
-  '/cuisine/$slug': typeof CuisineSlugIndexRoute
+  '/admin': typeof AuthenticatedAdminIndexRoute
+  '/espace': typeof AuthenticatedEspaceIndexRoute
+  '/espace/$slug/carte': typeof AuthenticatedEspaceSlugCarteRoute
+  '/espace/$slug/equipe': typeof AuthenticatedEspaceSlugEquipeRoute
+  '/espace/$slug': typeof AuthenticatedEspaceSlugIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$slug': typeof SlugRouteWithChildren
-  '/agence': typeof AgenceRoute
   '/commande': typeof CommandeRoute
   '/connexion': typeof ConnexionRoute
   '/$slug/borne': typeof SlugBorneRoute
   '/$slug/commande': typeof SlugCommandeRoute
   '/$slug/cuisine': typeof SlugCuisineRoute
-  '/cuisine/equipe': typeof CuisineEquipeRoute
   '/suivi/$id': typeof SuiviIdRoute
   '/$slug/': typeof SlugIndexRoute
-  '/cuisine/': typeof CuisineIndexRoute
   '/$slug/suivi/$id': typeof SlugSuiviIdRoute
-  '/cuisine/$slug/carte': typeof CuisineSlugCarteRoute
-  '/cuisine/$slug/equipe': typeof CuisineSlugEquipeRoute
-  '/cuisine/$slug/': typeof CuisineSlugIndexRoute
+  '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
+  '/_authenticated/espace/': typeof AuthenticatedEspaceIndexRoute
+  '/_authenticated/espace/$slug/carte': typeof AuthenticatedEspaceSlugCarteRoute
+  '/_authenticated/espace/$slug/equipe': typeof AuthenticatedEspaceSlugEquipeRoute
+  '/_authenticated/espace/$slug/': typeof AuthenticatedEspaceSlugIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/$slug'
-    | '/agence'
     | '/commande'
     | '/connexion'
     | '/$slug/borne'
     | '/$slug/commande'
     | '/$slug/cuisine'
-    | '/cuisine/equipe'
     | '/suivi/$id'
     | '/$slug/'
-    | '/cuisine/'
     | '/$slug/suivi/$id'
-    | '/cuisine/$slug/carte'
-    | '/cuisine/$slug/equipe'
-    | '/cuisine/$slug/'
+    | '/admin/'
+    | '/espace/'
+    | '/espace/$slug/carte'
+    | '/espace/$slug/equipe'
+    | '/espace/$slug/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/agence'
     | '/commande'
     | '/connexion'
     | '/$slug/borne'
     | '/$slug/commande'
     | '/$slug/cuisine'
-    | '/cuisine/equipe'
     | '/suivi/$id'
     | '/$slug'
-    | '/cuisine'
     | '/$slug/suivi/$id'
-    | '/cuisine/$slug/carte'
-    | '/cuisine/$slug/equipe'
-    | '/cuisine/$slug'
+    | '/admin'
+    | '/espace'
+    | '/espace/$slug/carte'
+    | '/espace/$slug/equipe'
+    | '/espace/$slug'
   id:
     | '__root__'
     | '/'
     | '/$slug'
-    | '/agence'
     | '/commande'
     | '/connexion'
     | '/$slug/borne'
     | '/$slug/commande'
     | '/$slug/cuisine'
-    | '/cuisine/equipe'
     | '/suivi/$id'
     | '/$slug/'
-    | '/cuisine/'
     | '/$slug/suivi/$id'
-    | '/cuisine/$slug/carte'
-    | '/cuisine/$slug/equipe'
-    | '/cuisine/$slug/'
+    | '/_authenticated/admin/'
+    | '/_authenticated/espace/'
+    | '/_authenticated/espace/$slug/carte'
+    | '/_authenticated/espace/$slug/equipe'
+    | '/_authenticated/espace/$slug/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SlugRoute: typeof SlugRouteWithChildren
-  AgenceRoute: typeof AgenceRoute
   CommandeRoute: typeof CommandeRoute
   ConnexionRoute: typeof ConnexionRoute
-  CuisineEquipeRoute: typeof CuisineEquipeRoute
   SuiviIdRoute: typeof SuiviIdRoute
-  CuisineIndexRoute: typeof CuisineIndexRoute
-  CuisineSlugCarteRoute: typeof CuisineSlugCarteRoute
-  CuisineSlugEquipeRoute: typeof CuisineSlugEquipeRoute
-  CuisineSlugIndexRoute: typeof CuisineSlugIndexRoute
+  AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+  AuthenticatedEspaceIndexRoute: typeof AuthenticatedEspaceIndexRoute
+  AuthenticatedEspaceSlugCarteRoute: typeof AuthenticatedEspaceSlugCarteRoute
+  AuthenticatedEspaceSlugEquipeRoute: typeof AuthenticatedEspaceSlugEquipeRoute
+  AuthenticatedEspaceSlugIndexRoute: typeof AuthenticatedEspaceSlugIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -245,13 +236,6 @@ declare module '@tanstack/react-router' {
       path: '/$slug'
       fullPath: '/$slug'
       preLoaderRoute: typeof SlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/agence': {
-      id: '/agence'
-      path: '/agence'
-      fullPath: '/agence'
-      preLoaderRoute: typeof AgenceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/commande': {
@@ -296,20 +280,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SlugCuisineRouteImport
       parentRoute: typeof SlugRoute
     }
-    '/cuisine/': {
-      id: '/cuisine/'
-      path: '/cuisine'
-      fullPath: '/cuisine/'
-      preLoaderRoute: typeof CuisineIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/cuisine/equipe': {
-      id: '/cuisine/equipe'
-      path: '/cuisine/equipe'
-      fullPath: '/cuisine/equipe'
-      preLoaderRoute: typeof CuisineEquipeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/suivi/$id': {
       id: '/suivi/$id'
       path: '/suivi/$id'
@@ -324,25 +294,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SlugSuiviIdRouteImport
       parentRoute: typeof SlugRoute
     }
-    '/cuisine/$slug/': {
-      id: '/cuisine/$slug/'
-      path: '/cuisine/$slug'
-      fullPath: '/cuisine/$slug/'
-      preLoaderRoute: typeof CuisineSlugIndexRouteImport
+    '/_authenticated/admin/': {
+      id: '/_authenticated/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/cuisine/$slug/carte': {
-      id: '/cuisine/$slug/carte'
-      path: '/cuisine/$slug/carte'
-      fullPath: '/cuisine/$slug/carte'
-      preLoaderRoute: typeof CuisineSlugCarteRouteImport
+    '/_authenticated/espace/': {
+      id: '/_authenticated/espace/'
+      path: '/espace'
+      fullPath: '/espace/'
+      preLoaderRoute: typeof AuthenticatedEspaceIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/cuisine/$slug/equipe': {
-      id: '/cuisine/$slug/equipe'
-      path: '/cuisine/$slug/equipe'
-      fullPath: '/cuisine/$slug/equipe'
-      preLoaderRoute: typeof CuisineSlugEquipeRouteImport
+    '/_authenticated/espace/$slug/': {
+      id: '/_authenticated/espace/$slug/'
+      path: '/espace/$slug'
+      fullPath: '/espace/$slug/'
+      preLoaderRoute: typeof AuthenticatedEspaceSlugIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/espace/$slug/carte': {
+      id: '/_authenticated/espace/$slug/carte'
+      path: '/espace/$slug/carte'
+      fullPath: '/espace/$slug/carte'
+      preLoaderRoute: typeof AuthenticatedEspaceSlugCarteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/espace/$slug/equipe': {
+      id: '/_authenticated/espace/$slug/equipe'
+      path: '/espace/$slug/equipe'
+      fullPath: '/espace/$slug/equipe'
+      preLoaderRoute: typeof AuthenticatedEspaceSlugEquipeRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -369,15 +353,14 @@ const SlugRouteWithChildren = SlugRoute._addFileChildren(SlugRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SlugRoute: SlugRouteWithChildren,
-  AgenceRoute: AgenceRoute,
   CommandeRoute: CommandeRoute,
   ConnexionRoute: ConnexionRoute,
-  CuisineEquipeRoute: CuisineEquipeRoute,
   SuiviIdRoute: SuiviIdRoute,
-  CuisineIndexRoute: CuisineIndexRoute,
-  CuisineSlugCarteRoute: CuisineSlugCarteRoute,
-  CuisineSlugEquipeRoute: CuisineSlugEquipeRoute,
-  CuisineSlugIndexRoute: CuisineSlugIndexRoute,
+  AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+  AuthenticatedEspaceIndexRoute: AuthenticatedEspaceIndexRoute,
+  AuthenticatedEspaceSlugCarteRoute: AuthenticatedEspaceSlugCarteRoute,
+  AuthenticatedEspaceSlugEquipeRoute: AuthenticatedEspaceSlugEquipeRoute,
+  AuthenticatedEspaceSlugIndexRoute: AuthenticatedEspaceSlugIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

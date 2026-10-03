@@ -1,0 +1,57 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { RESTAURANT_COLUMNS, type Restaurant } from "./shop";
+
+const minutes = z.number().int().min(0).max(1440);
+export const settingsSchema = z.object({
+  opening: z.record(z.enum(["0", "1", "2", "3", "4", "5", "6"]), z.array(z.tuple([minutes, minutes])).max(4)),
+  delivery: z.object({
+    minOrder: z.number().min(0).max(500),
+    fee: z.number().min(0).max(100),
+    freeFrom: z.number().min(0).max(1000),
+    zones: z.array(z.object({ cp: z.string().trim().regex(/^\d{5}$/), city: z.string().trim().min(1).max(80) })).max(100),
+  }),
+  config: z.object({
+    slotMinutes: z.number().int().min(5).max(120),
+    lead: z.object({ pickup: z.number().int().min(0).max(240), delivery: z.number().int().min(0).max(240) }),
+    hoursLabel: z.string().max(120).optional(),
+    tagline: z.string().max(200).optional(),
+    autoAccept: z.boolean(),
+    modes: z.object({ pickup: z.boolean(), delivery: z.boolean(), dine_in: z.boolean() }),
+    payments: z.object({ on_site: z.boolean(), counter: z.boolean(), card_terminal: z.boolean() }),
+  }),
+});
+export type Settings = z.infer<typeof settingsSchema>;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function assertManager(supabase: any, userId: string, restaurantId: string) {
+  const { data } = await supabase.rpc("is_restaurant_manager", { _user_id: userId, _restaurant_id: restaurantId });
+  if (!data) throw new Error("Réservé au gérant ou à l'agence");
+}
+
+/** Fiche complète d'un restaurant pour son gérant ou l'agence (y compris hors ligne). */
+export const loadRestaurantAdmin = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ slug: z.string().max(40) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin.from("restaurants").select(`${RESTAURANT_COLUMNS}, active`).eq("slug", data.slug).maybeSingle();
+    if (!row) throw new Error("Restaurant introuvable");
+    await assertManager(context.supabase, context.userId, (row as { id: string }).id);
+    return row as unknown as Restaurant & { active: boolean };
+  });
+
+export const saveRestaurantSettings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ restaurantId: z.string().uuid(), settings: settingsSchema }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertManager(context.supabase, context.userId, data.restaurantId);
+    const s = data.settings;
+    if (!s.config.modes.pickup && !s.config.modes.delivery && !s.config.modes.dine_in) throw new Error("Activez au moins un mode de commande");
+    for (const ranges of Object.values(s.opening)) for (const [a, b] of ranges) if (a >= b) throw new Error("Une plage horaire a une fin avant son début");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("restaurants").update({ opening: s.opening, delivery: s.delivery, config: s.config }).eq("id", data.restaurantId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
