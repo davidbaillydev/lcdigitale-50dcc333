@@ -28,11 +28,11 @@ function Reset() {
   const [busy, setBusy] = useState(false);
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (pw !== pw2) return toast.error("Les deux mots de passe sont différents");
+    if (pw !== pw2) { toast.error("Les deux mots de passe sont différents"); return; }
     setBusy(true);
     const { error } = await supabase.auth.updateUser({ password: pw });
     setBusy(false);
-    if (error) return toast.error(error.message.includes("session") ? "Lien expiré : redemandez un email." : error.message);
+    if (error) { toast.error(error.message.includes("session") ? "Lien expiré : redemandez un email." : error.message); return; }
     toast.success("Mot de passe enregistré");
     navigate({ to: "/espace" });
   };
