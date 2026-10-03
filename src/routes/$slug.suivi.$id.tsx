@@ -6,6 +6,9 @@ import { printTickets, type TicketOrder } from "@/lib/ticket";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { getOrderStatus } from "@/lib/orders.functions";
+import { confirmOnlinePayment } from "@/lib/payments.functions";
+import { useCart } from "@/lib/cart";
+import { useEffect, useRef } from "react";
 import { euro } from "@/lib/menu";
 import { fmtTime } from "@/lib/shop";
 import { cn } from "@/lib/utils";
@@ -34,10 +37,45 @@ const STEPS = [
 function Tracking() {
   const { id, slug } = Route.useParams();
   const fn = useServerFn(getOrderStatus);
-  const { data, isLoading } = useQuery({ queryKey: ["order", id], queryFn: () => fn({ data: { id } }), refetchInterval: 15000 });
+  const confirm = useServerFn(confirmOnlinePayment);
+  const { clear } = useCart();
+  const cleared = useRef(false);
+  const { data, isLoading } = useQuery({
+    queryKey: ["order", id],
+    queryFn: async () => {
+      const o = await fn({ data: { id } });
+      if (o?.status === "awaiting_payment") {
+        const r = await confirm({ data: { orderId: id } }).catch(() => null);
+        if (r?.status === "paid") return fn({ data: { id } });
+        return { ...o, _pay: r?.status ?? "pending" };
+      }
+      return o;
+    },
+    refetchInterval: (q) => (q.state.data?.status === "awaiting_payment" ? 3000 : 15000),
+  });
+  useEffect(() => {
+    if (!cleared.current && data && data.payment_method === "online" && data.payment_status === "paid") { cleared.current = true; clear(); }
+  }, [data, clear]);
 
   if (isLoading) return <div className="min-h-screen"><SiteHeader /><p className="p-10 text-center text-muted-foreground">Chargement…</p></div>;
   if (!data) return <div className="min-h-screen"><SiteHeader /><p className="p-10 text-center">Commande introuvable.</p></div>;
+
+  if (data.status === "awaiting_payment") {
+    const pay = (data as { _pay?: string })._pay;
+    return (
+      <div className="min-h-screen"><SiteHeader />
+        <div className="mx-auto max-w-md px-4 py-16 text-center">
+          <h1 className="text-4xl">Commande n° {data.order_number}</h1>
+          {pay === "retry" || pay === "failed" ? (
+            <>
+              <p role="alert" className="mt-4 rounded-lg bg-destructive/20 p-4">Le paiement n'a pas abouti. Votre commande n'a pas été envoyée au restaurant.</p>
+              <Button asChild className="mt-4"><Link to="/$slug/commande" params={{ slug }}>Revenir à ma commande</Link></Button>
+            </>
+          ) : <p className="mt-4 text-muted-foreground">Vérification du paiement en cours…</p>}
+        </div>
+      </div>
+    );
+  }
 
   const idx = STEPS.findIndex((x) => x.s === data.status);
   const items = data.items as { name: string; qty: number; total: number; details: string[] }[];
@@ -49,7 +87,7 @@ function Tracking() {
         <h1 className="mt-3 text-5xl">Commande n° {data.order_number}</h1>
         <p className="text-muted-foreground">
           {data.mode === "delivery" ? "Livraison" : "Retrait"} prévu à <strong className="text-foreground">{fmtTime(data.slot)}</strong>
-          {" · "}paiement {data.payment_method === "on_site" ? (data.mode === "delivery" ? "à la livraison" : "au retrait") : "en ligne"}
+          {" · "}{data.payment_method === "on_site" ? `paiement ${data.mode === "delivery" ? "à la livraison" : "au retrait"}` : data.payment_status === "paid" ? "payé en ligne ✓" : "paiement en ligne"}
         </p>
         {data.status === "cancelled" ? (
           <p className="mt-6 rounded-lg bg-destructive/20 p-4">Cette commande a été annulée. Contactez le restaurant pour plus d'informations.</p>
