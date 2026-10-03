@@ -103,7 +103,7 @@ export const createOrder = createServerFn({ method: "POST" })
       ...(data.email ? { receipt_email: data.email } : {}),
     }) as { id: string; client_secret: string };
     await supabaseAdmin.from("orders").update({ payment_ref: pi.id }).eq("id", row.id);
-    return { id: row.id, order_number: row.order_number, clientSecret: pi.client_secret };
+    return { ...base, clientSecret: pi.client_secret };
   });
 
 export const getOrderStatus = createServerFn({ method: "GET" })
@@ -112,7 +112,7 @@ export const getOrderStatus = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("orders")
-      .select("id, order_number, status, mode, slot, total, items, payment_method, payment_status, customer_name, restaurants(slug)")
+      .select("id, order_number, status, mode, slot, total, items, payment_method, payment_status, payment_ref, customer_name, restaurants(slug)")
       .eq("id", data.id)
       .maybeSingle();
     return row;
