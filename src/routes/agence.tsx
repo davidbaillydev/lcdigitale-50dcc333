@@ -102,6 +102,7 @@ function Console() {
                 <Button size="sm" variant="secondary" asChild><a href={`/${r.slug}/borne`} target="_blank" rel="noreferrer"><Tablet /> Borne</a></Button>
                 <Button size="sm" variant="secondary" asChild><Link to="/cuisine/$slug" params={{ slug: r.slug }}><ChefHat /> Cuisine</Link></Button>
                 <Button size="sm" variant="secondary" asChild><Link to="/cuisine/$slug/equipe" params={{ slug: r.slug }}><Users /> Équipe</Link></Button>
+                <Button size="sm" variant="secondary" asChild><Link to="/cuisine/$slug/carte" params={{ slug: r.slug }}>Carte</Link></Button>
                 <Button size="sm" onClick={() => setForm({ ...r })}><Pencil /> Modifier</Button>
               </div>
             </article>
