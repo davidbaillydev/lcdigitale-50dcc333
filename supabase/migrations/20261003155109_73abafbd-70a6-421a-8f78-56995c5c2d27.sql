@@ -1,0 +1,1 @@
+CREATE POLICY "Restaurant banner files are server managed" ON storage.objects AS RESTRICTIVE FOR ALL TO anon, authenticated USING (bucket_id <> 'restaurant-banners') WITH CHECK (bucket_id <> 'restaurant-banners');
