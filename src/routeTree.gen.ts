@@ -15,6 +15,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AgenceRouteImport } from './routes/agence'
 import { Route as CommandeRouteImport } from './routes/commande'
 import { Route as ConnexionRouteImport } from './routes/connexion'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SlugIndexRouteImport } from './routes/$slug.index'
 import { Route as SlugBorneRouteImport } from './routes/$slug.borne'
 import { Route as SlugCommandeRouteImport } from './routes/$slug.commande'
@@ -59,6 +60,11 @@ const CommandeRoute = CommandeRouteImport.update({
 const ConnexionRoute = ConnexionRouteImport.update({
   id: '/connexion',
   path: '/connexion',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SlugIndexRoute = SlugIndexRouteImport.update({
@@ -153,6 +159,7 @@ export interface FileRoutesByFullPath {
   '/agence': typeof AgenceRoute
   '/commande': typeof CommandeRoute
   '/connexion': typeof ConnexionRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/$slug/borne': typeof SlugBorneRoute
   '/$slug/commande': typeof SlugCommandeRoute
   '/$slug/cuisine': typeof SlugCuisineRoute
@@ -175,6 +182,7 @@ export interface FileRoutesByTo {
   '/agence': typeof AgenceRoute
   '/commande': typeof CommandeRoute
   '/connexion': typeof ConnexionRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/$slug/borne': typeof SlugBorneRoute
   '/$slug/commande': typeof SlugCommandeRoute
   '/$slug/cuisine': typeof SlugCuisineRoute
@@ -199,6 +207,7 @@ export interface FileRoutesById {
   '/agence': typeof AgenceRoute
   '/commande': typeof CommandeRoute
   '/connexion': typeof ConnexionRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/$slug/borne': typeof SlugBorneRoute
   '/$slug/commande': typeof SlugCommandeRoute
   '/$slug/cuisine': typeof SlugCuisineRoute
@@ -224,6 +233,7 @@ export interface FileRouteTypes {
     | '/agence'
     | '/commande'
     | '/connexion'
+    | '/reset-password'
     | '/$slug/borne'
     | '/$slug/commande'
     | '/$slug/cuisine'
@@ -246,6 +256,7 @@ export interface FileRouteTypes {
     | '/agence'
     | '/commande'
     | '/connexion'
+    | '/reset-password'
     | '/$slug/borne'
     | '/$slug/commande'
     | '/$slug/cuisine'
@@ -269,6 +280,7 @@ export interface FileRouteTypes {
     | '/agence'
     | '/commande'
     | '/connexion'
+    | '/reset-password'
     | '/$slug/borne'
     | '/$slug/commande'
     | '/$slug/cuisine'
@@ -294,6 +306,7 @@ export interface RootRouteChildren {
   AgenceRoute: typeof AgenceRoute
   CommandeRoute: typeof CommandeRoute
   ConnexionRoute: typeof ConnexionRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   CuisineSplatRoute: typeof CuisineSplatRoute
   SuiviIdRoute: typeof SuiviIdRoute
   CuisineIndexRoute: typeof CuisineIndexRoute
@@ -341,6 +354,13 @@ declare module '@tanstack/react-router' {
       path: '/connexion'
       fullPath: '/connexion'
       preLoaderRoute: typeof ConnexionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$slug/': {
@@ -517,6 +537,7 @@ const rootRouteChildren: RootRouteChildren = {
   AgenceRoute: AgenceRoute,
   CommandeRoute: CommandeRoute,
   ConnexionRoute: ConnexionRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   CuisineSplatRoute: CuisineSplatRoute,
   SuiviIdRoute: SuiviIdRoute,
   CuisineIndexRoute: CuisineIndexRoute,
