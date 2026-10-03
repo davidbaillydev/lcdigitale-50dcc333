@@ -82,6 +82,7 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="fr" className="dark">
       <head>
+        <script dangerouslySetInnerHTML={{ __html: "try{if(localStorage.getItem('theme')==='light')document.documentElement.classList.remove('dark')}catch(e){}" }} />
         <HeadContent />
       </head>
       <body>
