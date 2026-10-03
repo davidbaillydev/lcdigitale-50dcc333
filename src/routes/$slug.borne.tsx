@@ -92,7 +92,7 @@ function Kiosk() {
           <p className="relative text-3xl text-foreground">Bienvenue !</p>
           <span className="relative animate-pulse rounded-full bg-primary px-14 py-8 font-display text-5xl text-primary-foreground">Touchez pour commander</span>
           <div className="relative mt-6 grid w-full max-w-3xl grid-cols-2 gap-6" onClick={(e) => e.stopPropagation()}>
-            {([["dine_in", "Sur place", UtensilsCrossed], ["pickup", "À emporter", ShoppingBag]] as const).map(([m, label, Icon]) => (
+            {([["dine_in", "Sur place", UtensilsCrossed], ["pickup", "À emporter", ShoppingBag]] as const).filter(([m]) => restaurant.config.modes?.[m] !== false).map(([m, label, Icon]) => (
               <button key={m} onClick={() => { setMode(m); setStep("menu"); }}
                 className="flex flex-col items-center gap-4 rounded-2xl border-2 border-border bg-card p-10 active:border-primary active:bg-primary/15">
                 <Icon className="h-20 w-20 text-primary" />
@@ -194,12 +194,12 @@ function Kiosk() {
           <h2 className="font-display text-6xl">Comment souhaitez-vous payer ?</h2>
           <p className="text-3xl">Total : <span className="font-display text-primary">{euro(subtotal)}</span></p>
           <div className="grid w-full max-w-4xl grid-cols-2 gap-6">
-            <button disabled={busy} onClick={() => pay("counter")} className="flex flex-col items-center gap-4 rounded-2xl border-2 border-border bg-card p-10 active:border-primary disabled:opacity-50">
+            {restaurant.config.payments?.counter !== false && <button disabled={busy} onClick={() => pay("counter")} className="flex flex-col items-center gap-4 rounded-2xl border-2 border-border bg-card p-10 active:border-primary disabled:opacity-50">
               <Banknote className="h-20 w-20 text-primary" />
               <span className="font-display text-4xl">Payer au comptoir</span>
               <span className="text-lg text-muted-foreground">Espèces · Tickets resto</span>
             </button>
-            <button disabled={busy} onClick={() => pay("card_terminal")} className="flex flex-col items-center gap-4 rounded-2xl border-2 border-border bg-card p-10 active:border-primary disabled:opacity-50">
+            {restaurant.config.payments?.card_terminal !== false && <button disabled={busy} onClick={() => pay("card_terminal")} className="flex flex-col items-center gap-4 rounded-2xl border-2 border-border bg-card p-10 active:border-primary disabled:opacity-50">
               <CreditCard className="h-20 w-20 text-primary" />
               <span className="font-display text-4xl">Carte bancaire</span>
               <span className="text-lg text-muted-foreground">Sur le terminal au comptoir</span>

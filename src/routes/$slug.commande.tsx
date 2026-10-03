@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useCart } from "@/lib/cart";
 import { euro } from "@/lib/menu";
-import { availableSlots, deliveryFee, fmtTime } from "@/lib/shop";
+import { availableSlots, deliveryFee, fmtTime, modeEnabled } from "@/lib/shop";
 import { createOrder } from "@/lib/orders.functions";
 import { cn } from "@/lib/utils";
 
@@ -32,7 +32,7 @@ function Checkout() {
   const DELIVERY = restaurant.delivery;
   const navigate = useNavigate();
   const submitFn = useServerFn(createOrder);
-  const [mode, setMode] = useState<"pickup" | "delivery">("pickup");
+  const [mode, setMode] = useState<"pickup" | "delivery">(modeEnabled(restaurant, "pickup") ? "pickup" : "delivery");
   const [slots, setSlots] = useState<string[]>([]);
   const [slot, setSlot] = useState("");
   const [f, setF] = useState({ customer_name: "", phone: "", email: "", address: "", postal_code: "", notes: "" });
@@ -89,7 +89,7 @@ function Checkout() {
           <section>
             <h2 className="text-3xl">1. Mode de retrait</h2>
             <div className="mt-3 grid grid-cols-2 gap-3">
-              {([["pickup", "À emporter", "Click & collect", ShoppingBag], ["delivery", "Livraison", DELIVERY.zones.length ? "Dans notre zone de livraison" : "Indisponible", Bike]] as const).map(([v, t, s, Icon]) => (
+              {([["pickup", "À emporter", "Click & collect", ShoppingBag], ["delivery", "Livraison", DELIVERY.zones.length ? "Dans notre zone de livraison" : "Indisponible", Bike]] as const).filter(([v]) => modeEnabled(restaurant, v)).map(([v, t, s, Icon]) => (
                 <button key={v} onClick={() => setMode(v)} className={cn("rounded-xl border p-4 text-left", mode === v ? "border-primary bg-primary/10" : "border-border")}>
                   <Icon className="mb-2 h-6 w-6 text-primary" />
                   <p className="font-semibold">{t}</p>
