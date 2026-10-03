@@ -3,15 +3,15 @@ import { Minus, Plus, ShoppingBag } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/lib/cart";
-import { ITEMS_BY_ID, describeSelections, euro, unitPrice } from "@/lib/menu";
+import { describeSelections, euro, unitPrice } from "@/lib/menu";
 
 export function CartLines() {
-  const { lines, setQty } = useCart();
+  const { lines, setQty, catalog } = useCart();
   if (!lines.length) return <p className="py-10 text-center text-muted-foreground">Votre panier est vide.</p>;
   return (
     <ul className="divide-y divide-border">
       {lines.map((l) => {
-        const item = ITEMS_BY_ID[l.itemId];
+        const item = catalog.itemsById[l.itemId];
         if (!item) return null;
         return (
           <li key={l.key} className="flex gap-3 py-3">
@@ -35,7 +35,7 @@ export function CartLines() {
 }
 
 export function CartSheet() {
-  const { count, subtotal } = useCart();
+  const { count, subtotal, restaurant } = useCart();
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -50,7 +50,7 @@ export function CartSheet() {
         <div className="space-y-3 border-t border-border p-4">
           <div className="flex justify-between font-semibold"><span>Sous-total</span><span>{euro(subtotal)}</span></div>
           <Button asChild size="lg" className="w-full font-semibold" disabled={!count}>
-            <Link to="/commande">Commander</Link>
+            <Link to="/$slug/commande" params={{ slug: restaurant.slug }}>Commander</Link>
           </Button>
         </div>
       </SheetContent>

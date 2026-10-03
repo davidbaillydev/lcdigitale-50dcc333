@@ -31,6 +31,7 @@ export type Database = {
           payment_status: string
           phone: string
           postal_code: string | null
+          restaurant_id: string
           slot: string
           status: string
           subtotal: number
@@ -53,6 +54,7 @@ export type Database = {
           payment_status?: string
           phone: string
           postal_code?: string | null
+          restaurant_id: string
           slot: string
           status?: string
           subtotal: number
@@ -75,10 +77,102 @@ export type Database = {
           payment_status?: string
           phone?: string
           postal_code?: string | null
+          restaurant_id?: string
           slot?: string
           status?: string
           subtotal?: number
           total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurant_members: {
+        Row: {
+          created_at: string
+          id: string
+          restaurant_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          restaurant_id: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          restaurant_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_members_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurants: {
+        Row: {
+          active: boolean
+          address: string | null
+          city: string | null
+          config: Json
+          created_at: string
+          delivery: Json
+          email: string | null
+          id: string
+          menu_key: string
+          name: string
+          opening: Json
+          phone: string | null
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          address?: string | null
+          city?: string | null
+          config?: Json
+          created_at?: string
+          delivery?: Json
+          email?: string | null
+          id?: string
+          menu_key: string
+          name: string
+          opening?: Json
+          phone?: string | null
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          address?: string | null
+          city?: string | null
+          config?: Json
+          created_at?: string
+          delivery?: Json
+          email?: string | null
+          id?: string
+          menu_key?: string
+          name?: string
+          opening?: Json
+          phone?: string | null
+          slug?: string
           updated_at?: string
         }
         Relationships: []
@@ -109,11 +203,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_restaurant: {
+        Args: { _restaurant_id: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_restaurant_manager: {
+        Args: { _restaurant_id: string; _user_id: string }
         Returns: boolean
       }
       is_staff: { Args: { _user_id: string }; Returns: boolean }

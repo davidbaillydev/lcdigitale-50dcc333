@@ -9,6 +9,6 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
-- Menu catalogue and price computation live in one shared module used by client and server; the server recomputes every order total, never trusting client prices.
-- Customer orders are inserted by a public server function with the admin client; staff read/update orders via RLS (is_staff) and Realtime.
-- Staff roles live in user_roles; the first account created becomes admin via trigger.
+- Restaurants live in the `restaurants` table (hours, delivery, config as jsonb); public pages are scoped under `/$slug`. Menus stay in code, registered per `menu_key` in `src/lib/catalogs.ts`, shared by client and server; the server recomputes every order total, never trusting client prices.
+- Customer orders are inserted by a public server function with the admin client; staff read/update orders via RLS (`can_access_restaurant`) and Realtime filtered by restaurant_id.
+- Agency (global) role is `admin` in user_roles (first account via trigger); per-restaurant access (manager/kitchen) lives in `restaurant_members`.
