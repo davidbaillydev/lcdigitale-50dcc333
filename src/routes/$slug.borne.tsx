@@ -75,7 +75,7 @@ function Kiosk() {
   return (
     <div className="fixed inset-0 z-50 flex select-none flex-col overflow-hidden bg-background text-foreground touch-manipulation">
       {step === "welcome" && (
-        <button className="flex flex-1 flex-col items-center justify-center gap-10 p-10 text-center" onClick={() => setStep("menu")}>
+        <div role="button" tabIndex={0} className="flex flex-1 cursor-pointer flex-col items-center justify-center gap-10 p-10 text-center" onClick={() => setStep("menu")}>
           <p className="font-display text-8xl text-primary">{restaurant.name}</p>
           <p className="text-3xl text-muted-foreground">Bienvenue !</p>
           <span className="animate-pulse rounded-full bg-primary px-14 py-8 font-display text-5xl text-primary-foreground">Touchez pour commander</span>
@@ -88,7 +88,7 @@ function Kiosk() {
               </button>
             ))}
           </div>
-        </button>
+        </div>
       )}
 
       {step !== "welcome" && step !== "done" && (
