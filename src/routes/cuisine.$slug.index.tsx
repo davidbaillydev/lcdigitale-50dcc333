@@ -9,6 +9,7 @@ import { euro } from "@/lib/menu";
 import { fmtTime } from "@/lib/shop";
 import { cn } from "@/lib/utils";
 import { BrandLogo, BrandTheme } from "@/lib/brand";
+import { ThemeToggle } from "@/lib/theme";
 
 export const Route = createFileRoute("/cuisine/$slug/")({
   head: () => ({

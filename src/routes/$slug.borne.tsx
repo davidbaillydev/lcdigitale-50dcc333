@@ -8,6 +8,7 @@ import { createKioskOrder } from "@/lib/orders.functions";
 import { euro, groupCost, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
 import { itemImage, menuImage } from "@/lib/menu-images";
 import { BrandLogo } from "@/lib/brand";
+import { ThemeToggle } from "@/lib/theme";
 import welcomeFood from "@/assets/food-plateau.jpg";
 
 export const Route = createFileRoute("/$slug/borne")({
