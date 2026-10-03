@@ -225,7 +225,7 @@ function Kiosk() {
   );
 }
 
-function KioskItem({ item, image, onClose, onAdd }: { item: MenuItem; image?: string; onClose: () => void; onAdd: (sel: Selections, qty: number) => void }) {
+function KioskItem({ item, image, onClose, onAdd }: { item: MenuItem; image: string | undefined; onClose: () => void; onAdd: (sel: Selections, qty: number) => void }) {
   const [sel, setSel] = useState<Selections>({});
   const [qty, setQ] = useState(1);
   const [step, setStep] = useState(0);
