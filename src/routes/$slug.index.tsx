@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Clock, MapPin, Bike, ShoppingBag } from "lucide-react";
+import { Clock, MapPin, Bike, ShoppingBag, Phone } from "lucide-react";
 import hero from "@/assets/hero.jpg";
 import { euro, type MenuItem } from "@/lib/menu";
 import { ItemDialog } from "@/components/ItemDialog";
@@ -68,9 +68,21 @@ function MenuPage() {
             </div>
           </section>
         ))}
-        <footer className="flex items-center gap-2 border-t border-border pt-6 text-sm text-muted-foreground">
-          <MapPin className="h-4 w-4" /> {restaurant.name} · {restaurant.city} ·{" "}
-          <Link to="/connexion" className="underline">Espace restaurant</Link>
+        <footer className="space-y-2 border-t border-border pt-6 text-sm text-muted-foreground">
+          <p className="flex items-center gap-2">
+            <MapPin className="h-4 w-4 shrink-0" /> {restaurant.name}
+            {restaurant.address ? ` · ${restaurant.address}` : ""} · {restaurant.city}
+          </p>
+          {restaurant.phone && (
+            <p className="flex items-center gap-2">
+              <Phone className="h-4 w-4 shrink-0" /> <a href={`tel:${restaurant.phone.replace(/\s/g, "")}`} className="underline">{restaurant.phone}</a>
+              {restaurant.email && <> · <a href={`mailto:${restaurant.email}`} className="underline">{restaurant.email}</a></>}
+            </p>
+          )}
+          {restaurant.config.hoursLabel && (
+            <p className="flex items-center gap-2"><Clock className="h-4 w-4 shrink-0" /> {restaurant.config.hoursLabel}</p>
+          )}
+          <p><Link to="/connexion" className="underline">Espace restaurant</Link></p>
         </footer>
       </main>
 

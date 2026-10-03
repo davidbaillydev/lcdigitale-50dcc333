@@ -1,11 +1,10 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SiteHeader } from "@/components/SiteHeader";
 
 export const Route = createFileRoute("/connexion")({
   head: () => ({
@@ -52,7 +51,9 @@ function Login() {
 
   return (
     <div className="min-h-screen">
-      <SiteHeader hideCart />
+      <header className="border-b border-border px-4 py-3">
+        <Link to="/" className="font-display text-3xl">Nos restaurants</Link>
+      </header>
       <form onSubmit={submit} className="mx-auto mt-16 max-w-sm space-y-4 rounded-xl border border-border bg-card p-6">
         <h1 className="text-4xl">{mode === "in" ? "Espace restaurant" : "Créer un compte équipe"}</h1>
         <div><Label htmlFor="em">Email</Label><Input id="em" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
