@@ -13,10 +13,12 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
+import { ThemeToggle } from "@/lib/theme";
 
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <div className="absolute right-4 top-4"><ThemeToggle /></div>
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
         <h2 className="mt-4 text-xl font-semibold text-foreground">Page introuvable</h2>
@@ -38,6 +40,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   }, [error]);
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <div className="absolute right-4 top-4"><ThemeToggle /></div>
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold text-foreground">Cette page n'a pas pu se charger</h1>
         <div className="mt-6 flex justify-center gap-2">
@@ -60,7 +63,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: "LC Digitale : la plateforme de commande en ligne des restaurants partenaires — click & collect, livraison et borne tactile." },
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "LC Digitale" },
-      { name: "theme-color", content: "#f5b301" },
+      { name: "theme-color", content: "#141210" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
@@ -83,6 +86,7 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="fr" className="dark">
       <head>
         <HeadContent />
+        <script dangerouslySetInnerHTML={{ __html: "try{if(localStorage.getItem('theme')==='light'){document.documentElement.classList.remove('dark');document.querySelector('meta[name=theme-color]')?.setAttribute('content','#fbf8f1')}}catch(e){}" }} />
       </head>
       <body>
         {children}

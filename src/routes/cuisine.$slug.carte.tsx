@@ -1,13 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
-import { ArrowDown, ArrowLeft, ArrowUp, Eye, EyeOff, Plus, Save, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowDown, ArrowLeft, ArrowUp, Eye, EyeOff, FileUp, Plus, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useStaff } from "@/hooks/use-staff";
 import { loadMenu, saveMenu } from "@/lib/menu-admin.functions";
+import { analyzeMenu } from "@/lib/menu-import.functions";
+import { readMenuFile } from "@/lib/menu-import";
 import { baseCategories } from "@/lib/catalogs";
 import type { Category, MenuItem } from "@/lib/menu";
 import { BrandTheme } from "@/lib/brand";
+import { ThemeToggle } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -36,11 +39,16 @@ function MenuEditor() {
   const canManage = r?.role === "agency" || r?.role === "manager";
   const load = useServerFn(loadMenu);
   const save = useServerFn(saveMenu);
+  const analyze = useServerFn(analyzeMenu);
+  const input = useRef<HTMLInputElement>(null);
   const [menu, setMenu] = useState<Category[] | null>(null);
   const [custom, setCustom] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const [candidate, setCandidate] = useState<Category[] | null>(null);
 
   useEffect(() => {
     if (!canManage || !r) return;
@@ -66,14 +74,45 @@ function MenuEditor() {
     catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
   };
 
+  const importFile = async (file?: File) => {
+    if (!file || !r) return;
+    setImporting(true); setCandidate(null);
+    try {
+      const pages = await readMenuFile(file);
+      const result = await analyze({ data: { restaurantId: r.id, pages } });
+      setCandidate(result);
+      toast.success("Carte analysée : vérifiez les plats et les prix avant de valider");
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Import impossible"); }
+    finally { setImporting(false); if (input.current) input.current.value = ""; }
+  };
+
   return (
     <BrandTheme brand={r?.brand}>
       <div className="mx-auto max-w-4xl p-6 pb-28">
-        <Button asChild variant="ghost"><Link to="/cuisine/$slug" params={{ slug }}><ArrowLeft /> Écran cuisine</Link></Button>
+        <div className="flex items-center justify-between gap-3"><Button asChild variant="ghost"><Link to="/cuisine/$slug" params={{ slug }}><ArrowLeft /> Écran cuisine</Link></Button><ThemeToggle /></div>
         <h1 className="mt-4 text-5xl">Carte · {r?.name}</h1>
         <p className="text-sm text-muted-foreground">
           {custom ? "Carte personnalisée de ce restaurant." : "Vous partez de la carte de base : elle deviendra propre à ce restaurant dès le premier enregistrement."} Les modifications n'affectent aucun autre établissement.
         </p>
+
+        <div className="mt-6 space-y-3">
+          <input ref={input} className="sr-only" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.txt,.csv,application/pdf,image/jpeg,image/png,image/webp,text/plain,text/csv" onChange={(e) => void importFile(e.target.files?.[0])} aria-label="Choisir une carte à importer" />
+          <div role="button" tabIndex={0} onClick={() => input.current?.click()} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); input.current?.click(); } }}
+            onDragOver={(e) => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={(e) => { e.preventDefault(); setDragging(false); void importFile(e.dataTransfer.files[0]); }}
+            className={`cursor-pointer border-2 border-dashed p-6 text-center transition-colors ${dragging ? "border-primary bg-primary/10" : "border-border hover:border-primary"}`}>
+            <FileUp className="mx-auto mb-2 h-7 w-7 text-primary" />
+            <p className="font-semibold">{importing ? "Analyse de la carte en cours…" : "Déposez votre carte ici ou choisissez un fichier"}</p>
+            <p className="text-sm text-muted-foreground">PDF, photo, TXT ou CSV · 8 Mo maximum · 8 pages maximum</p>
+          </div>
+          {candidate && <div className="border border-primary bg-primary/5 p-4" aria-live="polite">
+            <h2 className="text-2xl">Carte proposée · {candidate.reduce((n, c) => n + c.items.length, 0)} plats</h2>
+            <p className="text-sm text-muted-foreground">Relisez les prix, intitulés et suppléments : l'analyse peut se tromper. Votre carte actuelle reste en ligne jusqu'à l'enregistrement.</p>
+            <div className="mt-3 max-h-64 overflow-auto border-y border-border py-2 text-sm">
+              {candidate.map((c) => <div key={c.id} className="mb-3"><strong>{c.label}</strong>{c.items.map((it) => <div key={it.id} className="flex justify-between gap-3 border-b border-border/50 py-1"><span>{it.name}</span><span className="shrink-0">{it.price.toFixed(2)} €</span></div>)}</div>)}
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2"><Button onClick={() => { update(candidate); setCandidate(null); setOpen(candidate[0]?.id ?? null); toast.info("Carte proposée prête à corriger ; enregistrez-la après vérification"); }}>Reprendre et corriger</Button><Button variant="secondary" onClick={() => setCandidate(null)}>Annuler l'import</Button></div>
+          </div>}
+        </div>
 
         <div className="mt-6 space-y-3">
           {menu.map((c, ci) => (
