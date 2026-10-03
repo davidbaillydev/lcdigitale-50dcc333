@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      order_print_logs: {
+        Row: {
+          auto: boolean
+          created_at: string
+          id: string
+          kinds: string
+          order_id: string
+          reprint: boolean
+          restaurant_id: string
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          auto?: boolean
+          created_at?: string
+          id?: string
+          kinds: string
+          order_id: string
+          reprint?: boolean
+          restaurant_id: string
+          status: string
+          user_id?: string | null
+        }
+        Update: {
+          auto?: boolean
+          created_at?: string
+          id?: string
+          kinds?: string
+          order_id?: string
+          reprint?: boolean
+          restaurant_id?: string
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_print_logs_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_print_logs_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           address: string | null
