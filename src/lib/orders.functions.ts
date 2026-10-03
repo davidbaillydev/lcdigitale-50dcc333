@@ -31,9 +31,11 @@ export const createOrder = createServerFn({ method: "POST" })
     const catalog = getCatalog(r);
 
     if (!isValidSlot(r, data.mode, data.slot)) throw new Error("Ce créneau n'est plus disponible, merci d'en choisir un autre.");
-    if (data.payment_method === "online") throw new Error("Le paiement en ligne n'est pas encore activé.");
+    const { stripeForRestaurant, stripeCall } = await import("./payments.functions");
+    const stripe = data.payment_method === "online" ? await stripeForRestaurant(r.id) : null;
+    if (data.payment_method === "online" && !stripe) throw new Error("Le paiement en ligne n'est pas disponible pour ce restaurant.");
     if (!modeEnabled(r, data.mode)) throw new Error(data.mode === "delivery" ? "La livraison n'est pas proposée par ce restaurant." : "La vente à emporter n'est pas proposée.");
-    if (!paymentEnabled(r, "on_site")) throw new Error("Ce mode de paiement n'est pas accepté.");
+    if (data.payment_method === "on_site" && !paymentEnabled(r, "on_site")) throw new Error("Ce mode de paiement n'est pas accepté.");
 
     const items = data.lines.map((l) => {
       const item = catalog.itemsById[l.itemId];
@@ -74,15 +76,25 @@ export const createOrder = createServerFn({ method: "POST" })
         delivery_fee: fee,
         total: Math.round((subtotal + fee) * 100) / 100,
         payment_method: data.payment_method,
-        status: r.config.autoAccept ? "accepted" : "new",
+        status: stripe ? "awaiting_payment" : r.config.autoAccept ? "accepted" : "new",
       })
-      .select("id, order_number")
+      .select("id, order_number, total")
       .single();
     if (error) {
       console.error(error);
       throw new Error("Impossible d'enregistrer la commande.");
     }
-    return row;
+    if (!stripe) return { id: row.id, order_number: row.order_number, clientSecret: null as string | null };
+    const pi = await stripeCall("/payment_intents", stripe.secret, {
+      amount: String(Math.round(Number(row.total) * 100)),
+      currency: "eur",
+      "automatic_payment_methods[enabled]": "true",
+      description: `${r.name} — commande n° ${row.order_number}`,
+      "metadata[order_id]": row.id,
+      ...(data.email ? { receipt_email: data.email } : {}),
+    }) as { id: string; client_secret: string };
+    await supabaseAdmin.from("orders").update({ payment_ref: pi.id }).eq("id", row.id);
+    return { id: row.id, order_number: row.order_number, clientSecret: pi.client_secret };
   });
 
 export const getOrderStatus = createServerFn({ method: "GET" })
@@ -91,7 +103,7 @@ export const getOrderStatus = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("orders")
-      .select("id, order_number, status, mode, slot, total, items, payment_method, customer_name, restaurants(slug)")
+      .select("id, order_number, status, mode, slot, total, items, payment_method, payment_status, customer_name, restaurants(slug)")
       .eq("id", data.id)
       .maybeSingle();
     return row;

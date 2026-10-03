@@ -57,7 +57,7 @@ export const listPaymentProviders = createServerFn({ method: "POST" })
       return {
         provider: p,
         enabled: r?.enabled ?? false,
-        credentials: Object.fromEntries(Object.entries(r?.credentials ?? {}).map(([k, v]) => [k, k === "merchantCode" ? v : mask(v)])),
+        credentials: Object.fromEntries(Object.entries(r?.credentials ?? {}).map(([k, v]) => [k, ["merchantCode", "publishableKey", "mode"].includes(k) ? v : mask(v)])),
         settings: r?.settings ?? {},
       };
     });
@@ -73,12 +73,21 @@ export const savePaymentProvider = createServerFn({ method: "POST" })
   }).parse(d))
   .handler(async ({ data, context }) => {
     await assertManager(context.supabase, context.userId, data.restaurantId);
-    if (data.provider !== "sumup" && data.enabled) throw new Error("Ce prestataire n'est pas encore disponible.");
+    if (!["sumup", "stripe"].includes(data.provider) && data.enabled) throw new Error("Ce prestataire n'est pas encore disponible.");
     const prev = await getRow(data.restaurantId, data.provider);
     const credentials = { ...(prev?.credentials ?? {}) };
     for (const [k, v] of Object.entries(data.credentials)) if (v) credentials[k] = v;
     if (data.enabled && data.provider === "sumup" && (!credentials["apiKey"] || !credentials["merchantCode"]))
       throw new Error("Renseignez la clé API et le code marchand SumUp.");
+    if (data.provider === "stripe") {
+      const pk = credentials["publishableKey"] ?? "", sk = credentials["secretKey"] ?? "";
+      if (data.enabled && (!pk || !sk)) throw new Error("Renseignez la clé publiable et la clé secrète Stripe.");
+      if (pk && !/^pk_(test|live)_/.test(pk)) throw new Error("La clé publiable doit commencer par pk_test_ ou pk_live_.");
+      if (sk && !/^(sk|rk)_(test|live)_/.test(sk)) throw new Error("La clé secrète doit commencer par sk_test_ ou sk_live_.");
+      const mode = data.credentials["mode"] || credentials["mode"] || "test";
+      credentials["mode"] = mode;
+      if (pk && sk && (!pk.includes(`_${mode}_`) || !sk.includes(`_${mode}_`))) throw new Error(`Les clés ne correspondent pas au mode ${mode === "live" ? "réel" : "test"}.`);
+    }
     const db = await admin();
     const { error } = await db.from("restaurant_payment_providers").upsert({
       restaurant_id: data.restaurantId, provider: data.provider, enabled: data.enabled, credentials, settings: prev?.settings ?? {},
@@ -199,4 +208,74 @@ export const cancelKioskPayment = createServerFn({ method: "POST" })
     if (s) { try { await sumup(`/v0.1/merchants/${s.merchant}/readers/${s.reader}/terminate`, s.apiKey, { method: "POST" }); } catch { /* déjà terminé */ } }
     await db.from("orders").update({ payment_status: "failed" }).eq("id", o.id);
     return { status: "failed" as const };
+  });
+
+// ───────────── Stripe (paiement en ligne sur le site) ─────────────
+const STRIPE = "https://api.stripe.com/v1";
+
+export async function stripeCall(path: string, secret: string, form?: Record<string, string>) {
+  const res = await fetch(`${STRIPE}${path}`, {
+    method: form ? "POST" : "GET",
+    headers: { Authorization: `Bearer ${secret}`, ...(form ? { "Content-Type": "application/x-www-form-urlencoded" } : {}) },
+    body: form ? new URLSearchParams(form).toString() : undefined,
+  });
+  const body = await res.json().catch(() => null) as { error?: { message?: string } } | null;
+  if (!res.ok) {
+    console.error("Stripe", path, res.status, body?.error?.message);
+    throw new Error(`Stripe : ${body?.error?.message ?? `erreur ${res.status}`}`);
+  }
+  return body as Record<string, unknown>;
+}
+
+export async function stripeForRestaurant(restaurantId: string) {
+  const r = await getRow(restaurantId, "stripe");
+  const c = r?.credentials ?? {};
+  if (!r?.enabled || !c["secretKey"] || !c["publishableKey"]) return null;
+  return { secret: c["secretKey"], publishable: c["publishableKey"] };
+}
+
+/** Vérifie les clés Stripe du restaurant. */
+export const testStripe = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ restaurantId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertManager(context.supabase, context.userId, data.restaurantId);
+    const r = await getRow(data.restaurantId, "stripe");
+    if (!r?.credentials["secretKey"]) throw new Error("Enregistrez d'abord la clé secrète.");
+    const acc = await stripeCall("/account", r.credentials["secretKey"]) as { id?: string; settings?: { dashboard?: { display_name?: string } }; charges_enabled?: boolean };
+    return { name: acc.settings?.dashboard?.display_name ?? acc.id ?? "", chargesEnabled: !!acc.charges_enabled, live: r.credentials["secretKey"].startsWith("sk_live_") };
+  });
+
+/** Indique au site si le paiement en ligne est disponible (renvoie seulement la clé publiable). */
+export const onlinePaymentInfo = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ slug: z.string().max(40) }).parse(d))
+  .handler(async ({ data }) => {
+    const db = await admin();
+    const { data: r } = await db.from("restaurants").select("id").eq("slug", data.slug).eq("active", true).maybeSingle();
+    if (!r) return { available: false, publishableKey: null as string | null };
+    const s = await stripeForRestaurant(r.id);
+    return { available: !!s, publishableKey: s?.publishable ?? null };
+  });
+
+/** Vérifie auprès de Stripe le paiement d'une commande en ligne et l'envoie en cuisine si payé. */
+export const confirmOnlinePayment = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    const db = await admin();
+    const { data: o } = await db.from("orders").select("id, restaurant_id, status, payment_method, payment_status, payment_ref").eq("id", data.orderId).maybeSingle();
+    if (!o || o.payment_method !== "online") throw new Error("Commande introuvable");
+    if (o.payment_status === "paid") return { status: "paid" as const };
+    if (!o.payment_ref) return { status: "failed" as const };
+    const s = await stripeForRestaurant(o.restaurant_id);
+    if (!s) return { status: "pending" as const };
+    const pi = await stripeCall(`/payment_intents/${encodeURIComponent(o.payment_ref)}`, s.secret) as { status?: string; metadata?: { order_id?: string } };
+    if (pi.metadata?.order_id !== o.id) throw new Error("Paiement non reconnu");
+    if (pi.status === "succeeded") {
+      const { data: r } = await db.from("restaurants").select("config").eq("id", o.restaurant_id).maybeSingle();
+      const next = (r?.config as { autoAccept?: boolean } | null)?.autoAccept ? "accepted" : "new";
+      await db.from("orders").update({ payment_status: "paid", status: o.status === "awaiting_payment" ? next : o.status, updated_at: new Date().toISOString() }).eq("id", o.id);
+      return { status: "paid" as const };
+    }
+    if (pi.status === "canceled" || pi.status === "requires_payment_method") return { status: pi.status === "canceled" ? "failed" as const : "retry" as const };
+    return { status: "pending" as const };
   });
