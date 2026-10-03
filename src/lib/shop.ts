@@ -1,44 +1,29 @@
-// Règles du restaurant : horaires, créneaux, livraison
-export const RESTAURANT = {
-  name: "Wok & Sushi",
-  city: "Colomiers",
-  phone: "05 00 00 00 00",
+// Règles d'un restaurant : horaires, créneaux, livraison (config stockée par restaurant)
+export type Zone = { cp: string; city: string };
+export type DeliveryConfig = { minOrder: number; fee: number; freeFrom: number; zones: Zone[] };
+export type Restaurant = {
+  id: string;
+  slug: string;
+  name: string;
+  city: string | null;
+  address: string | null;
+  phone: string | null;
+  menu_key: string;
+  /** 0 = dimanche. Plages en minutes depuis minuit (heure de Paris) */
+  opening: Record<string, [number, number][]>;
+  delivery: DeliveryConfig;
+  config: { slotMinutes?: number; lead?: { pickup: number; delivery: number }; hoursLabel?: string; tagline?: string };
 };
 
-// 0 = dimanche. Plages en minutes depuis minuit (heure de Paris)
-export const OPENING: Record<number, [number, number][]> = {
-  0: [[18 * 60, 22 * 60 + 30]],
-  1: [[11 * 60 + 30, 14 * 60 + 30], [18 * 60, 22 * 60 + 30]],
-  2: [[11 * 60 + 30, 14 * 60 + 30], [18 * 60, 22 * 60 + 30]],
-  3: [[11 * 60 + 30, 14 * 60 + 30], [18 * 60, 22 * 60 + 30]],
-  4: [[11 * 60 + 30, 14 * 60 + 30], [18 * 60, 22 * 60 + 30]],
-  5: [[11 * 60 + 30, 14 * 60 + 30], [18 * 60, 23 * 60]],
-  6: [[11 * 60 + 30, 14 * 60 + 30], [18 * 60, 23 * 60]],
-};
-export const SLOT_MINUTES = 20;
-export const LEAD = { pickup: 20, delivery: 40 }; // délai mini avant 1er créneau
+export const RESTAURANT_COLUMNS = "id, slug, name, city, address, phone, menu_key, opening, delivery, config";
 
-export const DELIVERY = {
-  minOrder: 20,
-  fee: 2.5,
-  freeFrom: 40,
-  zones: [
-    { cp: "31770", city: "Colomiers" },
-    { cp: "31820", city: "Pibrac" },
-    { cp: "31700", city: "Cornebarrieu / Blagnac" },
-    { cp: "31170", city: "Tournefeuille" },
-    { cp: "31490", city: "Léguevin / Brax" },
-    { cp: "31300", city: "Toulouse Purpan / Saint-Martin" },
-  ],
-};
-
-export function deliveryFee(subtotal: number) {
-  return subtotal >= DELIVERY.freeFrom ? 0 : DELIVERY.fee;
+export function deliveryFee(r: Restaurant, subtotal: number) {
+  return subtotal >= r.delivery.freeFrom ? 0 : r.delivery.fee;
 }
 
 const TZ = "Europe/Paris";
 function parisParts(d: Date) {
-  const f = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, weekday: "short", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
+  const f = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, weekday: "short", hour: "2-digit", minute: "2-digit", hour12: false });
   const p: Record<string, string> = Object.fromEntries(f.formatToParts(d).map((x) => [x.type, x.value]));
   const g = (k: string) => p[k] ?? "0";
   const wd = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(g("weekday"));
@@ -46,21 +31,23 @@ function parisParts(d: Date) {
 }
 
 /** Créneaux disponibles aujourd'hui (ISO strings) */
-export function availableSlots(mode: "pickup" | "delivery", now = new Date()): string[] {
+export function availableSlots(r: Restaurant, mode: "pickup" | "delivery", now = new Date()): string[] {
+  const step = r.config.slotMinutes ?? 20;
+  const lead = r.config.lead ?? { pickup: 20, delivery: 40 };
   const { wd, minutes } = parisParts(now);
-  const earliest = minutes + LEAD[mode];
+  const earliest = minutes + lead[mode];
   const out: string[] = [];
-  for (const [start, end] of OPENING[wd] ?? []) {
-    for (let m = start + (mode === "delivery" ? 20 : 0); m <= end; m += SLOT_MINUTES) {
+  for (const [start, end] of r.opening[String(wd)] ?? []) {
+    for (let m = start + (mode === "delivery" ? step : 0); m <= end; m += step) {
       if (m >= earliest) out.push(new Date(now.getTime() + (m - minutes) * 60000).toISOString().slice(0, 16) + ":00.000Z");
     }
   }
   return out;
 }
 
-export function isValidSlot(mode: "pickup" | "delivery", iso: string) {
+export function isValidSlot(r: Restaurant, mode: "pickup" | "delivery", iso: string) {
   const t = new Date(iso).getTime();
-  return availableSlots(mode).some((s) => Math.abs(new Date(s).getTime() - t) < 60000);
+  return availableSlots(r, mode).some((s) => Math.abs(new Date(s).getTime() - t) < 60000);
 }
 
 export const fmtTime = (iso: string) =>
