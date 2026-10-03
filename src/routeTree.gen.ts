@@ -10,53 +10,33 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ConnexionRouteImport } from './routes/connexion'
-import { Route as CuisineIndexRouteImport } from './routes/cuisine.index'
-import { Route as CuisineEquipeRouteImport } from './routes/cuisine.equipe'
 
 const ConnexionRoute = ConnexionRouteImport.update({
   id: '/connexion',
   path: '/connexion',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CuisineIndexRoute = CuisineIndexRouteImport.update({
-  id: '/cuisine/',
-  path: '/cuisine/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CuisineEquipeRoute = CuisineEquipeRouteImport.update({
-  id: '/cuisine/equipe',
-  path: '/cuisine/equipe',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/connexion': typeof ConnexionRoute
-  '/cuisine/equipe': typeof CuisineEquipeRoute
-  '/cuisine/': typeof CuisineIndexRoute
 }
 export interface FileRoutesByTo {
   '/connexion': typeof ConnexionRoute
-  '/cuisine/equipe': typeof CuisineEquipeRoute
-  '/cuisine': typeof CuisineIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/connexion': typeof ConnexionRoute
-  '/cuisine/equipe': typeof CuisineEquipeRoute
-  '/cuisine/': typeof CuisineIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/connexion' | '/cuisine/equipe' | '/cuisine/'
+  fullPaths: '/connexion'
   fileRoutesByTo: FileRoutesByTo
-  to: '/connexion' | '/cuisine/equipe' | '/cuisine'
-  id: '__root__' | '/connexion' | '/cuisine/equipe' | '/cuisine/'
+  to: '/connexion'
+  id: '__root__' | '/connexion'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   ConnexionRoute: typeof ConnexionRoute
-  CuisineEquipeRoute: typeof CuisineEquipeRoute
-  CuisineIndexRoute: typeof CuisineIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -68,27 +48,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConnexionRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/cuisine/': {
-      id: '/cuisine/'
-      path: '/cuisine'
-      fullPath: '/cuisine/'
-      preLoaderRoute: typeof CuisineIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/cuisine/equipe': {
-      id: '/cuisine/equipe'
-      path: '/cuisine/equipe'
-      fullPath: '/cuisine/equipe'
-      preLoaderRoute: typeof CuisineEquipeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   ConnexionRoute: ConnexionRoute,
-  CuisineEquipeRoute: CuisineEquipeRoute,
-  CuisineIndexRoute: CuisineIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
