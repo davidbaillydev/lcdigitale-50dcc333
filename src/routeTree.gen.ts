@@ -23,6 +23,7 @@ import { Route as CuisineEquipeRouteImport } from './routes/cuisine.equipe'
 import { Route as SuiviIdRouteImport } from './routes/suivi.$id'
 import { Route as SlugSuiviIdRouteImport } from './routes/$slug.suivi.$id'
 import { Route as CuisineSlugIndexRouteImport } from './routes/cuisine.$slug.index'
+import { Route as CuisineSlugCarteRouteImport } from './routes/cuisine.$slug.carte'
 import { Route as CuisineSlugEquipeRouteImport } from './routes/cuisine.$slug.equipe'
 
 const IndexRoute = IndexRouteImport.update({
@@ -95,6 +96,11 @@ const CuisineSlugIndexRoute = CuisineSlugIndexRouteImport.update({
   path: '/cuisine/$slug/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CuisineSlugCarteRoute = CuisineSlugCarteRouteImport.update({
+  id: '/cuisine/$slug/carte',
+  path: '/cuisine/$slug/carte',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CuisineSlugEquipeRoute = CuisineSlugEquipeRouteImport.update({
   id: '/cuisine/$slug/equipe',
   path: '/cuisine/$slug/equipe',
@@ -115,6 +121,7 @@ export interface FileRoutesByFullPath {
   '/$slug/': typeof SlugIndexRoute
   '/cuisine/': typeof CuisineIndexRoute
   '/$slug/suivi/$id': typeof SlugSuiviIdRoute
+  '/cuisine/$slug/carte': typeof CuisineSlugCarteRoute
   '/cuisine/$slug/equipe': typeof CuisineSlugEquipeRoute
   '/cuisine/$slug/': typeof CuisineSlugIndexRoute
 }
@@ -131,6 +138,7 @@ export interface FileRoutesByTo {
   '/$slug': typeof SlugIndexRoute
   '/cuisine': typeof CuisineIndexRoute
   '/$slug/suivi/$id': typeof SlugSuiviIdRoute
+  '/cuisine/$slug/carte': typeof CuisineSlugCarteRoute
   '/cuisine/$slug/equipe': typeof CuisineSlugEquipeRoute
   '/cuisine/$slug': typeof CuisineSlugIndexRoute
 }
@@ -149,6 +157,7 @@ export interface FileRoutesById {
   '/$slug/': typeof SlugIndexRoute
   '/cuisine/': typeof CuisineIndexRoute
   '/$slug/suivi/$id': typeof SlugSuiviIdRoute
+  '/cuisine/$slug/carte': typeof CuisineSlugCarteRoute
   '/cuisine/$slug/equipe': typeof CuisineSlugEquipeRoute
   '/cuisine/$slug/': typeof CuisineSlugIndexRoute
 }
@@ -168,6 +177,7 @@ export interface FileRouteTypes {
     | '/$slug/'
     | '/cuisine/'
     | '/$slug/suivi/$id'
+    | '/cuisine/$slug/carte'
     | '/cuisine/$slug/equipe'
     | '/cuisine/$slug/'
   fileRoutesByTo: FileRoutesByTo
@@ -184,6 +194,7 @@ export interface FileRouteTypes {
     | '/$slug'
     | '/cuisine'
     | '/$slug/suivi/$id'
+    | '/cuisine/$slug/carte'
     | '/cuisine/$slug/equipe'
     | '/cuisine/$slug'
   id:
@@ -201,6 +212,7 @@ export interface FileRouteTypes {
     | '/$slug/'
     | '/cuisine/'
     | '/$slug/suivi/$id'
+    | '/cuisine/$slug/carte'
     | '/cuisine/$slug/equipe'
     | '/cuisine/$slug/'
   fileRoutesById: FileRoutesById
@@ -214,6 +226,7 @@ export interface RootRouteChildren {
   CuisineEquipeRoute: typeof CuisineEquipeRoute
   SuiviIdRoute: typeof SuiviIdRoute
   CuisineIndexRoute: typeof CuisineIndexRoute
+  CuisineSlugCarteRoute: typeof CuisineSlugCarteRoute
   CuisineSlugEquipeRoute: typeof CuisineSlugEquipeRoute
   CuisineSlugIndexRoute: typeof CuisineSlugIndexRoute
 }
@@ -318,6 +331,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CuisineSlugIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cuisine/$slug/carte': {
+      id: '/cuisine/$slug/carte'
+      path: '/cuisine/$slug/carte'
+      fullPath: '/cuisine/$slug/carte'
+      preLoaderRoute: typeof CuisineSlugCarteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/cuisine/$slug/equipe': {
       id: '/cuisine/$slug/equipe'
       path: '/cuisine/$slug/equipe'
@@ -355,6 +375,7 @@ const rootRouteChildren: RootRouteChildren = {
   CuisineEquipeRoute: CuisineEquipeRoute,
   SuiviIdRoute: SuiviIdRoute,
   CuisineIndexRoute: CuisineIndexRoute,
+  CuisineSlugCarteRoute: CuisineSlugCarteRoute,
   CuisineSlugEquipeRoute: CuisineSlugEquipeRoute,
   CuisineSlugIndexRoute: CuisineSlugIndexRoute,
 }

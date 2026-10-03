@@ -18,6 +18,7 @@ export type MenuItem = {
   tag?: string;
   options?: OptionGroup[];
   builder?: boolean; // configurateur étape par étape
+  hidden?: boolean; // masqué (rupture / indisponible)
 };
 export type Category = { id: string; label: string; note?: string; items: MenuItem[] };
 

@@ -18,7 +18,7 @@ const CartCtx = createContext<Ctx | null>(null);
 
 /** Panier propre à chaque restaurant (stocké séparément sur l'appareil) */
 export function CartProvider({ restaurant, children }: { restaurant: Restaurant; children: ReactNode }) {
-  const catalog = useMemo(() => getCatalog(restaurant.menu_key), [restaurant.menu_key]);
+  const catalog = useMemo(() => getCatalog(restaurant), [restaurant]);
   const KEY = `cart-v2-${restaurant.slug}`;
   const [lines, setLines] = useState<CartLine[]>([]);
   const [ready, setReady] = useState(false);

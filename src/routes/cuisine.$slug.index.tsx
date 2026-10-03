@@ -122,6 +122,7 @@ function Kitchen() {
         <Button variant={sound ? "secondary" : "default"} onClick={sound ? () => setSound(false) : enableSound} className={cn(!sound && "animate-pulse")}>
           {sound ? <Bell /> : <BellOff />} {sound ? "Son activé" : "Activer le son"}
         </Button>
+        {isAdmin && <Button asChild variant="secondary"><Link to="/cuisine/$slug/carte" params={{ slug }}>Carte</Link></Button>}
         {isAdmin && <Button asChild variant="secondary"><Link to="/cuisine/$slug/equipe" params={{ slug }}><Users /> Équipe</Link></Button>}
         <Button variant="ghost" size="icon" onClick={() => supabase.auth.signOut()} aria-label="Déconnexion"><LogOut /></Button>
       </header>

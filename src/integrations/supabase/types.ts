@@ -141,6 +141,7 @@ export type Database = {
           email: string | null
           id: string
           logo_url: string | null
+          menu: Json | null
           menu_key: string
           name: string
           opening: Json
@@ -159,6 +160,7 @@ export type Database = {
           email?: string | null
           id?: string
           logo_url?: string | null
+          menu?: Json | null
           menu_key: string
           name: string
           opening?: Json
@@ -177,6 +179,7 @@ export type Database = {
           email?: string | null
           id?: string
           logo_url?: string | null
+          menu?: Json | null
           menu_key?: string
           name?: string
           opening?: Json
