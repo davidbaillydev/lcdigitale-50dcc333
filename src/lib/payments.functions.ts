@@ -26,6 +26,8 @@ async function getRow(restaurantId: string, provider: Provider): Promise<Row | n
   return data as Row | null;
 }
 const mask = (v?: string) => (v ? `••••${v.slice(-4)}` : "");
+// Champs non secrets, réaffichés en clair dans les réglages
+const PUBLIC_FIELDS = ["merchantCode", "publishableKey", "mode", "siteId", "gateway"];
 
 async function sumup(path: string, apiKey: string, init?: RequestInit) {
   const res = await fetch(`${SUMUP}${path}`, {
