@@ -23,7 +23,7 @@ export const settingsSchema = z.object({
     printing: z.object({
       width: z.union([z.literal(58), z.literal(80)]), auto: z.boolean(),
       kitchen: z.object({ options: z.boolean(), notes: z.boolean(), customer: z.boolean(), contact: z.boolean(), prices: z.boolean() }),
-    }).optional(),
+    }),
   }),
 });
 export type Settings = z.infer<typeof settingsSchema>;
