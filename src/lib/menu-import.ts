@@ -41,7 +41,6 @@ export async function readMenuFile(file: File): Promise<ImportPage[]> {
       await page.render({ canvas, canvasContext: ctx, viewport }).promise;
       pages.push({ type: "image", content: canvas.toDataURL("image/jpeg", 0.8) });
     }
-    await doc.destroy();
     return pages;
   }
   if (file.type === "text/plain" || file.type === "text/csv" || ["txt", "csv"].includes(ext ?? "")) {

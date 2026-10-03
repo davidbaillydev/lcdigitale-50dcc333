@@ -81,6 +81,9 @@ function Kiosk() {
   return (
     <div className="fixed inset-0 z-50 flex select-none flex-col overflow-hidden bg-background text-foreground touch-manipulation">
       {step === "welcome" && (
+        <div className="absolute right-5 top-5 z-[60]"><ThemeToggle className="h-14 w-14" /></div>
+      )}
+      {step === "welcome" && (
         <div role="button" tabIndex={0} className="relative flex flex-1 cursor-pointer flex-col items-center justify-center gap-10 overflow-hidden p-10 text-center" onClick={() => setStep("menu")}>
           <img src={welcomeFood} alt="" width={1024} height={768} className="absolute inset-0 h-full w-full object-cover opacity-30" />
           <div className="absolute inset-0 bg-background/75" />
