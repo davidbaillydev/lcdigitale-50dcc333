@@ -30,6 +30,7 @@ export const Route = createFileRoute("/$slug")({
 
 function Layout() {
   const { restaurant } = Route.useLoaderData();
+  if (!restaurant) return null;
   return (
     <CartProvider restaurant={restaurant}>
       <Outlet />
