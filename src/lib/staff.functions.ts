@@ -8,25 +8,43 @@ async function assertManager(supabase: any, userId: string, restaurantId: string
   if (!data) throw new Error("Réservé au gérant ou à l'agence");
 }
 
-/** Membres du restaurant + comptes en attente (sans aucun rattachement) */
+/** Membres de CE restaurant uniquement (aucun autre compte n'est exposé) */
 export const listStaff = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ restaurantId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertManager(context.supabase, context.userId, data.restaurantId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const [{ data: members }, { data: allMembers }, { data: agency }, { data: users }] = await Promise.all([
-      supabaseAdmin.from("restaurant_members").select("user_id, role").eq("restaurant_id", data.restaurantId),
-      supabaseAdmin.from("restaurant_members").select("user_id"),
-      supabaseAdmin.from("user_roles").select("user_id").eq("role", "admin"),
-      supabaseAdmin.auth.admin.listUsers({ perPage: 500 }),
-    ]);
-    const assigned = new Set((allMembers ?? []).map((m) => m.user_id));
-    const agencyIds = new Set((agency ?? []).map((a) => a.user_id));
-    return (users?.users ?? [])
-      .filter((u) => !agencyIds.has(u.id))
-      .map((u) => ({ id: u.id, email: u.email ?? "", roles: (members ?? []).filter((m) => m.user_id === u.id).map((m) => m.role) }))
-      .filter((u) => u.roles.length > 0 || !assigned.has(u.id));
+    const { data: members } = await supabaseAdmin.from("restaurant_members").select("user_id, role").eq("restaurant_id", data.restaurantId);
+    const ids = [...new Set((members ?? []).map((m) => m.user_id))];
+    const users = await Promise.all(ids.map((id) => supabaseAdmin.auth.admin.getUserById(id).then((r) => r.data.user)));
+    return ids.map((id, i) => ({ id, email: users[i]?.email ?? "", roles: (members ?? []).filter((m) => m.user_id === id).map((m) => m.role) }));
+  });
+
+/** Invite un restaurateur par email (crée le compte si besoin) et le rattache à ce restaurant. */
+export const inviteMember = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ restaurantId: z.string().uuid(), email: z.string().trim().toLowerCase().email().max(255), role: z.enum(["kitchen", "manager"]), origin: z.string().url().max(200) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertManager(context.supabase, context.userId, data.restaurantId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let userId: string | undefined;
+    let invited = false;
+    const { data: inv, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(data.email, { redirectTo: `${data.origin}/reset-password` });
+    if (inv?.user) { userId = inv.user.id; invited = true; }
+    else {
+      const { data: list } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+      userId = list?.users.find((u) => u.email?.toLowerCase() === data.email)?.id;
+      if (!userId) throw new Error(error?.message ?? "Invitation impossible");
+    }
+    const { error: e2 } = await supabaseAdmin.from("restaurant_members").upsert(
+      { restaurant_id: data.restaurantId, user_id: userId, role: data.role },
+      { onConflict: "restaurant_id,user_id,role" },
+    );
+    if (e2) throw new Error(e2.message);
+    return { invited };
   });
 
 export const setStaffRole = createServerFn({ method: "POST" })
