@@ -7,6 +7,7 @@ import { useCart } from "@/lib/cart";
 import { createKioskOrder } from "@/lib/orders.functions";
 import { euro, groupCost, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
 import { itemImage, menuImage } from "@/lib/menu-images";
+import welcomeFood from "@/assets/food-plateau.jpg";
 
 export const Route = createFileRoute("/$slug/borne")({
   head: () => ({
@@ -78,11 +79,13 @@ function Kiosk() {
   return (
     <div className="fixed inset-0 z-50 flex select-none flex-col overflow-hidden bg-background text-foreground touch-manipulation">
       {step === "welcome" && (
-        <div role="button" tabIndex={0} className="flex flex-1 cursor-pointer flex-col items-center justify-center gap-10 p-10 text-center" onClick={() => setStep("menu")}>
-          <p className="font-display text-8xl text-primary">{restaurant.name}</p>
-          <p className="text-3xl text-muted-foreground">Bienvenue !</p>
-          <span className="animate-pulse rounded-full bg-primary px-14 py-8 font-display text-5xl text-primary-foreground">Touchez pour commander</span>
-          <div className="mt-6 grid w-full max-w-3xl grid-cols-2 gap-6" onClick={(e) => e.stopPropagation()}>
+        <div role="button" tabIndex={0} className="relative flex flex-1 cursor-pointer flex-col items-center justify-center gap-10 overflow-hidden p-10 text-center" onClick={() => setStep("menu")}>
+          <img src={welcomeFood} alt="" width={1024} height={768} className="absolute inset-0 h-full w-full object-cover opacity-30" />
+          <div className="absolute inset-0 bg-background/50" />
+          <p className="relative font-display text-8xl text-primary">{restaurant.name}</p>
+          <p className="relative text-3xl text-foreground">Bienvenue !</p>
+          <span className="relative animate-pulse rounded-full bg-primary px-14 py-8 font-display text-5xl text-primary-foreground">Touchez pour commander</span>
+          <div className="relative mt-6 grid w-full max-w-3xl grid-cols-2 gap-6" onClick={(e) => e.stopPropagation()}>
             {([["dine_in", "Sur place", UtensilsCrossed], ["pickup", "À emporter", ShoppingBag]] as const).map(([m, label, Icon]) => (
               <button key={m} onClick={() => { setMode(m); setStep("menu"); }}
                 className="flex flex-col items-center gap-4 rounded-2xl border-2 border-border bg-card p-10 active:border-primary active:bg-primary/15">
