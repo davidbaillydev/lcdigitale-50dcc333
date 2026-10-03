@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Bike, ShoppingBag, CreditCard, Store } from "lucide-react";
+import { Bike, ShoppingBag, CreditCard, Store, Wallet, Landmark } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { CartLines } from "@/components/CartSheet";
 import { Button } from "@/components/ui/button";
@@ -39,15 +39,18 @@ function Checkout() {
   const [slots, setSlots] = useState<string[]>([]);
   const [slot, setSlot] = useState("");
   const [f, setF] = useState({ customer_name: "", phone: "", email: "", address: "", postal_code: "", notes: "" });
-  const [pay, setPay] = useState<"on_site" | "online">("on_site");
+  const [pay, setPay] = useState<"on_site" | "stripe" | "paypal" | "lyra">("on_site");
   const [busy, setBusy] = useState(false);
   const infoFn = useServerFn(onlinePaymentInfo);
-  const [online, setOnline] = useState<{ available: boolean; publishableKey: string | null }>({ available: false, publishableKey: null });
+  const [online, setOnline] = useState<{ stripe: string | null; paypal: boolean; lyra: boolean }>({ stripe: null, paypal: false, lyra: false });
   const [payment, setPayment] = useState<{ id: string; clientSecret: string } | null>(null);
   const onSiteOk = restaurant.config.payments?.on_site !== false;
 
   useEffect(() => {
-    infoFn({ data: { slug: restaurant.slug } }).then((r) => { setOnline(r); if (r.available && !onSiteOk) setPay("online"); }).catch(() => {});
+    infoFn({ data: { slug: restaurant.slug } }).then((r) => {
+      setOnline(r);
+      if (!onSiteOk) setPay(r.stripe ? "stripe" : r.paypal ? "paypal" : r.lyra ? "lyra" : "on_site");
+    }).catch(() => {});
   }, [restaurant.slug, infoFn, onSiteOk]);
 
   useEffect(() => {
@@ -69,19 +72,44 @@ function Checkout() {
 
   const submit = async () => {
     setBusy(true);
+    let leaving = false;
     try {
       const res = await submitFn({
-        data: { ...f, restaurant: restaurant.slug, mode, slot, payment_method: pay, lines: lines.map((l) => ({ itemId: l.itemId, qty: l.qty, sel: l.sel })) },
+        data: {
+          ...f, restaurant: restaurant.slug, mode, slot,
+          payment_method: pay === "on_site" ? "on_site" : "online",
+          ...(pay !== "on_site" ? { provider: pay, origin: window.location.origin } : {}),
+          lines: lines.map((l) => ({ itemId: l.itemId, qty: l.qty, sel: l.sel })),
+        },
       });
       if (res.clientSecret) { setPayment({ id: res.id, clientSecret: res.clientSecret }); return; }
+      if (res.redirectUrl) { leaving = true; window.location.assign(res.redirectUrl); return; }
+      if (res.form) {
+        // Formulaire signé envoyé à la page de paiement sécurisée Lyra / PayZen
+        leaving = true;
+        const form = document.createElement("form");
+        form.method = "POST"; form.action = res.form.action;
+        for (const [k, v] of Object.entries(res.form.fields)) {
+          const i = document.createElement("input"); i.type = "hidden"; i.name = k; i.value = v; form.appendChild(i);
+        }
+        document.body.appendChild(form); form.submit();
+        return;
+      }
       clear();
       navigate({ to: "/$slug/suivi/$id", params: { slug: restaurant.slug, id: res.id } });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erreur lors de la commande");
     } finally {
-      setBusy(false);
+      if (!leaving) setBusy(false);
     }
   };
+
+  const options = [
+    ...(onSiteOk ? [{ v: "on_site" as const, Icon: Store, t: mode === "delivery" ? "À la livraison" : "Au retrait", s: "Espèces, CB ou tickets resto", ok: true }] : []),
+    { v: "stripe" as const, Icon: CreditCard, t: "Carte bancaire", s: online.stripe ? "Carte, Apple Pay, Google Pay" : "Non proposé par ce restaurant", ok: !!online.stripe },
+    ...(online.paypal ? [{ v: "paypal" as const, Icon: Wallet, t: "PayPal", s: "Compte PayPal ou carte via PayPal", ok: true }] : []),
+    ...(online.lyra ? [{ v: "lyra" as const, Icon: Landmark, t: "Carte bancaire (banque)", s: "Page de paiement sécurisée Lyra / PayZen", ok: true }] : []),
+  ].filter((o) => o.ok || (!online.paypal && !online.lyra));
 
   if (!lines.length)
     return (
