@@ -32,6 +32,7 @@ import { Route as AuthenticatedEspaceSlugIndexRouteImport } from './routes/_auth
 import { Route as AuthenticatedEspaceSlugCarteRouteImport } from './routes/_authenticated/espace.$slug.carte'
 import { Route as AuthenticatedEspaceSlugEquipeRouteImport } from './routes/_authenticated/espace.$slug.equipe'
 import { Route as AuthenticatedEspaceSlugReglagesRouteImport } from './routes/_authenticated/espace.$slug.reglages'
+import { Route as ApiPublicRestaurantBannerIdRouteImport } from './routes/api/public/restaurant-banner/$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -152,6 +153,12 @@ const AuthenticatedEspaceSlugReglagesRoute =
     path: '/espace/$slug/reglages',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicRestaurantBannerIdRoute =
+  ApiPublicRestaurantBannerIdRouteImport.update({
+    id: '/api/public/restaurant-banner/$id',
+    path: '/api/public/restaurant-banner/$id',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -175,6 +182,7 @@ export interface FileRoutesByFullPath {
   '/espace/$slug/carte': typeof AuthenticatedEspaceSlugCarteRoute
   '/espace/$slug/equipe': typeof AuthenticatedEspaceSlugEquipeRoute
   '/espace/$slug/reglages': typeof AuthenticatedEspaceSlugReglagesRoute
+  '/api/public/restaurant-banner/$id': typeof ApiPublicRestaurantBannerIdRoute
   '/espace/$slug/': typeof AuthenticatedEspaceSlugIndexRoute
 }
 export interface FileRoutesByTo {
@@ -197,6 +205,7 @@ export interface FileRoutesByTo {
   '/espace/$slug/carte': typeof AuthenticatedEspaceSlugCarteRoute
   '/espace/$slug/equipe': typeof AuthenticatedEspaceSlugEquipeRoute
   '/espace/$slug/reglages': typeof AuthenticatedEspaceSlugReglagesRoute
+  '/api/public/restaurant-banner/$id': typeof ApiPublicRestaurantBannerIdRoute
   '/espace/$slug': typeof AuthenticatedEspaceSlugIndexRoute
 }
 export interface FileRoutesById {
@@ -223,6 +232,7 @@ export interface FileRoutesById {
   '/_authenticated/espace/$slug/carte': typeof AuthenticatedEspaceSlugCarteRoute
   '/_authenticated/espace/$slug/equipe': typeof AuthenticatedEspaceSlugEquipeRoute
   '/_authenticated/espace/$slug/reglages': typeof AuthenticatedEspaceSlugReglagesRoute
+  '/api/public/restaurant-banner/$id': typeof ApiPublicRestaurantBannerIdRoute
   '/_authenticated/espace/$slug/': typeof AuthenticatedEspaceSlugIndexRoute
 }
 export interface FileRouteTypes {
@@ -249,6 +259,7 @@ export interface FileRouteTypes {
     | '/espace/$slug/carte'
     | '/espace/$slug/equipe'
     | '/espace/$slug/reglages'
+    | '/api/public/restaurant-banner/$id'
     | '/espace/$slug/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -271,6 +282,7 @@ export interface FileRouteTypes {
     | '/espace/$slug/carte'
     | '/espace/$slug/equipe'
     | '/espace/$slug/reglages'
+    | '/api/public/restaurant-banner/$id'
     | '/espace/$slug'
   id:
     | '__root__'
@@ -296,6 +308,7 @@ export interface FileRouteTypes {
     | '/_authenticated/espace/$slug/carte'
     | '/_authenticated/espace/$slug/equipe'
     | '/_authenticated/espace/$slug/reglages'
+    | '/api/public/restaurant-banner/$id'
     | '/_authenticated/espace/$slug/'
   fileRoutesById: FileRoutesById
 }
@@ -310,6 +323,7 @@ export interface RootRouteChildren {
   CuisineSplatRoute: typeof CuisineSplatRoute
   SuiviIdRoute: typeof SuiviIdRoute
   CuisineIndexRoute: typeof CuisineIndexRoute
+  ApiPublicRestaurantBannerIdRoute: typeof ApiPublicRestaurantBannerIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -475,6 +489,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEspaceSlugReglagesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/restaurant-banner/$id': {
+      id: '/api/public/restaurant-banner/$id'
+      path: '/api/public/restaurant-banner/$id'
+      fullPath: '/api/public/restaurant-banner/$id'
+      preLoaderRoute: typeof ApiPublicRestaurantBannerIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -541,6 +562,7 @@ const rootRouteChildren: RootRouteChildren = {
   CuisineSplatRoute: CuisineSplatRoute,
   SuiviIdRoute: SuiviIdRoute,
   CuisineIndexRoute: CuisineIndexRoute,
+  ApiPublicRestaurantBannerIdRoute: ApiPublicRestaurantBannerIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Clock, MapPin, Bike, ShoppingBag, Phone } from "lucide-react";
-import hero from "@/assets/hero.jpg";
+import { RestaurantBanner } from "@/components/RestaurantBanner";
+import { getRestaurant } from "@/lib/restaurants.functions";
 import { euro, type MenuItem } from "@/lib/menu";
 import { ItemDialog } from "@/components/ItemDialog";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -10,11 +11,12 @@ import { Button } from "@/components/ui/button";
 import { menuImage } from "@/lib/menu-images";
 
 export const Route = createFileRoute("/$slug/")({
-  head: () => ({ meta: [
-    { title: "Carte & commande | Wok & Sushi Colomiers" },
-    { name: "description", content: "Commandez woks, sushis, pokés et spécialités japonaises à emporter ou en livraison à Colomiers." },
-    { property: "og:title", content: "Carte & commande | Wok & Sushi Colomiers" },
-    { property: "og:description", content: "Découvrez la carte Wok & Sushi à Colomiers et commandez en ligne." },
+  loader: ({ params }) => getRestaurant({ data: { slug: params.slug } }),
+  head: ({ loaderData: r }) => ({ meta: [
+    { title: `Carte & commande | ${r?.name ?? "LC Digitale"}` },
+    { name: "description", content: `Découvrez la carte de ${r?.name ?? "votre restaurant"} et commandez en ligne.` },
+    { property: "og:title", content: `Carte & commande | ${r?.name ?? "LC Digitale"}` },
+    { property: "og:description", content: `Commandez chez ${r?.name ?? "votre restaurant"}, à emporter ou en livraison.` },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },
   ] }),
@@ -30,11 +32,12 @@ function MenuPage() {
     <div className="min-h-screen pb-24">
       <SiteHeader />
       <section className="relative overflow-hidden">
-        <img src={hero} alt={`Spécialités de ${restaurant.name}`} width={1600} height={912} className="absolute inset-0 h-full w-full object-cover object-right opacity-70" />
+        <RestaurantBanner restaurant={restaurant} />
         <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent" />
         <div className="relative mx-auto max-w-6xl px-4 py-16 sm:py-24">
           <p className="mb-2 inline-block -rotate-1 brush px-4 py-1 font-display text-xl">{restaurant.city}</p>
-          <h1 className="max-w-xl text-6xl leading-none sm:text-8xl">{restaurant.config.tagline ?? restaurant.name}</h1>
+          <h1 className="max-w-xl break-words text-6xl leading-none sm:text-8xl">{restaurant.name}</h1>
+          {restaurant.config.tagline && <p className="mt-3 max-w-md">{restaurant.config.tagline}</p>}
           <p className="mt-4 max-w-md text-muted-foreground">Commandez en ligne, récupérez sur place ou faites-vous livrer.</p>
           <div className="mt-6 flex flex-wrap gap-3 text-sm">
             <span className="flex items-center gap-2 rounded-full bg-card px-3 py-1.5"><ShoppingBag className="h-4 w-4 text-primary" /> À emporter dès {restaurant.config.lead?.pickup ?? 20} min</span>
