@@ -198,12 +198,12 @@ function Kiosk() {
               <Banknote className="h-20 w-20 text-primary" />
               <span className="font-display text-4xl">Payer au comptoir</span>
               <span className="text-lg text-muted-foreground">Espèces · Tickets resto</span>
-            </button>
+            </button>}
             {restaurant.config.payments?.card_terminal !== false && <button disabled={busy} onClick={() => pay("card_terminal")} className="flex flex-col items-center gap-4 rounded-2xl border-2 border-border bg-card p-10 active:border-primary disabled:opacity-50">
               <CreditCard className="h-20 w-20 text-primary" />
               <span className="font-display text-4xl">Carte bancaire</span>
               <span className="text-lg text-muted-foreground">Sur le terminal au comptoir</span>
-            </button>
+            </button>}
           </div>
           {error && <p className="text-2xl text-destructive">{error}</p>}
           <button onClick={() => setStep("cart")} className="rounded-xl bg-muted px-8 py-5 text-xl font-semibold">Retour au panier</button>
