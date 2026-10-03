@@ -11,11 +11,13 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SlugRouteImport } from './routes/$slug'
+import { Route as AgenceRouteImport } from './routes/agence'
 import { Route as CommandeRouteImport } from './routes/commande'
 import { Route as ConnexionRouteImport } from './routes/connexion'
 import { Route as SlugIndexRouteImport } from './routes/$slug.index'
 import { Route as SlugBorneRouteImport } from './routes/$slug.borne'
 import { Route as SlugCommandeRouteImport } from './routes/$slug.commande'
+import { Route as SlugCuisineRouteImport } from './routes/$slug.cuisine'
 import { Route as CuisineIndexRouteImport } from './routes/cuisine.index'
 import { Route as CuisineEquipeRouteImport } from './routes/cuisine.equipe'
 import { Route as SuiviIdRouteImport } from './routes/suivi.$id'
@@ -31,6 +33,11 @@ const IndexRoute = IndexRouteImport.update({
 const SlugRoute = SlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgenceRoute = AgenceRouteImport.update({
+  id: '/agence',
+  path: '/agence',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CommandeRoute = CommandeRouteImport.update({
@@ -56,6 +63,11 @@ const SlugBorneRoute = SlugBorneRouteImport.update({
 const SlugCommandeRoute = SlugCommandeRouteImport.update({
   id: '/commande',
   path: '/commande',
+  getParentRoute: () => SlugRoute,
+} as any)
+const SlugCuisineRoute = SlugCuisineRouteImport.update({
+  id: '/cuisine',
+  path: '/cuisine',
   getParentRoute: () => SlugRoute,
 } as any)
 const CuisineIndexRoute = CuisineIndexRouteImport.update({
@@ -92,10 +104,12 @@ const CuisineSlugEquipeRoute = CuisineSlugEquipeRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$slug': typeof SlugRouteWithChildren
+  '/agence': typeof AgenceRoute
   '/commande': typeof CommandeRoute
   '/connexion': typeof ConnexionRoute
   '/$slug/borne': typeof SlugBorneRoute
   '/$slug/commande': typeof SlugCommandeRoute
+  '/$slug/cuisine': typeof SlugCuisineRoute
   '/cuisine/equipe': typeof CuisineEquipeRoute
   '/suivi/$id': typeof SuiviIdRoute
   '/$slug/': typeof SlugIndexRoute
@@ -106,10 +120,12 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/agence': typeof AgenceRoute
   '/commande': typeof CommandeRoute
   '/connexion': typeof ConnexionRoute
   '/$slug/borne': typeof SlugBorneRoute
   '/$slug/commande': typeof SlugCommandeRoute
+  '/$slug/cuisine': typeof SlugCuisineRoute
   '/cuisine/equipe': typeof CuisineEquipeRoute
   '/suivi/$id': typeof SuiviIdRoute
   '/$slug': typeof SlugIndexRoute
@@ -122,10 +138,12 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$slug': typeof SlugRouteWithChildren
+  '/agence': typeof AgenceRoute
   '/commande': typeof CommandeRoute
   '/connexion': typeof ConnexionRoute
   '/$slug/borne': typeof SlugBorneRoute
   '/$slug/commande': typeof SlugCommandeRoute
+  '/$slug/cuisine': typeof SlugCuisineRoute
   '/cuisine/equipe': typeof CuisineEquipeRoute
   '/suivi/$id': typeof SuiviIdRoute
   '/$slug/': typeof SlugIndexRoute
@@ -139,10 +157,12 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/$slug'
+    | '/agence'
     | '/commande'
     | '/connexion'
     | '/$slug/borne'
     | '/$slug/commande'
+    | '/$slug/cuisine'
     | '/cuisine/equipe'
     | '/suivi/$id'
     | '/$slug/'
@@ -153,10 +173,12 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/agence'
     | '/commande'
     | '/connexion'
     | '/$slug/borne'
     | '/$slug/commande'
+    | '/$slug/cuisine'
     | '/cuisine/equipe'
     | '/suivi/$id'
     | '/$slug'
@@ -168,10 +190,12 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/$slug'
+    | '/agence'
     | '/commande'
     | '/connexion'
     | '/$slug/borne'
     | '/$slug/commande'
+    | '/$slug/cuisine'
     | '/cuisine/equipe'
     | '/suivi/$id'
     | '/$slug/'
@@ -184,6 +208,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SlugRoute: typeof SlugRouteWithChildren
+  AgenceRoute: typeof AgenceRoute
   CommandeRoute: typeof CommandeRoute
   ConnexionRoute: typeof ConnexionRoute
   CuisineEquipeRoute: typeof CuisineEquipeRoute
@@ -207,6 +232,13 @@ declare module '@tanstack/react-router' {
       path: '/$slug'
       fullPath: '/$slug'
       preLoaderRoute: typeof SlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agence': {
+      id: '/agence'
+      path: '/agence'
+      fullPath: '/agence'
+      preLoaderRoute: typeof AgenceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/commande': {
@@ -242,6 +274,13 @@ declare module '@tanstack/react-router' {
       path: '/commande'
       fullPath: '/$slug/commande'
       preLoaderRoute: typeof SlugCommandeRouteImport
+      parentRoute: typeof SlugRoute
+    }
+    '/$slug/cuisine': {
+      id: '/$slug/cuisine'
+      path: '/cuisine'
+      fullPath: '/$slug/cuisine'
+      preLoaderRoute: typeof SlugCuisineRouteImport
       parentRoute: typeof SlugRoute
     }
     '/cuisine/': {
@@ -292,6 +331,7 @@ declare module '@tanstack/react-router' {
 interface SlugRouteChildren {
   SlugBorneRoute: typeof SlugBorneRoute
   SlugCommandeRoute: typeof SlugCommandeRoute
+  SlugCuisineRoute: typeof SlugCuisineRoute
   SlugIndexRoute: typeof SlugIndexRoute
   SlugSuiviIdRoute: typeof SlugSuiviIdRoute
 }
@@ -299,6 +339,7 @@ interface SlugRouteChildren {
 const SlugRouteChildren: SlugRouteChildren = {
   SlugBorneRoute: SlugBorneRoute,
   SlugCommandeRoute: SlugCommandeRoute,
+  SlugCuisineRoute: SlugCuisineRoute,
   SlugIndexRoute: SlugIndexRoute,
   SlugSuiviIdRoute: SlugSuiviIdRoute,
 }
@@ -308,6 +349,7 @@ const SlugRouteWithChildren = SlugRoute._addFileChildren(SlugRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SlugRoute: SlugRouteWithChildren,
+  AgenceRoute: AgenceRoute,
   CommandeRoute: CommandeRoute,
   ConnexionRoute: ConnexionRoute,
   CuisineEquipeRoute: CuisineEquipeRoute,
