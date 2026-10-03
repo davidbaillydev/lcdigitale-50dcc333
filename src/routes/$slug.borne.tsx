@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/lib/cart";
 import { createKioskOrder } from "@/lib/orders.functions";
+import { cancelKioskPayment, kioskPaymentStatus, kioskTerminalAvailable, startKioskCardPayment } from "@/lib/payments.functions";
 import { euro, groupCost, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
 import { itemImage, menuImage } from "@/lib/menu-images";
 import { BrandLogo } from "@/lib/brand";
@@ -27,7 +28,7 @@ export const Route = createFileRoute("/$slug/borne")({
 });
 
 const IDLE_MS = 60_000;
-type Step = "welcome" | "menu" | "cart" | "pay" | "done";
+type Step = "welcome" | "menu" | "cart" | "pay" | "terminal" | "done";
 type Mode = "dine_in" | "pickup";
 
 function Kiosk() {
@@ -42,6 +43,26 @@ function Kiosk() {
   const [result, setResult] = useState<{ n: number; total: number; pay: string } | null>(null);
   const [warn, setWarn] = useState(false);
   const last = useRef(Date.now());
+  const checkTerminal = useServerFn(kioskTerminalAvailable);
+  const startCard = useServerFn(startKioskCardPayment);
+  const pollCard = useServerFn(kioskPaymentStatus);
+  const cancelCard = useServerFn(cancelKioskPayment);
+  const [terminal, setTerminal] = useState(false);
+  const [pending, setPending] = useState<{ id: string; n: number; total: number } | null>(null);
+  const [cardState, setCardState] = useState<"pending" | "failed">("pending");
+  useEffect(() => { checkTerminal({ data: { slug: restaurant.slug } }).then((r) => setTerminal(r.available)).catch(() => {}); }, [restaurant.slug, checkTerminal]);
+  useEffect(() => {
+    if (step !== "terminal" || !pending || cardState !== "pending") return;
+    const t = setInterval(async () => {
+      last.current = Date.now();
+      try {
+        const r = await pollCard({ data: { orderId: pending.id } });
+        if (r.status === "paid") { setResult({ n: pending.n, total: pending.total, pay: "card_paid" }); setPending(null); setStep("done"); }
+        else if (r.status === "failed") setCardState("failed");
+      } catch { /* réessai au prochain tour */ }
+    }, 2000);
+    return () => clearInterval(t);
+  }, [step, pending, cardState, pollCard]);
 
   const reset = useCallback(() => {
     clear(); setItem(null); setResult(null); setError(null); setWarn(false);
@@ -53,7 +74,7 @@ function Kiosk() {
     const touch = () => { last.current = Date.now(); setWarn(false); };
     window.addEventListener("pointerdown", touch);
     const t = setInterval(() => {
-      if (step === "welcome") return;
+      if (step === "welcome" || step === "terminal") return;
       const idle = Date.now() - last.current;
       const limit = step === "done" ? 15_000 : IDLE_MS;
       if (idle > limit) reset();
@@ -69,8 +90,16 @@ function Kiosk() {
     setBusy(true); setError(null);
     try {
       const row = await send({ data: { restaurant: restaurant.slug, mode, payment_method, lines: lines.map((l) => ({ itemId: l.itemId, qty: l.qty, sel: l.sel })) } });
+      clear(); last.current = Date.now();
+      if (payment_method === "card_terminal" && terminal) {
+        try {
+          await startCard({ data: { orderId: row.id } });
+          setPending({ id: row.id, n: row.order_number, total: Number(row.total) }); setCardState("pending"); setStep("terminal");
+          return;
+        } catch { /* terminal indisponible : paiement par carte au comptoir */ }
+      }
       setResult({ n: row.order_number, total: Number(row.total), pay: payment_method });
-      clear(); setStep("done"); last.current = Date.now();
+      setStep("done");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erreur, merci de réessayer.");
     } finally { setBusy(false); }
@@ -202,11 +231,30 @@ function Kiosk() {
             {restaurant.config.payments?.card_terminal !== false && <button disabled={busy} onClick={() => pay("card_terminal")} className="flex flex-col items-center gap-4 rounded-2xl border-2 border-border bg-card p-10 active:border-primary disabled:opacity-50">
               <CreditCard className="h-20 w-20 text-primary" />
               <span className="font-display text-4xl">Carte bancaire</span>
-              <span className="text-lg text-muted-foreground">Sur le terminal au comptoir</span>
+              <span className="text-lg text-muted-foreground">{terminal ? "Sur le terminal de la borne" : "Sur le terminal au comptoir"}</span>
             </button>}
           </div>
           {error && <p className="text-2xl text-destructive">{error}</p>}
           <button onClick={() => setStep("cart")} className="rounded-xl bg-muted px-8 py-5 text-xl font-semibold">Retour au panier</button>
+        </div>
+      )}
+
+      {step === "terminal" && pending && (
+        <div className="flex flex-1 flex-col items-center justify-center gap-8 p-10 text-center">
+          <CreditCard className={cardState === "pending" ? "h-28 w-28 animate-pulse text-primary" : "h-28 w-28 text-destructive"} />
+          <p className="font-display text-6xl">{cardState === "pending" ? "Présentez votre carte sur le terminal" : "Paiement refusé ou annulé"}</p>
+          <p className="text-4xl">{euro(pending.total)}</p>
+          {cardState === "pending" ? (
+            <button onClick={async () => { try { await cancelCard({ data: { orderId: pending.id } }); } catch { /* ignore */ } setCardState("failed"); }}
+              className="rounded-xl bg-muted px-8 py-5 text-xl font-semibold">Annuler le paiement</button>
+          ) : (
+            <div className="flex flex-wrap justify-center gap-4">
+              <button onClick={async () => { try { await startCard({ data: { orderId: pending.id } }); setCardState("pending"); } catch { /* ignore */ } }}
+                className="rounded-xl bg-primary px-8 py-5 text-xl font-semibold text-primary-foreground">Réessayer</button>
+              <button onClick={() => { setResult({ n: pending.n, total: pending.total, pay: "card_terminal" }); setPending(null); setStep("done"); }}
+                className="rounded-xl bg-muted px-8 py-5 text-xl font-semibold">Payer au comptoir</button>
+            </div>
+          )}
         </div>
       )}
 
@@ -217,7 +265,7 @@ function Kiosk() {
           <p className="font-display text-[12rem] leading-none text-primary">{result.n}</p>
           <p className="text-3xl">{mode === "dine_in" ? "Sur place" : "À emporter"} · {euro(result.total)}</p>
           <p className="max-w-3xl text-2xl text-muted-foreground">
-            {result.pay === "counter" ? "Présentez-vous au comptoir pour régler (espèces ou tickets resto)." : "Présentez-vous au comptoir pour régler par carte."} Nous appellerons votre numéro dès que c'est prêt.
+            {result.pay === "card_paid" ? "Paiement accepté." : result.pay === "counter" ? "Présentez-vous au comptoir pour régler (espèces ou tickets resto)." : "Présentez-vous au comptoir pour régler par carte."} Nous appellerons votre numéro dès que c'est prêt.
           </p>
           <span className="mt-6 rounded-xl bg-muted px-8 py-4 text-xl">Toucher pour terminer</span>
         </button>
