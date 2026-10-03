@@ -64,3 +64,22 @@ export const setStaffRole = createServerFn({ method: "POST" })
     else await supabaseAdmin.from("restaurant_members").delete().eq("restaurant_id", data.restaurantId).eq("user_id", data.userId).eq("role", data.role);
     return { ok: true };
   });
+
+/** Lien direct d'activation (nouveau compte) ou de choix de mot de passe (compte existant) à partager au restaurateur. */
+export const getActivationLink = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ restaurantId: z.string().uuid(), userId: z.string().uuid(), origin: z.string().url().max(200) }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertManager(context.supabase, context.userId, data.restaurantId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: member } = await supabaseAdmin.from("restaurant_members").select("user_id").eq("restaurant_id", data.restaurantId).eq("user_id", data.userId).limit(1).maybeSingle();
+    if (!member) throw new Error("Ce compte n'appartient pas à ce restaurant");
+    const { data: u } = await supabaseAdmin.auth.admin.getUserById(data.userId);
+    const email = u.user?.email;
+    if (!email) throw new Error("Compte introuvable");
+    const redirectTo = `${data.origin}/reset-password`;
+    const type = u.user?.email_confirmed_at || u.user?.last_sign_in_at ? "recovery" : "invite";
+    const { data: link, error } = await supabaseAdmin.auth.admin.generateLink({ type, email, options: { redirectTo } } as Parameters<typeof supabaseAdmin.auth.admin.generateLink>[0]);
+    if (error || !link.properties?.action_link) throw new Error(error?.message ?? "Lien impossible");
+    return { link: link.properties.action_link, email };
+  });
