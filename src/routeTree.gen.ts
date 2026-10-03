@@ -9,23 +9,10 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as CommandeRouteImport } from './routes/commande'
 import { Route as ConnexionRouteImport } from './routes/connexion'
 import { Route as CuisineIndexRouteImport } from './routes/cuisine.index'
 import { Route as CuisineEquipeRouteImport } from './routes/cuisine.equipe'
-import { Route as SuiviIdRouteImport } from './routes/suivi.$id'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CommandeRoute = CommandeRouteImport.update({
-  id: '/commande',
-  path: '/commande',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ConnexionRoute = ConnexionRouteImport.update({
   id: '/connexion',
   path: '/connexion',
@@ -41,89 +28,39 @@ const CuisineEquipeRoute = CuisineEquipeRouteImport.update({
   path: '/cuisine/equipe',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SuiviIdRoute = SuiviIdRouteImport.update({
-  id: '/suivi/$id',
-  path: '/suivi/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/commande': typeof CommandeRoute
   '/connexion': typeof ConnexionRoute
   '/cuisine/equipe': typeof CuisineEquipeRoute
-  '/suivi/$id': typeof SuiviIdRoute
   '/cuisine/': typeof CuisineIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/commande': typeof CommandeRoute
   '/connexion': typeof ConnexionRoute
   '/cuisine/equipe': typeof CuisineEquipeRoute
-  '/suivi/$id': typeof SuiviIdRoute
   '/cuisine': typeof CuisineIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/commande': typeof CommandeRoute
   '/connexion': typeof ConnexionRoute
   '/cuisine/equipe': typeof CuisineEquipeRoute
-  '/suivi/$id': typeof SuiviIdRoute
   '/cuisine/': typeof CuisineIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/commande'
-    | '/connexion'
-    | '/cuisine/equipe'
-    | '/suivi/$id'
-    | '/cuisine/'
+  fullPaths: '/connexion' | '/cuisine/equipe' | '/cuisine/'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/commande'
-    | '/connexion'
-    | '/cuisine/equipe'
-    | '/suivi/$id'
-    | '/cuisine'
-  id:
-    | '__root__'
-    | '/'
-    | '/commande'
-    | '/connexion'
-    | '/cuisine/equipe'
-    | '/suivi/$id'
-    | '/cuisine/'
+  to: '/connexion' | '/cuisine/equipe' | '/cuisine'
+  id: '__root__' | '/connexion' | '/cuisine/equipe' | '/cuisine/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  CommandeRoute: typeof CommandeRoute
   ConnexionRoute: typeof ConnexionRoute
   CuisineEquipeRoute: typeof CuisineEquipeRoute
-  SuiviIdRoute: typeof SuiviIdRoute
   CuisineIndexRoute: typeof CuisineIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/commande': {
-      id: '/commande'
-      path: '/commande'
-      fullPath: '/commande'
-      preLoaderRoute: typeof CommandeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/connexion': {
       id: '/connexion'
       path: '/connexion'
@@ -145,22 +82,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CuisineEquipeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/suivi/$id': {
-      id: '/suivi/$id'
-      path: '/suivi/$id'
-      fullPath: '/suivi/$id'
-      preLoaderRoute: typeof SuiviIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  CommandeRoute: CommandeRoute,
   ConnexionRoute: ConnexionRoute,
   CuisineEquipeRoute: CuisineEquipeRoute,
-  SuiviIdRoute: SuiviIdRoute,
   CuisineIndexRoute: CuisineIndexRoute,
 }
 export const routeTree = rootRouteImport

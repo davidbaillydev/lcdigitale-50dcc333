@@ -1,9 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { ITEMS_BY_ID, unitPrice, validateSelections, describeSelections } from "./menu";
-import { DELIVERY, deliveryFee, isValidSlot } from "./shop";
+import { unitPrice, validateSelections, describeSelections } from "./menu";
+import { getCatalog } from "./catalogs";
+import { RESTAURANT_COLUMNS, deliveryFee, isValidSlot, type Restaurant } from "./shop";
 
 const orderSchema = z.object({
+  restaurant: z.string().max(40),
   mode: z.enum(["pickup", "delivery"]),
   slot: z.string().max(40),
   customer_name: z.string().trim().min(2).max(80),
@@ -22,11 +24,17 @@ const orderSchema = z.object({
 export const createOrder = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => orderSchema.parse(d))
   .handler(async ({ data }) => {
-    if (!isValidSlot(data.mode, data.slot)) throw new Error("Ce créneau n'est plus disponible, merci d'en choisir un autre.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rRow } = await supabaseAdmin.from("restaurants").select(RESTAURANT_COLUMNS).eq("slug", data.restaurant).eq("active", true).maybeSingle();
+    const r = rRow as unknown as Restaurant | null;
+    if (!r) throw new Error("Restaurant introuvable");
+    const catalog = getCatalog(r.menu_key);
+
+    if (!isValidSlot(r, data.mode, data.slot)) throw new Error("Ce créneau n'est plus disponible, merci d'en choisir un autre.");
     if (data.payment_method === "online") throw new Error("Le paiement en ligne n'est pas encore activé.");
 
     const items = data.lines.map((l) => {
-      const item = ITEMS_BY_ID[l.itemId];
+      const item = catalog.itemsById[l.itemId];
       if (!item) throw new Error("Article inconnu");
       const err = validateSelections(item, l.sel);
       if (err) throw new Error(err);
@@ -38,18 +46,18 @@ export const createOrder = createServerFn({ method: "POST" })
     let fee = 0;
     let city: string | null = null;
     if (data.mode === "delivery") {
-      const zone = DELIVERY.zones.find((z) => z.cp === data.postal_code);
+      const zone = r.delivery.zones.find((z) => z.cp === data.postal_code);
       if (!zone) throw new Error("Désolé, cette adresse est hors de notre zone de livraison.");
       if (!data.address || data.address.length < 5) throw new Error("Adresse de livraison requise.");
-      if (subtotal < DELIVERY.minOrder) throw new Error(`Minimum de commande en livraison : ${DELIVERY.minOrder} €`);
-      fee = deliveryFee(subtotal);
+      if (subtotal < r.delivery.minOrder) throw new Error(`Minimum de commande en livraison : ${r.delivery.minOrder} €`);
+      fee = deliveryFee(r, subtotal);
       city = zone.city;
     }
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row, error } = await supabaseAdmin
       .from("orders")
       .insert({
+        restaurant_id: r.id,
         customer_name: data.customer_name,
         phone: data.phone,
         email: data.email || null,
@@ -80,7 +88,7 @@ export const getOrderStatus = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("orders")
-      .select("id, order_number, status, mode, slot, total, items, payment_method, customer_name")
+      .select("id, order_number, status, mode, slot, total, items, payment_method, customer_name, restaurants(slug)")
       .eq("id", data.id)
       .maybeSingle();
     return row;
