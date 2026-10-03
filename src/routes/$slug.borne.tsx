@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { useCart } from "@/lib/cart";
 import { createKioskOrder } from "@/lib/orders.functions";
 import { euro, groupCost, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
+import { itemImage, menuImage } from "@/lib/menu-images";
 
 export const Route = createFileRoute("/$slug/borne")({
   head: () => ({
@@ -14,6 +15,8 @@ export const Route = createFileRoute("/$slug/borne")({
       { name: "description", content: "Borne de commande tactile en restaurant." },
       { property: "og:title", content: "Borne de commande" },
       { property: "og:description", content: "Commandez sur place ou à emporter depuis la borne." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -114,7 +117,10 @@ function Kiosk() {
             ))}
           </nav>
           <main className="min-h-0 flex-1 overflow-y-auto p-5">
-            <h2 className="mb-1 font-display text-5xl">{category?.label}</h2>
+            <div className="mb-4 flex items-center justify-between gap-4 border-b border-border pb-3">
+              <h2 className="font-display text-5xl">{category?.label}</h2>
+              {category && menuImage(category.id) && <img src={menuImage(category.id)} alt={`Illustration ${category.label}`} loading="lazy" width={1024} height={768} className="h-28 w-40 rounded-md object-cover" />}
+            </div>
             {category?.note && <p className="mb-4 text-lg text-muted-foreground">{category.note}</p>}
             <div className="grid grid-cols-2 gap-4 pb-32 xl:grid-cols-3">
               {category?.items.map((it) => (
@@ -205,7 +211,7 @@ function Kiosk() {
         </button>
       )}
 
-      {item && <KioskItem item={item} onClose={() => setItem(null)} onAdd={(sel, q) => { add(item.id, sel, q); setItem(null); }} />}
+      {item && <KioskItem item={item} image={itemImage(item.id, catalog.categories)} onClose={() => setItem(null)} onAdd={(sel, q) => { add(item.id, sel, q); setItem(null); }} />}
 
       {warn && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80">
@@ -219,7 +225,7 @@ function Kiosk() {
   );
 }
 
-function KioskItem({ item, onClose, onAdd }: { item: MenuItem; onClose: () => void; onAdd: (sel: Selections, qty: number) => void }) {
+function KioskItem({ item, image, onClose, onAdd }: { item: MenuItem; image?: string; onClose: () => void; onAdd: (sel: Selections, qty: number) => void }) {
   const [sel, setSel] = useState<Selections>({});
   const [qty, setQ] = useState(1);
   const [step, setStep] = useState(0);
@@ -247,6 +253,7 @@ function KioskItem({ item, onClose, onAdd }: { item: MenuItem; onClose: () => vo
       </div>
       {stepped && <div className="flex gap-2 px-6 pt-4">{groups.map((g, i) => <div key={g.id} className={cn("h-2 flex-1 rounded-full", i <= step ? "bg-primary" : "bg-muted")} />)}</div>}
       <div className="min-h-0 flex-1 space-y-8 overflow-y-auto p-6">
+        {image && <div className="flex items-center gap-4"><img src={image} alt={`Illustration pour ${item.name}`} loading="lazy" width={1024} height={768} className="h-32 w-44 rounded-md object-cover" /><span className="text-base text-muted-foreground">Photo d’illustration</span></div>}
         {visible.map((g) => {
           const picked = sel[g.id] ?? [];
           const extra = groupCost(g, picked);

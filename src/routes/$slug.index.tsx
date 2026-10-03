@@ -7,8 +7,17 @@ import { ItemDialog } from "@/components/ItemDialog";
 import { SiteHeader } from "@/components/SiteHeader";
 import { useCart } from "@/lib/cart";
 import { Button } from "@/components/ui/button";
+import { menuImage } from "@/lib/menu-images";
 
 export const Route = createFileRoute("/$slug/")({
+  head: () => ({ meta: [
+    { title: "Carte & commande | Wok & Sushi Colomiers" },
+    { name: "description", content: "Commandez woks, sushis, pokés et spécialités japonaises à emporter ou en livraison à Colomiers." },
+    { property: "og:title", content: "Carte & commande | Wok & Sushi Colomiers" },
+    { property: "og:description", content: "Découvrez la carte Wok & Sushi à Colomiers et commandez en ligne." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: MenuPage,
 });
 
@@ -49,7 +58,10 @@ function MenuPage() {
         {!catalog.categories.length && <p className="py-10 text-center text-muted-foreground">La carte arrive bientôt.</p>}
         {catalog.categories.map((c) => (
           <section key={c.id} id={c.id} className="scroll-mt-32">
-            <h2 className="inline-block -rotate-1 brush px-5 py-1 text-4xl">{c.label}</h2>
+            <div className="flex items-center justify-between gap-4 border-b border-border pb-4">
+              <h2 className="inline-block -rotate-1 brush px-5 py-1 text-4xl">{c.label}</h2>
+              {menuImage(c.id) && <img src={menuImage(c.id)} alt={`Illustration de la catégorie ${c.label}`} loading="lazy" width={1024} height={768} className="h-24 w-32 shrink-0 rounded-md object-cover sm:h-32 sm:w-48" />}
+            </div>
             {c.note && <p className="mt-3 text-sm text-muted-foreground">{c.note}</p>}
             <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {c.items.map((i) => (
