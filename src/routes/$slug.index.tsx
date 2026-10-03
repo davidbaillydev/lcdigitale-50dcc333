@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Clock, MapPin, Bike, ShoppingBag } from "lucide-react";
+import { Clock, MapPin, Bike, ShoppingBag, Phone } from "lucide-react";
 import hero from "@/assets/hero.jpg";
 import { euro, type MenuItem } from "@/lib/menu";
 import { ItemDialog } from "@/components/ItemDialog";
