@@ -9,16 +9,6 @@ import { useCart } from "@/lib/cart";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/$slug/")({
-  head: ({ match }) => {
-    const r = match.loaderData?.restaurant;
-    const title = r ? `${r.name} ${r.city ?? ""} — Commandez en ligne` : "Commande en ligne";
-    const desc = r ? `Carte complète de ${r.name} : click & collect ou livraison${r.city ? ` à ${r.city}` : ""}.` : "Commande en ligne.";
-    return { meta: [
-      { title }, { name: "description", content: desc },
-      { property: "og:title", content: title }, { property: "og:description", content: desc },
-      { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
-    ] };
-  },
   component: MenuPage,
 });
 
