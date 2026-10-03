@@ -109,7 +109,7 @@ function ProviderCard({ restaurantId, p, onChange }: { restaurantId: string; p: 
             return (
               <div className="max-w-xs">
                 <Label htmlFor={`${p.provider}-mode`}>Mode</Label>
-                <select id={`${p.provider}-mode`} value={creds["mode"] ?? p.credentials["mode"] ?? md.options[0][0]} onChange={(e) => setCreds({ ...creds, mode: e.target.value })}
+                <select id={`${p.provider}-mode`} value={creds["mode"] ?? p.credentials["mode"] ?? md.options[0]?.[0]} onChange={(e) => setCreds({ ...creds, mode: e.target.value })}
                   className="mt-1 h-9 w-full rounded-md border border-input bg-background px-3 text-sm">
                   {md.options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                 </select>

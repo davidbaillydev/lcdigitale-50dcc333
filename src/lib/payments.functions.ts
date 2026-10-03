@@ -422,7 +422,7 @@ export const confirmOnlinePayment = createServerFn({ method: "POST" })
 
     if (ref.startsWith("lyra:")) {
       if (data.lyra?.["vads_order_id"] === o.id) {
-        const r = await handleLyraResult(data.lyra);
+        const r = await handleLyraResult(data.lyra!);
         return { status: r === "failed" ? "retry" as const : r };
       }
       return { status: data.cancelled ? "retry" as const : "pending" as const };
