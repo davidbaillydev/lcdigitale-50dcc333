@@ -179,17 +179,15 @@ function Checkout() {
           <section>
             <h2 className="text-3xl">4. Paiement</h2>
             <div className="mt-3 grid grid-cols-2 gap-3">
-              {onSiteOk && <button onClick={() => setPay("on_site")} className={cn("rounded-xl border p-4 text-left", pay === "on_site" ? "border-primary bg-primary/10" : "border-border")}>
-                <Store className="mb-2 h-6 w-6 text-primary" />
-                <p className="font-semibold">{mode === "delivery" ? "À la livraison" : "Au retrait"}</p>
-                <p className="text-xs text-muted-foreground">Espèces, CB ou tickets resto</p>
-              </button>}
-              <button disabled={!online.available} onClick={() => setPay("online")} className={cn("rounded-xl border p-4 text-left", !online.available && "cursor-not-allowed opacity-50", pay === "online" ? "border-primary bg-primary/10" : "border-border")}>
-                <CreditCard className="mb-2 h-6 w-6 text-primary" />
-                <p className="font-semibold">Payer en ligne</p>
-                <p className="text-xs text-muted-foreground">{online.available ? "Carte bancaire, Apple Pay, Google Pay" : "Non proposé par ce restaurant"}</p>
-              </button>
+              {options.map(({ v, Icon, t, s, ok }) => (
+                <button key={v} disabled={!ok || !!payment} onClick={() => setPay(v)} className={cn("rounded-xl border p-4 text-left", !ok && "cursor-not-allowed opacity-50", pay === v ? "border-primary bg-primary/10" : "border-border")}>
+                  <Icon className="mb-2 h-6 w-6 text-primary" />
+                  <p className="font-semibold">{t}</p>
+                  <p className="text-xs text-muted-foreground">{s}</p>
+                </button>
+              ))}
             </div>
+            {(pay === "paypal" || pay === "lyra") && <p className="mt-2 text-xs text-muted-foreground">Vous serez redirigé vers la page de paiement sécurisée, puis ramené au suivi de votre commande.</p>}
           </section>
         </div>
 
@@ -202,14 +200,14 @@ function Checkout() {
             <div className="flex justify-between pt-2 text-lg font-bold"><span>Total</span><span className="text-primary">{euro(total)}</span></div>
           </div>
           {belowMin && <p className="mt-3 text-sm text-destructive">Minimum {DELIVERY.minOrder} € en livraison.</p>}
-          {payment && online.publishableKey ? (
+          {payment && online.stripe ? (
             <div className="mt-4">
-              <StripePayment publishableKey={online.publishableKey} clientSecret={payment.clientSecret} label={`Payer ${euro(total)}`}
+              <StripePayment publishableKey={online.stripe} clientSecret={payment.clientSecret} label={`Payer ${euro(total)}`}
                 returnUrl={`${window.location.origin}/${restaurant.slug}/suivi/${payment.id}`} onCancel={() => setPayment(null)} />
             </div>
           ) : (
             <Button size="lg" className="mt-4 w-full font-semibold" disabled={!canSubmit || busy || (pay === "on_site" && !onSiteOk)} onClick={submit}>
-              {busy ? "Envoi…" : pay === "online" ? `Continuer vers le paiement · ${euro(total)}` : `Valider la commande · ${euro(total)}`}
+              {busy ? "Envoi…" : pay === "on_site" ? `Valider la commande · ${euro(total)}` : pay === "paypal" ? `Payer avec PayPal · ${euro(total)}` : `Continuer vers le paiement · ${euro(total)}`}
             </Button>
           )}
         </aside>
