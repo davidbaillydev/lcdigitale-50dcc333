@@ -6,7 +6,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useStaff } from "@/hooks/use-staff";
 import { listAgencyRestaurants, saveRestaurant, setRestaurantActive, type AgencyRestaurant } from "@/lib/agency.functions";
-import { MENU_KEYS } from "@/lib/catalogs";
+import { MENU_KEYS, MENU_LABELS } from "@/lib/catalogs";
+import { inviteMember } from "@/lib/staff.functions";
 import { brandVars, BrandLogo, fileToLogo } from "@/lib/brand";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -121,7 +122,9 @@ function Console() {
 
 function RestaurantDialog({ form, setForm, onSaved }: { form: Form | null; setForm: (f: Form | null) => void; onSaved: (slug: string, created: boolean) => void }) {
   const save = useServerFn(saveRestaurant);
+  const invite = useServerFn(inviteMember);
   const [busy, setBusy] = useState(false);
+  const [manager, setManager] = useState("");
   if (!form) return null;
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setForm({ ...form, [k]: v });
   const field = (k: "name" | "city" | "address" | "phone" | "email", label: string) => (
@@ -135,8 +138,13 @@ function RestaurantDialog({ form, setForm, onSaved }: { form: Form | null; setFo
     setBusy(true);
     try {
       const n = (s: string | null) => (s?.trim() ? s.trim() : null);
-      await save({ data: { id: form.id, name: form.name, slug: form.slug, city: n(form.city), address: n(form.address), phone: n(form.phone), email: n(form.email), menu_key: form.menu_key, logo_url: form.logo_url, brand: form.brand, active: form.active } });
+      const res = await save({ data: { id: form.id, name: form.name, slug: form.slug, city: n(form.city), address: n(form.address), phone: n(form.phone), email: n(form.email), menu_key: form.menu_key, logo_url: form.logo_url, brand: form.brand, active: form.active } });
       toast.success(form.id ? "Restaurant mis à jour" : "Restaurant créé");
+      if (!form.id && manager.includes("@")) {
+        try { const r = await invite({ data: { restaurantId: res.id, email: manager, role: "manager", origin: window.location.origin } }); toast.success(r.invited ? `Invitation envoyée à ${manager}` : `${manager} rattaché au restaurant`); }
+        catch (e) { toast.error(`Invitation non envoyée : ${(e as Error).message}`); }
+        setManager("");
+      }
       const created = !form.id; setForm(null); onSaved(form.slug, created);
     } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
   };
@@ -151,7 +159,7 @@ function RestaurantDialog({ form, setForm, onSaved }: { form: Form | null; setFo
           {field("address", "Adresse")}{field("city", "Ville")}{field("phone", "Téléphone")}{field("email", "Email")}
           <div className="space-y-1"><Label htmlFor="menu">Carte</Label>
             <select id="menu" value={form.menu_key} onChange={(e) => set("menu_key", e.target.value)} className="h-9 w-full rounded-md border border-input bg-background px-2">
-              {MENU_KEYS.map((k) => <option key={k} value={k}>{k}</option>)}
+              {MENU_KEYS.map((k) => <option key={k} value={k}>{MENU_LABELS[k] ?? k}</option>)}
             </select></div>
           <div className="space-y-1"><Label htmlFor="logo">Logo</Label>
             <div className="flex items-center gap-2">
@@ -166,6 +174,8 @@ function RestaurantDialog({ form, setForm, onSaved }: { form: Form | null; setFo
                 <Input value={form.brand[k] ?? ""} onChange={(e) => set("brand", { ...form.brand, [k]: e.target.value })} />
               </div></div>
           ))}
+          {!form.id && <div className="space-y-1 sm:col-span-2"><Label htmlFor="manager">Email du gérant (invitation avec lien d'activation)</Label>
+            <Input id="manager" type="email" placeholder="gerant@restaurant.fr" value={manager} onChange={(e) => setManager(e.target.value)} /></div>}
           <label className="flex items-center gap-2 sm:col-span-2"><Switch checked={form.active} onCheckedChange={(v) => set("active", v)} /> Restaurant en ligne</label>
         </div>
         <div style={brandVars(form.brand)} className="mt-2 flex items-center gap-3 rounded-lg border border-border p-3">
@@ -173,7 +183,7 @@ function RestaurantDialog({ form, setForm, onSaved }: { form: Form | null; setFo
           <span className="rounded-md bg-primary px-3 py-1 text-primary-foreground">Commander</span>
           <span className="rounded-md bg-accent px-3 py-1 text-accent-foreground">Valider</span>
         </div>
-        {!form.id && <p className="text-xs text-muted-foreground">Horaires par défaut : lun.–sam. 11h30–14h30 et 18h30–22h30 — vous serez ensuite guidé pour régler horaires, commandes, livraison, carte et équipe.</p>}
+        {!form.id && <p className="text-xs text-muted-foreground">Horaires par défaut : lun.–sam. 11h30–14h30 et 18h30–22h30 — le restaurant démarre avec une carte vierge : déposez ensuite son menu (PDF ou photo) pour la créer avec l'IA.</p>}
         <Button onClick={submit} disabled={busy || !form.name || !form.slug}>{busy ? "Enregistrement…" : "Enregistrer"}</Button>
       </DialogContent>
     </Dialog>

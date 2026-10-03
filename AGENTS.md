@@ -19,3 +19,6 @@
 - Private screens live under `src/routes/_authenticated/`: `/admin/*` (agency only, has_role gate in admin.tsx beforeLoad) and `/espace/*` (restaurateurs: per-restaurant pages check membership); every server function re-checks the role. Old /agence and /cuisine/* redirect. Why: UI gates are UX, server checks are the boundary.
 - Restaurateur accounts are invite-only (public signup disabled; inviteMember adds restaurant_members, invite lands on /reset-password). Team lists expose only that restaurant's members. Why: no cross-restaurant email exposure or self-signup.
 - Ordering rules (enabled modes, accepted payments, autoAccept, lead times, delivery zones/fees) live in restaurants.config/delivery, edited by RestaurantSettingsForm and enforced server-side in createOrder/createKioskOrder. Why: one source of truth for site, kiosk and kitchen.
+
+- New restaurants default to the blank menu_key `vierge` (no base catalog) so the menu is built via AI import or by hand; templates remain selectable.
+- Kitchen PIN lock: hashed PIN in `restaurant_kitchen_pins` (service-role only, no RLS policies), set by managers and verified by server functions with attempt lockout. Why: quick tablet unlock without exposing the hash to clients.
