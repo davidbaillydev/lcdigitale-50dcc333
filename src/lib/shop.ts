@@ -20,6 +20,7 @@ export type Restaurant = {
     slotMinutes?: number; lead?: { pickup: number; delivery: number }; hoursLabel?: string; tagline?: string;
     /** Commandes acceptées automatiquement (sinon validation manuelle en cuisine) */
     autoAccept?: boolean;
+    printing?: Partial<import("./ticket").PrintingConfig>;
     modes?: { pickup?: boolean; delivery?: boolean; dine_in?: boolean };
     payments?: { on_site?: boolean; counter?: boolean; card_terminal?: boolean };
   };

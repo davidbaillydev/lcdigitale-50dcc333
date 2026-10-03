@@ -25,10 +25,12 @@ export function initialSettings(r: Restaurant): Settings {
       autoAccept: c.autoAccept ?? false,
       modes: { pickup: c.modes?.pickup !== false, delivery: c.modes?.delivery !== false, dine_in: c.modes?.dine_in !== false },
       payments: { on_site: c.payments?.on_site !== false, counter: c.payments?.counter !== false, card_terminal: c.payments?.card_terminal !== false },
+      printing: printingDefaults(c.printing),
     },
   };
 }
 
+import { printingDefaults } from "@/lib/ticket";
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return <section className="rounded-xl border border-border bg-card p-5"><h2 className="mb-4 text-3xl">{title}</h2>{children}</section>;
 }
@@ -98,6 +100,19 @@ export function RestaurantSettingsForm({ restaurant, onSaved }: { restaurant: Re
           <Num id="lp" label="Préparation à emporter (min)" value={s.config.lead.pickup} onChange={(v) => cfg({ lead: { ...s.config.lead, pickup: v } })} />
           <Num id="ld" label="Délai de livraison (min)" value={s.config.lead.delivery} onChange={(v) => cfg({ lead: { ...s.config.lead, delivery: v } })} />
         </div>
+      </Section>
+
+      <Section title="Impression des tickets">
+        <div className="mb-3 flex gap-2">
+          {([80, 58] as const).map((w) => (
+            <Button key={w} type="button" variant={s.config.printing.width === w ? "default" : "secondary"} onClick={() => cfg({ printing: { ...s.config.printing, width: w } })}>{w} mm</Button>
+          ))}
+        </div>
+        <Toggle label="Impression automatique" hint="Imprime le ticket cuisine et le ticket de caisse dès qu'une commande arrive. Sinon, impression manuelle." checked={s.config.printing.auto} onChange={(v) => cfg({ printing: { ...s.config.printing, auto: v } })} />
+        <p className="mt-3 text-sm font-semibold">Afficher sur le ticket cuisine</p>
+        {([["options", "Options et suppléments"], ["notes", "Notes du client"], ["customer", "Nom et téléphone du client"], ["contact", "Coordonnées du restaurant"], ["prices", "Prix et total"]] as const).map(([k, l]) => (
+          <Toggle key={k} label={l} checked={s.config.printing.kitchen[k]} onChange={(v) => cfg({ printing: { ...s.config.printing, kitchen: { ...s.config.printing.kitchen, [k]: v } } })} />
+        ))}
       </Section>
 
       <Section title="Paiements acceptés">

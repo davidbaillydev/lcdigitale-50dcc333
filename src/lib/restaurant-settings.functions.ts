@@ -20,6 +20,10 @@ export const settingsSchema = z.object({
     autoAccept: z.boolean(),
     modes: z.object({ pickup: z.boolean(), delivery: z.boolean(), dine_in: z.boolean() }),
     payments: z.object({ on_site: z.boolean(), counter: z.boolean(), card_terminal: z.boolean() }),
+    printing: z.object({
+      width: z.union([z.literal(58), z.literal(80)]), auto: z.boolean(),
+      kitchen: z.object({ options: z.boolean(), notes: z.boolean(), customer: z.boolean(), contact: z.boolean(), prices: z.boolean() }),
+    }),
   }),
 });
 export type Settings = z.infer<typeof settingsSchema>;
