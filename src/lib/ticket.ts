@@ -92,3 +92,16 @@ export function printTickets(o: TicketOrder, kinds: TicketKind[], shop: TicketSh
     } catch { resolve(false); }
   });
 }
+
+/** Commande fictive pour l'aperçu et le ticket de test. */
+export function sampleOrder(): TicketOrder {
+  const now = new Date().toISOString();
+  return {
+    order_number: 999, customer_name: "Client test", phone: "06 00 00 00 00", mode: "pickup", slot: now, created_at: now,
+    items: [
+      { name: "Wok poulet", qty: 2, total: 23.8, details: ["Nouilles sautées", "+ Sauce piquante"] },
+      { name: "California saumon", qty: 1, total: 6.5, details: ["Sans sésame"] },
+    ],
+    notes: "TICKET DE TEST", total: 30.3, payment_method: "on_site", source: "web",
+  };
+}

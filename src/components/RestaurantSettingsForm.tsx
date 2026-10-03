@@ -30,7 +30,7 @@ export function initialSettings(r: Restaurant): Settings {
   };
 }
 
-import { printingDefaults } from "@/lib/ticket";
+import { printingDefaults, printTickets, sampleOrder, ticketHtml } from "@/lib/ticket";
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return <section className="rounded-xl border border-border bg-card p-5"><h2 className="mb-4 text-3xl">{title}</h2>{children}</section>;
 }
@@ -51,6 +51,13 @@ export function RestaurantSettingsForm({ restaurant, onSaved }: { restaurant: Re
   const save = useServerFn(saveRestaurantSettings);
   const [s, setS] = useState<Settings>(() => initialSettings(restaurant));
   const [busy, setBusy] = useState(false);
+  const [testResult, setTestResult] = useState<null | "ok" | "failed">(null);
+  const shop = { name: restaurant.name, address: restaurant.address, phone: restaurant.phone };
+  const testPrint = async () => {
+    setTestResult(null);
+    const ok = await printTickets(sampleOrder(), ["kitchen"], shop, s.config.printing.width, s.config.printing.kitchen);
+    setTestResult(ok ? "ok" : "failed");
+  };
   const [cp, setCp] = useState(""); const [city, setCity] = useState("");
   const cfg = (patch: Partial<Settings["config"]>) => setS({ ...s, config: { ...s.config, ...patch } });
   const del = (patch: Partial<Settings["delivery"]>) => setS({ ...s, delivery: { ...s.delivery, ...patch } });
@@ -103,6 +110,8 @@ export function RestaurantSettingsForm({ restaurant, onSaved }: { restaurant: Re
       </Section>
 
       <Section title="Impression des tickets">
+        <div className="grid gap-6 lg:grid-cols-[1fr_auto]">
+        <div>
         <div className="mb-3 flex gap-2">
           {([80, 58] as const).map((w) => (
             <Button key={w} type="button" variant={s.config.printing.width === w ? "default" : "secondary"} onClick={() => cfg({ printing: { ...s.config.printing, width: w } })}>{w} mm</Button>
@@ -113,6 +122,17 @@ export function RestaurantSettingsForm({ restaurant, onSaved }: { restaurant: Re
         {([["options", "Options et suppléments"], ["notes", "Notes du client"], ["customer", "Nom et téléphone du client"], ["contact", "Coordonnées du restaurant"], ["prices", "Prix et total"]] as const).map(([k, l]) => (
           <Toggle key={k} label={l} checked={s.config.printing.kitchen[k]} onChange={(v) => cfg({ printing: { ...s.config.printing, kitchen: { ...s.config.printing.kitchen, [k]: v } } })} />
         ))}
+        </div>
+        <div>
+          <p className="mb-2 text-sm font-semibold">Aperçu du ticket cuisine ({s.config.printing.width} mm)</p>
+          <iframe title="Aperçu du ticket cuisine" className="rounded border border-border bg-white"
+            style={{ width: `${s.config.printing.width === 80 ? 330 : 250}px`, height: 460 }}
+            srcDoc={ticketHtml(sampleOrder(), "kitchen", s.config.printing.width, shop, s.config.printing.kitchen)} />
+          <Button type="button" variant="secondary" className="mt-3 w-full" onClick={testPrint}>Imprimer un ticket de test</Button>
+          {testResult === "ok" && <p role="status" className="mt-2 rounded bg-primary/15 p-2 text-sm">Ticket de test envoyé à l'imprimante. Vérifiez qu'il est bien sorti.</p>}
+          {testResult === "failed" && <p role="alert" className="mt-2 rounded bg-destructive/20 p-2 text-sm">Échec : le ticket n'a pas pu être envoyé. Vérifiez l'imprimante et réessayez.</p>}
+        </div>
+        </div>
       </Section>
 
       <Section title="Paiements acceptés">
