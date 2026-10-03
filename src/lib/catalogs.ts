@@ -23,4 +23,7 @@ export function baseCategories(menuKey: string): Category[] {
   return structuredClone(BASE[menuKey] ?? []);
 }
 
-export const MENU_KEYS = Object.keys(CATALOGS);
+export const BLANK_MENU = "vierge";
+/** Choix proposés à la création : carte vierge (par défaut) puis modèles. */
+export const MENU_KEYS = [BLANK_MENU, ...Object.keys(CATALOGS)];
+export const MENU_LABELS: Record<string, string> = { [BLANK_MENU]: "Carte vierge", woknsushi: "Modèle Wok & Sushi" };

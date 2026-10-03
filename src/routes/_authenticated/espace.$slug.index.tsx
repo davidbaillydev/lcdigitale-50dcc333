@@ -1,6 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, Bell, BellOff, Bike, LogOut, Phone, ShoppingBag, Users } from "lucide-react";
+import { ArrowLeft, Bell, BellOff, Bike, Lock, LogOut, Phone, ShoppingBag, Users } from "lucide-react";
+import { hasKitchenPin } from "@/lib/kitchen-pin.functions";
+import { KitchenLock } from "@/components/KitchenLock";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useStaff } from "@/hooks/use-staff";
@@ -56,6 +59,30 @@ function Kitchen() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [sound, setSound] = useState(false);
   const audio = useRef<AudioContext | null>(null);
+  const checkPin = useServerFn(hasKitchenPin);
+  const [pinEnabled, setPinEnabled] = useState(false);
+  const [locked, setLocked] = useState(false);
+  const setLock = useCallback((v: boolean) => {
+    setLocked(v);
+    if (rid) { if (v) sessionStorage.setItem(`kitchen-lock-${rid}`, "1"); else sessionStorage.removeItem(`kitchen-lock-${rid}`); }
+  }, [rid]);
+  useEffect(() => {
+    if (!rid) return;
+    checkPin({ data: { restaurantId: rid } }).then((r) => {
+      setPinEnabled(r.enabled);
+      if (r.enabled && sessionStorage.getItem(`kitchen-lock-${rid}`)) setLocked(true);
+    }).catch(() => {});
+  }, [rid, checkPin]);
+  // Verrouillage automatique après 5 minutes sans interaction
+  useEffect(() => {
+    if (!pinEnabled || locked) return;
+    let t = setTimeout(() => setLock(true), 5 * 60_000);
+    const reset = () => { clearTimeout(t); t = setTimeout(() => setLock(true), 5 * 60_000); };
+    const evs = ["pointerdown", "keydown"] as const;
+    evs.forEach((e) => window.addEventListener(e, reset));
+    return () => { clearTimeout(t); evs.forEach((e) => window.removeEventListener(e, reset)); };
+  }, [pinEnabled, locked, setLock]);
+
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/connexion" }); }, [loading, user, navigate]);
 
@@ -126,6 +153,7 @@ function Kitchen() {
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/carte" params={{ slug }}>Carte</Link></Button>}
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/reglages" params={{ slug }}>Réglages</Link></Button>}
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/equipe" params={{ slug }}><Users /> Équipe</Link></Button>}
+        {pinEnabled && <Button variant="secondary" onClick={() => setLock(true)}><Lock /> Verrouiller</Button>}
         <ThemeToggle />
         <Button variant="ghost" size="icon" onClick={() => supabase.auth.signOut()} aria-label="Déconnexion"><LogOut /></Button>
       </header>
@@ -178,6 +206,7 @@ function Kitchen() {
           );
         })}
       </div>
+      {locked && rid && <KitchenLock restaurantId={rid} name={restaurant?.name ?? ""} onUnlock={() => setLock(false)} />}
     </div>
     </BrandTheme>
   );

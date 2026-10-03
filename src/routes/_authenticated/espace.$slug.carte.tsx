@@ -92,16 +92,17 @@ function MenuEditor() {
         <div className="flex items-center justify-between gap-3"><Button asChild variant="ghost"><Link to="/espace/$slug" params={{ slug }}><ArrowLeft /> Écran cuisine</Link></Button><ThemeToggle /></div>
         <h1 className="mt-4 text-5xl">Carte · {r?.name}</h1>
         <p className="text-sm text-muted-foreground">
-          {custom ? "Carte personnalisée de ce restaurant." : "Vous partez de la carte de base : elle deviendra propre à ce restaurant dès le premier enregistrement."} Les modifications n'affectent aucun autre établissement.
+          {!menu.length ? "Carte vierge : déposez votre menu ci-dessous ou ajoutez vos catégories à la main." : custom ? "Carte personnalisée de ce restaurant." : "Vous partez de la carte de base : elle deviendra propre à ce restaurant dès le premier enregistrement."} Les modifications n'affectent aucun autre établissement.
         </p>
 
         <div className="mt-6 space-y-3">
           <input ref={input} className="sr-only" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.txt,.csv,application/pdf,image/jpeg,image/png,image/webp,text/plain,text/csv" onChange={(e) => void importFile(e.target.files?.[0])} aria-label="Choisir une carte à importer" />
           <div role="button" tabIndex={0} onClick={() => input.current?.click()} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); input.current?.click(); } }}
             onDragOver={(e) => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={(e) => { e.preventDefault(); setDragging(false); void importFile(e.dataTransfer.files[0]); }}
-            className={`cursor-pointer border-2 border-dashed p-6 text-center transition-colors ${dragging ? "border-primary bg-primary/10" : "border-border hover:border-primary"}`}>
-            <FileUp className="mx-auto mb-2 h-7 w-7 text-primary" />
-            <p className="font-semibold">{importing ? "Analyse de la carte en cours…" : "Déposez votre carte ici ou choisissez un fichier"}</p>
+            className={`cursor-pointer rounded-xl border-2 border-dashed text-center transition-colors ${menu.length ? "p-6" : "p-10"} ${dragging ? "border-primary bg-primary/10" : "border-border hover:border-primary"}`}>
+            <FileUp className={`mx-auto mb-2 text-primary ${menu.length ? "h-7 w-7" : "h-12 w-12"}`} />
+            <p className={menu.length ? "font-semibold" : "font-display text-3xl"}>{importing ? "Analyse de la carte en cours…" : "Déposer votre menu (PDF ou photo) pour le créer avec l'IA"}</p>
+            {!importing && <span className="mt-3 inline-flex h-10 items-center rounded-md bg-primary px-5 font-semibold text-primary-foreground">Choisir un fichier</span>}
             <p className="text-sm text-muted-foreground">PDF, photo, TXT ou CSV · 8 Mo maximum · 8 pages maximum</p>
           </div>
           {candidate && <div className="border border-primary bg-primary/5 p-4" aria-live="polite">
