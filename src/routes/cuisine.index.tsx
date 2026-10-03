@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/cuisine/")({
   head: () => ({
     meta: [
-      { title: "Espace restaurants — Choisir un établissement" },
+      { title: "Espace restaurants — LC Digitale" },
       { name: "description", content: "Accès aux écrans cuisine de vos restaurants." },
       { property: "og:title", content: "Espace restaurants" },
       { property: "og:description", content: "Choisissez un établissement." },
