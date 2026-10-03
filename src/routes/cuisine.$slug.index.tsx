@@ -25,7 +25,7 @@ export const Route = createFileRoute("/cuisine/$slug/")({
 type Order = {
   id: string; order_number: number; customer_name: string; phone: string; mode: string; address: string | null; city: string | null;
   slot: string; items: { name: string; qty: number; details: string[] }[]; notes: string | null; total: number;
-  payment_method: string; status: string; created_at: string;
+  payment_method: string; status: string; source?: string; created_at: string;
 };
 
 const COLS = [
@@ -142,7 +142,7 @@ function Kitchen() {
                         <p className="flex items-center justify-end gap-1 font-display text-3xl leading-none text-primary">
                           {o.mode === "delivery" ? <Bike className="h-5 w-5" /> : <ShoppingBag className="h-5 w-5" />}{fmtTime(o.slot)}
                         </p>
-                        <p className="text-xs text-muted-foreground">{o.mode === "delivery" ? "Livraison" : "À emporter"}</p>
+                        <p className="text-xs text-muted-foreground">{o.source === "kiosk" ? "BORNE · " : ""}{o.mode === "delivery" ? "Livraison" : o.mode === "dine_in" ? "Sur place" : "À emporter"}</p>
                       </div>
                     </div>
                     <ul className="mt-3 space-y-1.5 border-t border-border pt-3">
@@ -156,8 +156,8 @@ function Kitchen() {
                     {o.notes && <p className="mt-2 rounded bg-accent/20 p-2 text-sm">⚠ {o.notes}</p>}
                     {o.mode === "delivery" && <p className="mt-2 text-sm">{o.address}, {o.city}</p>}
                     <div className="mt-2 flex items-center justify-between text-sm text-muted-foreground">
-                      <a href={`tel:${o.phone}`} className="flex items-center gap-1"><Phone className="h-3 w-3" />{o.phone}</a>
-                      <span>{euro(Number(o.total))} · {o.payment_method === "on_site" ? "à encaisser" : "payé"}</span>
+                      {o.source === "kiosk" ? <span /> : <a href={`tel:${o.phone}`} className="flex items-center gap-1"><Phone className="h-3 w-3" />{o.phone}</a>}
+                      <span>{euro(Number(o.total))} · {o.payment_method === "online" ? "payé" : o.payment_method === "card_terminal" ? "CB au comptoir" : o.payment_method === "counter" ? "espèces/TR au comptoir" : "à encaisser"}</span>
                     </div>
                     <div className="mt-3 flex gap-2">
                       <Button size="lg" className="flex-1 font-semibold" onClick={() => move(o, c.next)}>{c.action}</Button>

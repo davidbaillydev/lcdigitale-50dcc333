@@ -33,6 +33,7 @@ export type Database = {
           postal_code: string | null
           restaurant_id: string
           slot: string
+          source: string
           status: string
           subtotal: number
           total: number
@@ -56,6 +57,7 @@ export type Database = {
           postal_code?: string | null
           restaurant_id: string
           slot: string
+          source?: string
           status?: string
           subtotal: number
           total: number
@@ -79,6 +81,7 @@ export type Database = {
           postal_code?: string | null
           restaurant_id?: string
           slot?: string
+          source?: string
           status?: string
           subtotal?: number
           total?: number

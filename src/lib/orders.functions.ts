@@ -93,3 +93,53 @@ export const getOrderStatus = createServerFn({ method: "GET" })
       .maybeSingle();
     return row;
   });
+
+const kioskSchema = z.object({
+  restaurant: z.string().max(40),
+  mode: z.enum(["dine_in", "pickup"]),
+  payment_method: z.enum(["counter", "card_terminal"]),
+  customer_name: z.string().trim().max(40).optional(),
+  lines: orderSchema.shape.lines,
+});
+
+/** Commande passée depuis la borne en restaurant : préparation immédiate, paiement au comptoir/TPE */
+export const createKioskOrder = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => kioskSchema.parse(d))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rRow } = await supabaseAdmin.from("restaurants").select(RESTAURANT_COLUMNS).eq("slug", data.restaurant).eq("active", true).maybeSingle();
+    const r = rRow as unknown as Restaurant | null;
+    if (!r) throw new Error("Restaurant introuvable");
+    const catalog = getCatalog(r.menu_key);
+    const items = data.lines.map((l) => {
+      const item = catalog.itemsById[l.itemId];
+      if (!item) throw new Error("Article inconnu");
+      const err = validateSelections(item, l.sel);
+      if (err) throw new Error(err);
+      const unit = unitPrice(item, l.sel);
+      return { id: item.id, name: item.name, qty: l.qty, unit, total: Math.round(unit * l.qty * 100) / 100, details: describeSelections(item, l.sel) };
+    });
+    const subtotal = Math.round(items.reduce((s, i) => s + i.total, 0) * 100) / 100;
+    const { data: row, error } = await supabaseAdmin
+      .from("orders")
+      .insert({
+        restaurant_id: r.id,
+        customer_name: data.customer_name || "Borne",
+        phone: "-",
+        mode: data.mode,
+        slot: new Date().toISOString(),
+        items,
+        subtotal,
+        delivery_fee: 0,
+        total: subtotal,
+        payment_method: data.payment_method,
+        source: "kiosk",
+      })
+      .select("id, order_number, total")
+      .single();
+    if (error) {
+      console.error(error);
+      throw new Error("Impossible d'enregistrer la commande.");
+    }
+    return row;
+  });
