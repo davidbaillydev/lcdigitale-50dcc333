@@ -5,10 +5,10 @@ import { listRestaurants } from "@/lib/restaurants.functions";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Nos restaurants — Commande en ligne" },
-      { name: "description", content: "Choisissez votre restaurant et commandez en ligne : à emporter ou en livraison." },
-      { property: "og:title", content: "Nos restaurants — Commande en ligne" },
-      { property: "og:description", content: "Commandez en ligne dans nos restaurants partenaires." },
+      { title: "LC Digitale — Nos restaurants, commande en ligne" },
+      { name: "description", content: "LC Digitale : choisissez votre restaurant et commandez en ligne, à emporter ou en livraison." },
+      { property: "og:title", content: "LC Digitale — Nos restaurants" },
+      { property: "og:description", content: "Commandez en ligne dans les restaurants du réseau LC Digitale." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -22,7 +22,7 @@ function Home() {
   const restaurants = Route.useLoaderData();
   return (
     <div className="mx-auto min-h-screen max-w-4xl px-4 py-16">
-      <p className="inline-block -rotate-1 brush px-4 py-1 font-display text-xl">Commande en ligne</p>
+      <p className="inline-block -rotate-1 brush px-4 py-1 font-display text-xl">LC Digitale · Commande en ligne</p>
       <h1 className="mt-3 text-6xl leading-none sm:text-7xl">Nos restaurants</h1>
       <div className="mt-10 grid gap-4 sm:grid-cols-2">
         {restaurants.map((r) => (

@@ -1,0 +1,13 @@
+{
+  "name": "LC Digitale — Commande en ligne",
+  "short_name": "LC Digitale",
+  "description": "La plateforme de commande en ligne des restaurants partenaires LC Digitale.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#141210",
+  "theme_color": "#f5b301",
+  "icons": [
+    { "src": "/favicon.ico", "sizes": "48x48", "type": "image/x-icon" }
+  ]
+}
