@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { BrandLogo, BrandTheme } from "@/lib/brand";
 import { ThemeToggle } from "@/lib/theme";
 
-export const Route = createFileRoute("/cuisine/$slug/")({
+export const Route = createFileRoute("/_authenticated/espace/$slug/")({
   head: () => ({
     meta: [
       { title: "Écran cuisine" },
@@ -106,7 +106,7 @@ function Kitchen() {
       <div className="mx-auto max-w-md p-10 text-center">
         <h1 className="text-4xl">Accès en attente</h1>
         <p className="mt-2 text-muted-foreground">Votre compte ({user.email}) n'a pas accès à ce restaurant.</p>
-        <Button asChild className="mt-6 mr-2"><Link to="/cuisine">Mes restaurants</Link></Button>
+        <Button asChild className="mt-6 mr-2"><Link to="/espace">Mes restaurants</Link></Button>
         <Button className="mt-6" variant="secondary" onClick={() => supabase.auth.signOut()}>Se déconnecter</Button>
       </div>
     );
@@ -116,15 +116,16 @@ function Kitchen() {
     <BrandTheme brand={restaurant?.brand}>
     <div className="flex min-h-screen flex-col">
       <header className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3">
-        {restaurants.length > 1 && <Button asChild variant="ghost" size="icon" aria-label="Mes restaurants"><Link to="/cuisine"><ArrowLeft /></Link></Button>}
+        {restaurants.length > 1 && <Button asChild variant="ghost" size="icon" aria-label="Mes restaurants"><Link to="/espace"><ArrowLeft /></Link></Button>}
         <BrandLogo src={restaurant?.logo_url} name={restaurant?.name ?? ""} />
         <h1 className="mr-auto text-3xl">Cuisine <span className="text-primary">{restaurant?.name}</span></h1>
         <span className="text-sm text-muted-foreground">{done.length} terminée(s) · CA {euro(done.reduce((s, o) => s + Number(o.total), 0))}</span>
         <Button variant={sound ? "secondary" : "default"} onClick={sound ? () => setSound(false) : enableSound} className={cn(!sound && "animate-pulse")}>
           {sound ? <Bell /> : <BellOff />} {sound ? "Son activé" : "Activer le son"}
         </Button>
-        {isAdmin && <Button asChild variant="secondary"><Link to="/cuisine/$slug/carte" params={{ slug }}>Carte</Link></Button>}
-        {isAdmin && <Button asChild variant="secondary"><Link to="/cuisine/$slug/equipe" params={{ slug }}><Users /> Équipe</Link></Button>}
+        {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/carte" params={{ slug }}>Carte</Link></Button>}
+        {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/reglages" params={{ slug }}>Réglages</Link></Button>}
+        {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/equipe" params={{ slug }}><Users /> Équipe</Link></Button>}
         <ThemeToggle />
         <Button variant="ghost" size="icon" onClick={() => supabase.auth.signOut()} aria-label="Déconnexion"><LogOut /></Button>
       </header>

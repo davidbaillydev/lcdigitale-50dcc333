@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { unitPrice, validateSelections, describeSelections } from "./menu";
 import { getCatalog } from "./catalogs";
-import { RESTAURANT_COLUMNS, deliveryFee, isValidSlot, type Restaurant } from "./shop";
+import { RESTAURANT_COLUMNS, deliveryFee, isValidSlot, modeEnabled, paymentEnabled, type Restaurant } from "./shop";
 
 const orderSchema = z.object({
   restaurant: z.string().max(40),
@@ -32,6 +32,8 @@ export const createOrder = createServerFn({ method: "POST" })
 
     if (!isValidSlot(r, data.mode, data.slot)) throw new Error("Ce créneau n'est plus disponible, merci d'en choisir un autre.");
     if (data.payment_method === "online") throw new Error("Le paiement en ligne n'est pas encore activé.");
+    if (!modeEnabled(r, data.mode)) throw new Error(data.mode === "delivery" ? "La livraison n'est pas proposée par ce restaurant." : "La vente à emporter n'est pas proposée.");
+    if (!paymentEnabled(r, "on_site")) throw new Error("Ce mode de paiement n'est pas accepté.");
 
     const items = data.lines.map((l) => {
       const item = catalog.itemsById[l.itemId];
@@ -72,6 +74,7 @@ export const createOrder = createServerFn({ method: "POST" })
         delivery_fee: fee,
         total: Math.round((subtotal + fee) * 100) / 100,
         payment_method: data.payment_method,
+        status: r.config.autoAccept ? "accepted" : "new",
       })
       .select("id, order_number")
       .single();
@@ -110,6 +113,8 @@ export const createKioskOrder = createServerFn({ method: "POST" })
     const { data: rRow } = await supabaseAdmin.from("restaurants").select(RESTAURANT_COLUMNS).eq("slug", data.restaurant).eq("active", true).maybeSingle();
     const r = rRow as unknown as Restaurant | null;
     if (!r) throw new Error("Restaurant introuvable");
+    if (!modeEnabled(r, data.mode)) throw new Error("Ce mode n'est pas proposé.");
+    if (!paymentEnabled(r, data.payment_method)) throw new Error("Ce mode de paiement n'est pas accepté.");
     const catalog = getCatalog(r);
     const items = data.lines.map((l) => {
       const item = catalog.itemsById[l.itemId];
@@ -134,6 +139,7 @@ export const createKioskOrder = createServerFn({ method: "POST" })
         total: subtotal,
         payment_method: data.payment_method,
         source: "kiosk",
+        status: r.config.autoAccept ? "accepted" : "new",
       })
       .select("id, order_number, total")
       .single();

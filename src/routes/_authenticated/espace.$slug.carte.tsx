@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-export const Route = createFileRoute("/cuisine/$slug/carte")({
+export const Route = createFileRoute("/_authenticated/espace/$slug/carte")({
   head: () => ({
     meta: [
       { title: "Gestion de la carte — Back-office restaurant" },
@@ -60,7 +60,7 @@ function MenuEditor() {
   }, [canManage, r?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) return <p className="p-10 text-center text-muted-foreground">Chargement…</p>;
-  if (!canManage) return <p className="p-10 text-center">Réservé au gérant. <Link to="/cuisine" className="underline">Retour</Link></p>;
+  if (!canManage) return <p className="p-10 text-center">Réservé au gérant. <Link to="/espace" className="underline">Retour</Link></p>;
   if (!menu) return <p className="p-10 text-center text-muted-foreground">Chargement de la carte…</p>;
 
   const update = (m: Category[]) => { setMenu(m); setDirty(true); };
@@ -89,7 +89,7 @@ function MenuEditor() {
   return (
     <BrandTheme brand={r?.brand}>
       <div className="mx-auto max-w-4xl p-6 pb-28">
-        <div className="flex items-center justify-between gap-3"><Button asChild variant="ghost"><Link to="/cuisine/$slug" params={{ slug }}><ArrowLeft /> Écran cuisine</Link></Button><ThemeToggle /></div>
+        <div className="flex items-center justify-between gap-3"><Button asChild variant="ghost"><Link to="/espace/$slug" params={{ slug }}><ArrowLeft /> Écran cuisine</Link></Button><ThemeToggle /></div>
         <h1 className="mt-4 text-5xl">Carte · {r?.name}</h1>
         <p className="text-sm text-muted-foreground">
           {custom ? "Carte personnalisée de ce restaurant." : "Vous partez de la carte de base : elle deviendra propre à ce restaurant dès le premier enregistrement."} Les modifications n'affectent aucun autre établissement.

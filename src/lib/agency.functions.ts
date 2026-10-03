@@ -42,7 +42,7 @@ const input = z.object({
   active: z.boolean(),
 });
 
-const RESERVED = new Set(["cuisine", "connexion", "agence", "commande", "suivi", "api"]);
+const RESERVED = new Set(["cuisine", "connexion", "agence", "commande", "suivi", "api", "admin", "espace", "reset-password"]);
 const DEFAULT_OPENING = Object.fromEntries([1, 2, 3, 4, 5, 6].map((d) => [String(d), [[690, 870], [1110, 1350]]]));
 
 export const saveRestaurant = createServerFn({ method: "POST" })
