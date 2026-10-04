@@ -33,11 +33,25 @@ export const Route = createFileRoute("/api/public/vapi/$restaurantId")({
         if (!ok) return new Response("Unauthorized", { status: 401 });
         if (!ch.enabled) return Response.json({ error: "Canal désactivé" }, { status: 403 });
 
-        const body = (await request.json().catch(() => null)) as { message?: { type?: string; toolCallList?: ToolCall[]; toolCalls?: ToolCall[] } } | null;
+        // Mode test (Console Agence) : aucune écriture en base, commande simulée.
+        const dryRun = request.headers.get("x-lc-test") === "1";
+        const body = (await request.json().catch(() => null)) as { message?: { type?: string; toolCallList?: ToolCall[]; toolCalls?: ToolCall[]; durationSeconds?: number; endedReason?: string; call?: { id?: string; customer?: { number?: string } } } } | null;
         const msg = body?.message;
         if (!msg) return new Response("Bad request", { status: 400 });
+        const callId = typeof msg.call?.id === "string" ? msg.call.id.slice(0, 100) : null;
+        const caller = typeof msg.call?.customer?.number === "string" ? msg.call.customer.number.slice(0, 30) : null;
         if (msg.type === "end-of-call-report") {
+          if (dryRun) return Response.json({ ok: true, dry_run: true });
           await supabaseAdmin.from("restaurant_voice_channels").update({ calls_count: ch.calls_count + 1, last_call_at: new Date().toISOString() }).eq("restaurant_id", params.restaurantId);
+          if (callId) {
+            const { data: cur } = await supabaseAdmin.from("restaurant_voice_calls").select("order_number").eq("restaurant_id", params.restaurantId).eq("call_id", callId).maybeSingle();
+            const dur = typeof msg.durationSeconds === "number" ? Math.round(msg.durationSeconds) : null;
+            await supabaseAdmin.from("restaurant_voice_calls").upsert({
+              restaurant_id: params.restaurantId, call_id: callId, caller, duration_seconds: dur,
+              ended_reason: typeof msg.endedReason === "string" ? msg.endedReason.slice(0, 80) : null,
+              status: cur?.order_number ? "commande" : "sans commande", updated_at: new Date().toISOString(),
+            }, { onConflict: "restaurant_id,call_id" });
+          }
           return Response.json({ ok: true });
         }
         if (msg.type !== "tool-calls") return Response.json({ ok: true });
@@ -90,6 +104,9 @@ export const Route = createFileRoute("/api/public/vapi/$restaurantId")({
                 fee = deliveryFee(r, subtotal); city = zone.city;
               }
               const total = Math.round((subtotal + fee) * 100) / 100;
+              if (dryRun) {
+                result = { ok: true, dry_run: true, order_number: null, total, ready_at: slot, items, payment: "Paiement au retrait / à la livraison (simulation, aucune commande créée)" };
+              } else {
               const { data: row, error } = await supabaseAdmin.from("orders").insert({
                 restaurant_id: r.id, customer_name: a.customer_name, phone: a.phone, mode: a.mode,
                 address: a.mode === "delivery" ? a.address ?? null : null, postal_code: a.mode === "delivery" ? a.postal_code ?? null : null, city,
@@ -97,7 +114,13 @@ export const Route = createFileRoute("/api/public/vapi/$restaurantId")({
                 payment_method: "on_site", source: "phone", status: r.config?.autoAccept ? "accepted" : "new",
               }).select("order_number").single();
               if (error) { console.error(error); throw new Error("Impossible d'enregistrer la commande."); }
+              if (callId) {
+                await supabaseAdmin.from("restaurant_voice_calls").upsert({
+                  restaurant_id: r.id, call_id: callId, caller, order_number: row.order_number, status: "commande", updated_at: new Date().toISOString(),
+                }, { onConflict: "restaurant_id,call_id" });
+              }
               result = { ok: true, order_number: row.order_number, total, ready_at: slot, payment: "Paiement au retrait / à la livraison" };
+              }
             } else {
               result = { error: `Outil inconnu : ${name}` };
             }
