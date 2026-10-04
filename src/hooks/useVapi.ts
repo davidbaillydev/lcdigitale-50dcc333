@@ -37,11 +37,20 @@ export function useVapi(publicKey: string | null | undefined) {
     return v;
   }, [publicKey]);
 
+  const lastAssistantId = useRef<string | null>(null);
+
   const startCall = useCallback(async (assistantId: string) => {
+    lastAssistantId.current = assistantId;
     setError(null); setConnecting(true);
     try { await (await ensure()).start(assistantId); }
     catch (e) { setConnecting(false); setError((e as Error).message || "Impossible de démarrer l'appel"); }
   }, [ensure]);
+
+  const retryCall = useCallback(() => {
+    if (lastAssistantId.current) void startCall(lastAssistantId.current);
+  }, [startCall]);
+
+  const dismissError = useCallback(() => setError(null), []);
 
   const stopCall = useCallback(() => { ref.current?.stop(); setConnecting(false); }, []);
   const toggleMute = useCallback(() => {
@@ -50,5 +59,5 @@ export function useVapi(publicKey: string | null | undefined) {
 
   useEffect(() => () => { ref.current?.stop(); ref.current?.removeAllListeners?.(); ref.current = null; }, [publicKey]);
 
-  return { startCall, stopCall, toggleMute, isConnecting, isConnected, isSpeaking, volumeLevel, isMuted, error };
+  return { startCall, retryCall, dismissError, stopCall, toggleMute, isConnecting, isConnected, isSpeaking, volumeLevel, isMuted, error };
 }
