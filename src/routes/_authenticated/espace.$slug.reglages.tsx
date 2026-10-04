@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft } from "lucide-react";
 import { loadRestaurantAdmin } from "@/lib/restaurant-settings.functions";
+import { MarketingPanel } from "@/components/MarketingPanel";
 import { PaymentProvidersPanel } from "@/components/PaymentProvidersPanel";
 import { RestaurantSettingsForm } from "@/components/RestaurantSettingsForm";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ function Page() {
       {error && <p className="text-destructive">{(error as Error).message}</p>}
       {data && <RestaurantSettingsForm restaurant={data} onSaved={() => refetch()} />}
       {data && <PaymentProvidersPanel restaurantId={data.id} />}
+      {data && <MarketingPanel restaurantId={data.id} marketing={data.config.marketing} onSaved={() => refetch()} />}
     </div>
   );
 }

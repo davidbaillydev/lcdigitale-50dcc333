@@ -11,6 +11,8 @@ import { itemImage, menuImage } from "@/lib/menu-images";
 import { BrandLogo } from "@/lib/brand";
 import { ThemeToggle } from "@/lib/theme";
 import { RestaurantBanner } from "@/components/RestaurantBanner";
+import { PromoCodeField, type AppliedDiscount } from "@/components/PromoCodeField";
+import { announcementText } from "@/lib/promo";
 
 export const Route = createFileRoute("/$slug/borne")({
   head: () => ({
@@ -42,6 +44,9 @@ function Kiosk() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ n: number; total: number; pay: string } | null>(null);
   const [warn, setWarn] = useState(false);
+  const [promo, setPromo] = useState<{ d: AppliedDiscount | null; code?: string | undefined }>({ d: null });
+  const toPay = Math.round((subtotal - (promo.d?.discount ?? 0)) * 100) / 100;
+  const announce = announcementText(restaurant.config);
   const last = useRef(Date.now());
   const checkTerminal = useServerFn(kioskTerminalAvailable);
   const startCard = useServerFn(startKioskCardPayment);
@@ -65,7 +70,7 @@ function Kiosk() {
   }, [step, pending, cardState, pollCard]);
 
   const reset = useCallback(() => {
-    clear(); setItem(null); setResult(null); setError(null); setWarn(false);
+    clear(); setItem(null); setResult(null); setError(null); setWarn(false); setPromo({ d: null });
     setCat(catalog.categories[0]?.id ?? ""); setStep("welcome");
   }, [clear, catalog]);
 
@@ -89,7 +94,7 @@ function Kiosk() {
   const pay = async (payment_method: "counter" | "card_terminal") => {
     setBusy(true); setError(null);
     try {
-      const row = await send({ data: { restaurant: restaurant.slug, mode, payment_method, lines: lines.map((l) => ({ itemId: l.itemId, qty: l.qty, sel: l.sel })) } });
+      const row = await send({ data: { restaurant: restaurant.slug, mode, payment_method, ...(promo.code ? { promo_code: promo.code } : {}), lines: lines.map((l) => ({ itemId: l.itemId, qty: l.qty, sel: l.sel })) } });
       clear(); last.current = Date.now();
       if (payment_method === "card_terminal" && terminal) {
         try {
@@ -119,6 +124,7 @@ function Kiosk() {
           <BrandLogo src={restaurant.logo_url} name={restaurant.name} className="relative h-40 w-40 object-contain" />
           <p className="relative font-display text-8xl text-primary">{restaurant.name}</p>
           <p className="relative text-3xl text-foreground">Bienvenue !</p>
+          {announce && <p className="relative max-w-4xl rounded-2xl bg-accent px-10 py-5 font-display text-4xl text-accent-foreground">{announce}</p>}
           <span className="relative animate-pulse rounded-full bg-primary px-14 py-8 font-display text-5xl text-primary-foreground">Touchez pour commander</span>
           <div className="relative mt-6 grid w-full max-w-3xl grid-cols-2 gap-6" onClick={(e) => e.stopPropagation()}>
             {([["dine_in", "Sur place", UtensilsCrossed], ["pickup", "À emporter", ShoppingBag]] as const).filter(([m]) => restaurant.config.modes?.[m] !== false).map(([m, label, Icon]) => (
@@ -221,7 +227,11 @@ function Kiosk() {
       {step === "pay" && (
         <div className="flex flex-1 flex-col items-center justify-center gap-8 p-10">
           <h2 className="font-display text-6xl">Comment souhaitez-vous payer ?</h2>
-          <p className="text-3xl">Total : <span className="font-display text-primary">{euro(subtotal)}</span></p>
+          <div className="w-full max-w-2xl">
+            <PromoCodeField large slug={restaurant.slug} subtotal={subtotal} channel="kiosk" onChange={(d, code) => setPromo({ d, code })} />
+          </div>
+          {promo.d && <p className="text-2xl text-primary">{promo.d.label} : -{euro(promo.d.discount)}</p>}
+          <p className="text-3xl">Total : <span className="font-display text-primary">{euro(toPay)}</span></p>
           <div className="grid w-full max-w-4xl grid-cols-2 gap-6">
             {restaurant.config.payments?.counter !== false && <button disabled={busy} onClick={() => pay("counter")} className="flex flex-col items-center gap-4 rounded-2xl border-2 border-border bg-card p-10 active:border-primary disabled:opacity-50">
               <Banknote className="h-20 w-20 text-primary" />

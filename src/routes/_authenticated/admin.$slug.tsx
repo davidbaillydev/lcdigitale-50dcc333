@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft, Check, ChefHat, ExternalLink, Tablet, Users, UtensilsCrossed } from "lucide-react";
 import { loadRestaurantAdmin } from "@/lib/restaurant-settings.functions";
 import { RestaurantSettingsForm } from "@/components/RestaurantSettingsForm";
+import { MarketingPanel } from "@/components/MarketingPanel";
 import { PaymentProvidersPanel } from "@/components/PaymentProvidersPanel";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/lib/theme";
@@ -60,6 +61,7 @@ function Page() {
           <p className="text-sm text-muted-foreground">Identité, logo et couleurs se modifient depuis la console (bouton « Modifier »).</p>
           <RestaurantSettingsForm restaurant={r} onSaved={() => refetch()} />
           <PaymentProvidersPanel restaurantId={r.id} />
+          <MarketingPanel restaurantId={r.id} marketing={r.config.marketing} onSaved={() => refetch()} />
         </>
       )}
     </div>

@@ -23,6 +23,7 @@ export type Restaurant = {
     printing?: Partial<import("./ticket").PrintingConfig>;
     modes?: { pickup?: boolean; delivery?: boolean; dine_in?: boolean };
     payments?: { on_site?: boolean; counter?: boolean; card_terminal?: boolean };
+    marketing?: import("./promo").Marketing;
   };
 };
 

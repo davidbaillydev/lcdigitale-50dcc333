@@ -16,6 +16,7 @@ import { createOrder } from "@/lib/orders.functions";
 import { onlinePaymentInfo } from "@/lib/payments.functions";
 import { StripePayment } from "@/components/StripePayment";
 import { cn } from "@/lib/utils";
+import { PromoCodeField, type AppliedDiscount } from "@/components/PromoCodeField";
 
 export const Route = createFileRoute("/$slug/commande")({
   head: () => ({
@@ -44,6 +45,7 @@ function Checkout() {
   const infoFn = useServerFn(onlinePaymentInfo);
   const [online, setOnline] = useState<{ stripe: string | null; paypal: boolean; lyra: boolean }>({ stripe: null, paypal: false, lyra: false });
   const [payment, setPayment] = useState<{ id: string; clientSecret: string } | null>(null);
+  const [promo, setPromo] = useState<{ d: AppliedDiscount | null; code?: string | undefined }>({ d: null });
   const onSiteOk = restaurant.config.payments?.on_site !== false;
 
   useEffect(() => {
@@ -60,7 +62,8 @@ function Checkout() {
   }, [mode, restaurant]);
 
   const fee = mode === "delivery" ? deliveryFee(restaurant, subtotal) : 0;
-  const total = subtotal + fee;
+  const discount = promo.d?.discount ?? 0;
+  const total = subtotal - discount + fee;
   const belowMin = mode === "delivery" && subtotal < DELIVERY.minOrder;
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
 
@@ -76,7 +79,7 @@ function Checkout() {
     try {
       const res = await submitFn({
         data: {
-          ...f, restaurant: restaurant.slug, mode, slot,
+          ...f, restaurant: restaurant.slug, mode, slot, ...(promo.code ? { promo_code: promo.code } : {}),
           payment_method: pay === "on_site" ? "on_site" : "online",
           ...(pay !== "on_site" ? { provider: pay, origin: window.location.origin } : {}),
           lines: lines.map((l) => ({ itemId: l.itemId, qty: l.qty, sel: l.sel })),
@@ -194,8 +197,10 @@ function Checkout() {
         <aside className="h-fit rounded-xl border border-border bg-card p-5 lg:sticky lg:top-20">
           <h2 className="text-3xl">Récapitulatif</h2>
           <CartLines />
+          {!payment && <div className="mb-3"><PromoCodeField slug={restaurant.slug} subtotal={subtotal} channel="web" email={f.email} phone={f.phone} onChange={(d, code) => setPromo({ d, code })} /></div>}
           <div className="space-y-1 border-t border-border pt-3 text-sm">
             <div className="flex justify-between"><span>Sous-total</span><span>{euro(subtotal)}</span></div>
+            {discount > 0 && <div className="flex justify-between text-primary"><span>{promo.d?.label}</span><span>-{euro(discount)}</span></div>}
             {mode === "delivery" && <div className="flex justify-between"><span>Livraison</span><span>{fee ? euro(fee) : "Offerte"}</span></div>}
             <div className="flex justify-between pt-2 text-lg font-bold"><span>Total</span><span className="text-primary">{euro(total)}</span></div>
           </div>

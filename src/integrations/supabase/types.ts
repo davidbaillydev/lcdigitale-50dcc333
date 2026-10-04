@@ -72,6 +72,7 @@ export type Database = {
           created_at: string
           customer_name: string
           delivery_fee: number
+          discount: number
           email: string | null
           id: string
           items: Json
@@ -83,6 +84,7 @@ export type Database = {
           payment_status: string
           phone: string
           postal_code: string | null
+          promo_code: string | null
           restaurant_id: string
           slot: string
           source: string
@@ -97,6 +99,7 @@ export type Database = {
           created_at?: string
           customer_name: string
           delivery_fee?: number
+          discount?: number
           email?: string | null
           id?: string
           items: Json
@@ -108,6 +111,7 @@ export type Database = {
           payment_status?: string
           phone: string
           postal_code?: string | null
+          promo_code?: string | null
           restaurant_id: string
           slot: string
           source?: string
@@ -122,6 +126,7 @@ export type Database = {
           created_at?: string
           customer_name?: string
           delivery_fee?: number
+          discount?: number
           email?: string | null
           id?: string
           items?: Json
@@ -133,6 +138,7 @@ export type Database = {
           payment_status?: string
           phone?: string
           postal_code?: string | null
+          promo_code?: string | null
           restaurant_id?: string
           slot?: string
           source?: string
@@ -246,6 +252,59 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "restaurant_payment_providers_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurant_promo_codes: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          ends_at: string | null
+          id: string
+          kind: string
+          min_order: number
+          restaurant_id: string
+          starts_at: string | null
+          updated_at: string
+          uses: number
+          value: number
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          kind: string
+          min_order?: number
+          restaurant_id: string
+          starts_at?: string | null
+          updated_at?: string
+          uses?: number
+          value: number
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          kind?: string
+          min_order?: number
+          restaurant_id?: string
+          starts_at?: string | null
+          updated_at?: string
+          uses?: number
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_promo_codes_restaurant_id_fkey"
             columns: ["restaurant_id"]
             isOneToOne: false
             referencedRelation: "restaurants"

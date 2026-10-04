@@ -114,6 +114,8 @@ function Tracking() {
               {it.details.map((d) => <p key={d} className="text-xs text-muted-foreground">{d}</p>)}
             </li>
           ))}
+          {Number(data.discount) > 0 && <li className="flex justify-between py-3 text-primary"><span>Remise{data.promo_code ? ` ${data.promo_code}` : ""}</span><span>-{euro(Number(data.discount))}</span></li>}
+          {Number(data.delivery_fee) > 0 && <li className="flex justify-between py-3"><span>Livraison</span><span>{euro(Number(data.delivery_fee))}</span></li>}
           <li className="flex justify-between py-3 font-bold"><span>Total</span><span className="text-primary">{euro(Number(data.total))}</span></li>
         </ul>
         <div className="mt-6 flex flex-wrap gap-2">
