@@ -2,7 +2,7 @@ import { ALLERGENS, allergenIcon, allergenLabel } from "@/lib/allergens";
 import { cn } from "@/lib/utils";
 
 /** Badges d'allergènes d'un plat (pictogramme + libellé) */
-export function AllergenBadges({ ids, size = "sm", className }: { ids?: string[]; size?: "sm" | "lg"; className?: string }) {
+export function AllergenBadges({ ids, size = "sm", className }: { ids?: string[] | undefined; size?: "sm" | "lg"; className?: string }) {
   if (!ids?.length) return null;
   return (
     <ul className={cn("flex flex-wrap gap-1", className)} aria-label="Allergènes">
@@ -16,7 +16,7 @@ export function AllergenBadges({ ids, size = "sm", className }: { ids?: string[]
 }
 
 /** Bloc « Contient » pour la fiche du plat — mention obligatoire même si vide */
-export function AllergenInfo({ ids, size = "sm" }: { ids?: string[]; size?: "sm" | "lg" }) {
+export function AllergenInfo({ ids, size = "sm" }: { ids?: string[] | undefined; size?: "sm" | "lg" }) {
   return (
     <div className="space-y-1">
       <p className={cn("font-semibold", size === "lg" ? "text-lg" : "text-sm")}>Allergènes</p>
