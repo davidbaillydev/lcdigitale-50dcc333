@@ -2,7 +2,7 @@ import { Crumbs } from "@/components/Crumbs";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
-import { ArrowLeft, FileDown, FileSpreadsheet, RefreshCw, Trash2, Upload } from "lucide-react";
+import { FileDown, FileSpreadsheet, RefreshCw, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useStaff } from "@/hooks/use-staff";
@@ -37,7 +37,7 @@ const SRC: Record<string, string> = { import: "Import", order: "Commande", manua
 
 function Page() {
   const { slug } = Route.useParams();
-  const { loading, restaurants } = useStaff();
+  const { loading, restaurants, isAgency } = useStaff();
   const r = restaurants.find((x) => x.slug === slug);
   const rid = r?.id;
   const canManage = r && r.role !== "kitchen";

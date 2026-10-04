@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ArrowLeft, Copy, KeyRound, Link2 } from "lucide-react";
+import { Copy, KeyRound, Link2 } from "lucide-react";
 import { useStaff } from "@/hooks/use-staff";
 import { getActivationLink, inviteMember, listStaff, setStaffRole } from "@/lib/staff.functions";
 import { hasKitchenPin, setKitchenPin } from "@/lib/kitchen-pin.functions";
@@ -31,7 +31,7 @@ function Team() {
   const { slug } = Route.useParams();
   const { loading, restaurants } = useStaff();
   const restaurant = restaurants.find((r) => r.slug === slug);
-  const canManage = restaurant?.role === "agency" || restaurant?.role === "manager";
+  const canManage = restaurant?.role === "agency";
   const list = useServerFn(listStaff);
   const setRole = useServerFn(setStaffRole);
   const qc = useQueryClient();

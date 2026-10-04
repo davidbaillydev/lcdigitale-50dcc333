@@ -2,7 +2,7 @@ import { Crumbs } from "@/components/Crumbs";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, Check, ChefHat, ExternalLink, Tablet, Users, UtensilsCrossed } from "lucide-react";
+import { Check, ChefHat, ExternalLink, Tablet, Users, UtensilsCrossed } from "lucide-react";
 import { loadRestaurantAdmin } from "@/lib/restaurant-settings.functions";
 import { RestaurantSettingsForm } from "@/components/RestaurantSettingsForm";
 import { MarketingPanel } from "@/components/MarketingPanel";
