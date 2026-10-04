@@ -33,8 +33,8 @@ function Page() {
       <h1 className="text-5xl">Réglages {data?.name ?? ""}</h1>
       {error && <p className="text-destructive">{(error as Error).message}</p>}
       {data && <RestaurantSettingsForm restaurant={data} onSaved={() => refetch()} />}
-      {data && <PaymentProvidersPanel restaurantId={data.id} />
-          {data && <MarketingPanel restaurantId={data.id} marketing={data.config.marketing} onSaved={() => refetch()} />}}
+      {data && <PaymentProvidersPanel restaurantId={data.id} />}
+      {data && <MarketingPanel restaurantId={data.id} marketing={data.config.marketing} onSaved={() => refetch()} />}
     </div>
   );
 }
