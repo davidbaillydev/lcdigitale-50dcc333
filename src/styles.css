@@ -157,3 +157,47 @@
   background: linear-gradient(100deg, transparent 0 2%, var(--primary) 4% 94%, transparent 97%);
   color: var(--primary-foreground);
 }
+
+/* Agency directory tokens preserve partner-specific branding elsewhere. */
+.restaurant-directory {
+  --background: #f7f8fc;
+  --foreground: #212529;
+  --card: #ffffff;
+  --card-foreground: #212529;
+  --primary: #007af5;
+  --primary-foreground: #ffffff;
+  --muted: #f7f8fc;
+  --muted-foreground: #6c757d;
+  --border: color-mix(in oklab, #6c757d 18%, #ffffff);
+  --input: var(--border);
+  --accent: #f7f8fc;
+  --accent-foreground: #212529;
+  --ring: #007af5;
+  --directory-shadow: 0 2px 4px color-mix(in oklab, #222029 4%, transparent);
+  --directory-shadow-hover: 0 16px 32px color-mix(in oklab, #222029 12%, transparent);
+  font-family: "Figtree", system-ui, sans-serif;
+  letter-spacing: 0;
+}
+.dark .restaurant-directory {
+  --background: #222029;
+  --foreground: #ffffff;
+  --card: color-mix(in oklab, #222029 92%, #ffffff);
+  --card-foreground: #ffffff;
+  --muted: #222029;
+  --muted-foreground: color-mix(in oklab, #6c757d 40%, #ffffff);
+  --border: color-mix(in oklab, #222029 78%, #ffffff);
+  --accent: #222029;
+  --accent-foreground: #ffffff;
+}
+.restaurant-directory :is(h1, h2, .font-display) {
+  font-family: "Outfit", sans-serif;
+  letter-spacing: 0;
+}
+.directory-card {
+  box-shadow: var(--directory-shadow);
+  transition: box-shadow 300ms ease;
+}
+.directory-card:hover { box-shadow: var(--directory-shadow-hover); }
+@media (prefers-reduced-motion: reduce) {
+  .directory-card { transition: none; }
+}
