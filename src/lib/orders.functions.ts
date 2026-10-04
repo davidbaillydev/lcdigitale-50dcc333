@@ -15,6 +15,7 @@ const orderSchema = z.object({
   postal_code: z.string().trim().max(10).optional(),
   notes: z.string().trim().max(500).optional(),
   payment_method: z.enum(["on_site", "online"]),
+  promo_code: z.string().trim().max(30).optional(),
   provider: z.enum(["stripe", "paypal", "lyra"]).optional(),
   origin: z.string().url().max(200).regex(/^https?:\/\/[^/]+$/).optional(),
   lines: z
@@ -61,6 +62,9 @@ export const createOrder = createServerFn({ method: "POST" })
       fee = deliveryFee(r, subtotal);
       city = zone.city;
     }
+    const { resolveDiscount } = await import("./promo.server");
+    const promo = await resolveDiscount(supabaseAdmin, r, subtotal, { code: data.promo_code, email: data.email, phone: data.phone, channel: "web" });
+    if (promo.error) throw new Error(promo.error);
 
     const { data: row, error } = await supabaseAdmin
       .from("orders")
@@ -78,7 +82,9 @@ export const createOrder = createServerFn({ method: "POST" })
         notes: data.notes || null,
         subtotal,
         delivery_fee: fee,
-        total: Math.round((subtotal + fee) * 100) / 100,
+        discount: promo.discount,
+        promo_code: promo.discount ? promo.code : null,
+        total: Math.round((subtotal - promo.discount + fee) * 100) / 100,
         payment_method: data.payment_method,
         status: provider ? "awaiting_payment" : r.config.autoAccept ? "accepted" : "new",
       })
@@ -87,6 +93,10 @@ export const createOrder = createServerFn({ method: "POST" })
     if (error) {
       console.error(error);
       throw new Error("Impossible d'enregistrer la commande.");
+    }
+    if (promo.discount && promo.code && promo.code !== "PREMIERE-COMMANDE") {
+      const { data: pc } = await supabaseAdmin.from("restaurant_promo_codes").select("id, uses").eq("restaurant_id", r.id).eq("code", promo.code).maybeSingle();
+      if (pc) await supabaseAdmin.from("restaurant_promo_codes").update({ uses: pc.uses + 1 }).eq("id", pc.id);
     }
     const base = { id: row.id, order_number: row.order_number, clientSecret: null as string | null, redirectUrl: null as string | null, form: null as { action: string; fields: Record<string, string> } | null };
     if (provider === "paypal" || provider === "lyra") {
@@ -112,7 +122,7 @@ export const getOrderStatus = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("orders")
-      .select("id, order_number, status, mode, slot, total, items, payment_method, payment_status, customer_name, restaurants(slug)")
+      .select("id, order_number, status, mode, slot, total, items, payment_method, payment_status, customer_name, discount, promo_code, delivery_fee, restaurants(slug)")
       .eq("id", data.id)
       .maybeSingle();
     return row;
@@ -123,6 +133,7 @@ const kioskSchema = z.object({
   mode: z.enum(["dine_in", "pickup"]),
   payment_method: z.enum(["counter", "card_terminal"]),
   customer_name: z.string().trim().max(40).optional(),
+  promo_code: z.string().trim().max(30).optional(),
   lines: orderSchema.shape.lines,
 });
 
@@ -146,6 +157,9 @@ export const createKioskOrder = createServerFn({ method: "POST" })
       return { id: item.id, name: item.name, qty: l.qty, unit, total: Math.round(unit * l.qty * 100) / 100, details: describeSelections(item, l.sel) };
     });
     const subtotal = Math.round(items.reduce((s, i) => s + i.total, 0) * 100) / 100;
+    const { resolveDiscount } = await import("./promo.server");
+    const promo = await resolveDiscount(supabaseAdmin, r, subtotal, { code: data.promo_code, channel: "kiosk" });
+    if (promo.error) throw new Error(promo.error);
     const { data: row, error } = await supabaseAdmin
       .from("orders")
       .insert({
@@ -157,7 +171,9 @@ export const createKioskOrder = createServerFn({ method: "POST" })
         items,
         subtotal,
         delivery_fee: 0,
-        total: subtotal,
+        discount: promo.discount,
+        promo_code: promo.discount ? promo.code : null,
+        total: Math.round((subtotal - promo.discount) * 100) / 100,
         payment_method: data.payment_method,
         source: "kiosk",
         status: r.config.autoAccept ? "accepted" : "new",
@@ -167,6 +183,10 @@ export const createKioskOrder = createServerFn({ method: "POST" })
     if (error) {
       console.error(error);
       throw new Error("Impossible d'enregistrer la commande.");
+    }
+    if (promo.discount && promo.code && promo.code !== "PREMIERE-COMMANDE") {
+      const { data: pc } = await supabaseAdmin.from("restaurant_promo_codes").select("id, uses").eq("restaurant_id", r.id).eq("code", promo.code).maybeSingle();
+      if (pc) await supabaseAdmin.from("restaurant_promo_codes").update({ uses: pc.uses + 1 }).eq("id", pc.id);
     }
     return row;
   });

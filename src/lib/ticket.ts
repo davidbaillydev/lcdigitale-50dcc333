@@ -6,6 +6,7 @@ export type TicketOrder = {
   address?: string | null; city?: string | null; slot: string; created_at?: string;
   items: { name: string; qty: number; total?: number; details?: string[] }[];
   notes?: string | null; total: number | string; delivery_fee?: number | string | null;
+  discount?: number | string | null; promo_code?: string | null;
   payment_method: string; source?: string | null;
 };
 
@@ -65,6 +66,7 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
     ${f.notes && o.notes ? `<div class="note">⚠ ${esc(o.notes)}</div>` : ""}
     <hr>
     ${f.prices && Number(o.delivery_fee) > 0 ? `<div class="row"><span>Livraison</span><span>${eur(o.delivery_fee)}</span></div>` : ""}
+    ${f.prices && Number(o.discount) > 0 ? `<div class="row"><span>Remise${o.promo_code ? ` ${esc(o.promo_code)}` : ""}</span><span>-${eur(o.discount)}</span></div>` : ""}
     ${f.prices ? `<div class="row l"><span>TOTAL</span><span>${eur(o.total)}</span></div>` : ""}
     <div>${payLabel(o.payment_method)}</div>
     ${kind === "receipt" ? `<hr><div class="c">Merci de votre commande !</div>` : ""}

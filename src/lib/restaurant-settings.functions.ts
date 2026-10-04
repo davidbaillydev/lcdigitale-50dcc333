@@ -55,7 +55,9 @@ export const saveRestaurantSettings = createServerFn({ method: "POST" })
     if (!s.config.modes.pickup && !s.config.modes.delivery && !s.config.modes.dine_in) throw new Error("Activez au moins un mode de commande");
     for (const ranges of Object.values(s.opening)) for (const [a, b] of ranges) if (a >= b) throw new Error("Une plage horaire a une fin avant son début");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("restaurants").update({ opening: s.opening, delivery: s.delivery, config: s.config }).eq("id", data.restaurantId);
+    const { data: cur } = await supabaseAdmin.from("restaurants").select("config").eq("id", data.restaurantId).single();
+    const marketing = (cur?.config as { marketing?: unknown } | null)?.marketing;
+    const { error } = await supabaseAdmin.from("restaurants").update({ opening: s.opening, delivery: s.delivery, config: { ...s.config, ...(marketing ? { marketing } : {}) } as never }).eq("id", data.restaurantId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
