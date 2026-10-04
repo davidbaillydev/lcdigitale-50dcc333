@@ -64,6 +64,7 @@ function Console() {
           <p className="text-sm uppercase tracking-widest text-muted-foreground">LC Digitale</p>
           <h1 className="text-5xl">Console agence</h1>
         </div>
+        <Button variant="secondary" asChild><Link to="/espace/tableau-de-bord">Tableau de bord</Link></Button>
         <Button onClick={() => setForm({ ...EMPTY })}><Plus /> Nouveau restaurant</Button>
         <ThemeToggle />
         <Button variant="ghost" size="icon" onClick={async () => { await supabase.auth.signOut(); navigate({ to: "/connexion", replace: true }); }} aria-label="Déconnexion"><LogOut /></Button>
@@ -107,6 +108,7 @@ function Console() {
                 <Button size="sm" variant="secondary" asChild><Link to="/espace/$slug" params={{ slug: r.slug }}><ChefHat /> Cuisine</Link></Button>
                 <Button size="sm" variant="secondary" asChild><Link to="/espace/$slug/equipe" params={{ slug: r.slug }}><Users /> Équipe</Link></Button>
                 <Button size="sm" variant="secondary" asChild><Link to="/espace/$slug/carte" params={{ slug: r.slug }}>Carte</Link></Button>
+                <Button size="sm" variant="secondary" asChild><Link to="/espace/$slug/clients" params={{ slug: r.slug }}>Clients</Link></Button>
                 <Button size="sm" variant="secondary" asChild><Link to="/admin/$slug" params={{ slug: r.slug }}><Settings /> Réglages</Link></Button>
                 <Button size="sm" onClick={() => setForm({ ...r })}><Pencil /> Modifier</Button>
               </div>

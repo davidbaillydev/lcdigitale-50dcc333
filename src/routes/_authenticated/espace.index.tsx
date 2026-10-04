@@ -43,6 +43,7 @@ function Picker() {
     <div className="mx-auto max-w-3xl p-6">
       <div className="flex items-center gap-2">
         <h1 className="mr-auto text-5xl">Vos restaurants</h1>
+        {restaurants.some((r) => r.role !== "kitchen") && <Button asChild variant="secondary"><Link to="/espace/tableau-de-bord">Tableau de bord</Link></Button>}
         {isAgency && <Button asChild variant="secondary"><Link to="/admin">Console agence</Link></Button>}
         <ThemeToggle />
         <Button variant="ghost" size="icon" onClick={() => supabase.auth.signOut()} aria-label="Déconnexion"><LogOut /></Button>
