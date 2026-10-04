@@ -6,6 +6,7 @@ import { getRestaurant } from "@/lib/restaurants.functions";
 import { euro, type MenuItem } from "@/lib/menu";
 import { ItemDialog } from "@/components/ItemDialog";
 import { SiteHeader } from "@/components/SiteHeader";
+import { VapiVoiceWidget } from "@/components/VapiVoiceWidget";
 import { useCart } from "@/lib/cart";
 import { Button } from "@/components/ui/button";
 import { menuImage } from "@/lib/menu-images";
@@ -43,6 +44,11 @@ function MenuPage() {
           <h1 className="max-w-xl break-words text-6xl leading-none sm:text-8xl">{restaurant.name}</h1>
           {restaurant.config.tagline && <p className="mt-3 max-w-md">{restaurant.config.tagline}</p>}
           <p className="mt-4 max-w-md text-muted-foreground">Commandez en ligne, récupérez sur place ou faites-vous livrer.</p>
+          {restaurant.vapi_phone_number && (
+            <a href={`tel:${restaurant.vapi_phone_number.replace(/[^\d+]/g, "")}`} className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-primary underline-offset-4 hover:underline">
+              <Phone className="h-4 w-4" /> Disponible par téléphone 24/7 avec notre assistant IA Kaito · {restaurant.vapi_phone_number}
+            </a>
+          )}
           <div className="mt-6 flex flex-wrap gap-3 text-sm">
             <span className="flex items-center gap-2 rounded-full bg-card px-3 py-1.5"><ShoppingBag className="h-4 w-4 text-primary" /> À emporter dès {restaurant.config.lead?.pickup ?? 20} min</span>
             {d.zones.length > 0 && (
@@ -120,6 +126,7 @@ function MenuPage() {
           </Button>
         </div>
       )}
+      <VapiVoiceWidget restaurant={restaurant} />
       <ItemDialog item={open} onClose={() => setOpen(null)} />
     </div>
   );

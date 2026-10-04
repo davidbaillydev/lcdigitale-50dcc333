@@ -4,6 +4,7 @@ import { useCart } from "@/lib/cart";
 import { BrandLogo } from "@/lib/brand";
 import { ThemeToggle } from "@/lib/theme";
 import { AnnouncementBar } from "@/components/AnnouncementBar";
+import { Phone } from "lucide-react";
 
 export function SiteHeader({ hideCart }: { hideCart?: boolean }) {
   const { restaurant } = useCart();
@@ -16,6 +17,12 @@ export function SiteHeader({ hideCart }: { hideCart?: boolean }) {
           <span className="truncate">{restaurant.name}</span>
         </Link>
         <div className="flex items-center gap-2">
+          {restaurant.vapi_phone_number && (
+            <a href={`tel:${restaurant.vapi_phone_number.replace(/[^\d+]/g, "")}`} aria-label={`Commander par téléphone : ${restaurant.vapi_phone_number}`}
+              className="flex items-center gap-2 rounded-full border border-primary px-3 py-1.5 text-sm font-semibold text-primary transition hover:bg-primary hover:text-primary-foreground">
+              <Phone className="h-4 w-4" /><span className="hidden md:inline">Commander par tél :</span><span className="hidden sm:inline">{restaurant.vapi_phone_number}</span>
+            </a>
+          )}
           <ThemeToggle />
           {!hideCart && <CartSheet />}
         </div>

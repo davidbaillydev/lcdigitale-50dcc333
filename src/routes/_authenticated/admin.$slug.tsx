@@ -7,6 +7,7 @@ import { loadRestaurantAdmin } from "@/lib/restaurant-settings.functions";
 import { RestaurantSettingsForm } from "@/components/RestaurantSettingsForm";
 import { MarketingPanel } from "@/components/MarketingPanel";
 import { PaymentProvidersPanel } from "@/components/PaymentProvidersPanel";
+import { VapiWebPanel } from "@/components/VapiWebPanel";
 import { VoiceChannelPanel } from "@/components/VoiceChannelPanel";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/lib/theme";
@@ -64,6 +65,7 @@ function Page() {
           <RestaurantSettingsForm restaurant={r} onSaved={() => refetch()} />
           <PaymentProvidersPanel restaurantId={r.id} />
           <VoiceChannelPanel restaurantId={r.id} />
+          <VapiWebPanel key={r.id} restaurant={r} onSaved={() => refetch()} />
           <MarketingPanel restaurantId={r.id} marketing={r.config.marketing} onSaved={() => refetch()} />
         </>
       )}
