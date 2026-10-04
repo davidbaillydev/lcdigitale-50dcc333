@@ -119,7 +119,7 @@ export function RestaurantSettingsForm({ restaurant, onSaved }: { restaurant: Re
         </div>
         <Toggle label="Impression automatique" hint="Imprime le ticket cuisine et le ticket de caisse dès qu'une commande arrive. Sinon, impression manuelle." checked={s.config.printing.auto} onChange={(v) => cfg({ printing: { ...s.config.printing, auto: v } })} />
         <p className="mt-3 text-sm font-semibold">Afficher sur le ticket cuisine</p>
-        {([["options", "Options et suppléments"], ["notes", "Notes du client"], ["customer", "Nom et téléphone du client"], ["contact", "Coordonnées du restaurant"], ["prices", "Prix et total"]] as const).map(([k, l]) => (
+        {([["allergens", "Allergènes des plats"], ["options", "Options et suppléments"], ["notes", "Notes du client"], ["customer", "Nom et téléphone du client"], ["contact", "Coordonnées du restaurant"], ["prices", "Prix et total"]] as const).map(([k, l]) => (
           <Toggle key={k} label={l} checked={s.config.printing.kitchen[k]} onChange={(v) => cfg({ printing: { ...s.config.printing, kitchen: { ...s.config.printing.kitchen, [k]: v } } })} />
         ))}
         </div>

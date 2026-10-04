@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { euro, groupCost, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
 import { useCart } from "@/lib/cart";
 import { itemImage } from "@/lib/menu-images";
+import { AllergenInfo } from "@/components/Allergens";
 
 export function ItemDialog({ item, onClose }: { item: MenuItem | null; onClose: () => void }) {
   const { add, catalog } = useCart();
@@ -57,6 +58,7 @@ export function ItemDialog({ item, onClose }: { item: MenuItem | null; onClose: 
         <DialogHeader>
           <DialogTitle className="font-display text-3xl">{item.name}</DialogTitle>
           {item.desc && <DialogDescription>{item.desc}</DialogDescription>}
+          <div className="pt-2"><AllergenInfo ids={item.allergens} /></div>
         </DialogHeader>
         {image && <div><img src={image} alt={`Illustration pour ${item.name}`} loading="lazy" width={1024} height={768} className="h-36 w-full rounded-md object-cover sm:h-48" /><p className="mt-1 text-right text-xs text-muted-foreground">Photo d’illustration</p></div>}
 

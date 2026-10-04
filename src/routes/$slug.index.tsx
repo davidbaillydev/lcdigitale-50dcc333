@@ -9,6 +9,8 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { useCart } from "@/lib/cart";
 import { Button } from "@/components/ui/button";
 import { menuImage } from "@/lib/menu-images";
+import { AllergenBadges, AllergenPicker } from "@/components/Allergens";
+import { safeFor } from "@/lib/allergens";
 
 export const Route = createFileRoute("/$slug/")({
   loader: ({ params }) => getRestaurant({ data: { slug: params.slug } }),
@@ -26,6 +28,8 @@ export const Route = createFileRoute("/$slug/")({
 function MenuPage() {
   const [open, setOpen] = useState<MenuItem | null>(null);
   const { count, subtotal, restaurant, catalog } = useCart();
+  const [excluded, setExcluded] = useState<string[]>([]);
+  const shown = catalog.categories.map((c) => ({ ...c, items: c.items.filter((i) => safeFor(i, excluded)) })).filter((c) => c.items.length);
   const d = restaurant.delivery;
 
   return (
@@ -51,15 +55,22 @@ function MenuPage() {
 
       <nav className="sticky top-[61px] z-30 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl gap-2 overflow-x-auto px-4 py-3">
-          {catalog.categories.map((c) => (
+          {shown.map((c) => (
             <a key={c.id} href={`#${c.id}`} className="shrink-0 rounded-full border border-border px-3 py-1.5 text-sm hover:border-primary hover:text-primary">{c.label}</a>
           ))}
         </div>
       </nav>
 
       <main className="mx-auto max-w-6xl space-y-14 px-4 py-10">
+        <details className="rounded-xl border border-border bg-card p-4" open={excluded.length > 0}>
+          <summary className="cursor-pointer font-semibold">Allergies ? Masquer les plats contenant… {excluded.length > 0 && <span className="text-primary">({excluded.length} exclu{excluded.length > 1 ? "s" : ""})</span>}</summary>
+          <div className="mt-3"><AllergenPicker value={excluded} onChange={setExcluded} /></div>
+          {excluded.length > 0 && <button className="mt-2 text-sm underline" onClick={() => setExcluded([])}>Tout réafficher</button>}
+          <p className="mt-2 text-xs text-muted-foreground">Les plats dont les allergènes ne sont pas renseignés sont aussi masqués. Informations déclarées par le restaurant. En cas d'allergie sévère, contactez-le avant de commander.</p>
+        </details>
         {!catalog.categories.length && <p className="py-10 text-center text-muted-foreground">La carte arrive bientôt.</p>}
-        {catalog.categories.map((c) => (
+        {excluded.length > 0 && !shown.length && <p className="py-10 text-center text-muted-foreground">Aucun plat sans ces allergènes.</p>}
+        {shown.map((c) => (
           <section key={c.id} id={c.id} className="scroll-mt-32">
             <div className="flex items-center justify-between gap-4 border-b border-border pb-4">
               <h2 className="inline-block -rotate-1 brush px-5 py-1 text-4xl">{c.label}</h2>
@@ -75,6 +86,7 @@ function MenuPage() {
                     <span className="shrink-0 rounded-md bg-accent px-2 py-0.5 text-sm font-bold text-accent-foreground">{euro(i.price)}</span>
                   </div>
                   {i.desc && <p className="mt-1 text-sm text-muted-foreground">{i.desc}</p>}
+                  <AllergenBadges ids={i.allergens} className="mt-2" />
                   <span className="mt-auto pt-3 text-sm font-semibold text-primary opacity-80 group-hover:opacity-100">
                     {i.builder ? "Composer →" : i.options?.length ? "Choisir les options →" : "+ Ajouter"}
                   </span>

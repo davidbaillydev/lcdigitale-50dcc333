@@ -14,6 +14,7 @@ import { ThemeToggle } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { AllergenBadges, AllergenPicker } from "@/components/Allergens";
 
 export const Route = createFileRoute("/_authenticated/espace/$slug/carte")({
   head: () => ({
@@ -107,9 +108,9 @@ function MenuEditor() {
           </div>
           {candidate && <div className="border border-primary bg-primary/5 p-4" aria-live="polite">
             <h2 className="text-2xl">Carte proposée · {candidate.reduce((n, c) => n + c.items.length, 0)} plats</h2>
-            <p className="text-sm text-muted-foreground">Relisez les prix, intitulés et suppléments : l'analyse peut se tromper. Votre carte actuelle reste en ligne jusqu'à l'enregistrement.</p>
+            <p className="text-sm text-muted-foreground">Relisez les prix, intitulés, suppléments et allergènes détectés : l'analyse peut se tromper. Votre carte actuelle reste en ligne jusqu'à l'enregistrement.</p>
             <div className="mt-3 max-h-64 overflow-auto border-y border-border py-2 text-sm">
-              {candidate.map((c) => <div key={c.id} className="mb-3"><strong>{c.label}</strong>{c.items.map((it) => <div key={it.id} className="flex justify-between gap-3 border-b border-border/50 py-1"><span>{it.name}</span><span className="shrink-0">{it.price.toFixed(2)} €</span></div>)}</div>)}
+              {candidate.map((c) => <div key={c.id} className="mb-3"><strong>{c.label}</strong>{c.items.map((it) => <div key={it.id} className="flex justify-between gap-3 border-b border-border/50 py-1"><span>{it.name}<AllergenBadges ids={it.allergens} className="mt-1" /></span><span className="shrink-0">{it.price.toFixed(2)} €</span></div>)}</div>)}
             </div>
             <div className="mt-3 flex flex-wrap gap-2"><Button onClick={() => { update(candidate); setCandidate(null); setOpen(candidate[0]?.id ?? null); toast.info("Carte proposée prête à corriger ; enregistrez-la après vérification"); }}>Reprendre et corriger</Button><Button variant="secondary" onClick={() => setCandidate(null)}>Annuler l'import</Button></div>
           </div>}
@@ -135,6 +136,7 @@ function MenuEditor() {
                       <div className="space-y-2">
                         <Input value={it.name} onChange={(e) => setItem(ci, ii, { name: e.target.value })} aria-label="Nom du plat" />
                         <Textarea rows={2} value={it.desc ?? ""} placeholder="Description" onChange={(e) => setItem(ci, ii, { desc: e.target.value })} />
+                        <div><p className="mb-1 text-xs font-semibold">Allergènes (14 allergènes INCO) · {it.allergens === undefined ? <span className="text-destructive">non renseignés</span> : it.allergens.length ? `${it.allergens.length} coché(s)` : "aucun"} {it.allergens === undefined && <button type="button" className="underline" onClick={() => setItem(ci, ii, { allergens: [] })}>Marquer « aucun allergène »</button>}</p><AllergenPicker value={it.allergens ?? []} onChange={(v) => setItem(ci, ii, { allergens: v })} /></div>
                         {!!it.options?.length && <p className="text-xs text-muted-foreground">Options conservées : {it.options.map((o) => o.label).join(" · ")}</p>}
                       </div>
                       <div>

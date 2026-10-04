@@ -1,10 +1,12 @@
 // Impression de tickets thermiques (80 mm / 58 mm) via le dialogue d'impression du navigateur.
+import { allergenLabel } from "./allergens";
+
 export type TicketWidth = 80 | 58;
 export type TicketKind = "kitchen" | "receipt";
 export type TicketOrder = {
   order_number: number; customer_name?: string | null; phone?: string | null; mode: string;
   address?: string | null; city?: string | null; slot: string; created_at?: string;
-  items: { name: string; qty: number; total?: number; details?: string[] }[];
+  items: { name: string; qty: number; total?: number; details?: string[]; allergens?: string[] }[];
   notes?: string | null; total: number | string; delivery_fee?: number | string | null;
   discount?: number | string | null; promo_code?: string | null;
   payment_method: string; source?: string | null;
@@ -17,14 +19,14 @@ const modeLabel = (m: string) => (m === "delivery" ? "LIVRAISON" : m === "dine_i
 const payLabel = (p: string) =>
   p === "online" ? "Payé en ligne" : p === "card_terminal" ? "CB au comptoir" : p === "counter" ? "Espèces/TR au comptoir" : "À encaisser";
 
-export type KitchenFields = { options: boolean; notes: boolean; customer: boolean; contact: boolean; prices: boolean };
+export type KitchenFields = { allergens: boolean; options: boolean; notes: boolean; customer: boolean; contact: boolean; prices: boolean };
 export type PrintingConfig = { width: TicketWidth; auto: boolean; kitchen: KitchenFields };
 export type TicketShop = { name: string; address?: string | null; phone?: string | null };
 
 export function printingDefaults(p?: Partial<PrintingConfig> | null): PrintingConfig {
   return {
     width: p?.width === 58 ? 58 : 80, auto: p?.auto ?? false,
-    kitchen: { options: true, notes: true, customer: true, contact: false, prices: false, ...(p?.kitchen ?? {}) },
+    kitchen: { allergens: true, options: true, notes: true, customer: true, contact: false, prices: false, ...(p?.kitchen ?? {}) },
   };
 }
 
@@ -38,12 +40,14 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
   const shop = typeof shopIn === "string" ? { name: shopIn } : shopIn;
   const restaurant = shop.name;
   const f: KitchenFields = kind === "receipt"
-    ? { options: true, notes: true, customer: true, contact: true, prices: true }
+    ? { allergens: true, options: true, notes: true, customer: true, contact: true, prices: true }
     : { ...printingDefaults().kitchen, ...(fieldsIn ?? {}) };
   const big = width === 80 ? 15 : 12;
   const items = o.items.map((it) => `
     <div class="row"><b>${it.qty}× ${esc(it.name)}</b>${f.prices && it.total != null ? `<span>${eur(it.total)}</span>` : ""}</div>
-    ${(f.options ? it.details ?? [] : []).map((d) => `<div class="det">${esc(d)}</div>`).join("")}`).join("");
+    ${(f.options ? it.details ?? [] : []).map((d) => `<div class="det">${esc(d)}</div>`).join("")}
+    ${f.allergens && it.allergens?.length ? `<div class="alg">⚠ ALLERGÈNES : ${it.allergens.map((a) => esc(allergenLabel(a)).toUpperCase()).join(", ")}</div>` : ""}`).join("");
+  const allAlg = [...new Set(o.items.flatMap((i) => i.allergens ?? []))];
   return `<!doctype html><html><head><meta charset="utf-8"><title>Ticket ${o.order_number}</title><style>
     @page { size: ${width}mm auto; margin: 0; }
     * { box-sizing: border-box; }
@@ -52,6 +56,7 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
     .row { display: flex; justify-content: space-between; gap: 4px; margin-top: 4px; }
     .det { padding-left: 10px; font-size: ${big - 2}px; }
     hr { border: 0; border-top: 1px dashed #000; margin: 6px 0; }
+    .alg { padding-left: 10px; font-size: ${big - 2}px; font-weight: bold; }
     .note { border: 2px solid #000; padding: 4px; margin-top: 6px; font-weight: bold; }
   </style></head><body>
     <div class="c l">${esc(restaurant)}</div>
@@ -63,7 +68,8 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
     ${f.customer && o.customer_name ? `<div class="c">${esc(o.customer_name)}${o.phone && o.phone !== "-" ? ` · ${esc(o.phone)}` : ""}</div>` : ""}
     ${o.mode === "delivery" && o.address ? `<div class="c">${esc(o.address)}, ${esc(o.city)}</div>` : ""}
     <hr>${items}
-    ${f.notes && o.notes ? `<div class="note">⚠ ${esc(o.notes)}</div>` : ""}
+    ${f.allergens && kind === "kitchen" && allAlg.length ? `<div class="note">ALLERGÈNES COMMANDE : ${allAlg.map((a) => esc(allergenLabel(a))).join(", ")}</div>` : ""}
+    ${f.notes && o.notes ? `<div class="note">⚠ REMARQUE CLIENT : ${esc(o.notes)}</div>` : ""}
     <hr>
     ${f.prices && Number(o.delivery_fee) > 0 ? `<div class="row"><span>Livraison</span><span>${eur(o.delivery_fee)}</span></div>` : ""}
     ${f.prices && Number(o.discount) > 0 ? `<div class="row"><span>Remise${o.promo_code ? ` ${esc(o.promo_code)}` : ""}</span><span>-${eur(o.discount)}</span></div>` : ""}
@@ -102,7 +108,7 @@ export function sampleOrder(): TicketOrder {
     order_number: 999, customer_name: "Client test", phone: "06 00 00 00 00", mode: "pickup", slot: now, created_at: now,
     items: [
       { name: "Wok poulet", qty: 2, total: 23.8, details: ["Nouilles sautées", "+ Sauce piquante"] },
-      { name: "California saumon", qty: 1, total: 6.5, details: ["Sans sésame"] },
+      { name: "California saumon", qty: 1, total: 6.5, details: ["Sans sésame"], allergens: ["poissons", "sesame", "soja"] },
     ],
     notes: "TICKET DE TEST", total: 30.3, payment_method: "on_site", source: "web",
   };
