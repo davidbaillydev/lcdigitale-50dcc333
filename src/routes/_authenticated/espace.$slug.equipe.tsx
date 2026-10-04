@@ -49,7 +49,7 @@ function Team() {
   const { data: pinState, refetch: refetchPin } = useQuery({ queryKey: ["pin", rid], queryFn: () => pinCheck({ data: { restaurantId: rid } }), enabled: canManage });
   const [pin, setPin] = useState("");
   if (loading) return null;
-  if (!canManage) return <p className="p-10 text-center">Réservé au gérant. <Link to="/espace" className="underline">Retour</Link></p>;
+  if (!canManage) return <p className="p-10 text-center">Gestion de l'équipe réservée à l'agence LC Digitale. <Link to="/espace" className="underline">Retour</Link></p>;
 
   const sendInvite = async () => {
     setBusy(true);
