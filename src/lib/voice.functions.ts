@@ -37,3 +37,19 @@ export const saveVoiceChannel = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export type VoiceCall = { id: string; created_at: string; caller: string | null; status: string; ended_reason: string | null; duration_seconds: number | null; order_number: number | null };
+
+/** Agence : journal des appels Téléphone IA d'un restaurant (100 derniers). */
+export const listVoiceCalls = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => rid.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAgency(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows, error } = await supabaseAdmin.from("restaurant_voice_calls")
+      .select("id, created_at, caller, status, ended_reason, duration_seconds, order_number")
+      .eq("restaurant_id", data.restaurantId).order("created_at", { ascending: false }).limit(100);
+    if (error) throw new Error(error.message);
+    return (rows ?? []) as VoiceCall[];
+  });
