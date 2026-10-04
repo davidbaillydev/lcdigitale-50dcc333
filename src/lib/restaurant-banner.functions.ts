@@ -9,8 +9,8 @@ export const saveRestaurantBanner = createServerFn({ method: "POST" })
     image: z.string().max(4_200_000).nullable(),
   }).parse(input))
   .handler(async ({ data, context }) => {
-    const { data: allowed, error: roleError } = await context.supabase.rpc("is_restaurant_manager", { _user_id: context.userId, _restaurant_id: data.restaurantId });
-    if (roleError || !allowed) throw new Error("Réservé au gérant ou à l'agence");
+    const { data: allowed, error: roleError } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    if (roleError || !allowed) throw new Error("Réservé à l'agence");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: restaurant, error: readError } = await supabaseAdmin.from("restaurants").select("brand").eq("id", data.restaurantId).single();
     if (readError) throw new Error("Restaurant introuvable");

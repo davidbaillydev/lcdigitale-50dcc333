@@ -12,8 +12,9 @@ type Row = { restaurant_id: string; provider: Provider; enabled: boolean; creden
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function assertManager(supabase: any, userId: string, restaurantId: string) {
-  const { data } = await supabase.rpc("is_restaurant_manager", { _user_id: userId, _restaurant_id: restaurantId });
-  if (!data) throw new Error("Réservé au gérant ou à l'agence");
+  void restaurantId;
+  const { data } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
+  if (!data) throw new Error("Réservé à l'agence");
 }
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
