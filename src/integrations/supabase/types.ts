@@ -157,6 +157,59 @@ export type Database = {
           },
         ]
       }
+      restaurant_customers: {
+        Row: {
+          consent_at: string | null
+          consent_source: string | null
+          created_at: string
+          email: string | null
+          id: string
+          marketing_consent: boolean
+          name: string | null
+          notes: string | null
+          phone: string | null
+          restaurant_id: string
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          consent_at?: string | null
+          consent_source?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          marketing_consent?: boolean
+          name?: string | null
+          notes?: string | null
+          phone?: string | null
+          restaurant_id: string
+          source?: string
+          updated_at?: string
+        }
+        Update: {
+          consent_at?: string | null
+          consent_source?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          marketing_consent?: boolean
+          name?: string | null
+          notes?: string | null
+          phone?: string | null
+          restaurant_id?: string
+          source?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_customers_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurant_kitchen_pins: {
         Row: {
           failed_attempts: number
