@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { loadRestaurantAdmin } from "@/lib/restaurant-settings.functions";
 import { MarketingPanel } from "@/components/MarketingPanel";
 import { PaymentProvidersPanel } from "@/components/PaymentProvidersPanel";
+import { VapiWebPanel } from "@/components/VapiWebPanel";
 import { RestaurantSettingsForm } from "@/components/RestaurantSettingsForm";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/lib/theme";
@@ -36,6 +37,7 @@ function Page() {
       {error && <p className="text-destructive">{(error as Error).message}</p>}
       {data && <RestaurantSettingsForm restaurant={data} onSaved={() => refetch()} agency={isAgency} />}
       {data && isAgency && <PaymentProvidersPanel restaurantId={data.id} />}
+      {data && <VapiWebPanel key={data.id} restaurant={data} onSaved={() => refetch()} />}
       {data && <MarketingPanel restaurantId={data.id} marketing={data.config.marketing} onSaved={() => refetch()} />}
       {data && !isAgency && <p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">Paiements en ligne, impression des tickets, logo et bannière sont gérés par votre agence LC Digitale. Contactez-la pour toute modification.</p>}
     </div>
