@@ -45,7 +45,7 @@ function Checkout() {
   const infoFn = useServerFn(onlinePaymentInfo);
   const [online, setOnline] = useState<{ stripe: string | null; paypal: boolean; lyra: boolean }>({ stripe: null, paypal: false, lyra: false });
   const [payment, setPayment] = useState<{ id: string; clientSecret: string } | null>(null);
-  const [promo, setPromo] = useState<{ d: AppliedDiscount | null; code?: string }>({ d: null });
+  const [promo, setPromo] = useState<{ d: AppliedDiscount | null; code?: string | undefined }>({ d: null });
   const onSiteOk = restaurant.config.payments?.on_site !== false;
 
   useEffect(() => {

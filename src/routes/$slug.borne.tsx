@@ -44,7 +44,7 @@ function Kiosk() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ n: number; total: number; pay: string } | null>(null);
   const [warn, setWarn] = useState(false);
-  const [promo, setPromo] = useState<{ d: AppliedDiscount | null; code?: string }>({ d: null });
+  const [promo, setPromo] = useState<{ d: AppliedDiscount | null; code?: string | undefined }>({ d: null });
   const toPay = Math.round((subtotal - (promo.d?.discount ?? 0)) * 100) / 100;
   const announce = announcementText(restaurant.config);
   const last = useRef(Date.now());

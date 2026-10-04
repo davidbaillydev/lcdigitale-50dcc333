@@ -5,7 +5,7 @@ export type DiscountResult = { discount: number; code: string | null; label: str
 /** Calcule la remise côté serveur : code promo prioritaire, sinon offre de premier achat (site uniquement). */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function resolveDiscount(db: any, r: { id: string; config: { marketing?: Marketing } }, subtotal: number,
-  opts: { code?: string | null; email?: string | null; phone?: string | null; channel: "web" | "kiosk" }): Promise<DiscountResult> {
+  opts: { code?: string | null | undefined; email?: string | null | undefined; phone?: string | null | undefined; channel: "web" | "kiosk" }): Promise<DiscountResult> {
   const code = opts.code ? normalizeCode(opts.code) : "";
   if (code) {
     const { data: p } = await db.from("restaurant_promo_codes").select("*").eq("restaurant_id", r.id).eq("code", code).maybeSingle();
