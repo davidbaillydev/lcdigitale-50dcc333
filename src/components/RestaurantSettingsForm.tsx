@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { RestaurantBannerUpload } from "@/components/RestaurantBannerUpload";
+import { PrinterSetup } from "@/components/PrinterSetup";
 
 const DAYS = [["1", "Lundi"], ["2", "Mardi"], ["3", "Mercredi"], ["4", "Jeudi"], ["5", "Vendredi"], ["6", "Samedi"], ["0", "Dimanche"]] as const;
 const toHHMM = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
@@ -128,6 +129,7 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
           <iframe title="Aperçu du ticket cuisine" className="rounded border border-border bg-white"
             style={{ width: `${s.config.printing.width === 80 ? 330 : 250}px`, height: 460 }}
             srcDoc={ticketHtml(sampleOrder(), "kitchen", s.config.printing.width, shop, s.config.printing.kitchen)} />
+          <div className="mt-3"><PrinterSetup width={s.config.printing.width} shop={shop} /></div>
           <Button type="button" variant="secondary" className="mt-3 w-full" onClick={testPrint}>Imprimer un ticket de test</Button>
           {testResult === "ok" && <p role="status" className="mt-2 rounded bg-primary/15 p-2 text-sm">Ticket de test envoyé à l'imprimante. Vérifiez qu'il est bien sorti.</p>}
           {testResult === "failed" && <p role="alert" className="mt-2 rounded bg-destructive/20 p-2 text-sm">Échec : le ticket n'a pas pu être envoyé. Vérifiez l'imprimante et réessayez.</p>}
