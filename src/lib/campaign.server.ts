@@ -9,7 +9,7 @@ export function checkUnsubToken(customerId: string, token: string) {
 }
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
-export function campaignHtml(o: { restaurant: string; body: string; ctaUrl?: string; ctaLabel?: string; color?: string }) {
+export function campaignHtml(o: { restaurant: string; body: string; ctaUrl?: string | undefined; ctaLabel?: string | undefined; color?: string | undefined }) {
   const color = /^#[0-9a-f]{6}$/i.test(o.color ?? "") ? o.color : "#c8102e";
   const body = esc(o.body).replace(/\n/g, "<br>");
   const cta = o.ctaUrl ? `<p style="text-align:center;margin:28px 0"><a href="${esc(o.ctaUrl)}" style="background:${color};color:#ffffff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold">${esc(o.ctaLabel || "Commander")}</a></p>` : "";
