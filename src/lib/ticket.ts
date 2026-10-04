@@ -80,8 +80,20 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
   </body></html>`;
 }
 
-/** Imprime un ou plusieurs tickets via une iframe cachée. Renvoie false si l'impression n'a pas pu être lancée. */
-export function printTickets(o: TicketOrder, kinds: TicketKind[], shop: TicketShop | string, width: TicketWidth = getTicketWidth(), fields?: Partial<KitchenFields>): Promise<boolean> {
+/** Imprime directement sur l'imprimante ESC/POS de l'appareil si elle est configurée, sinon via le navigateur. */
+export async function printTickets(o: TicketOrder, kinds: TicketKind[], shopIn: TicketShop | string, width: TicketWidth = getTicketWidth(), fields?: Partial<KitchenFields>): Promise<boolean> {
+  const { getPrinter, sendToPrinter } = await import("./printer");
+  const p = getPrinter();
+  if (p) {
+    const { ticketEscpos } = await import("./escpos");
+    const shop = typeof shopIn === "string" ? { name: shopIn } : shopIn;
+    try { for (const k of kinds) await sendToPrinter(p, ticketEscpos(o, k, width, shop, fields)); return true; }
+    catch (e) { console.warn("Impression directe échouée", e); return false; }
+  }
+  return printBrowser(o, kinds, shopIn, width, fields);
+}
+
+function printBrowser(o: TicketOrder, kinds: TicketKind[], shop: TicketShop | string, width: TicketWidth, fields?: Partial<KitchenFields>): Promise<boolean> {
   return new Promise((resolve) => {
     try {
       const html = kinds.map((k) => ticketHtml(o, k, width, shop, fields)).join("");
