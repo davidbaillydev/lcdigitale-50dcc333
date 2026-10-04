@@ -12,6 +12,10 @@ export type Restaurant = {
   menu_key: string;
   logo_url: string | null;
   menu: import("./menu").Category[] | null;
+  vapi_assistant_id?: string | null;
+  vapi_public_key?: string | null;
+  vapi_phone_number?: string | null;
+  is_vapi_web_enabled?: boolean;
   brand: { primary?: string; accent?: string; bannerPath?: string };
   /** 0 = dimanche. Plages en minutes depuis minuit (heure de Paris) */
   opening: Record<string, [number, number][]>;
