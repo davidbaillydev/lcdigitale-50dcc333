@@ -27,7 +27,7 @@ export type Restaurant = {
   };
 };
 
-export const RESTAURANT_COLUMNS = "id, slug, name, city, address, phone, email, menu_key, logo_url, brand, menu, opening, delivery, config";
+export const RESTAURANT_COLUMNS = "id, slug, name, city, address, phone, email, menu_key, logo_url, brand, menu, opening, delivery, config, vapi_assistant_id, vapi_public_key, vapi_phone_number, is_vapi_web_enabled";
 
 export function deliveryFee(r: Restaurant, subtotal: number) {
   return subtotal >= r.delivery.freeFrom ? 0 : r.delivery.fee;
