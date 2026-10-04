@@ -111,7 +111,7 @@ function Page() {
       keys.forEach((k) => known.add(k));
       add.push({ name: o.customer_name, email, phone, consent: false });
     });
-    if (!add.length) return toast.info("Tous les clients des commandes sont déjà dans le fichier.");
+    if (!add.length) { toast.info("Tous les clients des commandes sont déjà dans le fichier."); return; }
     const { error } = await insertChunks(rid!, add, "order", false);
     if (error) toast.error(error); else { toast.success(`${add.length} client(s) ajouté(s) depuis les commandes`); refetch(); }
   };
@@ -145,7 +145,7 @@ function Page() {
           <Button size="sm" variant="secondary" onClick={() => downloadXLSX(`clients-${slug}`, { Clients: exportRows(rows) })}><FileSpreadsheet /> Excel</Button>
           <Button size="sm" onClick={() => {
             const list = rows.filter((c) => c.marketing_consent && c.email);
-            if (!list.length) return toast.error("Aucun client ciblé n'a donné son consentement avec un email.");
+            if (!list.length) { toast.error("Aucun client ciblé n'a donné son consentement avec un email."); return; }
             downloadCSV(`liste-diffusion-${slug}`, list.map((c) => ({ email: c.email, nom: c.name ?? "", consentement: c.consent_at ?? "" })));
             toast.success(`${list.length} contact(s) consentant(s) exporté(s)`);
           }}>Exporter la liste de diffusion</Button>
@@ -212,16 +212,16 @@ function ImportPanel({ restaurantId, existing, onDone }: { restaurantId: string;
     if (!plan) return;
     setBusy(true);
     const { error } = await insertChunks(restaurantId, plan.add, "import", attest);
-    if (error) { setBusy(false); return toast.error(error); }
+    if (error) { setBusy(false); toast.error(error); return; }
     const now = new Date().toISOString();
     const updates = plan.merge.map(({ c, x }) => {
-      const patch: Record<string, unknown> = {};
+      const patch: { name?: string; email?: string; phone?: string; marketing_consent?: boolean; consent_at?: string; consent_source?: string } = {};
       if (!c.name && x.name) patch.name = x.name;
       if (!c.email && x.email && !existing.some((o) => o.email === x.email)) patch.email = x.email;
       if (!c.phone && x.phone && !existing.some((o) => o.phone === x.phone)) patch.phone = x.phone;
       if (attest && x.consent && !c.marketing_consent) Object.assign(patch, { marketing_consent: true, consent_at: now, consent_source: `import ${now.slice(0, 10)}` });
       return Object.keys(patch).length ? { id: c.id, patch } : null;
-    }).filter(Boolean) as { id: string; patch: Record<string, unknown> }[];
+    }).filter(Boolean) as { id: string; patch: { name?: string; email?: string; phone?: string } }[];
     for (let i = 0; i < updates.length; i += 6) await Promise.all(updates.slice(i, i + 6).map((u) => supabase.from("restaurant_customers").update(u.patch).eq("id", u.id)));
     setBusy(false); setPlan(null);
     toast.success(`${plan.add.length} ajouté(s), ${updates.length} fiche(s) complétée(s)`);
