@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useStaff } from "@/hooks/use-staff";
 import { Button } from "@/components/ui/button";
+import { allergenLabel } from "@/lib/allergens";
 import { euro } from "@/lib/menu";
 import { fmtTime } from "@/lib/shop";
 import { cn } from "@/lib/utils";
@@ -31,7 +32,7 @@ export const Route = createFileRoute("/_authenticated/espace/$slug/")({
 
 type Order = {
   id: string; order_number: number; customer_name: string; phone: string; mode: string; address: string | null; city: string | null;
-  slot: string; items: { name: string; qty: number; details: string[] }[]; notes: string | null; total: number;
+  slot: string; items: { name: string; qty: number; details: string[]; allergens?: string[] }[]; notes: string | null; total: number;
   payment_method: string; payment_status?: string; status: string; source?: string; created_at: string;
 };
 
@@ -224,6 +225,7 @@ function Kitchen() {
                         <li key={i}>
                           <p className="font-semibold"><span className="text-primary">{it.qty}×</span> {it.name}</p>
                           {it.details.map((d) => <p key={d} className="pl-5 text-sm text-muted-foreground">{d}</p>)}
+                          {!!it.allergens?.length && <p className="pl-5 text-sm font-semibold text-destructive">⚠ {it.allergens.map(allergenLabel).join(", ")}</p>}
                         </li>
                       ))}
                     </ul>
