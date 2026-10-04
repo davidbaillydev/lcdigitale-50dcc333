@@ -77,7 +77,7 @@ export const Route = createFileRoute("/api/public/vapi/$restaurantId")({
                 const err = validateSelections(item, sel);
                 if (err) throw new Error(`${item.name} : ${err}`);
                 const unit = unitPrice(item, sel);
-                const details = [describeSelections(item, sel), l.notes].filter(Boolean).join(" · ");
+                const details = [...describeSelections(item, sel), ...(l.notes ? [l.notes] : [])];
                 return { id: item.id, name: item.name, qty: l.qty, unit, total: Math.round(unit * l.qty * 100) / 100, details, ...(item.allergens?.length ? { allergens: item.allergens } : {}) };
               });
               const subtotal = Math.round(items.reduce((s, i) => s + i.total, 0) * 100) / 100;
