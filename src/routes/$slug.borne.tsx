@@ -3,6 +3,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, ChevronLeft, CreditCard, Minus, Plus, ShoppingBag, Trash2, UtensilsCrossed, Banknote } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { cn } from "@/lib/utils";
+import { AllergenBadges, AllergenInfo, AllergenPicker } from "@/components/Allergens";
+import { safeFor } from "@/lib/allergens";
 import { useCart } from "@/lib/cart";
 import { createKioskOrder } from "@/lib/orders.functions";
 import { cancelKioskPayment, kioskPaymentStatus, kioskTerminalAvailable, startKioskCardPayment } from "@/lib/payments.functions";
@@ -39,6 +41,8 @@ function Kiosk() {
   const [step, setStep] = useState<Step>("welcome");
   const [mode, setMode] = useState<Mode>("dine_in");
   const [cat, setCat] = useState(catalog.categories[0]?.id ?? "");
+  const [excluded, setExcluded] = useState<string[]>([]);
+  const [allergyOpen, setAllergyOpen] = useState(false);
   const [item, setItem] = useState<MenuItem | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +75,7 @@ function Kiosk() {
 
   const reset = useCallback(() => {
     clear(); setItem(null); setResult(null); setError(null); setWarn(false); setPromo({ d: null });
-    setCat(catalog.categories[0]?.id ?? ""); setStep("welcome");
+    setCat(catalog.categories[0]?.id ?? ""); setExcluded([]); setAllergyOpen(false); setStep("welcome");
   }, [clear, catalog]);
 
   // Remise à zéro après inactivité
@@ -110,7 +114,8 @@ function Kiosk() {
     } finally { setBusy(false); }
   };
 
-  const category = catalog.categories.find((c) => c.id === cat);
+  const baseCat = catalog.categories.find((c) => c.id === cat);
+  const category = baseCat && { ...baseCat, items: baseCat.items.filter((i) => safeFor(i, excluded)) };
 
   return (
     <div className="fixed inset-0 z-50 flex select-none flex-col overflow-hidden bg-background text-foreground touch-manipulation">
@@ -156,6 +161,7 @@ function Kiosk() {
       {step === "menu" && (
         <div className="flex min-h-0 flex-1">
           <nav className="w-60 shrink-0 overflow-y-auto border-r border-border p-3">
+            <button onClick={() => setAllergyOpen(true)} className={cn("mb-4 flex w-full items-center justify-center gap-2 rounded-xl border-2 px-4 py-5 text-xl font-semibold", excluded.length ? "border-primary bg-primary/10 text-primary" : "border-border")}>⚠ Sans allergènes{excluded.length ? ` (${excluded.length})` : ""}</button>
             {catalog.categories.map((c) => (
               <button key={c.id} onClick={() => setCat(c.id)}
                 className={cn("mb-2 block w-full rounded-xl px-4 py-5 text-left text-xl font-semibold", c.id === cat ? "bg-primary text-primary-foreground" : "bg-card")}>
@@ -169,13 +175,15 @@ function Kiosk() {
               {category && menuImage(category.id) && <img src={menuImage(category.id)} alt={`Illustration ${category.label}`} loading="lazy" width={1024} height={768} className="h-28 w-40 rounded-md object-cover" />}
             </div>
             {category?.note && <p className="mb-4 text-lg text-muted-foreground">{category.note}</p>}
+            {excluded.length > 0 && category && !category.items.length && <p className="py-10 text-center text-2xl text-muted-foreground">Aucun plat de cette catégorie sans ces allergènes.</p>}
             <div className="grid grid-cols-2 gap-4 pb-32 xl:grid-cols-3">
               {category?.items.map((it) => (
-                <button key={it.id} onClick={() => it.options?.length ? setItem(it) : add(it.id, {}, 1)}
+                <button key={it.id} onClick={() => it.options?.length || it.allergens?.length ? setItem(it) : add(it.id, {}, 1)}
                   className="flex min-h-40 flex-col justify-between rounded-2xl border-2 border-border bg-card p-5 text-left active:border-primary">
                   <span>
                     <span className="block text-2xl font-semibold leading-tight">{it.name}</span>
                     {it.desc && <span className="mt-1 line-clamp-2 block text-base text-muted-foreground">{it.desc}</span>}
+                    <AllergenBadges ids={it.allergens} className="mt-2" />
                   </span>
                   <span className="mt-3 flex items-center justify-between">
                     <span className="font-display text-3xl text-primary">{euro(it.price)}</span>
@@ -281,6 +289,17 @@ function Kiosk() {
         </button>
       )}
 
+      {allergyOpen && (
+        <div className="absolute inset-0 z-40 flex flex-col bg-background p-8">
+          <p className="font-display text-5xl">Masquer les plats contenant…</p>
+          <p className="mt-2 text-xl text-muted-foreground">Touchez vos allergènes : seuls les plats compatibles resteront affichés.</p>
+          <div className="mt-8 flex-1 overflow-y-auto"><AllergenPicker value={excluded} onChange={setExcluded} size="lg" /></div>
+          <div className="flex gap-4">
+            <button onClick={() => setExcluded([])} className="flex-1 rounded-2xl bg-muted py-6 text-2xl font-semibold">Tout réafficher</button>
+            <button onClick={() => setAllergyOpen(false)} className="flex-1 rounded-2xl bg-primary py-6 text-2xl font-semibold text-primary-foreground">Voir les plats</button>
+          </div>
+        </div>
+      )}
       {item && <KioskItem item={item} image={itemImage(item.id, catalog.categories)} onClose={() => setItem(null)} onAdd={(sel, q) => { add(item.id, sel, q); setItem(null); }} />}
 
       {warn && (
@@ -324,6 +343,7 @@ function KioskItem({ item, image, onClose, onAdd }: { item: MenuItem; image: str
       {stepped && <div className="flex gap-2 px-6 pt-4">{groups.map((g, i) => <div key={g.id} className={cn("h-2 flex-1 rounded-full", i <= step ? "bg-primary" : "bg-muted")} />)}</div>}
       <div className="min-h-0 flex-1 space-y-8 overflow-y-auto p-6">
         {image && <div className="flex items-center gap-4"><img src={image} alt={`Illustration pour ${item.name}`} loading="lazy" width={1024} height={768} className="h-32 w-44 rounded-md object-cover" /><span className="text-base text-muted-foreground">Photo d’illustration</span></div>}
+        <div className="rounded-2xl border-2 border-border p-5"><AllergenInfo ids={item.allergens} size="lg" /></div>
         {visible.map((g) => {
           const picked = sel[g.id] ?? [];
           const extra = groupCost(g, picked);
