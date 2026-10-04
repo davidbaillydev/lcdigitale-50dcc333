@@ -22,7 +22,7 @@ export const settingsSchema = z.object({
     payments: z.object({ on_site: z.boolean(), counter: z.boolean(), card_terminal: z.boolean() }),
     printing: z.object({
       width: z.union([z.literal(58), z.literal(80)]), auto: z.boolean(),
-      kitchen: z.object({ options: z.boolean(), notes: z.boolean(), customer: z.boolean(), contact: z.boolean(), prices: z.boolean() }),
+      kitchen: z.object({ allergens: z.boolean().default(true), options: z.boolean(), notes: z.boolean(), customer: z.boolean(), contact: z.boolean(), prices: z.boolean() }),
     }),
   }),
 });
