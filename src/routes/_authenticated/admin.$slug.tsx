@@ -1,7 +1,8 @@
+import { Crumbs } from "@/components/Crumbs";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, Check, ChefHat, ExternalLink, Tablet, Users, UtensilsCrossed } from "lucide-react";
+import { Check, ChefHat, ExternalLink, Tablet, Users, UtensilsCrossed } from "lucide-react";
 import { loadRestaurantAdmin } from "@/lib/restaurant-settings.functions";
 import { RestaurantSettingsForm } from "@/components/RestaurantSettingsForm";
 import { MarketingPanel } from "@/components/MarketingPanel";
@@ -36,7 +37,7 @@ function Page() {
   ] as const : [];
   return (
     <div className="mx-auto max-w-4xl space-y-5 p-6">
-      <div className="flex items-center justify-between"><Button asChild variant="ghost"><Link to="/admin"><ArrowLeft /> Console agence</Link></Button><ThemeToggle /></div>
+      <div className="flex items-center justify-between"><Crumbs /><ThemeToggle /></div>
       {error && <p className="text-destructive">{(error as Error).message}</p>}
       {r && (
         <>

@@ -1,7 +1,8 @@
+import { Crumbs } from "@/components/Crumbs";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
-import { ArrowLeft, FileDown, FileSpreadsheet, RefreshCw, Trash2, Upload } from "lucide-react";
+import { FileDown, FileSpreadsheet, RefreshCw, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useStaff } from "@/hooks/use-staff";
@@ -36,7 +37,7 @@ const SRC: Record<string, string> = { import: "Import", order: "Commande", manua
 
 function Page() {
   const { slug } = Route.useParams();
-  const { loading, restaurants } = useStaff();
+  const { loading, restaurants, isAgency } = useStaff();
   const r = restaurants.find((x) => x.slug === slug);
   const rid = r?.id;
   const canManage = r && r.role !== "kitchen";
@@ -124,7 +125,7 @@ function Page() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-6">
-      <div className="flex items-center gap-2"><Button asChild variant="ghost"><Link to="/espace/$slug" params={{ slug }}><ArrowLeft /> Écran cuisine</Link></Button><span className="mr-auto" /><ThemeToggle /></div>
+      <div className="flex items-center gap-2"><Crumbs slug={slug} page="Clients" /><span className="mr-auto" /><ThemeToggle /></div>
       <div className="flex flex-wrap items-end gap-3">
         <h1 className="mr-auto text-5xl">Clients {r.name}</h1>
         <Button variant="secondary" onClick={syncFromOrders} disabled={!data}><RefreshCw /> Ajouter les clients des commandes</Button>
@@ -156,7 +157,8 @@ function Page() {
         <p className="text-xs text-muted-foreground">La liste de diffusion ne contient que les clients ayant donné leur consentement et disposant d'un email (RGPD).</p>
       </section>
 
-      <CampaignPanel restaurantId={r.id} targets={rows.filter((c) => c.marketing_consent && c.email)} />
+      {isAgency ? <CampaignPanel restaurantId={r.id} targets={rows.filter((c) => c.marketing_consent && c.email)} />
+        : <section className="rounded-xl border border-border bg-card p-4"><h2 className="text-2xl">Campagnes email et SMS</h2><p className="text-sm text-muted-foreground">Option disponible dans votre contrat LC Digitale. Contactez votre agence pour l'activer : elle prépare et envoie les campagnes pour vous.</p></section>}
 
       <div className={`overflow-x-auto rounded-xl border border-border ${isFetching ? "opacity-60" : ""}`}>
         <table className="w-full text-sm">

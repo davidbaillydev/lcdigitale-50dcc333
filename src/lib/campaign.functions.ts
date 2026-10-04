@@ -34,8 +34,8 @@ export const sendCampaign = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => schema.parse(d))
   .handler(async ({ data, context }) => {
-    const { data: ok } = await context.supabase.rpc("is_restaurant_manager", { _user_id: context.userId, _restaurant_id: data.restaurantId });
-    if (!ok) throw new Error("Réservé au gérant ou à l'agence");
+    const { data: ok } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    if (!ok) throw new Error("Réservé à l'agence");
     if (!process.env["BREVO_API_KEY"]) throw new Error("Brevo n'est pas connecté.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { campaignHtml, unsubToken } = await import("./campaign.server");

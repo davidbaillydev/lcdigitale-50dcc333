@@ -7,6 +7,11 @@ async function assertManager(supabase: any, userId: string, restaurantId: string
   const { data } = await supabase.rpc("is_restaurant_manager", { _user_id: userId, _restaurant_id: restaurantId });
   if (!data) throw new Error("Réservé au gérant ou à l'agence");
 }
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function assertAgency(supabase: any, userId: string) {
+  const { data } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
+  if (!data) throw new Error("Réservé à l'agence");
+}
 
 /** Membres de CE restaurant uniquement (aucun autre compte n'est exposé) */
 export const listStaff = createServerFn({ method: "GET" })
@@ -28,7 +33,7 @@ export const inviteMember = createServerFn({ method: "POST" })
     z.object({ restaurantId: z.string().uuid(), email: z.string().trim().toLowerCase().email().max(255), role: z.enum(["kitchen", "manager"]), origin: z.string().url().max(200) }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertManager(context.supabase, context.userId, data.restaurantId);
+    await assertAgency(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     let userId: string | undefined;
     let invited = false;
@@ -53,7 +58,7 @@ export const setStaffRole = createServerFn({ method: "POST" })
     z.object({ restaurantId: z.string().uuid(), userId: z.string().uuid(), role: z.enum(["kitchen", "manager"]), grant: z.boolean() }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertManager(context.supabase, context.userId, data.restaurantId);
+    await assertAgency(context.supabase, context.userId);
     if (data.userId === context.userId && data.role === "manager" && !data.grant) throw new Error("Vous ne pouvez pas retirer votre propre accès gérant");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     if (data.grant)
@@ -70,7 +75,7 @@ export const getActivationLink = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ restaurantId: z.string().uuid(), userId: z.string().uuid(), origin: z.string().url().max(200) }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertManager(context.supabase, context.userId, data.restaurantId);
+    await assertAgency(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: member } = await supabaseAdmin.from("restaurant_members").select("user_id").eq("restaurant_id", data.restaurantId).eq("user_id", data.userId).limit(1).maybeSingle();
     if (!member) throw new Error("Ce compte n'appartient pas à ce restaurant");

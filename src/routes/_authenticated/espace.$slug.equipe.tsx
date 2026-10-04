@@ -1,8 +1,9 @@
+import { Crumbs } from "@/components/Crumbs";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ArrowLeft, Copy, KeyRound, Link2 } from "lucide-react";
+import { Copy, KeyRound, Link2 } from "lucide-react";
 import { useStaff } from "@/hooks/use-staff";
 import { getActivationLink, inviteMember, listStaff, setStaffRole } from "@/lib/staff.functions";
 import { hasKitchenPin, setKitchenPin } from "@/lib/kitchen-pin.functions";
@@ -30,7 +31,7 @@ function Team() {
   const { slug } = Route.useParams();
   const { loading, restaurants } = useStaff();
   const restaurant = restaurants.find((r) => r.slug === slug);
-  const canManage = restaurant?.role === "agency" || restaurant?.role === "manager";
+  const canManage = restaurant?.role === "agency";
   const list = useServerFn(listStaff);
   const setRole = useServerFn(setStaffRole);
   const qc = useQueryClient();
@@ -48,7 +49,7 @@ function Team() {
   const { data: pinState, refetch: refetchPin } = useQuery({ queryKey: ["pin", rid], queryFn: () => pinCheck({ data: { restaurantId: rid } }), enabled: canManage });
   const [pin, setPin] = useState("");
   if (loading) return null;
-  if (!canManage) return <p className="p-10 text-center">Réservé au gérant. <Link to="/espace" className="underline">Retour</Link></p>;
+  if (!canManage) return <p className="p-10 text-center">Gestion de l'équipe réservée à l'agence LC Digitale. <Link to="/espace" className="underline">Retour</Link></p>;
 
   const sendInvite = async () => {
     setBusy(true);
@@ -76,7 +77,7 @@ function Team() {
 
   return (
     <div className="mx-auto max-w-2xl p-6">
-      <div className="flex items-center justify-between"><Button asChild variant="ghost"><Link to="/espace/$slug" params={{ slug }}><ArrowLeft /> Écran cuisine</Link></Button><ThemeToggle /></div>
+      <div className="flex items-center justify-between"><Crumbs slug={slug} page="Équipe" /><ThemeToggle /></div>
       <h1 className="mt-4 text-5xl">Équipe · {restaurant?.name}</h1>
       <p className="text-sm text-muted-foreground">Invitez vos gérants et votre équipe cuisine par email : ils reçoivent un lien pour choisir leur mot de passe. Ils n'accèdent qu'à ce restaurant.</p>
       <div className="mt-4 flex flex-wrap gap-2 rounded-xl border border-border bg-card p-4">

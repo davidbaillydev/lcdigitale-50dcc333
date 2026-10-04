@@ -1,7 +1,8 @@
+import { Crumbs } from "@/components/Crumbs";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
-import { ArrowDown, ArrowLeft, ArrowUp, Eye, EyeOff, FileUp, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Eye, EyeOff, FileUp, Plus, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useStaff } from "@/hooks/use-staff";
 import { loadMenu, saveMenu } from "@/lib/menu-admin.functions";
@@ -90,7 +91,7 @@ function MenuEditor() {
   return (
     <BrandTheme brand={r?.brand}>
       <div className="mx-auto max-w-4xl p-6 pb-28">
-        <div className="flex items-center justify-between gap-3"><Button asChild variant="ghost"><Link to="/espace/$slug" params={{ slug }}><ArrowLeft /> Écran cuisine</Link></Button><ThemeToggle /></div>
+        <div className="flex items-center justify-between gap-3"><Crumbs slug={slug} page="Carte" /><ThemeToggle /></div>
         <h1 className="mt-4 text-5xl">Carte · {r?.name}</h1>
         <p className="text-sm text-muted-foreground">
           {!menu.length ? "Carte vierge : déposez votre menu ci-dessous ou ajoutez vos catégories à la main." : custom ? "Carte personnalisée de ce restaurant." : "Vous partez de la carte de base : elle deviendra propre à ce restaurant dès le premier enregistrement."} Les modifications n'affectent aucun autre établissement.

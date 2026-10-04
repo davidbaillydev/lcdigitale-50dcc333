@@ -47,7 +47,7 @@ function Num({ id, label, value, onChange, step = 1 }: { id: string; label: stri
 }
 
 /** Horaires, modes de commande, acceptation, paiements et livraison d'un restaurant. */
-export function RestaurantSettingsForm({ restaurant, onSaved }: { restaurant: Restaurant; onSaved?: () => void }) {
+export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: { restaurant: Restaurant; onSaved?: () => void; agency?: boolean }) {
   const save = useServerFn(saveRestaurantSettings);
   const [s, setS] = useState<Settings>(() => initialSettings(restaurant));
   const [busy, setBusy] = useState(false);
@@ -109,7 +109,7 @@ export function RestaurantSettingsForm({ restaurant, onSaved }: { restaurant: Re
         </div>
       </Section>
 
-      <Section title="Impression des tickets">
+      {agency && <Section title="Impression des tickets">
         <div className="grid gap-6 lg:grid-cols-[1fr_auto]">
         <div>
         <div className="mb-3 flex gap-2">
@@ -133,7 +133,7 @@ export function RestaurantSettingsForm({ restaurant, onSaved }: { restaurant: Re
           {testResult === "failed" && <p role="alert" className="mt-2 rounded bg-destructive/20 p-2 text-sm">Échec : le ticket n'a pas pu être envoyé. Vérifiez l'imprimante et réessayez.</p>}
         </div>
         </div>
-      </Section>
+      </Section>}
 
       <Section title="Paiements acceptés">
         <Toggle label="Paiement au retrait / à la livraison (site)" checked={s.config.payments.on_site} onChange={(v) => cfg({ payments: { ...s.config.payments, on_site: v } })} />

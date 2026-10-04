@@ -57,6 +57,10 @@ export const saveRestaurantSettings = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: cur } = await supabaseAdmin.from("restaurants").select("config").eq("id", data.restaurantId).single();
     const marketing = (cur?.config as { marketing?: unknown } | null)?.marketing;
+    // L'impression est un réglage agence : un gérant ne peut pas la modifier.
+    const { data: isAgency } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    const printing = (cur?.config as { printing?: unknown } | null)?.printing;
+    if (!isAgency && printing) s.config.printing = printing as typeof s.config.printing;
     const { error } = await supabaseAdmin.from("restaurants").update({ opening: s.opening, delivery: s.delivery, config: { ...s.config, ...(marketing ? { marketing } : {}) } as never }).eq("id", data.restaurantId);
     if (error) throw new Error(error.message);
     return { ok: true };
