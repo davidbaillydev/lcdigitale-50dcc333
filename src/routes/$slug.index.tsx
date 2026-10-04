@@ -9,6 +9,8 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { useCart } from "@/lib/cart";
 import { Button } from "@/components/ui/button";
 import { menuImage } from "@/lib/menu-images";
+import { AllergenBadges, AllergenPicker } from "@/components/Allergens";
+import { safeFor } from "@/lib/allergens";
 
 export const Route = createFileRoute("/$slug/")({
   loader: ({ params }) => getRestaurant({ data: { slug: params.slug } }),
@@ -25,6 +27,8 @@ export const Route = createFileRoute("/$slug/")({
 
 function MenuPage() {
   const [open, setOpen] = useState<MenuItem | null>(null);
+  const [excluded, setExcluded] = useState<string[]>([]);
+  const shown = catalog.categories.map((c) => ({ ...c, items: c.items.filter((i) => safeFor(i, excluded)) })).filter((c) => c.items.length);
   const { count, subtotal, restaurant, catalog } = useCart();
   const d = restaurant.delivery;
 
