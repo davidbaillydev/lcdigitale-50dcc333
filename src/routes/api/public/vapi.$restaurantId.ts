@@ -6,7 +6,7 @@ import { z } from "zod";
  * Sécurité : en-tête x-vapi-secret comparé en temps constant à la clé du restaurant ; canal et restaurant doivent être actifs.
  * Outils exposés à l'assistant : get_menu, create_order. Les prix sont toujours recalculés ici.
  */
-const lineSchema = z.object({ itemId: z.string().max(80), qty: z.number().int().min(1).max(50), notes: z.string().max(200).optional() });
+const lineSchema = z.object({ itemId: z.string().max(80), qty: z.number().int().min(1).max(50), sel: z.record(z.string(), z.array(z.string().max(60)).max(12)).optional(), notes: z.string().max(200).optional() });
 const orderArgs = z.object({
   customer_name: z.string().trim().min(2).max(80),
   phone: z.string().trim().regex(/^[0-9 +().-]{8,20}$/),
@@ -60,8 +60,9 @@ export const Route = createFileRoute("/api/public/vapi/$restaurantId")({
           try {
             if (name === "get_menu") {
               result = catalog.categories.map((c) => ({
-                category: c.name,
-                items: c.items.filter((i) => !i.unavailable).map((i) => ({ itemId: i.id, name: i.name, price: i.price, description: i.description, allergens: i.allergens ?? "non renseignés", needsOptions: !!i.options?.some((o) => (o.min ?? 0) > 0) })),
+                category: c.label,
+                items: c.items.filter((i) => !i.hidden).map((i) => ({ itemId: i.id, name: i.name, price: i.price, description: i.desc, allergens: i.allergens ?? "non renseignés",
+                  options: i.options?.map((o) => ({ groupId: o.id, label: o.label, min: o.min, max: o.max, choices: o.choices.map((ch) => ({ id: ch.id, label: ch.label, extra: ch.price })) })) })),
               }));
             } else if (name === "create_order") {
               const a = orderArgs.parse(raw);
@@ -72,10 +73,11 @@ export const Route = createFileRoute("/api/public/vapi/$restaurantId")({
               const items = a.lines.map((l) => {
                 const item = catalog.itemsById[l.itemId];
                 if (!item) throw new Error(`Article inconnu : ${l.itemId}`);
-                const err = validateSelections(item, {});
-                if (err) throw new Error(`${item.name} : options requises non gérables par téléphone (${err}).`);
-                const unit = unitPrice(item, {});
-                const details = [describeSelections(item, {}), l.notes].filter(Boolean).join(" · ");
+                const sel = l.sel ?? {};
+                const err = validateSelections(item, sel);
+                if (err) throw new Error(`${item.name} : ${err}`);
+                const unit = unitPrice(item, sel);
+                const details = [describeSelections(item, sel), l.notes].filter(Boolean).join(" · ");
                 return { id: item.id, name: item.name, qty: l.qty, unit, total: Math.round(unit * l.qty * 100) / 100, details, ...(item.allergens?.length ? { allergens: item.allergens } : {}) };
               });
               const subtotal = Math.round(items.reduce((s, i) => s + i.total, 0) * 100) / 100;
