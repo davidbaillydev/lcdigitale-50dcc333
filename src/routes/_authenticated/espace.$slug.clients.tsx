@@ -153,6 +153,8 @@ function Page() {
         <p className="text-xs text-muted-foreground">La liste de diffusion ne contient que les clients ayant donné leur consentement et disposant d'un email (RGPD).</p>
       </section>
 
+      <CampaignPanel restaurantId={r.id} targets={rows.filter((c) => c.marketing_consent && c.email)} />
+
       <div className={`overflow-x-auto rounded-xl border border-border ${isFetching ? "opacity-60" : ""}`}>
         <table className="w-full text-sm">
           <thead className="bg-muted text-left"><tr><th className="p-2">Client</th><th>Contact</th><th>Origine</th><th className="text-right">Cmd</th><th className="text-right">Dépensé</th><th>Dernière</th><th>Consentement</th><th /></tr></thead>
