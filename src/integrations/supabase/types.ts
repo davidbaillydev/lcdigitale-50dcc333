@@ -406,6 +406,53 @@ export type Database = {
           },
         ]
       }
+      restaurant_voice_calls: {
+        Row: {
+          call_id: string
+          caller: string | null
+          created_at: string
+          duration_seconds: number | null
+          ended_reason: string | null
+          id: string
+          order_number: number | null
+          restaurant_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          call_id: string
+          caller?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          ended_reason?: string | null
+          id?: string
+          order_number?: number | null
+          restaurant_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          call_id?: string
+          caller?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          ended_reason?: string | null
+          id?: string
+          order_number?: number | null
+          restaurant_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_voice_calls_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurant_voice_channels: {
         Row: {
           calls_count: number
