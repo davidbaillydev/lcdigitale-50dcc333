@@ -13,7 +13,7 @@ import { Switch } from "@/components/ui/switch";
 const blank = { code: "", kind: "percent" as "percent" | "fixed", value: 10, min_order: 0, starts: "", ends: "", active: true };
 const toLocal = (iso: string | null) => (iso ? iso.slice(0, 10) : "");
 
-export function MarketingPanel({ restaurantId, marketing, onSaved }: { restaurantId: string; marketing?: Marketing; onSaved?: () => void }) {
+export function MarketingPanel({ restaurantId, marketing, onSaved }: { restaurantId: string; marketing?: Marketing | undefined; onSaved?: () => void }) {
   const save = useServerFn(saveMarketing);
   const [m, setM] = useState({
     announcement: { enabled: false, text: "", ...(marketing?.announcement ?? {}) },
