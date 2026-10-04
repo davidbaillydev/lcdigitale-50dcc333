@@ -20,7 +20,7 @@ export function AllergenInfo({ ids, size = "sm" }: { ids?: string[] | undefined;
   return (
     <div className="space-y-1">
       <p className={cn("font-semibold", size === "lg" ? "text-lg" : "text-sm")}>Allergènes</p>
-      {ids?.length ? <AllergenBadges ids={ids} size={size} /> : <p className="text-sm text-muted-foreground">Aucun allergène majeur déclaré pour ce plat.</p>}
+      {ids?.length ? <AllergenBadges ids={ids} size={size} /> : ids ? <p className="text-sm text-muted-foreground">Aucun des 14 allergènes majeurs déclaré pour ce plat.</p> : <p className="text-sm font-medium text-destructive">Allergènes non renseignés : demandez au restaurant avant de commander.</p>}
       <p className="text-xs text-muted-foreground">En cas d'allergie, signalez-le au restaurant : des traces peuvent subsister en cuisine.</p>
     </div>
   );

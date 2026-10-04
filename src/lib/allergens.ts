@@ -22,6 +22,6 @@ export const allergenLabel = (id: string) => BY_ID[id]?.label ?? id;
 export const allergenIcon = (id: string) => BY_ID[id]?.icon ?? "⚠";
 export const cleanAllergens = (ids: unknown): AllergenId[] =>
   Array.isArray(ids) ? ALLERGEN_IDS.filter((a) => ids.includes(a)) : [];
-/** true si le plat ne contient aucun des allergènes exclus */
-export const safeFor = (item: { allergens?: string[] }, excluded: string[]) =>
-  !excluded.length || !(item.allergens ?? []).some((a) => excluded.includes(a));
+/** true si le plat ne contient aucun des allergènes exclus. Un plat non renseigné est masqué dès qu'un filtre est actif (prudence). */
+export const safeFor = (item: { allergens?: string[] | undefined }, excluded: string[]) =>
+  !excluded.length || (Array.isArray(item.allergens) && !item.allergens.some((a) => excluded.includes(a)));

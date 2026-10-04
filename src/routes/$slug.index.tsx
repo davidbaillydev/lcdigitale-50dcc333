@@ -66,7 +66,7 @@ function MenuPage() {
           <summary className="cursor-pointer font-semibold">Allergies ? Masquer les plats contenant… {excluded.length > 0 && <span className="text-primary">({excluded.length} exclu{excluded.length > 1 ? "s" : ""})</span>}</summary>
           <div className="mt-3"><AllergenPicker value={excluded} onChange={setExcluded} /></div>
           {excluded.length > 0 && <button className="mt-2 text-sm underline" onClick={() => setExcluded([])}>Tout réafficher</button>}
-          <p className="mt-2 text-xs text-muted-foreground">Informations déclarées par le restaurant. En cas d'allergie sévère, contactez-le avant de commander.</p>
+          <p className="mt-2 text-xs text-muted-foreground">Les plats dont les allergènes ne sont pas renseignés sont aussi masqués. Informations déclarées par le restaurant. En cas d'allergie sévère, contactez-le avant de commander.</p>
         </details>
         {!catalog.categories.length && <p className="py-10 text-center text-muted-foreground">La carte arrive bientôt.</p>}
         {excluded.length > 0 && !shown.length && <p className="py-10 text-center text-muted-foreground">Aucun plat sans ces allergènes.</p>}
