@@ -12,6 +12,9 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ThemeToggle } from "@/lib/theme";
+import { Textarea } from "@/components/ui/textarea";
+import { useServerFn } from "@tanstack/react-start";
+import { sendCampaign } from "@/lib/campaign.functions";
 
 export const Route = createFileRoute("/_authenticated/espace/$slug/clients")({
   head: () => ({
@@ -153,6 +156,8 @@ function Page() {
         <p className="text-xs text-muted-foreground">La liste de diffusion ne contient que les clients ayant donné leur consentement et disposant d'un email (RGPD).</p>
       </section>
 
+      <CampaignPanel restaurantId={r.id} targets={rows.filter((c) => c.marketing_consent && c.email)} />
+
       <div className={`overflow-x-auto rounded-xl border border-border ${isFetching ? "opacity-60" : ""}`}>
         <table className="w-full text-sm">
           <thead className="bg-muted text-left"><tr><th className="p-2">Client</th><th>Contact</th><th>Origine</th><th className="text-right">Cmd</th><th className="text-right">Dépensé</th><th>Dernière</th><th>Consentement</th><th /></tr></thead>
@@ -261,6 +266,52 @@ function ImportPanel({ restaurantId, existing, onDone }: { restaurantId: string;
             <Button onClick={apply} disabled={busy || (!plan.add.length && !plan.merge.length)}>{busy ? "Import…" : "Valider l'import"}</Button>
             <Button variant="ghost" onClick={() => setPlan(null)}>Annuler</Button>
           </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function CampaignPanel({ restaurantId, targets }: { restaurantId: string; targets: Customer[] }) {
+  const send = useServerFn(sendCampaign);
+  const [subject, setSubject] = useState("");
+  const [body, setBody] = useState("");
+  const [ctaUrl, setCtaUrl] = useState("");
+  const [ctaLabel, setCtaLabel] = useState("Commander");
+  const [test, setTest] = useState("");
+  const [busy, setBusy] = useState(false);
+  const { data: history, refetch } = useQuery({
+    queryKey: ["campaigns", restaurantId],
+    queryFn: async () => (await supabase.from("restaurant_campaigns").select("id, subject, recipients, status, error, created_at").eq("restaurant_id", restaurantId).order("created_at", { ascending: false }).limit(20)).data ?? [],
+  });
+  const go = async (testEmail?: string) => {
+    if (!testEmail && !confirm(`Envoyer « ${subject} » à ${targets.length} client(s) consentant(s) ?`)) return;
+    setBusy(true);
+    try {
+      const res = await send({ data: { restaurantId, customerIds: testEmail ? [targets[0]?.id ?? restaurantId] : targets.map((c) => c.id), subject, body, ctaUrl: ctaUrl || "", ctaLabel, origin: window.location.origin, ...(testEmail ? { testEmail } : {}) } });
+      if (res.test) toast.success(`Email de test envoyé à ${testEmail}`);
+      else { if (res.error) toast.warning(`${res.sent} envoyé(s), puis erreur : ${res.error}`); else toast.success(`Campagne envoyée à ${res.sent} client(s)`); refetch(); }
+    } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
+  };
+  const ready = subject.trim().length >= 3 && body.trim().length >= 5;
+  return (
+    <section className="space-y-3 rounded-xl border border-border bg-card p-4">
+      <h2 className="text-2xl">Campagne email (Brevo)</h2>
+      <p className="text-sm text-muted-foreground">Destinataires : les <b>{targets.length}</b> client(s) consentant(s) avec email correspondant au ciblage ci-dessus. Un lien de désabonnement est ajouté automatiquement.</p>
+      <Input placeholder="Objet — ex. -15 % ce week-end sur les plateaux" value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={150} />
+      <Textarea placeholder="Votre message…" rows={6} value={body} onChange={(e) => setBody(e.target.value)} maxLength={5000} />
+      <div className="grid gap-2 sm:grid-cols-2">
+        <Input placeholder="Lien du bouton (ex. adresse de votre page de commande)" value={ctaUrl} onChange={(e) => setCtaUrl(e.target.value)} />
+        <Input placeholder="Texte du bouton" value={ctaLabel} onChange={(e) => setCtaLabel(e.target.value)} maxLength={40} />
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <Input className="max-w-xs" type="email" placeholder="Votre email pour un test" value={test} onChange={(e) => setTest(e.target.value)} />
+        <Button variant="secondary" disabled={busy || !ready || !test.includes("@")} onClick={() => go(test)}>Envoyer un test</Button>
+        <Button className="ml-auto" disabled={busy || !ready || !targets.length} onClick={() => go()}>{busy ? "Envoi…" : `Envoyer à ${targets.length} client(s)`}</Button>
+      </div>
+      {!!history?.length && (
+        <div className="text-sm"><p className="font-semibold">Historique</p>
+          {history.map((h) => <p key={h.id} className="border-t border-border py-1">{new Date(h.created_at).toLocaleString("fr-FR")} · {h.subject} · {h.recipients} destinataire(s) · {h.status === "sent" ? "Envoyée" : h.status === "partial" ? "Partielle" : "Échec"}{h.error ? ` — ${h.error}` : ""}</p>)}
         </div>
       )}
     </section>

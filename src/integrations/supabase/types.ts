@@ -157,6 +157,47 @@ export type Database = {
           },
         ]
       }
+      restaurant_campaigns: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          error: string | null
+          id: string
+          recipients: number
+          restaurant_id: string
+          status: string
+          subject: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          id?: string
+          recipients?: number
+          restaurant_id: string
+          status?: string
+          subject: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          id?: string
+          recipients?: number
+          restaurant_id?: string
+          status?: string
+          subject?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_campaigns_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurant_customers: {
         Row: {
           consent_at: string | null
