@@ -1,3 +1,4 @@
+import { Crumbs } from "@/components/Crumbs";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -76,7 +77,7 @@ function Team() {
 
   return (
     <div className="mx-auto max-w-2xl p-6">
-      <div className="flex items-center justify-between"><Button asChild variant="ghost"><Link to="/espace/$slug" params={{ slug }}><ArrowLeft /> Écran cuisine</Link></Button><ThemeToggle /></div>
+      <div className="flex items-center justify-between"><Crumbs slug={slug} page="Équipe" /><ThemeToggle /></div>
       <h1 className="mt-4 text-5xl">Équipe · {restaurant?.name}</h1>
       <p className="text-sm text-muted-foreground">Invitez vos gérants et votre équipe cuisine par email : ils reçoivent un lien pour choisir leur mot de passe. Ils n'accèdent qu'à ce restaurant.</p>
       <div className="mt-4 flex flex-wrap gap-2 rounded-xl border border-border bg-card p-4">

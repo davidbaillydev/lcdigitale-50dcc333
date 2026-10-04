@@ -1,3 +1,4 @@
+import { Crumbs } from "@/components/Crumbs";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -101,7 +102,7 @@ function Dashboard() {
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-6">
       <div className="flex items-center gap-2">
-        <Button asChild variant="ghost"><Link to="/espace"><ArrowLeft /> Mes restaurants</Link></Button>
+        <Crumbs page="Tableau de bord" />
         <span className="mr-auto" /><ThemeToggle />
       </div>
       <h1 className="text-5xl">Tableau de bord</h1>

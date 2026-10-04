@@ -160,7 +160,7 @@ function Kiosk() {
 
       {step === "menu" && (
         <div className="flex min-h-0 flex-1">
-          <nav className="w-60 shrink-0 overflow-y-auto border-r border-border p-3">
+          <nav className="w-60 shrink-0 xl:w-72 2xl:w-80 overflow-y-auto border-r border-border p-3">
             <button onClick={() => setAllergyOpen(true)} className={cn("mb-4 flex w-full items-center justify-center gap-2 rounded-xl border-2 px-4 py-5 text-xl font-semibold", excluded.length ? "border-primary bg-primary/10 text-primary" : "border-border")}>⚠ Sans allergènes{excluded.length ? ` (${excluded.length})` : ""}</button>
             {catalog.categories.map((c) => (
               <button key={c.id} onClick={() => setCat(c.id)}
@@ -176,7 +176,7 @@ function Kiosk() {
             </div>
             {category?.note && <p className="mb-4 text-lg text-muted-foreground">{category.note}</p>}
             {excluded.length > 0 && category && !category.items.length && <p className="py-10 text-center text-2xl text-muted-foreground">Aucun plat de cette catégorie sans ces allergènes.</p>}
-            <div className="grid grid-cols-2 gap-4 pb-32 xl:grid-cols-3">
+            <div className="grid grid-cols-2 gap-4 pb-32 lg:grid-cols-3 2xl:grid-cols-4 min-[2200px]:grid-cols-5">
               {category?.items.map((it) => (
                 <button key={it.id} onClick={() => it.options?.length || it.allergens?.length ? setItem(it) : add(it.id, {}, 1)}
                   className="flex min-h-40 flex-col justify-between rounded-2xl border-2 border-border bg-card p-5 text-left active:border-primary">
