@@ -19,6 +19,7 @@ export type MenuItem = {
   options?: OptionGroup[];
   builder?: boolean; // configurateur étape par étape
   hidden?: boolean; // masqué (rupture / indisponible)
+  allergens?: string[]; // ids des 14 allergènes INCO (src/lib/allergens.ts)
 };
 export type Category = { id: string; label: string; note?: string; items: MenuItem[] };
 

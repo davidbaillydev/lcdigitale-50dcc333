@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { ALLERGEN_IDS } from "./allergens";
 
 const id = z.string().trim().min(1).max(80);
 const choice = z.object({ id, label: z.string().max(120), price: z.number().min(0).max(1000).optional() });
@@ -10,7 +11,7 @@ const group = z.object({
 });
 const item = z.object({
   id, name: z.string().trim().min(1).max(120), desc: z.string().max(500).optional(), price: z.number().min(0).max(1000),
-  tag: z.string().max(40).optional(), options: z.array(group).max(20).optional(), builder: z.boolean().optional(), hidden: z.boolean().optional(),
+  tag: z.string().max(40).optional(), options: z.array(group).max(20).optional(), builder: z.boolean().optional(), hidden: z.boolean().optional(), allergens: z.array(z.enum(ALLERGEN_IDS)).max(14).optional(),
 });
 const category = z.object({ id, label: z.string().trim().min(1).max(80), note: z.string().max(300).optional(), items: z.array(item).max(300) });
 
