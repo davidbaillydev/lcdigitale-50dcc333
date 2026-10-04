@@ -7,6 +7,7 @@ import { loadRestaurantAdmin } from "@/lib/restaurant-settings.functions";
 import { RestaurantSettingsForm } from "@/components/RestaurantSettingsForm";
 import { MarketingPanel } from "@/components/MarketingPanel";
 import { PaymentProvidersPanel } from "@/components/PaymentProvidersPanel";
+import { VoiceChannelPanel } from "@/components/VoiceChannelPanel";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/lib/theme";
 import { BrandLogo } from "@/lib/brand";
@@ -62,6 +63,7 @@ function Page() {
           <p className="text-sm text-muted-foreground">Identité, logo et couleurs se modifient depuis la console (bouton « Modifier »).</p>
           <RestaurantSettingsForm restaurant={r} onSaved={() => refetch()} />
           <PaymentProvidersPanel restaurantId={r.id} />
+          <VoiceChannelPanel restaurantId={r.id} />
           <MarketingPanel restaurantId={r.id} marketing={r.config.marketing} onSaved={() => refetch()} />
         </>
       )}

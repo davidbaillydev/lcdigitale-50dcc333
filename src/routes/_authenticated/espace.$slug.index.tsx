@@ -217,7 +217,7 @@ function Kitchen() {
                         <p className="flex items-center justify-end gap-1 font-display text-3xl leading-none text-primary">
                           {o.mode === "delivery" ? <Bike className="h-5 w-5" /> : <ShoppingBag className="h-5 w-5" />}{fmtTime(o.slot)}
                         </p>
-                        <p className="text-xs text-muted-foreground">{o.source === "kiosk" ? "BORNE · " : ""}{o.mode === "delivery" ? "Livraison" : o.mode === "dine_in" ? "Sur place" : "À emporter"}</p>
+                        <p className="text-xs text-muted-foreground">{o.source === "kiosk" ? "BORNE · " : o.source === "phone" ? "TÉLÉPHONE IA · " : ""}{o.mode === "delivery" ? "Livraison" : o.mode === "dine_in" ? "Sur place" : "À emporter"}</p>
                       </div>
                     </div>
                     <ul className="mt-3 space-y-1.5 border-t border-border pt-3">

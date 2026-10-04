@@ -406,6 +406,47 @@ export type Database = {
           },
         ]
       }
+      restaurant_voice_channels: {
+        Row: {
+          calls_count: number
+          created_at: string
+          enabled: boolean
+          last_call_at: string | null
+          phone_number: string | null
+          restaurant_id: string
+          updated_at: string
+          webhook_secret: string
+        }
+        Insert: {
+          calls_count?: number
+          created_at?: string
+          enabled?: boolean
+          last_call_at?: string | null
+          phone_number?: string | null
+          restaurant_id: string
+          updated_at?: string
+          webhook_secret: string
+        }
+        Update: {
+          calls_count?: number
+          created_at?: string
+          enabled?: boolean
+          last_call_at?: string | null
+          phone_number?: string | null
+          restaurant_id?: string
+          updated_at?: string
+          webhook_secret?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_voice_channels_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: true
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurants: {
         Row: {
           active: boolean
