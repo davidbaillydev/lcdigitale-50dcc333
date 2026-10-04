@@ -505,6 +505,7 @@ export type Database = {
           delivery: Json
           email: string | null
           id: string
+          is_vapi_web_enabled: boolean
           logo_url: string | null
           menu: Json | null
           menu_key: string
@@ -513,6 +514,9 @@ export type Database = {
           phone: string | null
           slug: string
           updated_at: string
+          vapi_assistant_id: string | null
+          vapi_phone_number: string | null
+          vapi_public_key: string | null
         }
         Insert: {
           active?: boolean
@@ -524,6 +528,7 @@ export type Database = {
           delivery?: Json
           email?: string | null
           id?: string
+          is_vapi_web_enabled?: boolean
           logo_url?: string | null
           menu?: Json | null
           menu_key: string
@@ -532,6 +537,9 @@ export type Database = {
           phone?: string | null
           slug: string
           updated_at?: string
+          vapi_assistant_id?: string | null
+          vapi_phone_number?: string | null
+          vapi_public_key?: string | null
         }
         Update: {
           active?: boolean
@@ -543,6 +551,7 @@ export type Database = {
           delivery?: Json
           email?: string | null
           id?: string
+          is_vapi_web_enabled?: boolean
           logo_url?: string | null
           menu?: Json | null
           menu_key?: string
@@ -551,6 +560,9 @@ export type Database = {
           phone?: string | null
           slug?: string
           updated_at?: string
+          vapi_assistant_id?: string | null
+          vapi_phone_number?: string | null
+          vapi_public_key?: string | null
         }
         Relationships: []
       }
