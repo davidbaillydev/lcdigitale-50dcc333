@@ -1,4 +1,4 @@
-import { Loader2, Mic, MicOff, PhoneOff, Sparkles } from "lucide-react";
+import { AlertTriangle, Loader2, Mic, MicOff, PhoneOff, RotateCcw, Sparkles, X } from "lucide-react";
 import { useVapi } from "@/hooks/useVapi";
 import type { Restaurant } from "@/lib/shop";
 
@@ -11,7 +11,26 @@ export function VapiVoiceWidget({ restaurant }: { restaurant: Restaurant }) {
 
   return (
     <div className="fixed bottom-20 right-4 z-50 flex flex-col items-end gap-2 sm:bottom-6">
-      {v.error && <p role="alert" className="max-w-xs rounded-lg bg-destructive px-3 py-2 text-sm text-destructive-foreground shadow-lg">{v.error}</p>}
+      {v.error && (
+        <div role="alert" className="w-72 animate-in fade-in slide-in-from-bottom-2 rounded-2xl border border-destructive/40 bg-card p-4 shadow-2xl">
+          <div className="flex items-start gap-2.5">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold">L'appel n'a pas abouti</p>
+              <p className="mt-1 text-sm text-muted-foreground">{v.error}</p>
+            </div>
+            <button onClick={v.dismissError} aria-label="Fermer le message d'erreur"
+              className="rounded-full p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <button onClick={v.retryCall} disabled={v.isConnecting}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60">
+            {v.isConnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+            Relancer l'appel
+          </button>
+        </div>
+      )}
       {active ? (
         <div className="w-72 animate-in fade-in zoom-in-95 rounded-2xl border border-border bg-card p-4 shadow-2xl">
           <p className="flex items-center gap-2 font-semibold">

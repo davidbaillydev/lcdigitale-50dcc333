@@ -8,6 +8,18 @@ type VapiInstance = {
   removeAllListeners?: () => void;
 };
 
+/** Traduit une erreur brute du SDK en message clair pour le client. */
+function friendlyError(raw: string | null | undefined): string {
+  const m = (raw ?? "").toLowerCase();
+  if (m.includes("notallowed") || m.includes("permission") || m.includes("micro"))
+    return "Le micro est bloqué. Autorisez le micro dans votre navigateur, puis réessayez.";
+  if (m.includes("network") || m.includes("websocket") || m.includes("ice") || m.includes("connection") || m.includes("connexion"))
+    return "La connexion vocale a échoué. Vérifiez votre réseau, puis réessayez.";
+  if (m.includes("notfound") || m.includes("no device"))
+    return "Aucun micro détecté sur cet appareil.";
+  return raw?.trim() || "L'appel vocal a échoué. Veuillez réessayer.";
+}
+
 /** Cycle de vie d'un appel vocal Vapi dans le navigateur (SDK chargé à la demande, côté client uniquement). */
 export function useVapi(publicKey: string | null | undefined) {
   const ref = useRef<VapiInstance | null>(null);
@@ -31,17 +43,26 @@ export function useVapi(publicKey: string | null | undefined) {
     v.on("error", (e) => {
       setConnecting(false); setConnected(false);
       const msg = (e as { error?: { message?: string }; message?: string })?.error?.message ?? (e as { message?: string })?.message;
-      setError(msg || "L'appel vocal a échoué. Vérifiez l'accès au micro.");
+      setError(friendlyError(msg));
     });
     ref.current = v;
     return v;
   }, [publicKey]);
 
+  const lastAssistantId = useRef<string | null>(null);
+
   const startCall = useCallback(async (assistantId: string) => {
+    lastAssistantId.current = assistantId;
     setError(null); setConnecting(true);
     try { await (await ensure()).start(assistantId); }
-    catch (e) { setConnecting(false); setError((e as Error).message || "Impossible de démarrer l'appel"); }
+    catch (e) { setConnecting(false); setError(friendlyError((e as Error).message)); }
   }, [ensure]);
+
+  const retryCall = useCallback(() => {
+    if (lastAssistantId.current) void startCall(lastAssistantId.current);
+  }, [startCall]);
+
+  const dismissError = useCallback(() => setError(null), []);
 
   const stopCall = useCallback(() => { ref.current?.stop(); setConnecting(false); }, []);
   const toggleMute = useCallback(() => {
@@ -50,5 +71,5 @@ export function useVapi(publicKey: string | null | undefined) {
 
   useEffect(() => () => { ref.current?.stop(); ref.current?.removeAllListeners?.(); ref.current = null; }, [publicKey]);
 
-  return { startCall, stopCall, toggleMute, isConnecting, isConnected, isSpeaking, volumeLevel, isMuted, error };
+  return { startCall, retryCall, dismissError, stopCall, toggleMute, isConnecting, isConnected, isSpeaking, volumeLevel, isMuted, error };
 }
