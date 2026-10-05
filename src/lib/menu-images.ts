@@ -22,7 +22,7 @@ export function menuImage(categoryId: string) {
 }
 
 /** Photo du plat si le restaurant en a une ; sinon illustration de sa famille. */
-export function itemImage(item: { id: string; image?: string }, categories: { id: string; items: { id: string }[] }[]) {
+export function itemImage(item: { id: string; image?: string | undefined }, categories: { id: string; items: { id: string }[] }[]) {
   if (item.image) return { src: item.image, real: true };
   const category = categories.find((c) => c.items.some((i) => i.id === item.id));
   const src = category ? menuImage(category.id) : undefined;
