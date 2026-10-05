@@ -139,7 +139,7 @@ function Kitchen() {
         if ((p.eventType === "INSERT" && n.status !== "awaiting_payment") || becamePaid) {
           toast.success(`Nouvelle commande n° ${(p.new as Order).order_number}`);
           if (audio.current) beep(audio.current);
-          if (printRef.current.auto) void printRef.current.doPrint(p.new as Order, ["kitchen", "receipt"], true);
+          if (printRef.current.auto && n.status !== "pending_validation") void printRef.current.doPrint(p.new as Order, ["kitchen", "receipt"], true);
         }
         load();
       })
