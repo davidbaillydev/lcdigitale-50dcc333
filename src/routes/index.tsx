@@ -29,7 +29,7 @@ function Home() {
       <nav aria-label="Navigation principale" className="directory-nav flex items-center justify-between gap-3">
         <span className="font-display text-lg font-bold">LC<span className="text-primary">.</span></span>
         <div className="flex items-center gap-3">
-          <Button asChild variant="ghost"><Link to="/connexion">Espace restaurant <ArrowUpRight aria-hidden="true" /></Link></Button>
+          <Button asChild variant="ghost" className="text-foreground"><Link to="/connexion">Espace restaurant <ArrowUpRight aria-hidden="true" /></Link></Button>
           <ThemeToggle />
         </div>
       </nav>
@@ -67,9 +67,9 @@ function Home() {
                   </div>
                   <h3 className="directory-partner-name font-display font-semibold">{r.name}</h3>
                   {r.config.tagline && <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{r.config.tagline}</p>}
-                  <div className="mt-auto flex justify-between gap-3 border-b border-border py-6">
+                  <div className="mt-auto flex flex-wrap justify-between gap-3 border-b border-border py-6">
                     <Button asChild className="h-12 rounded-md px-6 text-base font-semibold"><Link to="/$slug" params={{ slug: r.slug }}>Commander <ArrowUpRight aria-hidden="true" /></Link></Button>
-                    <Button asChild variant="ghost" className="h-12 rounded-md px-2 text-sm"><Link to="/connexion">Espace restaurant</Link></Button>
+                    <Button asChild variant="ghost" className="h-12 rounded-md px-2 text-sm text-foreground"><Link to="/connexion">Espace restaurant</Link></Button>
                   </div>
                 </div>
               </article>
