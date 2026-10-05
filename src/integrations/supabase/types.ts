@@ -90,6 +90,7 @@ export type Database = {
           source: string
           status: string
           subtotal: number
+          table_label: string | null
           total: number
           updated_at: string
         }
@@ -117,6 +118,7 @@ export type Database = {
           source?: string
           status?: string
           subtotal: number
+          table_label?: string | null
           total: number
           updated_at?: string
         }
@@ -144,6 +146,7 @@ export type Database = {
           source?: string
           status?: string
           subtotal?: number
+          table_label?: string | null
           total?: number
           updated_at?: string
         }
