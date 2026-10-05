@@ -273,11 +273,18 @@
 .admin-restaurant-card:hover { box-shadow: var(--admin-shadow-hover); }
 .admin-dashboard section { background: transparent; border: 0; border-top: 1px solid var(--border); border-radius: 0; padding: 1.5rem 0; }
 .admin-dashboard .grid > .bg-card { background: transparent; border: 0; border-bottom: 1px solid var(--border); border-radius: 0; padding: 1.25rem 0; }
+.admin-content section:not(.admin-menu section):not(.admin-kitchen section) {
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  padding: 1.75rem 0;
+}
 .admin-kitchen > header { padding: 1.5rem; }
 .admin-kitchen h1 { font-size: 1.75rem; margin-bottom: 0; }
 .admin-kitchen section { border-radius: 0; background: transparent; padding: 0.75rem; }
 .admin-kitchen section > h2 { border-bottom: 1px solid var(--border); padding-bottom: 1rem; font-size: 1.25rem; }
-:root:has(.admin-workspace) [role="dialog"] { font-family: var(--font-sans); border-radius: var(--radius); max-width: calc(100vw - 2rem); }
+:root:has(.admin-workspace) [role="dialog"] { font-family: var(--font-sans); border-radius: var(--radius); width: calc(100vw - 2rem); }
 :root:has(.admin-workspace) [role="dialog"] .tracking-tight { letter-spacing: 0; }
 @media (max-width: 639px) {
   .admin-workspace h1 { font-size: 2rem; }
