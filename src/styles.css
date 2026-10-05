@@ -326,6 +326,44 @@
   .admin-kitchen > header { padding: 1.25rem; }
   .admin-content .fixed > div.flex { flex-wrap: wrap; }
 }
+/* Mobile administration touch targets also cover portaled controls. */
+@media (max-width: 767px) {
+  :is(.admin-workspace, :root:has(.admin-workspace) [role="dialog"], :root:has(.admin-workspace) [data-radix-popper-content-wrapper]) :is(button, a.inline-flex):not([role="switch"]):not([role="checkbox"]):not([role="radio"]) {
+    min-height: 3rem;
+    min-width: 3rem;
+    height: auto;
+    padding-block: 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    touch-action: manipulation;
+  }
+  :is(.admin-workspace, :root:has(.admin-workspace) [role="dialog"], :root:has(.admin-workspace) [data-radix-popper-content-wrapper]) :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, [role="combobox"]) {
+    min-height: 3rem;
+    font-size: 1rem;
+  }
+  :is(.admin-workspace, :root:has(.admin-workspace) [role="dialog"]) [role="switch"] {
+    width: 4rem;
+    height: 2.75rem;
+    min-width: 4rem;
+    padding: 0.5rem 0.25rem;
+    touch-action: manipulation;
+  }
+  :is(.admin-workspace, :root:has(.admin-workspace) [role="dialog"]) [role="switch"] > span { width: 1.5rem; height: 1.5rem; }
+  :is(.admin-workspace, :root:has(.admin-workspace) [role="dialog"]) [role="switch"] > span[data-state="checked"] { transform: translateX(1.875rem); }
+  :is(.admin-workspace, :root:has(.admin-workspace) [role="dialog"]) :is([role="checkbox"], [role="radio"], input[type="checkbox"], input[type="radio"]) {
+    width: 2.75rem;
+    height: 2.75rem;
+    min-width: 2.75rem;
+    flex-shrink: 0;
+    touch-action: manipulation;
+  }
+  :is(.admin-workspace, :root:has(.admin-workspace) [role="dialog"]) label:has(:is([role="switch"], [role="checkbox"], input[type="checkbox"], input[type="radio"])) { min-height: 3rem; gap: 0.75rem; }
+  .admin-workspace .admin-card-actions { gap: 0.75rem; }
+  .admin-workspace [role="tablist"] { height: auto; flex-wrap: wrap; gap: 0.25rem; }
+  :root:has(.admin-workspace) [role="dialog"] > button.absolute { top: 0.5rem; right: 0.5rem; }
+  :root:has(.admin-workspace) [role="dialog"] > div:first-child { padding-right: 3rem; }
+  :root:has(.admin-workspace) [data-radix-popper-content-wrapper] [role^="menuitem"] { min-height: 3rem; padding-block: 0.75rem; }
+}
 @media (prefers-reduced-motion: reduce) {
   .directory-card { transition: none; }
   .admin-restaurant-card { transition: none; }
