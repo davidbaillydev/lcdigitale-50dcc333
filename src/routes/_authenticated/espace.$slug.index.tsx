@@ -181,7 +181,7 @@ function Kitchen() {
     <div className="admin-kitchen flex min-h-screen flex-col">
       <header className="kds-header border-b border-border">
         <div className="flex flex-wrap items-center gap-3">
-        {restaurants.length > 1 && <Button asChild variant="ghost" size="icon" aria-label="Mes restaurants"><Link to="/espace"><ArrowLeft /></Link></Button>}
+        {restaurants.length > 1 && <Button asChild variant="ghost" size="icon" className="text-foreground" aria-label="Mes restaurants"><Link to="/espace"><ArrowLeft /></Link></Button>}
         <BrandLogo src={restaurant?.logo_url} name={restaurant?.name ?? ""} />
         <div className="mr-auto min-w-0"><p className="text-sm text-muted-foreground">Écran cuisine</p><h1>{restaurant?.name}</h1></div>
         <Button variant={sound ? "secondary" : "default"} onClick={sound ? () => setSound(false) : enableSound} aria-pressed={sound} className="min-h-12">
@@ -189,7 +189,7 @@ function Kitchen() {
         </Button>
         {pinEnabled && <Button variant="secondary" onClick={() => setLock(true)}><Lock /> Verrouiller</Button>}
         <ThemeToggle />
-        <Button variant="ghost" size="icon" onClick={() => supabase.auth.signOut()} aria-label="Déconnexion"><LogOut /></Button>
+        <Button variant="ghost" size="icon" className="text-foreground" onClick={() => supabase.auth.signOut()} aria-label="Déconnexion"><LogOut /></Button>
         </div>
         <nav aria-label="Gestion du restaurant" className="kds-navigation mt-5 flex flex-wrap items-center gap-2 border-t border-border pt-4">
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/carte" params={{ slug }}>Carte</Link></Button>}
