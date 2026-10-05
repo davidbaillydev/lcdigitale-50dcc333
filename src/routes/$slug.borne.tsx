@@ -343,7 +343,7 @@ function KioskItem({ item, image, onClose, onAdd }: { item: MenuItem; image: str
       </div>
       {stepped && <div className="flex gap-2 px-6 pt-4">{groups.map((g, i) => <div key={g.id} className={cn("h-2 flex-1 rounded-full", i <= step ? "bg-primary" : "bg-muted")} />)}</div>}
       <div className="min-h-0 flex-1 space-y-8 overflow-y-auto p-6">
-        {image && <div className="flex items-center gap-4"><img src={image} alt={`Illustration pour ${item.name}`} loading="lazy" width={1024} height={768} className="h-32 w-44 rounded-md object-cover" /><span className="text-base text-muted-foreground">Photo d’illustration</span></div>}
+        {image && <div className="flex items-center gap-4"><img src={image} alt={`Illustration pour ${item.name}`} loading="lazy" width={1024} height={768} className="h-32 w-44 rounded-md object-cover" />{!item.image && <span className="text-base text-muted-foreground">Photo d’illustration</span>}</div>}
         <div className="rounded-2xl border-2 border-border p-5"><AllergenInfo ids={item.allergens} size="lg" /></div>
         {visible.map((g) => {
           const picked = sel[g.id] ?? [];

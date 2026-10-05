@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { AllergenBadges, AllergenPicker } from "@/components/Allergens";
+import { DishPhoto } from "@/components/DishPhoto";
 
 export const Route = createFileRoute("/_authenticated/espace/$slug/carte")({
   head: () => ({
@@ -120,7 +121,7 @@ function MenuEditor() {
             <section key={c.id} className="rounded-xl border border-border bg-card">
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 p-3 sm:flex sm:flex-wrap">
                 <Input value={c.label} onChange={(e) => setCat(ci, { label: e.target.value })} className="min-w-0 font-semibold sm:max-w-xs" aria-label="Nom de la catégorie" />
-                <span className="text-sm text-muted-foreground">{c.items.length} plat(s)</span>
+                <span className="text-sm text-muted-foreground">{c.items.length} plat(s) · {c.items.filter((i) => i.image).length} photo(s)</span>
                 <div className="col-span-2 flex justify-end gap-1 sm:ml-auto">
                   <Button size="icon" variant="ghost" onClick={() => update(move(menu, ci, -1))} aria-label="Monter"><ArrowUp /></Button>
                   <Button size="icon" variant="ghost" onClick={() => update(move(menu, ci, 1))} aria-label="Descendre"><ArrowDown /></Button>
@@ -133,6 +134,7 @@ function MenuEditor() {
                   {c.items.map((it, ii) => (
                     <div key={it.id} className={`grid grid-cols-[minmax(0,1fr)_auto] gap-2 rounded-lg border border-border p-3 lg:grid-cols-[minmax(0,1fr)_7rem_auto] ${it.hidden ? "opacity-50" : ""}`}>
                       <div className="col-span-2 min-w-0 space-y-2 lg:col-span-1">
+                        <DishPhoto restaurantId={r!.id} item={it} onChange={(image) => setItem(ci, ii, { image })} />
                         <Input value={it.name} onChange={(e) => setItem(ci, ii, { name: e.target.value })} aria-label="Nom du plat" />
                         <Textarea rows={2} value={it.desc ?? ""} placeholder="Description" onChange={(e) => setItem(ci, ii, { desc: e.target.value })} />
                         <div><p className="mb-1 text-xs font-semibold">Allergènes (14 allergènes INCO) · {it.allergens === undefined ? <span className="text-destructive">non renseignés</span> : it.allergens.length ? `${it.allergens.length} coché(s)` : "aucun"} {it.allergens === undefined && <button type="button" className="underline" onClick={() => setItem(ci, ii, { allergens: [] })}>Marquer « aucun allergène »</button>}</p><AllergenPicker value={it.allergens ?? []} onChange={(v) => setItem(ci, ii, { allergens: v })} /></div>
