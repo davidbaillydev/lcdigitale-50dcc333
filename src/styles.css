@@ -364,12 +364,16 @@
     max-height: calc(100dvh - 2rem);
     max-width: calc(100vw - 2rem);
     overflow-y: auto;
+    overflow-x: hidden;
     overscroll-behavior: contain;
     scroll-padding-block: 5rem 1rem;
     padding: 1rem;
   }
   :root:has(.admin-workspace) [data-console-dialog="modal"] { top: 1rem; --tw-translate-y: 0; translate: -50% 0 !important; transform: none; }
   :root:has(.admin-workspace) [data-console-dialog="sheet"] { height: calc(100dvh - 2rem); top: 1rem; }
+  :root:has(.admin-workspace) [data-console-dialog] > *,
+  :root:has(.admin-workspace) [data-console-dialog] .grid > * { min-width: 0; }
+  :root:has(.admin-workspace) [data-console-dialog] :is(input, select, textarea) { max-width: 100%; }
   :root:has(.admin-workspace) [data-console-close-bar] {
     display: flex;
     justify-content: flex-end;
