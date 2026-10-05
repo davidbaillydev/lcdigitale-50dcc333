@@ -29,7 +29,8 @@ export const Route = createFileRoute("/$slug/")({
 
 function MenuPage() {
   const [open, setOpen] = useState<MenuItem | null>(null);
-  const { count, subtotal, restaurant, catalog } = useCart();
+  const { count, subtotal, restaurant, catalog, qr } = useCart();
+  const view = qr.view;
   const [excluded, setExcluded] = useState<string[]>([]);
   const shown = catalog.categories.map((c) => ({ ...c, items: c.items.filter((i) => safeFor(i, excluded)) })).filter((c) => c.items.length);
   const d = restaurant.delivery;
@@ -37,8 +38,11 @@ function MenuPage() {
 
   return (
     <div className="min-h-screen pb-24">
-      <SiteHeader />
+      <SiteHeader hideCart={view} />
       {table && <p className="bg-primary px-4 py-2 text-center font-semibold text-primary-foreground" role="status">Table {table} · commandez ici, nous vous servons à table</p>}
+      {!table && qr.room && <p className="bg-primary px-4 py-2 text-center font-semibold text-primary-foreground" role="status">Room service · Chambre {qr.room}</p>}
+      {!table && qr.self && <p className="bg-primary px-4 py-2 text-center font-semibold text-primary-foreground" role="status">Libre-service · votre commande sera validée par notre équipe</p>}
+      {view && <p className="bg-secondary px-4 py-2 text-center text-sm font-semibold text-secondary-foreground" role="status">Menu en consultation · commandes sur place auprès de notre équipe</p>}
       <section className="relative overflow-hidden">
         <RestaurantBanner restaurant={restaurant} />
         <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent" />
@@ -88,7 +92,7 @@ function MenuPage() {
             {c.note && <p className="mt-3 text-sm text-muted-foreground">{c.note}</p>}
             <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {c.items.map((i) => (
-                <button key={i.id} onClick={() => setOpen(i)}
+                <button key={i.id} onClick={() => !view && setOpen(i)} disabled={view}
                   className={`group flex flex-col overflow-hidden rounded-xl border bg-card p-4 text-left transition hover:-translate-y-0.5 hover:border-primary ${i.builder ? "border-primary/60 sm:col-span-2 lg:col-span-1" : "border-border"}`}>
                   {i.image && <img src={i.image} alt={i.name} loading="lazy" className="-mx-4 -mt-4 mb-3 aspect-[16/10] w-[calc(100%+2rem)] max-w-none object-cover transition group-hover:scale-[1.02]" />}
                   <div className="flex items-start justify-between gap-3">
@@ -97,9 +101,9 @@ function MenuPage() {
                   </div>
                   {i.desc && <p className="mt-1 text-sm text-muted-foreground">{i.desc}</p>}
                   <AllergenBadges ids={i.allergens} className="mt-2" />
-                  <span className="mt-auto pt-3 text-sm font-semibold text-primary opacity-80 group-hover:opacity-100">
+                  {!view && <span className="mt-auto pt-3 text-sm font-semibold text-primary opacity-80 group-hover:opacity-100">
                     {i.builder ? "Composer →" : i.options?.length ? "Choisir les options →" : "+ Ajouter"}
-                  </span>
+                  </span>}
                 </button>
               ))}
             </div>
@@ -123,7 +127,7 @@ function MenuPage() {
         </footer>
       </main>
 
-      {count > 0 && (
+      {count > 0 && !view && (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 p-3 backdrop-blur sm:hidden">
           <Button asChild size="lg" className="w-full font-semibold">
             <Link to="/$slug/commande" params={{ slug: restaurant.slug }}>Commander · {count} article{count > 1 ? "s" : ""} · {euro(subtotal)}</Link>

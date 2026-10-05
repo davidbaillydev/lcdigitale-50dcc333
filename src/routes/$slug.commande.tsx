@@ -33,12 +33,15 @@ export const Route = createFileRoute("/$slug/commande")({
 });
 
 function Checkout() {
-  const { lines, subtotal, clear, restaurant } = useCart();
+  const { lines, subtotal, clear, restaurant, qr } = useCart();
   const DELIVERY = restaurant.delivery;
   const navigate = useNavigate();
   const submitFn = useServerFn(createOrder);
   const [mode, setMode] = useState<"pickup" | "delivery">(modeEnabled(restaurant, "pickup") ? "pickup" : "delivery");
-  const table = useTable(restaurant.slug, restaurant.config.qr?.tables ?? 0);
+  const tableNo = useTable(restaurant.slug, restaurant.config.qr?.tables ?? 0);
+  const table = tableNo ?? qr.room ?? (qr.self ? "self" : null);
+  const onsiteTitle = qr.room ? `Room service · Chambre ${qr.room}` : qr.self && !tableNo ? "Libre-service" : `Sur place · Table ${tableNo}`;
+  const onsiteText = qr.room ? "Votre commande est préparée puis livrée dans votre chambre." : qr.self ? "Votre commande sera vérifiée par notre équipe avant d'être envoyée en cuisine." : "Votre commande part directement en cuisine et vous est servie à table.";
   const [slots, setSlots] = useState<string[]>([]);
   const [slot, setSlot] = useState("");
   const [f, setF] = useState({ customer_name: "", phone: "", email: "", address: "", postal_code: "", notes: "" });
@@ -81,7 +84,7 @@ function Checkout() {
     try {
       const res = await submitFn({
         data: {
-          ...f, restaurant: restaurant.slug, ...(table ? { mode: "dine_in" as const, table, slot: new Date().toISOString(), address: "", postal_code: "" } : { mode, slot }), ...(promo.code ? { promo_code: promo.code } : {}),
+          ...f, restaurant: restaurant.slug, ...(table ? { mode: "dine_in" as const, ...(tableNo ? { table: tableNo } : {}), ...(qr.room ? { room: qr.room } : {}), ...(qr.self ? { qr: "self" as const } : {}), slot: new Date().toISOString(), address: "", postal_code: "" } : { mode, slot }), ...(promo.code ? { promo_code: promo.code } : {}),
           payment_method: pay === "on_site" ? "on_site" : "online",
           ...(pay !== "on_site" ? { provider: pay, origin: window.location.origin } : {}),
           lines: lines.map((l) => ({ itemId: l.itemId, qty: l.qty, sel: l.sel })),
@@ -131,7 +134,7 @@ function Checkout() {
       <SiteHeader hideCart />
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-8 lg:grid-cols-[1fr_380px]">
         <div className="space-y-8">
-          {table ? <section className="rounded-xl border border-primary bg-primary/10 p-4"><h2 className="text-3xl">Sur place · Table {table}</h2><p className="text-sm text-muted-foreground">Votre commande part directement en cuisine et vous est servie à table.</p></section> : <>
+          {table ? <section className="rounded-xl border border-primary bg-primary/10 p-4"><h2 className="text-3xl">{onsiteTitle}</h2><p className="text-sm text-muted-foreground">{onsiteText}</p></section> : <>
           <section>
             <h2 className="text-3xl">1. Mode de retrait</h2>
             <div className="mt-3 grid grid-cols-2 gap-3">
