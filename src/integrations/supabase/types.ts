@@ -97,6 +97,8 @@ export type Database = {
       orders: {
         Row: {
           address: string | null
+          cgv_accepted_at: string | null
+          cgv_version: string | null
           city: string | null
           created_at: string
           customer_name: string
@@ -127,6 +129,8 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          cgv_accepted_at?: string | null
+          cgv_version?: string | null
           city?: string | null
           created_at?: string
           customer_name: string
@@ -157,6 +161,8 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          cgv_accepted_at?: string | null
+          cgv_version?: string | null
           city?: string | null
           created_at?: string
           customer_name?: string
@@ -544,6 +550,7 @@ export type Database = {
           email: string | null
           id: string
           is_vapi_web_enabled: boolean
+          legal: Json
           logo_url: string | null
           menu: Json | null
           menu_key: string
@@ -567,6 +574,7 @@ export type Database = {
           email?: string | null
           id?: string
           is_vapi_web_enabled?: boolean
+          legal?: Json
           logo_url?: string | null
           menu?: Json | null
           menu_key: string
@@ -590,6 +598,7 @@ export type Database = {
           email?: string | null
           id?: string
           is_vapi_web_enabled?: boolean
+          legal?: Json
           logo_url?: string | null
           menu?: Json | null
           menu_key?: string
