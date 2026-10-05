@@ -14,6 +14,35 @@ export type Database = {
   }
   public: {
     Tables: {
+      menu_stock: {
+        Row: {
+          item_id: string
+          restaurant_id: string
+          sold_out: boolean
+          updated_at: string
+        }
+        Insert: {
+          item_id: string
+          restaurant_id: string
+          sold_out?: boolean
+          updated_at?: string
+        }
+        Update: {
+          item_id?: string
+          restaurant_id?: string
+          sold_out?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_stock_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_print_logs: {
         Row: {
           auto: boolean
@@ -85,7 +114,9 @@ export type Database = {
           phone: string
           postal_code: string | null
           promo_code: string | null
+          qr_mode: string | null
           restaurant_id: string
+          room_label: string | null
           slot: string
           source: string
           status: string
@@ -113,7 +144,9 @@ export type Database = {
           phone: string
           postal_code?: string | null
           promo_code?: string | null
+          qr_mode?: string | null
           restaurant_id: string
+          room_label?: string | null
           slot: string
           source?: string
           status?: string
@@ -141,7 +174,9 @@ export type Database = {
           phone?: string
           postal_code?: string | null
           promo_code?: string | null
+          qr_mode?: string | null
           restaurant_id?: string
+          room_label?: string | null
           slot?: string
           source?: string
           status?: string
