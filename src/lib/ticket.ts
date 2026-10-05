@@ -9,7 +9,7 @@ export type TicketOrder = {
   items: { name: string; qty: number; total?: number; details?: string[]; allergens?: string[] }[];
   notes?: string | null; total: number | string; delivery_fee?: number | string | null;
   discount?: number | string | null; promo_code?: string | null;
-  payment_method: string; source?: string | null; table_label?: string | null;
+  payment_method: string; source?: string | null; table_label?: string | null; room_label?: string | null;
 };
 
 const esc = (s: unknown) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
@@ -63,7 +63,7 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
     ${f.contact && (shop.address || shop.phone) ? `<div class="c">${esc(shop.address)}${shop.address && shop.phone ? "<br>" : ""}${esc(shop.phone)}</div>` : ""}
     <div class="c">${kind === "kitchen" ? "TICKET CUISINE" : "TICKET CLIENT"}</div>
     <hr><div class="c xl">N° ${o.order_number}</div>
-    <div class="c l">${modeLabel(o.mode)}${o.source === "kiosk" ? " · BORNE" : ""}${o.table_label ? ` · TABLE ${esc(o.table_label)}` : ""}</div>
+    <div class="c l">${modeLabel(o.mode)}${o.source === "kiosk" ? " · BORNE" : ""}${o.table_label ? ` · TABLE ${esc(o.table_label)}` : ""}${o.room_label ? ` · CHAMBRE ${esc(o.room_label)}` : ""}</div>
     <div class="c">Pour ${time(o.slot)}${o.created_at ? ` · reçue ${time(o.created_at)}` : ""}</div>
     ${f.customer && o.customer_name ? `<div class="c">${esc(o.customer_name)}${o.phone && o.phone !== "-" ? ` · ${esc(o.phone)}` : ""}</div>` : ""}
     ${o.mode === "delivery" && o.address ? `<div class="c">${esc(o.address)}, ${esc(o.city)}</div>` : ""}
