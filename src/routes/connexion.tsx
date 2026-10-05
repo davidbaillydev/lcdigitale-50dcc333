@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
+import { ArrowUpRight } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -46,21 +47,64 @@ function Login() {
   };
 
   return (
-    <div className="min-h-screen">
-      <header className="flex items-center justify-between border-b border-border px-4 py-3">
-        <Link to="/" className="font-display text-3xl">LC Digitale</Link>
-        <ThemeToggle />
+    <div className="connexion-screen min-h-screen bg-background text-foreground">
+      <header className="connexion-top border-b border-border">
+        <div className="workspace-inner flex items-center justify-between gap-4 py-5">
+          <Link to="/" className="font-display text-xl font-bold text-primary">LC Digitale<span aria-hidden="true">.</span></Link>
+          <ThemeToggle />
+        </div>
       </header>
-      <form onSubmit={submit} className="mx-auto mt-16 max-w-sm space-y-4 rounded-xl border border-border bg-card p-6">
-        <h1 className="text-4xl">{forgot ? "Mot de passe oublié" : "Connexion"}</h1>
-        <p className="text-sm text-muted-foreground">Agence ou restaurateur : un seul accès, vous arrivez automatiquement sur votre espace. Les comptes restaurateurs sont créés sur invitation.</p>
-        <div><Label htmlFor="em">Email</Label><Input id="em" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
-        {!forgot && <div><Label htmlFor="pw">Mot de passe</Label><Input id="pw" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} /></div>}
-        <Button className="w-full" disabled={busy}>{forgot ? "Recevoir le lien" : "Se connecter"}</Button>
-        <button type="button" className="w-full text-sm text-muted-foreground underline" onClick={() => setForgot(!forgot)}>
-          {forgot ? "Retour à la connexion" : "Mot de passe oublié ?"}
-        </button>
-      </form>
-    </div>
+      <div className="connexion-poster bg-primary text-primary-foreground">
+        <div className="workspace-inner py-12 sm:py-16">
+          <p className="text-sm font-semibold">LC Digitale / Accès</p>
+          <h1 className="connexion-title font-display">Espace de connexion<span aria-hidden="true">.</span></h1>
+          <p className="border-t border-primary-foreground/30 pt-4 text-sm">Un seul accès : agence ou restaurateur, vous arrivez automatiquement sur votre espace.</p>
+        </div>
+      </div>
+      <main className="workspace-inner connexion-main grid gap-x-12 pb-16 pt-10 lg:grid-cols-2">
+        <div className="connexion-statement border-b border-border pb-10 lg:border-b-0 lg:pb-0">
+          <h2 className="font-display text-2xl sm:text-3xl">Vos écrans, en clair et en sombre.</h2>
+          <p className="mt-4 max-w-prose text-muted-foreground">
+            Console agence pour l'ensemble des établissements partenaires, espace restaurateur pour vos commandes,
+            votre carte et votre cuisine. Chacun voit uniquement ce qui lui appartient.
+          </p>
+          <ul className="mt-8 space-y-4">
+            {[
+              ["Agence", "Création des restaurants, branding, paiements, campagnes, invitations."],
+              ["Gérant", "Commandes, carte et prix, horaires et livraison, rapports, clients, promos."],
+              ["Cuisine", "Écran de service temps réel, transmission des plats et impression."],
+            ].map(([role, desc]) => (
+              <li key={role} className="flex gap-4 border-b border-border pb-4">
+                <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" aria-hidden="true" />
+                <p className="min-w-0 text-sm"><span className="font-display font-semibold text-primary">{role}</span><span className="block text-muted-foreground">{desc}</span></p>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <form onSubmit={submit} className="connexion-form h-fit rounded-lg border border-border bg-card p-6 sm:p-8" aria-label={forgot ? "Mot de passe oublié" : "Connexion"}>
+          <div className="mb-6 flex items-start justify-between gap-3">
+            <h2 className="font-display text-3xl">{forgot ? "Mot de passe oublié" : "Connexion"}</h2>
+            <ArrowUpRight aria-hidden="true" className="mt-1 h-6 w-6 shrink-0 text-primary" />
+          </div>
+          <p className="mb-6 text-sm text-muted-foreground">Les comptes restaurateurs sont créés sur invitation par l'agence ou le gérant.</p>
+          <div className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="em">Email</Label>
+              <Input id="em" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
+            </div>
+            {!forgot && (
+              <div className="space-y-2">
+                <Label htmlFor="pw">Mot de passe</Label>
+                <Input id="pw" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
+              </div>
+            )}
+            <Button className="min-h-12 w-full" disabled={busy}>{forgot ? "Recevoir le lien" : "Se connecter"}</Button>
+            <button type="button" className="min-h-12 w-full text-sm text-muted-foreground underline" onClick={() => setForgot(!forgot)}>
+              {forgot ? "Retour à la connexion" : "Mot de passe oublié ?"}
+            </button>
+          </div>
+        </form>
+      </main>
+et    </div>
   );
 }
