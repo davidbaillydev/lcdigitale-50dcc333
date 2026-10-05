@@ -30,8 +30,8 @@ export function DishPhoto({ restaurantId, item, onChange }: { restaurantId: stri
 
   const fromFile = async (file?: File) => {
     if (!file) return;
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) return toast.error("Format accepté : JPG, PNG ou WebP");
-    if (file.size > 15 * 1024 * 1024) return toast.error("Photo trop lourde (15 Mo maximum)");
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) { toast.error("Format accepté : JPG, PNG ou WebP"); return; }
+    if (file.size > 15 * 1024 * 1024) { toast.error("Photo trop lourde (15 Mo maximum)"); return; }
     setBusy("upload");
     try { await save(await toJpeg(file)); toast.success("Photo ajoutée — enregistrez la carte pour la publier"); }
     catch (e) { toast.error(e instanceof Error ? e.message : "Import impossible"); }
@@ -39,7 +39,7 @@ export function DishPhoto({ restaurantId, item, onChange }: { restaurantId: stri
   };
 
   const generate = async () => {
-    if (!item.name.trim() || item.name === "Nouveau plat") return toast.error("Donnez d'abord un nom au plat");
+    if (!item.name.trim() || item.name === "Nouveau plat") { toast.error("Donnez d'abord un nom au plat"); return; }
     setBusy("ai"); setPreview(null);
     try {
       const { data } = await supabase.auth.getSession();

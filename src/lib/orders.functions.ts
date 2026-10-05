@@ -38,7 +38,7 @@ export const createOrder = createServerFn({ method: "POST" })
     if (dineIn) {
       const n = Number(data.table);
       if (!data.table || !(n >= 1 && n <= (r.config.qr?.tables ?? 0))) throw new Error("Table inconnue : scannez à nouveau le QR code de votre table.");
-    } else if (!isValidSlot(r, data.mode, data.slot)) throw new Error("Ce créneau n'est plus disponible, merci d'en choisir un autre.");
+    } else if (!isValidSlot(r, data.mode as "pickup" | "delivery", data.slot)) throw new Error("Ce créneau n'est plus disponible, merci d'en choisir un autre.");
     const { stripeForRestaurant, stripeCall, startOnlinePayment } = await import("./payments.functions");
     const provider = data.payment_method === "online" ? (data.provider ?? "stripe") : null;
     const stripe = provider === "stripe" ? await stripeForRestaurant(r.id) : null;
@@ -83,7 +83,7 @@ export const createOrder = createServerFn({ method: "POST" })
         postal_code: data.mode === "delivery" ? (data.postal_code ?? null) : null,
         city,
         slot: dineIn ? new Date().toISOString() : data.slot,
-        table_label: dineIn ? data.table : null,
+        table_label: dineIn ? (data.table ?? null) : null,
         items,
         notes: data.notes || null,
         subtotal,
@@ -153,7 +153,7 @@ export const createKioskOrder = createServerFn({ method: "POST" })
     const { data: rRow } = await supabaseAdmin.from("restaurants").select(RESTAURANT_COLUMNS).eq("slug", data.restaurant).eq("active", true).maybeSingle();
     const r = rRow as unknown as Restaurant | null;
     if (!r) throw new Error("Restaurant introuvable");
-    if (!dineIn && !modeEnabled(r, data.mode)) throw new Error("Ce mode n'est pas proposé.");
+    if (!modeEnabled(r, data.mode)) throw new Error("Ce mode n'est pas proposé.");
     if (!paymentEnabled(r, data.payment_method)) throw new Error("Ce mode de paiement n'est pas accepté.");
     const catalog = getCatalog(r);
     const items = data.lines.map((l) => {
