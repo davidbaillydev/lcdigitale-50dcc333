@@ -9,6 +9,7 @@ import { MarketingPanel } from "@/components/MarketingPanel";
 import { PaymentProvidersPanel } from "@/components/PaymentProvidersPanel";
 import { VapiWebPanel } from "@/components/VapiWebPanel";
 import { VoiceChannelPanel } from "@/components/VoiceChannelPanel";
+import { LegalPanel } from "@/components/LegalPanel";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/lib/theme";
 import { BrandLogo } from "@/lib/brand";
@@ -67,6 +68,7 @@ function Page() {
           <VoiceChannelPanel restaurantId={r.id} />
           <VapiWebPanel key={r.id} restaurant={r} onSaved={() => refetch()} />
           <MarketingPanel restaurantId={r.id} marketing={r.config.marketing} onSaved={() => refetch()} />
+          <LegalPanel key={`legal-${r.id}-${r.legal?.updatedAt ?? ""}`} restaurant={r} onSaved={() => refetch()} />
         </>
       )}
     </div>

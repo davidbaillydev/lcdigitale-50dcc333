@@ -83,3 +83,23 @@ export const setRestaurantActive = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+const legalField = z.string().trim().max(200).optional();
+export const saveLegal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    id: z.string().uuid(),
+    legal: z.object({
+      company: legalField, form: legalField, capital: legalField, siret: z.string().trim().max(20).optional(), rcs: legalField,
+      vat: z.string().trim().max(20).optional(), representative: legalField, dpoEmail: z.string().trim().email().max(255).optional().or(z.literal("")),
+      mediator: legalField, mediatorUrl: z.string().trim().url().max(200).optional().or(z.literal("")), host: z.string().trim().max(300).optional(),
+    }),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAgency(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const legal = { ...data.legal, updatedAt: new Date().toISOString() };
+    const { error } = await supabaseAdmin.from("restaurants").update({ legal }).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

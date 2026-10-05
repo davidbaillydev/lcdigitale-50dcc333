@@ -1,0 +1,2 @@
+ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS legal jsonb NOT NULL DEFAULT '{}'::jsonb;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS cgv_accepted_at timestamptz, ADD COLUMN IF NOT EXISTS cgv_version text;

@@ -1,4 +1,5 @@
-import { createFileRoute, Link, notFound, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, Outlet, useRouterState } from "@tanstack/react-router";
+import { CookieConsent } from "@/components/CookieConsent";
 import { getRestaurant } from "@/lib/restaurants.functions";
 import { CartProvider } from "@/lib/cart";
 import { BrandTheme } from "@/lib/brand";
@@ -31,11 +32,14 @@ export const Route = createFileRoute("/$slug")({
 
 function Layout() {
   const { restaurant } = Route.useLoaderData();
+  const path = useRouterState({ select: (s) => s.location.pathname });
   if (!restaurant) return null;
+  const staffScreen = /\/(borne|cuisine)(\/|$)/.test(path);
   return (
     <BrandTheme brand={restaurant.brand}>
       <CartProvider restaurant={restaurant}>
         <Outlet />
+        {!staffScreen && <CookieConsent slug={restaurant.slug} voice={!!restaurant.is_vapi_web_enabled} />}
       </CartProvider>
     </BrandTheme>
   );

@@ -7,3 +7,5 @@
 - Allergens: MenuItem.allergens holds INCO ids from src/lib/allergens.ts (undefined = not declared, hidden when a customer filter is active); order lines copy them server-side for kitchen tickets. Why: one list for editor, AI import, site, kiosk and tickets; safety-first filtering.
 - Dish photos: MenuItem.image points to /api/public/menu-photo/<restaurantId>/<file> served from the private `menu-photos` bucket (public buckets are blocked); uploads and AI generation (/api/menu-photo-generate, streamed) are manager-checked and saveMenu rejects another restaurant's photo path. Why: public menu images without public storage.
 - Table QR ordering: restaurants.config.qr {tables, reviewUrl}; /$slug?table=N is kept in sessionStorage, createOrder accepts mode dine_in only for a table within config.qr.tables and stores orders.table_label. Why: server validates the table, kitchen and tickets show it.
+
+- Imprimante directe ESC/POS par appareil (Bluetooth BLE, USB, réseau via pont LC Print) : `src/lib/printer.ts` + `escpos.ts`; repli navigateur si aucune configurée. Why: le navigateur ne peut pas ouvrir de socket réseau.

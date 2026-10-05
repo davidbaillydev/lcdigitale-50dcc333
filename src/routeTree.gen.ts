@@ -19,8 +19,12 @@ import { Route as DesabonnementRouteImport } from './routes/desabonnement'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SlugIndexRouteImport } from './routes/$slug.index'
 import { Route as SlugBorneRouteImport } from './routes/$slug.borne'
+import { Route as SlugCgvRouteImport } from './routes/$slug.cgv'
 import { Route as SlugCommandeRouteImport } from './routes/$slug.commande'
+import { Route as SlugConfidentialiteRouteImport } from './routes/$slug.confidentialite'
+import { Route as SlugCookiesRouteImport } from './routes/$slug.cookies'
 import { Route as SlugCuisineRouteImport } from './routes/$slug.cuisine'
+import { Route as SlugMentionsLegalesRouteImport } from './routes/$slug.mentions-legales'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as ApiMenuPhotoGenerateRouteImport } from './routes/api/menu-photo-generate'
 import { Route as CuisineIndexRouteImport } from './routes/cuisine.index'
@@ -91,14 +95,34 @@ const SlugBorneRoute = SlugBorneRouteImport.update({
   path: '/borne',
   getParentRoute: () => SlugRoute,
 } as any)
+const SlugCgvRoute = SlugCgvRouteImport.update({
+  id: '/cgv',
+  path: '/cgv',
+  getParentRoute: () => SlugRoute,
+} as any)
 const SlugCommandeRoute = SlugCommandeRouteImport.update({
   id: '/commande',
   path: '/commande',
   getParentRoute: () => SlugRoute,
 } as any)
+const SlugConfidentialiteRoute = SlugConfidentialiteRouteImport.update({
+  id: '/confidentialite',
+  path: '/confidentialite',
+  getParentRoute: () => SlugRoute,
+} as any)
+const SlugCookiesRoute = SlugCookiesRouteImport.update({
+  id: '/cookies',
+  path: '/cookies',
+  getParentRoute: () => SlugRoute,
+} as any)
 const SlugCuisineRoute = SlugCuisineRouteImport.update({
   id: '/cuisine',
   path: '/cuisine',
+  getParentRoute: () => SlugRoute,
+} as any)
+const SlugMentionsLegalesRoute = SlugMentionsLegalesRouteImport.update({
+  id: '/mentions-legales',
+  path: '/mentions-legales',
   getParentRoute: () => SlugRoute,
 } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
@@ -222,8 +246,12 @@ export interface FileRoutesByFullPath {
   '/desabonnement': typeof DesabonnementRoute
   '/reset-password': typeof ResetPasswordRoute
   '/$slug/borne': typeof SlugBorneRoute
+  '/$slug/cgv': typeof SlugCgvRoute
   '/$slug/commande': typeof SlugCommandeRoute
+  '/$slug/confidentialite': typeof SlugConfidentialiteRoute
+  '/$slug/cookies': typeof SlugCookiesRoute
   '/$slug/cuisine': typeof SlugCuisineRoute
+  '/$slug/mentions-legales': typeof SlugMentionsLegalesRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/api/menu-photo-generate': typeof ApiMenuPhotoGenerateRoute
   '/cuisine/$': typeof CuisineSplatRoute
@@ -254,8 +282,12 @@ export interface FileRoutesByTo {
   '/desabonnement': typeof DesabonnementRoute
   '/reset-password': typeof ResetPasswordRoute
   '/$slug/borne': typeof SlugBorneRoute
+  '/$slug/cgv': typeof SlugCgvRoute
   '/$slug/commande': typeof SlugCommandeRoute
+  '/$slug/confidentialite': typeof SlugConfidentialiteRoute
+  '/$slug/cookies': typeof SlugCookiesRoute
   '/$slug/cuisine': typeof SlugCuisineRoute
+  '/$slug/mentions-legales': typeof SlugMentionsLegalesRoute
   '/api/menu-photo-generate': typeof ApiMenuPhotoGenerateRoute
   '/cuisine/$': typeof CuisineSplatRoute
   '/suivi/$id': typeof SuiviIdRoute
@@ -288,8 +320,12 @@ export interface FileRoutesById {
   '/desabonnement': typeof DesabonnementRoute
   '/reset-password': typeof ResetPasswordRoute
   '/$slug/borne': typeof SlugBorneRoute
+  '/$slug/cgv': typeof SlugCgvRoute
   '/$slug/commande': typeof SlugCommandeRoute
+  '/$slug/confidentialite': typeof SlugConfidentialiteRoute
+  '/$slug/cookies': typeof SlugCookiesRoute
   '/$slug/cuisine': typeof SlugCuisineRoute
+  '/$slug/mentions-legales': typeof SlugMentionsLegalesRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/api/menu-photo-generate': typeof ApiMenuPhotoGenerateRoute
   '/cuisine/$': typeof CuisineSplatRoute
@@ -323,8 +359,12 @@ export interface FileRouteTypes {
     | '/desabonnement'
     | '/reset-password'
     | '/$slug/borne'
+    | '/$slug/cgv'
     | '/$slug/commande'
+    | '/$slug/confidentialite'
+    | '/$slug/cookies'
     | '/$slug/cuisine'
+    | '/$slug/mentions-legales'
     | '/admin'
     | '/api/menu-photo-generate'
     | '/cuisine/$'
@@ -355,8 +395,12 @@ export interface FileRouteTypes {
     | '/desabonnement'
     | '/reset-password'
     | '/$slug/borne'
+    | '/$slug/cgv'
     | '/$slug/commande'
+    | '/$slug/confidentialite'
+    | '/$slug/cookies'
     | '/$slug/cuisine'
+    | '/$slug/mentions-legales'
     | '/api/menu-photo-generate'
     | '/cuisine/$'
     | '/suivi/$id'
@@ -388,8 +432,12 @@ export interface FileRouteTypes {
     | '/desabonnement'
     | '/reset-password'
     | '/$slug/borne'
+    | '/$slug/cgv'
     | '/$slug/commande'
+    | '/$slug/confidentialite'
+    | '/$slug/cookies'
     | '/$slug/cuisine'
+    | '/$slug/mentions-legales'
     | '/_authenticated/admin'
     | '/api/menu-photo-generate'
     | '/cuisine/$'
@@ -504,6 +552,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SlugBorneRouteImport
       parentRoute: typeof SlugRoute
     }
+    '/$slug/cgv': {
+      id: '/$slug/cgv'
+      path: '/cgv'
+      fullPath: '/$slug/cgv'
+      preLoaderRoute: typeof SlugCgvRouteImport
+      parentRoute: typeof SlugRoute
+    }
     '/$slug/commande': {
       id: '/$slug/commande'
       path: '/commande'
@@ -511,11 +566,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SlugCommandeRouteImport
       parentRoute: typeof SlugRoute
     }
+    '/$slug/confidentialite': {
+      id: '/$slug/confidentialite'
+      path: '/confidentialite'
+      fullPath: '/$slug/confidentialite'
+      preLoaderRoute: typeof SlugConfidentialiteRouteImport
+      parentRoute: typeof SlugRoute
+    }
+    '/$slug/cookies': {
+      id: '/$slug/cookies'
+      path: '/cookies'
+      fullPath: '/$slug/cookies'
+      preLoaderRoute: typeof SlugCookiesRouteImport
+      parentRoute: typeof SlugRoute
+    }
     '/$slug/cuisine': {
       id: '/$slug/cuisine'
       path: '/cuisine'
       fullPath: '/$slug/cuisine'
       preLoaderRoute: typeof SlugCuisineRouteImport
+      parentRoute: typeof SlugRoute
+    }
+    '/$slug/mentions-legales': {
+      id: '/$slug/mentions-legales'
+      path: '/mentions-legales'
+      fullPath: '/$slug/mentions-legales'
+      preLoaderRoute: typeof SlugMentionsLegalesRouteImport
       parentRoute: typeof SlugRoute
     }
     '/_authenticated/admin': {
@@ -703,16 +779,24 @@ const AuthenticatedRouteRouteWithChildren =
 
 interface SlugRouteChildren {
   SlugBorneRoute: typeof SlugBorneRoute
+  SlugCgvRoute: typeof SlugCgvRoute
   SlugCommandeRoute: typeof SlugCommandeRoute
+  SlugConfidentialiteRoute: typeof SlugConfidentialiteRoute
+  SlugCookiesRoute: typeof SlugCookiesRoute
   SlugCuisineRoute: typeof SlugCuisineRoute
+  SlugMentionsLegalesRoute: typeof SlugMentionsLegalesRoute
   SlugIndexRoute: typeof SlugIndexRoute
   SlugSuiviIdRoute: typeof SlugSuiviIdRoute
 }
 
 const SlugRouteChildren: SlugRouteChildren = {
   SlugBorneRoute: SlugBorneRoute,
+  SlugCgvRoute: SlugCgvRoute,
   SlugCommandeRoute: SlugCommandeRoute,
+  SlugConfidentialiteRoute: SlugConfidentialiteRoute,
+  SlugCookiesRoute: SlugCookiesRoute,
   SlugCuisineRoute: SlugCuisineRoute,
+  SlugMentionsLegalesRoute: SlugMentionsLegalesRoute,
   SlugIndexRoute: SlugIndexRoute,
   SlugSuiviIdRoute: SlugSuiviIdRoute,
 }

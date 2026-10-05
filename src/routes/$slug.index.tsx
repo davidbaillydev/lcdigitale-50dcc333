@@ -7,6 +7,8 @@ import { euro, type MenuItem } from "@/lib/menu";
 import { ItemDialog } from "@/components/ItemDialog";
 import { SiteHeader } from "@/components/SiteHeader";
 import { VapiVoiceWidget } from "@/components/VapiVoiceWidget";
+import { LegalFooter } from "@/components/LegalFooter";
+import { useConsent } from "@/lib/consent";
 import { useCart } from "@/lib/cart";
 import { Button } from "@/components/ui/button";
 import { menuImage } from "@/lib/menu-images";
@@ -30,6 +32,7 @@ export const Route = createFileRoute("/$slug/")({
 function MenuPage() {
   const [open, setOpen] = useState<MenuItem | null>(null);
   const { count, subtotal, restaurant, catalog, qr } = useCart();
+  const { consent } = useConsent();
   const view = qr.view;
   const [excluded, setExcluded] = useState<string[]>([]);
   const shown = catalog.categories.map((c) => ({ ...c, items: c.items.filter((i) => safeFor(i, excluded)) })).filter((c) => c.items.length);
@@ -124,6 +127,7 @@ function MenuPage() {
             <p className="flex items-center gap-2"><Clock className="h-4 w-4 shrink-0" /> {restaurant.config.hoursLabel}</p>
           )}
           <p><Link to="/connexion" className="underline">Espace restaurant</Link></p>
+          <LegalFooter slug={restaurant.slug} />
         </footer>
       </main>
 
@@ -134,7 +138,7 @@ function MenuPage() {
           </Button>
         </div>
       )}
-      <VapiVoiceWidget restaurant={restaurant} />
+      {consent?.voice && <VapiVoiceWidget restaurant={restaurant} />}
       <ItemDialog item={open} onClose={() => setOpen(null)} />
     </div>
   );

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { unitPrice, validateSelections, describeSelections } from "./menu";
 import { getCatalog } from "./catalogs";
 import { RESTAURANT_COLUMNS, deliveryFee, isValidSlot, modeEnabled, paymentEnabled, type Restaurant } from "./shop";
+import { cgvVersion } from "./legal";
 
 const orderSchema = z.object({
   restaurant: z.string().max(40),
@@ -19,6 +20,7 @@ const orderSchema = z.object({
   notes: z.string().trim().max(500).optional(),
   payment_method: z.enum(["on_site", "online"]),
   promo_code: z.string().trim().max(30).optional(),
+  cgv: z.literal(true, { message: "Merci d'accepter les conditions générales de vente." }),
   provider: z.enum(["stripe", "paypal", "lyra"]).optional(),
   origin: z.string().url().max(200).regex(/^https?:\/\/[^/]+$/).optional(),
   lines: z
@@ -101,6 +103,8 @@ export const createOrder = createServerFn({ method: "POST" })
         promo_code: promo.discount ? promo.code : null,
         total: Math.round((subtotal - promo.discount + fee) * 100) / 100,
         payment_method: data.payment_method,
+        cgv_accepted_at: new Date().toISOString(),
+        cgv_version: cgvVersion(r.legal ?? {}),
         status: provider ? "awaiting_payment" : dineIn && data.qr === "self" && !data.table && !data.room ? "pending_validation" : r.config.autoAccept ? "accepted" : "new",
       })
       .select("id, order_number, total")
