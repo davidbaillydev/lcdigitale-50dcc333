@@ -41,8 +41,8 @@ function Picker() {
     );
   return (
     <div className="mx-auto max-w-3xl p-6">
-      <div className="flex items-center gap-2">
-        <h1 className="mr-auto text-5xl">Vos restaurants</h1>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex sm:flex-wrap">
+        <h1 className="col-span-2 min-w-0 text-5xl sm:mr-auto">Vos restaurants</h1>
         {restaurants.some((r) => r.role !== "kitchen") && <Button asChild variant="secondary"><Link to="/espace/tableau-de-bord">Tableau de bord</Link></Button>}
         {isAgency && <Button asChild variant="secondary"><Link to="/admin">Console agence</Link></Button>}
         <ThemeToggle />
@@ -50,9 +50,9 @@ function Picker() {
       </div>
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
         {restaurants.map((r) => (
-          <Link key={r.id} to="/espace/$slug" params={{ slug: r.slug }} className="rounded-xl border border-border bg-card p-5 hover:border-primary">
-            <p className="text-3xl">{r.name}</p>
-            <p className="text-sm text-muted-foreground">{r.city} · {ROLE[r.role]}</p>
+          <Link key={r.id} to="/espace/$slug" params={{ slug: r.slug }} className="admin-restaurant-card min-w-0 rounded-lg border border-border bg-card p-4 hover:border-primary sm:p-5">
+            <p className="break-words font-display text-2xl font-semibold sm:text-3xl">{r.name}</p>
+            <p className="mt-2 break-words text-sm text-muted-foreground">{r.city} · {ROLE[r.role]}</p>
           </Link>
         ))}
       </div>

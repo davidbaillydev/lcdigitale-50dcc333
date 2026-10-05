@@ -9,11 +9,11 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
-- Restaurants live in the `restaurants` table (hours, delivery, config as jsonb); public pages are scoped under `/$slug`. Base menus stay in code per `menu_key` in `src/lib/catalogs.ts`; a restaurant's own edited menu lives in `restaurants.menu` (jsonb, same Category shape) and overrides the base via getCatalog(restaurant), shared by client and server; the server recomputes every order total, never trusting client prices.
+- Restaurants store hours, delivery and config as jsonb; public pages use `/$slug`. Base menus live in `src/lib/catalogs.ts` by `menu_key`; `restaurants.menu` (same Category shape) overrides them through shared getCatalog(restaurant). Servers recompute every order total, never trusting client prices.
 - Customer orders are inserted by a public server function with the admin client; staff read/update orders via RLS (`can_access_restaurant`) and Realtime filtered by restaurant_id.
 - Agency (global) role is `admin` in user_roles (first account via trigger); per-restaurant access (manager/kitchen) lives in `restaurant_members`.
 - Public site/kiosk use BrandTheme; all authenticated screens and portaled dialogs use scoped editorial administration tokens, with restaurant logos/swatches/previews only. Agency writes require has_role. Why: consistent admin identity, independent public branding.
-- Menu imports are analyzed in an authenticated server function and staged only in the editor until a manager reviews and saves them; uploaded files are not persisted. Why: uncertain AI extraction must never silently replace a restaurant's live prices or another restaurant's menu.
+- Authenticated menu imports stay staged in the editor until manager review/save; uploads are not persisted. Why: uncertain AI extraction must never silently replace live prices or another restaurant's menu.
 - Private screens live under `src/routes/_authenticated/`: `/admin/*` (agency only, has_role gate in admin.tsx beforeLoad) and `/espace/*` (restaurateurs: per-restaurant pages check membership); every server function re-checks the role. Old /agence and /cuisine/* redirect. Why: UI gates are UX, server checks are the boundary.
 - Restaurateur accounts are invite-only (public signup disabled; inviteMember adds restaurant_members, invite lands on /reset-password). Team lists expose only that restaurant's members. Why: no cross-restaurant email exposure or self-signup.
 - Ordering rules (enabled modes, accepted payments, autoAccept, lead times, delivery zones/fees) live in restaurants.config/delivery, edited by RestaurantSettingsForm and enforced server-side in createOrder/createKioskOrder. Why: one source of truth for site, kiosk and kitchen.
@@ -27,4 +27,5 @@
 - Phone orders (Vapi voice assistant) arrive via /api/public/vapi/$restaurantId, authenticated by a per-restaurant x-vapi-secret stored in `restaurant_voice_channels` (service-role only, agency-managed); orders use source 'phone' and server-recomputed prices. Why: public webhook must never trust caller or prices.
 - Web voice ordering (Vapi Web SDK) uses per-restaurant public key + assistant id stored on restaurants (publicly readable, never the private key); the SDK is dynamically imported client-side only. Why: avoid SSR import of browser-only code and secret leakage.
 - Imprimante directe ESC/POS par appareil (Bluetooth BLE, USB, réseau via pont LC Print) : `src/lib/printer.ts` + `escpos.ts`; repli navigateur si aucune configurée. Why: le navigateur ne peut pas ouvrir de socket réseau.
-- Directory tokens are scoped; entries stay database-driven. Why: preserve partner branding and future restaurants.
+- Directory tokens are scoped; entries stay database-driven. Why: preserve partner branding.
+- Customer tables stack labelled records on mobile; card controls use constrained grids. Why: keep data/actions without page overflow.

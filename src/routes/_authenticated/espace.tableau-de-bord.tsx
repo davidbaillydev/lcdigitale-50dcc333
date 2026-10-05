@@ -107,19 +107,19 @@ function Dashboard() {
       </div>
       <h1 className="text-5xl">Tableau de bord</h1>
 
-      <div className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4">
-        <label className="space-y-1 text-sm">Restaurant
-          <select value={rid} onChange={(e) => setRid(e.target.value)} className="block h-9 rounded-md border border-input bg-background px-2">
+      <div className="grid grid-cols-2 items-end gap-3 border-y border-border py-4 sm:flex sm:flex-wrap">
+        <label className="col-span-2 min-w-0 space-y-1 text-sm">Restaurant
+          <select value={rid} onChange={(e) => setRid(e.target.value)} className="block h-9 w-full rounded-md border border-input bg-background px-2 sm:max-w-72">
             {managed.length > 1 && <option value="all">Tous les restaurants</option>}
             {managed.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
           </select>
         </label>
-        <div className="flex flex-wrap gap-1">
+        <div className="col-span-2 flex flex-wrap gap-1">
           {PRESETS.map(([k, l]) => <Button key={k} size="sm" variant={preset === k ? "default" : "secondary"} onClick={() => { setPreset(k); setRange(range(k)); }}>{l}</Button>)}
         </div>
         <label className="text-sm">Du<Input type="date" value={from} max={to} onChange={(e) => { setPreset(""); setRange([e.target.value, to]); }} /></label>
         <label className="text-sm">Au<Input type="date" value={to} min={from} onChange={(e) => { setPreset(""); setRange([from, e.target.value]); }} /></label>
-        <div className="ml-auto flex flex-wrap gap-1">
+        <div className="col-span-2 flex flex-wrap gap-2 sm:ml-auto">
           <Button size="sm" variant="secondary" disabled={!orders} onClick={() => downloadCSV(fname, orderRows())}><FileDown /> CSV</Button>
           <Button size="sm" variant="secondary" disabled={!orders} onClick={() => downloadXLSX(fname, { Synthèse: summary, Commandes: orderRows(), "Top plats": topRows, "Par jour": s.days.map(([d, v]) => ({ Jour: d, Commandes: v.n, "CA (€)": Math.round(v.ca * 100) / 100 })) })}><FileSpreadsheet /> Excel</Button>
           <Button size="sm" variant="secondary" disabled={!orders} onClick={() => downloadPDF(fname, `Rapport des ventes — ${label}`, `Période du ${from} au ${to}`, [
@@ -134,7 +134,7 @@ function Dashboard() {
       <div className={isFetching ? "opacity-60" : ""}>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
           {[["Chiffre d'affaires", eur(s.ca)], ["Commandes", s.n], ["Panier moyen", eur(s.avg)], ["Remises", eur(s.discount)], ["Frais livraison", eur(s.fees)], ["Annulées", s.cancelled]].map(([l, v]) => (
-            <div key={l} className="rounded-xl border border-border bg-card p-4"><p className="text-sm text-muted-foreground">{l}</p><p className="font-display text-3xl">{v}</p></div>
+            <div key={l} className="admin-sales-metric rounded-lg border border-border bg-card p-4"><p className="text-sm text-muted-foreground">{l}</p><p className="break-words font-display text-xl tabular-nums sm:text-3xl">{v}</p></div>
           ))}
         </div>
 
@@ -159,8 +159,8 @@ function Dashboard() {
           <Breakdown title="Par paiement" rows={s.byPay} total={s.ca} />
           <section className="rounded-xl border border-border bg-card p-4 md:col-span-2">
             <h2 className="text-2xl">Plats les plus vendus</h2>
-            <table className="mt-2 w-full text-sm"><thead className="text-left text-muted-foreground"><tr><th>Plat</th><th className="text-right">Qté</th><th className="text-right">CA</th></tr></thead>
-              <tbody>{s.top.map(([k, v]) => <tr key={k} className="border-t border-border"><td className="py-1">{k}</td><td className="text-right">{v.qty}</td><td className="text-right">{eur(v.ca)}</td></tr>)}</tbody></table>
+            <table aria-label="Plats les plus vendus" className="admin-sales-table mt-2 w-full text-sm"><thead className="text-left text-muted-foreground"><tr><th>Plat</th><th className="text-right">Qté</th><th className="text-right">CA</th></tr></thead>
+              <tbody>{s.top.map(([k, v]) => <tr key={k} className="border-t border-border"><td className="break-words py-1">{k}</td><td className="text-right tabular-nums">{v.qty}</td><td className="whitespace-nowrap text-right tabular-nums">{eur(v.ca)}</td></tr>)}</tbody></table>
           </section>
         </div>
       </div>
@@ -175,7 +175,7 @@ function Breakdown({ title, rows, total }: { title: string; rows: [string, { n: 
       <div className="mt-2 space-y-2">
         {rows.map(([k, v]) => (
           <div key={k}>
-            <div className="flex justify-between text-sm"><span>{k} · {v.n} cmd</span><span>{eur(v.ca)}</span></div>
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 text-sm"><span className="min-w-0 break-words">{k} · {v.n} cmd</span><span className="shrink-0 tabular-nums">{eur(v.ca)}</span></div>
             <div className="h-2 rounded bg-muted"><div className="h-2 rounded bg-primary" style={{ width: `${total ? (v.ca / total) * 100 : 0}%` }} /></div>
           </div>
         ))}

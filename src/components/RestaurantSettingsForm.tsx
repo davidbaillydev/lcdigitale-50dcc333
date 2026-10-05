@@ -82,7 +82,7 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
                 <span className="w-24 font-medium">{label}</span>
                 {!ranges.length && <span className="text-sm text-muted-foreground">Fermé</span>}
                 {ranges.map(([a, b], i) => (
-                  <span key={i} className="flex items-center gap-1 rounded-lg border border-border px-2 py-1">
+                  <span key={i} className="grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto] items-center gap-1 rounded-lg border border-border px-2 py-1 sm:w-auto">
                     <input aria-label={`${label} début`} type="time" value={toHHMM(a)} onChange={(e) => setDay(d, ranges.map((r, j) => (j === i ? [fromHHMM(e.target.value), r[1]] : r)))} className="bg-transparent" />
                     –
                     <input aria-label={`${label} fin`} type="time" value={toHHMM(b)} onChange={(e) => setDay(d, ranges.map((r, j) => (j === i ? [r[0], fromHHMM(e.target.value)] : r)))} className="bg-transparent" />
@@ -126,7 +126,7 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
         </div>
         <div>
           <p className="mb-2 text-sm font-semibold">Aperçu du ticket cuisine ({s.config.printing.width} mm)</p>
-          <iframe title="Aperçu du ticket cuisine" className="rounded border border-border bg-white"
+          <iframe title="Aperçu du ticket cuisine" className="max-w-full rounded border border-border bg-card"
             style={{ width: `${s.config.printing.width === 80 ? 330 : 250}px`, height: 460 }}
             srcDoc={ticketHtml(sampleOrder(), "kitchen", s.config.printing.width, shop, s.config.printing.kitchen)} />
           <div className="mt-3"><PrinterSetup width={s.config.printing.width} shop={shop} /></div>

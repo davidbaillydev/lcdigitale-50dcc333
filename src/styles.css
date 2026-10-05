@@ -271,6 +271,40 @@
 .admin-workspace :is(th, td) { padding: 0.75rem; }
 .admin-restaurant-card { box-shadow: var(--admin-shadow); transition: box-shadow 200ms ease; }
 .admin-restaurant-card:hover { box-shadow: var(--admin-shadow-hover); }
+.admin-sales-table { table-layout: fixed; }
+.admin-sales-table th:first-child { width: 54%; }
+.admin-sales-table th:nth-child(2) { width: 16%; }
+.admin-sales-metric { min-width: 0; }
+@media (max-width: 767px) {
+  .admin-customers { border: 0; overflow: visible; }
+  .admin-customer-table, .admin-customer-table tbody { display: block; width: 100%; }
+  .admin-customer-table thead {
+    position: absolute; width: 1px; height: 1px; padding: 0;
+    overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+  }
+  .admin-customer-table tbody { display: grid; gap: 1rem; }
+  .admin-customer-table tr {
+    display: block; min-width: 0; border: 1px solid var(--border);
+    border-radius: var(--radius); background: var(--card); padding: 1rem;
+  }
+  .admin-customer-table td[data-label] {
+    display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    align-items: center; gap: 0.75rem; padding: 0.5rem 0;
+    text-align: left; overflow-wrap: anywhere;
+  }
+  .admin-customer-table td[data-label]::before {
+    content: attr(data-label); color: var(--muted-foreground); font-weight: 400;
+  }
+  .admin-customer-table td[data-label="Client"] {
+    display: block; padding-top: 0; padding-bottom: 0.75rem;
+    margin-bottom: 0.25rem; border-bottom: 1px solid var(--border);
+    font-family: var(--font-display); font-size: 1.25rem; font-weight: 600;
+  }
+  .admin-customer-table td[data-label="Client"]::before { display: none; }
+  .admin-customer-table td[colspan] { display: block; }
+  .admin-customer-table td[data-label="Actions"] > button { justify-self: end; }
+  .admin-sales-table :is(th, td) { padding: 0.75rem 0.25rem; }
+}
 .admin-dashboard section { background: transparent; border: 0; border-top: 1px solid var(--border); border-radius: 0; padding: 1.5rem 0; }
 .admin-dashboard .grid > .bg-card { background: transparent; border: 0; border-bottom: 1px solid var(--border); border-radius: 0; padding: 1.25rem 0; }
 .admin-content section:not(.admin-menu section):not(.admin-kitchen section) {

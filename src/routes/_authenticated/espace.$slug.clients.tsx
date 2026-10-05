@@ -160,20 +160,20 @@ function Page() {
       {isAgency ? <CampaignPanel restaurantId={r.id} targets={rows.filter((c) => c.marketing_consent && c.email)} />
         : <section className="rounded-xl border border-border bg-card p-4"><h2 className="text-2xl">Campagnes email et SMS</h2><p className="text-sm text-muted-foreground">Option disponible dans votre contrat LC Digitale. Contactez votre agence pour l'activer : elle prépare et envoie les campagnes pour vous.</p></section>}
 
-      <div className={`overflow-x-auto rounded-xl border border-border ${isFetching ? "opacity-60" : ""}`}>
-        <table className="w-full text-sm">
+      <div className={`admin-customers overflow-x-auto rounded-lg border border-border ${isFetching ? "opacity-60" : ""}`}>
+        <table aria-label="Fichier clients" className="admin-customer-table w-full text-sm">
           <thead className="bg-muted text-left"><tr><th className="p-2">Client</th><th>Contact</th><th>Origine</th><th className="text-right">Cmd</th><th className="text-right">Dépensé</th><th>Dernière</th><th>Consentement</th><th /></tr></thead>
           <tbody>
             {rows.slice(0, 500).map((c) => { const s = stats(c); return (
               <tr key={c.id} className="border-t border-border">
-                <td className="p-2 font-medium">{c.name ?? "—"}</td>
-                <td><div>{c.email ?? ""}</div><div className="text-muted-foreground">{c.phone ?? ""}</div></td>
-                <td>{SRC[c.source] ?? c.source}</td>
-                <td className="text-right">{s.orders}</td><td className="text-right">{eur(s.spent)}</td>
-                <td>{s.last ? new Date(s.last).toLocaleDateString("fr-FR") : "—"}</td>
-                <td><label className="flex items-center gap-2"><Switch checked={c.marketing_consent} onCheckedChange={(v) => setConsent(c, v)} aria-label="Consentement marketing" />
+                <td data-label="Client" className="p-2 font-medium">{c.name ?? "—"}</td>
+                <td data-label="Contact"><div className="min-w-0 break-words"><div>{c.email ?? ""}</div><div className="text-muted-foreground">{c.phone ?? ""}</div></div></td>
+                <td data-label="Origine">{SRC[c.source] ?? c.source}</td>
+                <td data-label="Commandes" className="text-right">{s.orders}</td><td data-label="Dépensé" className="text-right tabular-nums">{eur(s.spent)}</td>
+                <td data-label="Dernière commande">{s.last ? new Date(s.last).toLocaleDateString("fr-FR") : "—"}</td>
+                <td data-label="Consentement"><label className="flex flex-wrap items-center gap-2"><Switch checked={c.marketing_consent} onCheckedChange={(v) => setConsent(c, v)} aria-label="Consentement marketing" />
                   {c.consent_at && <span className="text-xs text-muted-foreground" title={c.consent_source ?? ""}>{new Date(c.consent_at).toLocaleDateString("fr-FR")}</span>}</label></td>
-                <td><Button size="icon" variant="ghost" onClick={() => erase(c)} aria-label="Supprimer la fiche"><Trash2 /></Button></td>
+                <td data-label="Actions"><Button size="icon" variant="ghost" onClick={() => erase(c)} aria-label="Supprimer la fiche"><Trash2 /></Button></td>
               </tr>
             ); })}
             {!rows.length && <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">Aucun client.</td></tr>}
