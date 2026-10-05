@@ -28,4 +28,4 @@
 - Web voice ordering (Vapi Web SDK) uses per-restaurant public key + assistant id stored on restaurants (publicly readable, never the private key); the SDK is dynamically imported client-side only. Why: avoid SSR import of browser-only code and secret leakage.
 - Imprimante directe ESC/POS par appareil (Bluetooth BLE, USB, réseau via pont LC Print) : `src/lib/printer.ts` + `escpos.ts`; repli navigateur si aucune configurée. Why: le navigateur ne peut pas ouvrir de socket réseau.
 - Directory tokens are scoped; entries stay database-driven. Why: preserve partner branding.
-- Mobile admin: labelled table records, constrained card grids, 48px actions/44px toggles including portals. Desktop/public unchanged. Why: touch access without overflow.
+- Mobile admin: labelled records, constrained grids, 48px actions/44px toggles, bounded portals/sticky close bars. Desktop/public unchanged. Why: touch access without overflow.
