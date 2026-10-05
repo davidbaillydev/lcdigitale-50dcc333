@@ -29,7 +29,7 @@ export type Restaurant = {
     payments?: { on_site?: boolean; counter?: boolean; card_terminal?: boolean };
     marketing?: import("./promo").Marketing;
     /** Menu QR par table (nombre de tables) et lien d'avis Google proposé après la commande */
-    qr?: { tables?: number; reviewUrl?: string };
+    qr?: { tables?: number; reviewUrl?: string; room?: boolean; self?: boolean };
   };
 };
 

@@ -73,13 +73,15 @@ export const saveQrSettings = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({
     restaurantId: z.string().uuid(),
     tables: z.number().int().min(0).max(300),
+    room: z.boolean().optional(),
+    self: z.boolean().optional(),
     reviewUrl: z.string().trim().max(300).regex(/^https:\/\/[^\s]+$/).optional().or(z.literal("")),
   }).parse(d))
   .handler(async ({ data, context }) => {
     await assertManager(context.supabase, context.userId, data.restaurantId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: cur } = await supabaseAdmin.from("restaurants").select("config").eq("id", data.restaurantId).single();
-    const config = { ...((cur?.config as Record<string, unknown>) ?? {}), qr: { tables: data.tables, ...(data.reviewUrl ? { reviewUrl: data.reviewUrl } : {}) } };
+    const config = { ...((cur?.config as Record<string, unknown>) ?? {}), qr: { tables: data.tables, room: !!data.room, self: !!data.self, ...(data.reviewUrl ? { reviewUrl: data.reviewUrl } : {}) } };
     const { error } = await supabaseAdmin.from("restaurants").update({ config: config as never }).eq("id", data.restaurantId);
     if (error) throw new Error(error.message);
     return { ok: true };

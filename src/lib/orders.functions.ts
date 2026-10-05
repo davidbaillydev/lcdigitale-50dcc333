@@ -8,6 +8,8 @@ const orderSchema = z.object({
   restaurant: z.string().max(40),
   mode: z.enum(["pickup", "delivery", "dine_in"]),
   table: z.string().trim().regex(/^[0-9]{1,3}$/).optional(),
+  room: z.string().trim().regex(/^[A-Za-z0-9-]{1,8}$/).optional(),
+  qr: z.literal("self").optional(),
   slot: z.string().max(40),
   customer_name: z.string().trim().min(2).max(80),
   phone: z.string().trim().regex(/^[0-9 +().-]{8,20}$/),
@@ -37,7 +39,9 @@ export const createOrder = createServerFn({ method: "POST" })
     const dineIn = data.mode === "dine_in";
     if (dineIn) {
       const n = Number(data.table);
-      if (!data.table || !(n >= 1 && n <= (r.config.qr?.tables ?? 0))) throw new Error("Table inconnue : scannez à nouveau le QR code de votre table.");
+      if (data.room) { if (!r.config.qr?.room) throw new Error("Le room service n'est pas proposé."); }
+      else if (data.qr === "self" && !data.table) { if (!r.config.qr?.self) throw new Error("Le libre-service n'est pas proposé."); }
+      else if (!data.table || !(n >= 1 && n <= (r.config.qr?.tables ?? 0))) throw new Error("Table inconnue : scannez à nouveau le QR code de votre table.");
     } else if (!isValidSlot(r, data.mode as "pickup" | "delivery", data.slot)) throw new Error("Ce créneau n'est plus disponible, merci d'en choisir un autre.");
     const { stripeForRestaurant, stripeCall, startOnlinePayment } = await import("./payments.functions");
     const provider = data.payment_method === "online" ? (data.provider ?? "stripe") : null;
@@ -47,9 +51,12 @@ export const createOrder = createServerFn({ method: "POST" })
     if (!dineIn && !modeEnabled(r, data.mode)) throw new Error(data.mode === "delivery" ? "La livraison n'est pas proposée par ce restaurant." : "La vente à emporter n'est pas proposée.");
     if (data.payment_method === "on_site" && !paymentEnabled(r, "on_site")) throw new Error("Ce mode de paiement n'est pas accepté.");
 
+    const { data: so } = await supabaseAdmin.from("menu_stock").select("item_id").eq("restaurant_id", r.id).eq("sold_out", true);
+    const soldOut = new Set((so ?? []).map((x) => x.item_id));
     const items = data.lines.map((l) => {
       const item = catalog.itemsById[l.itemId];
       if (!item) throw new Error("Article inconnu");
+      if (soldOut.has(item.id)) throw new Error(`« ${item.name} » est momentanément épuisé. Retirez-le de votre panier.`);
       const err = validateSelections(item, l.sel);
       if (err) throw new Error(err);
       const unit = unitPrice(item, l.sel);
@@ -84,6 +91,8 @@ export const createOrder = createServerFn({ method: "POST" })
         city,
         slot: dineIn ? new Date().toISOString() : data.slot,
         table_label: dineIn ? (data.table ?? null) : null,
+        room_label: dineIn ? (data.room ?? null) : null,
+        qr_mode: dineIn ? (data.room ? "room" : data.qr === "self" && !data.table ? "self" : "table") : null,
         items,
         notes: data.notes || null,
         subtotal,
@@ -92,7 +101,7 @@ export const createOrder = createServerFn({ method: "POST" })
         promo_code: promo.discount ? promo.code : null,
         total: Math.round((subtotal - promo.discount + fee) * 100) / 100,
         payment_method: data.payment_method,
-        status: provider ? "awaiting_payment" : r.config.autoAccept ? "accepted" : "new",
+        status: provider ? "awaiting_payment" : dineIn && data.qr === "self" && !data.table && !data.room ? "pending_validation" : r.config.autoAccept ? "accepted" : "new",
       })
       .select("id, order_number, total")
       .single();
@@ -156,9 +165,12 @@ export const createKioskOrder = createServerFn({ method: "POST" })
     if (!modeEnabled(r, data.mode)) throw new Error("Ce mode n'est pas proposé.");
     if (!paymentEnabled(r, data.payment_method)) throw new Error("Ce mode de paiement n'est pas accepté.");
     const catalog = getCatalog(r);
+    const { data: so } = await supabaseAdmin.from("menu_stock").select("item_id").eq("restaurant_id", r.id).eq("sold_out", true);
+    const soldOut = new Set((so ?? []).map((x) => x.item_id));
     const items = data.lines.map((l) => {
       const item = catalog.itemsById[l.itemId];
       if (!item) throw new Error("Article inconnu");
+      if (soldOut.has(item.id)) throw new Error(`« ${item.name} » est momentanément épuisé. Retirez-le de votre panier.`);
       const err = validateSelections(item, l.sel);
       if (err) throw new Error(err);
       const unit = unitPrice(item, l.sel);

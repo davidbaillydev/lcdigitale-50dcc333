@@ -37,10 +37,25 @@ function Page() {
   const { data: r, refetch } = useQuery({ queryKey: ["qr-admin", slug], queryFn: () => load({ data: { slug } }), enabled: canManage });
   const [tables, setTables] = useState(0);
   const [reviewUrl, setReviewUrl] = useState("");
+  const [room, setRoom] = useState(false);
+  const [self, setSelf] = useState(false);
+  const [roomNo, setRoomNo] = useState("101");
+  const [extra, setExtra] = useState<{ t: string; d: string; url: string; svg: string }[]>([]);
   const [codes, setCodes] = useState<{ n: number; url: string; svg: string }[]>([]);
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => { if (r) { setTables(r.config.qr?.tables ?? 0); setReviewUrl(r.config.qr?.reviewUrl ?? ""); } }, [r]);
+  useEffect(() => { if (r) { setTables(r.config.qr?.tables ?? 0); setReviewUrl(r.config.qr?.reviewUrl ?? ""); setRoom(!!r.config.qr?.room); setSelf(!!r.config.qr?.self); } }, [r]);
+  useEffect(() => {
+    if (!r) return;
+    const color = r.brand?.primary && /^#[0-9a-f]{6}$/i.test(r.brand.primary) ? r.brand.primary : "#222029";
+    const base = `${window.location.origin}/${r.slug}`;
+    const list = [
+      ...(r.config.qr?.room && /^[A-Za-z0-9-]{1,8}$/.test(roomNo) ? [{ t: `Room service · Chambre ${roomNo}`, d: "Le numéro de chambre est joint à la commande.", url: `${base}?room=${roomNo}` }] : []),
+      ...(r.config.qr?.self ? [{ t: "Libre-service", d: "Commande validée par le personnel avant la cuisine.", url: `${base}?qr=self` }] : []),
+      { t: "Consultation seule", d: "Menu vitrine, sans commande.", url: `${base}?qr=view` },
+    ];
+    Promise.all(list.map(async (x) => ({ ...x, svg: await QRCode.toString(x.url, { type: "svg", margin: 1, errorCorrectionLevel: "M", color: { dark: color, light: "#ffffff" } }) }))).then(setExtra);
+  }, [r, roomNo]);
   useEffect(() => {
     const saved = r?.config.qr?.tables ?? 0;
     if (!r || !saved) { setCodes([]); return; }
@@ -57,7 +72,7 @@ function Page() {
   const submit = async () => {
     if (!r) return;
     setBusy(true);
-    try { await save({ data: { restaurantId: r.id, tables, reviewUrl } }); await refetch(); toast.success("Réglages enregistrés"); }
+    try { await save({ data: { restaurantId: r.id, tables, reviewUrl, room, self } }); await refetch(); toast.success("Réglages enregistrés"); }
     catch (e) { toast.error(e instanceof Error && /regex|https/i.test(e.message) ? "Le lien d'avis doit commencer par https://" : (e as Error).message); }
     finally { setBusy(false); }
   };
@@ -80,6 +95,25 @@ function Page() {
           <Input id="review" type="url" placeholder="https://g.page/r/…/review" value={reviewUrl} onChange={(e) => setReviewUrl(e.target.value)} />
         </section>
       </div>
+      <section className="mt-4 rounded-xl border border-border bg-card p-4 print:hidden">
+        <h2 className="text-2xl">Autres types de QR</h2>
+        <label className="mt-3 flex min-h-11 items-center gap-3"><input type="checkbox" className="h-5 w-5" checked={room} onChange={(e) => setRoom(e.target.checked)} /> Room service (hôtel) : le numéro de chambre est ajouté à la commande</label>
+        <label className="flex min-h-11 items-center gap-3"><input type="checkbox" className="h-5 w-5" checked={self} onChange={(e) => setSelf(e.target.checked)} /> Libre-service : les commandes attendent la validation du personnel avant la cuisine</label>
+        <p className="text-sm text-muted-foreground">Le QR « Consultation seule » est toujours disponible (menu sans bouton de commande).</p>
+        {r?.config.qr?.room && <div className="mt-3 max-w-xs"><Label htmlFor="roomno">Numéro de chambre pour le QR</Label><Input id="roomno" value={roomNo} onChange={(e) => setRoomNo(e.target.value.slice(0, 8))} /></div>}
+        {extra.length > 0 && (
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {extra.map((x) => (
+              <figure key={x.url} className="rounded-xl border border-border p-3 text-center">
+                <p className="font-semibold">{x.t}</p>
+                <div className="mx-auto my-2 aspect-square w-full max-w-40 rounded bg-white p-1" dangerouslySetInnerHTML={{ __html: x.svg }} />
+                <p className="text-xs text-muted-foreground">{x.d}</p>
+                <Button variant="ghost" size="sm" className="mt-1 min-h-11" onClick={() => { navigator.clipboard.writeText(x.url); toast.success("Lien copié"); }}>Copier le lien</Button>
+              </figure>
+            ))}
+          </div>
+        )}
+      </section>
       <div className="mt-4 flex flex-wrap gap-2 print:hidden">
         <Button onClick={submit} disabled={busy}><Save /> {busy ? "Enregistrement…" : "Enregistrer"}</Button>
         {codes.length > 0 && <Button variant="secondary" onClick={() => window.print()}><Printer /> Imprimer les QR codes</Button>}
