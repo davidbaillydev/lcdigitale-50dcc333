@@ -198,6 +198,101 @@
   transition: box-shadow 300ms ease;
 }
 .directory-card:hover { box-shadow: var(--directory-shadow-hover); }
+
+/* Scope authenticated screens and body-portaled controls to the agency identity. */
+:root:has(.admin-workspace), .admin-workspace {
+  --radius: 0.5rem;
+  --background: #f7f8fc;
+  --foreground: #212529;
+  --card: #ffffff;
+  --card-foreground: #212529;
+  --popover: #ffffff;
+  --popover-foreground: #212529;
+  --primary: #007af5;
+  --primary-foreground: #ffffff;
+  --secondary: #edf1f7;
+  --secondary-foreground: #212529;
+  --muted: #edf1f7;
+  --muted-foreground: #6c757d;
+  --accent: #e8f2ff;
+  --accent-foreground: #0058b0;
+  --border: color-mix(in oklab, #6c757d 18%, #ffffff);
+  --input: var(--border);
+  --ring: #007af5;
+  --chart-1: #007af5;
+  --chart-2: var(--success);
+  --chart-3: #6c757d;
+  --chart-4: var(--destructive);
+  --chart-5: #212529;
+  --font-display: "Outfit", sans-serif;
+  --font-sans: "Figtree", system-ui, sans-serif;
+  --admin-shadow: 0 2px 4px color-mix(in oklab, #222029 4%, transparent);
+  --admin-shadow-hover: 0 12px 28px color-mix(in oklab, #222029 10%, transparent);
+  font-family: var(--font-sans);
+  letter-spacing: 0;
+}
+:root.dark:has(.admin-workspace), .dark .admin-workspace {
+  --background: #222029;
+  --foreground: #ffffff;
+  --card: color-mix(in oklab, #222029 92%, #ffffff);
+  --card-foreground: #ffffff;
+  --popover: color-mix(in oklab, #222029 92%, #ffffff);
+  --popover-foreground: #ffffff;
+  --secondary: color-mix(in oklab, #222029 82%, #ffffff);
+  --secondary-foreground: #ffffff;
+  --muted: color-mix(in oklab, #222029 90%, #ffffff);
+  --muted-foreground: color-mix(in oklab, #6c757d 40%, #ffffff);
+  --accent: color-mix(in oklab, #007af5 18%, #222029);
+  --accent-foreground: #c4e1ff;
+  --border: color-mix(in oklab, #222029 78%, #ffffff);
+  --input: var(--border);
+}
+.admin-workspace :is(h1, h2, h3, .font-display),
+:root:has(.admin-workspace) [role="dialog"] :is(h1, h2, h3, .font-display) {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+.admin-workspace h1 { font-size: 2.5rem; line-height: 1.15; }
+.admin-workspace h2 { line-height: 1.25; }
+.admin-workspace :is(p, span, label, button, a) { letter-spacing: 0; }
+.admin-content > div:not(.admin-kitchen) { padding-top: 2.5rem; padding-bottom: 3rem; }
+.admin-content > .admin-menu { padding-bottom: 7rem; }
+.admin-content > div > header:first-child { border-bottom: 1px solid var(--border); padding-bottom: 2rem; }
+.admin-content h1:not(header h1) { margin-bottom: 1.5rem; }
+.admin-content :is(.rounded-xl, .rounded-2xl, .rounded-3xl) { border-radius: var(--radius); }
+.admin-workspace :is(input, textarea, select) { font-family: var(--font-sans); }
+.admin-workspace select { max-width: 100%; }
+.admin-workspace :is(input, textarea) { min-width: 0; }
+.admin-workspace button { white-space: normal; }
+.admin-workspace .grid > * { min-width: 0; }
+.admin-workspace th { font-weight: 500; }
+.admin-workspace :is(th, td) { padding: 0.75rem; }
+.admin-restaurant-card { box-shadow: var(--admin-shadow); transition: box-shadow 200ms ease; }
+.admin-restaurant-card:hover { box-shadow: var(--admin-shadow-hover); }
+.admin-dashboard section { background: transparent; border: 0; border-top: 1px solid var(--border); border-radius: 0; padding: 1.5rem 0; }
+.admin-dashboard .grid > .bg-card { background: transparent; border: 0; border-bottom: 1px solid var(--border); border-radius: 0; padding: 1.25rem 0; }
+.admin-content section:not(.admin-menu section):not(.admin-kitchen section) {
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  padding: 1.75rem 0;
+}
+.admin-kitchen > header { padding: 1.5rem; }
+.admin-kitchen h1 { font-size: 1.75rem; margin-bottom: 0; }
+.admin-kitchen section { border-radius: 0; background: transparent; padding: 0.75rem; }
+.admin-kitchen section > h2 { border-bottom: 1px solid var(--border); padding-bottom: 1rem; font-size: 1.25rem; }
+:root:has(.admin-workspace) [role="dialog"] { font-family: var(--font-sans); border-radius: var(--radius); width: calc(100vw - 2rem); }
+:root:has(.admin-workspace) [role="dialog"] .tracking-tight { letter-spacing: 0; }
+@media (max-width: 639px) {
+  .admin-workspace h1 { font-size: 2rem; }
+  .admin-content > div:not(.admin-kitchen) { padding-left: 1.25rem; padding-right: 1.25rem; padding-top: 1.5rem; }
+  .admin-kitchen > header { padding: 1.25rem; }
+  .admin-content .fixed > div.flex { flex-wrap: wrap; }
+}
 @media (prefers-reduced-motion: reduce) {
   .directory-card { transition: none; }
+  .admin-restaurant-card { transition: none; }
 }

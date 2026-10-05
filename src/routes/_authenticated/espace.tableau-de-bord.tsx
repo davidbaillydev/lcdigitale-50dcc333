@@ -100,7 +100,7 @@ function Dashboard() {
   const max = Math.max(1, ...s.days.map(([, v]) => v.ca));
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-6">
+    <div className="admin-dashboard mx-auto max-w-6xl space-y-6 p-6">
       <div className="flex items-center gap-2">
         <Crumbs page="Tableau de bord" />
         <span className="mr-auto" /><ThemeToggle />

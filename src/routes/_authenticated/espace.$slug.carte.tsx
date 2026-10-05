@@ -10,7 +10,6 @@ import { analyzeMenu } from "@/lib/menu-import.functions";
 import { readMenuFile } from "@/lib/menu-import";
 import { baseCategories } from "@/lib/catalogs";
 import type { Category, MenuItem } from "@/lib/menu";
-import { BrandTheme } from "@/lib/brand";
 import { ThemeToggle } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -89,8 +88,7 @@ function MenuEditor() {
   };
 
   return (
-    <BrandTheme brand={r?.brand}>
-      <div className="mx-auto max-w-4xl p-6 pb-28">
+      <div className="admin-menu mx-auto max-w-4xl p-6 pb-28">
         <div className="flex items-center justify-between gap-3"><Crumbs slug={slug} page="Carte" /><ThemeToggle /></div>
         <h1 className="mt-4 text-5xl">Carte · {r?.name}</h1>
         <p className="text-sm text-muted-foreground">
@@ -172,6 +170,5 @@ function MenuEditor() {
           </div>
         </div>
       </div>
-    </BrandTheme>
   );
 }
