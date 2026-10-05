@@ -12,3 +12,9 @@
 
 Verified on a temporary restaurant, now deactivated: upload and reload persistence, customer site and kiosk rendering, removal, mobile fallback without horizontal overflow, and no browser errors. Three banner component tests pass; automatic build passes. Storage is private and direct anon/authenticated access is denied. Five database advisor findings predate this change and remain outside its scope.
 - [x] Dish photos (import + AI), table QR codes, Google review invite
+
+## 7 modules avancés (plan approuvé 2026-10-05)
+- [x] Étape 1 : ruptures temps réel depuis la Cuisine + QR room service / libre-service / consultation
+- [ ] Étape 2 : zones de livraison (CP/rayon), livreurs, statuts de livraison
+- [ ] Étape 3 : menu FR/EN/ES/DE + réservations avec acompte Stripe
+- [ ] Étape 4 : SMS/WhatsApp (attend compte Twilio) + application installable
