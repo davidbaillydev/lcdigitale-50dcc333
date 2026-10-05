@@ -226,7 +226,7 @@ function Checkout() {
             <Button size="lg" className="mt-4 w-full font-semibold" disabled={!canSubmit || !cgv || busy || (pay === "on_site" && !onSiteOk)} onClick={submit}>
               {busy ? "Envoi…" : pay === "on_site" ? `Valider la commande · ${euro(total)}` : pay === "paypal" ? `Payer avec PayPal · ${euro(total)}` : `Continuer vers le paiement · ${euro(total)}`}
             </Button>
-          )}
+          </>)}
         </aside>
       </div>
     </div>
