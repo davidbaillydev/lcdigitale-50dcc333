@@ -36,6 +36,7 @@ import { Route as AuthenticatedEspaceSlugIndexRouteImport } from './routes/_auth
 import { Route as AuthenticatedEspaceSlugCarteRouteImport } from './routes/_authenticated/espace.$slug.carte'
 import { Route as AuthenticatedEspaceSlugClientsRouteImport } from './routes/_authenticated/espace.$slug.clients'
 import { Route as AuthenticatedEspaceSlugEquipeRouteImport } from './routes/_authenticated/espace.$slug.equipe'
+import { Route as AuthenticatedEspaceSlugQrRouteImport } from './routes/_authenticated/espace.$slug.qr'
 import { Route as AuthenticatedEspaceSlugReglagesRouteImport } from './routes/_authenticated/espace.$slug.reglages'
 import { Route as ApiPublicRestaurantBannerIdRouteImport } from './routes/api/public/restaurant-banner/$id'
 import { Route as ApiPublicVapiRestaurantIdRouteImport } from './routes/api/public/vapi.$restaurantId'
@@ -181,6 +182,12 @@ const AuthenticatedEspaceSlugEquipeRoute =
     path: '/espace/$slug/equipe',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedEspaceSlugQrRoute =
+  AuthenticatedEspaceSlugQrRouteImport.update({
+    id: '/espace/$slug/qr',
+    path: '/espace/$slug/qr',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedEspaceSlugReglagesRoute =
   AuthenticatedEspaceSlugReglagesRouteImport.update({
     id: '/espace/$slug/reglages',
@@ -232,6 +239,7 @@ export interface FileRoutesByFullPath {
   '/espace/$slug/carte': typeof AuthenticatedEspaceSlugCarteRoute
   '/espace/$slug/clients': typeof AuthenticatedEspaceSlugClientsRoute
   '/espace/$slug/equipe': typeof AuthenticatedEspaceSlugEquipeRoute
+  '/espace/$slug/qr': typeof AuthenticatedEspaceSlugQrRoute
   '/espace/$slug/reglages': typeof AuthenticatedEspaceSlugReglagesRoute
   '/api/public/restaurant-banner/$id': typeof ApiPublicRestaurantBannerIdRoute
   '/api/public/vapi/$restaurantId': typeof ApiPublicVapiRestaurantIdRoute
@@ -262,6 +270,7 @@ export interface FileRoutesByTo {
   '/espace/$slug/carte': typeof AuthenticatedEspaceSlugCarteRoute
   '/espace/$slug/clients': typeof AuthenticatedEspaceSlugClientsRoute
   '/espace/$slug/equipe': typeof AuthenticatedEspaceSlugEquipeRoute
+  '/espace/$slug/qr': typeof AuthenticatedEspaceSlugQrRoute
   '/espace/$slug/reglages': typeof AuthenticatedEspaceSlugReglagesRoute
   '/api/public/restaurant-banner/$id': typeof ApiPublicRestaurantBannerIdRoute
   '/api/public/vapi/$restaurantId': typeof ApiPublicVapiRestaurantIdRoute
@@ -296,6 +305,7 @@ export interface FileRoutesById {
   '/_authenticated/espace/$slug/carte': typeof AuthenticatedEspaceSlugCarteRoute
   '/_authenticated/espace/$slug/clients': typeof AuthenticatedEspaceSlugClientsRoute
   '/_authenticated/espace/$slug/equipe': typeof AuthenticatedEspaceSlugEquipeRoute
+  '/_authenticated/espace/$slug/qr': typeof AuthenticatedEspaceSlugQrRoute
   '/_authenticated/espace/$slug/reglages': typeof AuthenticatedEspaceSlugReglagesRoute
   '/api/public/restaurant-banner/$id': typeof ApiPublicRestaurantBannerIdRoute
   '/api/public/vapi/$restaurantId': typeof ApiPublicVapiRestaurantIdRoute
@@ -330,6 +340,7 @@ export interface FileRouteTypes {
     | '/espace/$slug/carte'
     | '/espace/$slug/clients'
     | '/espace/$slug/equipe'
+    | '/espace/$slug/qr'
     | '/espace/$slug/reglages'
     | '/api/public/restaurant-banner/$id'
     | '/api/public/vapi/$restaurantId'
@@ -360,6 +371,7 @@ export interface FileRouteTypes {
     | '/espace/$slug/carte'
     | '/espace/$slug/clients'
     | '/espace/$slug/equipe'
+    | '/espace/$slug/qr'
     | '/espace/$slug/reglages'
     | '/api/public/restaurant-banner/$id'
     | '/api/public/vapi/$restaurantId'
@@ -393,6 +405,7 @@ export interface FileRouteTypes {
     | '/_authenticated/espace/$slug/carte'
     | '/_authenticated/espace/$slug/clients'
     | '/_authenticated/espace/$slug/equipe'
+    | '/_authenticated/espace/$slug/qr'
     | '/_authenticated/espace/$slug/reglages'
     | '/api/public/restaurant-banner/$id'
     | '/api/public/vapi/$restaurantId'
@@ -610,6 +623,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEspaceSlugEquipeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/espace/$slug/qr': {
+      id: '/_authenticated/espace/$slug/qr'
+      path: '/espace/$slug/qr'
+      fullPath: '/espace/$slug/qr'
+      preLoaderRoute: typeof AuthenticatedEspaceSlugQrRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/espace/$slug/reglages': {
       id: '/_authenticated/espace/$slug/reglages'
       path: '/espace/$slug/reglages'
@@ -661,6 +681,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEspaceSlugCarteRoute: typeof AuthenticatedEspaceSlugCarteRoute
   AuthenticatedEspaceSlugClientsRoute: typeof AuthenticatedEspaceSlugClientsRoute
   AuthenticatedEspaceSlugEquipeRoute: typeof AuthenticatedEspaceSlugEquipeRoute
+  AuthenticatedEspaceSlugQrRoute: typeof AuthenticatedEspaceSlugQrRoute
   AuthenticatedEspaceSlugReglagesRoute: typeof AuthenticatedEspaceSlugReglagesRoute
   AuthenticatedEspaceSlugIndexRoute: typeof AuthenticatedEspaceSlugIndexRoute
 }
@@ -672,6 +693,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEspaceSlugCarteRoute: AuthenticatedEspaceSlugCarteRoute,
   AuthenticatedEspaceSlugClientsRoute: AuthenticatedEspaceSlugClientsRoute,
   AuthenticatedEspaceSlugEquipeRoute: AuthenticatedEspaceSlugEquipeRoute,
+  AuthenticatedEspaceSlugQrRoute: AuthenticatedEspaceSlugQrRoute,
   AuthenticatedEspaceSlugReglagesRoute: AuthenticatedEspaceSlugReglagesRoute,
   AuthenticatedEspaceSlugIndexRoute: AuthenticatedEspaceSlugIndexRoute,
 }

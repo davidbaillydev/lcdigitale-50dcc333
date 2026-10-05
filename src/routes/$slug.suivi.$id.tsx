@@ -90,8 +90,8 @@ function Tracking() {
         <p className="inline-block -rotate-1 brush px-4 py-1 font-display text-xl">Merci {data.customer_name} !</p>
         <h1 className="mt-3 text-5xl">Commande n° {data.order_number}</h1>
         <p className="text-muted-foreground">
-          {data.mode === "delivery" ? "Livraison" : "Retrait"} prévu à <strong className="text-foreground">{fmtTime(data.slot)}</strong>
-          {" · "}{data.payment_method === "on_site" ? `paiement ${data.mode === "delivery" ? "à la livraison" : "au retrait"}` : data.payment_status === "paid" ? "payé en ligne ✓" : "paiement en ligne"}
+          {data.mode === "dine_in" ? <>Sur place{data.table_label ? <> · <strong className="text-foreground">Table {data.table_label}</strong></> : null}</> : <>{data.mode === "delivery" ? "Livraison" : "Retrait"} prévu à <strong className="text-foreground">{fmtTime(data.slot)}</strong></>}
+          {" · "}{data.payment_method === "on_site" ? `paiement ${data.mode === "delivery" ? "à la livraison" : data.mode === "dine_in" ? "à table ou au comptoir" : "au retrait"}` : data.payment_status === "paid" ? "payé en ligne ✓" : "paiement en ligne"}
         </p>
         {data.status === "cancelled" ? (
           <p className="mt-6 rounded-lg bg-destructive/20 p-4">Cette commande a été annulée. Contactez le restaurant pour plus d'informations.</p>
@@ -105,6 +105,12 @@ function Tracking() {
                 <p className={cn("mt-2 text-xs", i <= idx ? "text-foreground" : "text-muted-foreground")}>{label}</p>
               </div>
             ))}
+          </div>
+        )}
+        {data.review_url && (data.status === "ready" || data.status === "done") && (
+          <div className="mt-8 rounded-xl border border-primary bg-primary/10 p-4 text-center">
+            <p className="font-semibold">Vous avez aimé ? Votre avis nous aide énormément ★★★★★</p>
+            <Button asChild className="mt-3"><a href={data.review_url} target="_blank" rel="noopener noreferrer">Laisser un avis Google</a></Button>
           </div>
         )}
         <ul className="mt-8 divide-y divide-border rounded-xl border border-border bg-card px-4">

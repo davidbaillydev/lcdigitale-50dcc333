@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { menuImage } from "@/lib/menu-images";
 import { AllergenBadges, AllergenPicker } from "@/components/Allergens";
 import { safeFor } from "@/lib/allergens";
+import { useTable } from "@/lib/table";
 
 export const Route = createFileRoute("/$slug/")({
   loader: ({ params }) => getRestaurant({ data: { slug: params.slug } }),
@@ -32,10 +33,12 @@ function MenuPage() {
   const [excluded, setExcluded] = useState<string[]>([]);
   const shown = catalog.categories.map((c) => ({ ...c, items: c.items.filter((i) => safeFor(i, excluded)) })).filter((c) => c.items.length);
   const d = restaurant.delivery;
+  const table = useTable(restaurant.slug, restaurant.config.qr?.tables ?? 0);
 
   return (
     <div className="min-h-screen pb-24">
       <SiteHeader />
+      {table && <p className="bg-primary px-4 py-2 text-center font-semibold text-primary-foreground" role="status">Table {table} · commandez ici, nous vous servons à table</p>}
       <section className="relative overflow-hidden">
         <RestaurantBanner restaurant={restaurant} />
         <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent" />
