@@ -61,7 +61,7 @@ function Console() {
     <div className="mx-auto max-w-6xl p-6">
       <header className="flex flex-wrap items-center gap-3">
         <div className="mr-auto">
-          <p className="text-sm uppercase tracking-widest text-muted-foreground">LC Digitale</p>
+          <p className="text-sm font-semibold text-primary">Réseau de restaurants</p>
           <h1 className="text-5xl">Console agence</h1>
         </div>
         <Button variant="secondary" asChild><Link to="/espace/tableau-de-bord">Tableau de bord</Link></Button>
@@ -71,29 +71,29 @@ function Console() {
       </header>
       <Input className="mt-6" placeholder="Rechercher un restaurant (nom, ville, adresse web)…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher" />
 
-      <div className="mt-6 grid grid-cols-3 gap-3">
+      <div className="admin-metrics mt-8 grid grid-cols-1 gap-6 sm:grid-cols-3">
         {[["Restaurants", rows?.length ?? 0], ["En ligne", active], ["Commandes aujourd'hui", today]].map(([l, v]) => (
-          <div key={l} className="rounded-xl border border-border bg-card p-4">
+          <div key={l} className="border-b border-border pb-5">
             <p className="text-sm text-muted-foreground">{l}</p><p className="font-display text-4xl">{v}</p>
           </div>
         ))}
       </div>
 
       {!rows ? <p className="mt-10 text-center text-muted-foreground">Chargement du réseau…</p> : (
-        <div className="mt-6 grid gap-4 md:grid-cols-2">
+        <div className="mt-8 grid gap-6 md:grid-cols-2">
           {rows.filter((r) => `${r.name} ${r.city ?? ""} ${r.slug}`.toLowerCase().includes(q.toLowerCase())).map((r) => (
-            <article key={r.id} style={brandVars(r.brand)} className="rounded-xl border border-border bg-card p-5">
-              <div className="flex items-start gap-4">
+            <article key={r.id} className="admin-restaurant-card rounded-lg border border-border bg-card p-6">
+              <div className="flex flex-wrap items-start gap-4">
                 {r.logo_url ? <BrandLogo src={r.logo_url} name={r.name} className="h-14 w-14 rounded-lg object-contain" />
                   : <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-primary font-display text-3xl text-primary-foreground">{r.name[0]}</div>}
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-display text-3xl">{r.name}</p>
+                <div className="min-w-0 flex-1 basis-40">
+                  <h2 className="font-display text-2xl font-semibold">{r.name}</h2>
                   <p className="text-sm text-muted-foreground">/{r.slug} · {r.city ?? "—"} · {r.orders_today} cmd aujourd'hui</p>
-                  <div className="mt-2 flex gap-1">
+                  <div style={brandVars(r.brand)} className="mt-3 flex gap-1" aria-label="Couleurs du restaurant">
                     <span className="h-4 w-8 rounded bg-primary" /><span className="h-4 w-8 rounded bg-accent" />
                   </div>
                 </div>
-                <label className="flex items-center gap-2 text-sm">
+                <label className="flex shrink-0 items-center gap-2 text-sm">
                   <Switch checked={r.active} onCheckedChange={async (v) => {
                     setRows((p) => p?.map((x) => (x.id === r.id ? { ...x, active: v } : x)) ?? null);
                     try { await toggle({ data: { id: r.id, active: v } }); toast.success(v ? "Restaurant en ligne" : "Restaurant désactivé"); }
@@ -102,7 +102,7 @@ function Console() {
                   {r.active ? "En ligne" : "Hors ligne"}
                 </label>
               </div>
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-6 flex flex-wrap gap-2 border-t border-border pt-5">
                 <Button size="sm" variant="secondary" asChild><a href={`/${r.slug}`} target="_blank" rel="noreferrer"><ExternalLink /> Site</a></Button>
                 <Button size="sm" variant="secondary" asChild><a href={`/${r.slug}/borne`} target="_blank" rel="noreferrer"><Tablet /> Borne</a></Button>
                 <Button size="sm" variant="secondary" asChild><Link to="/espace/$slug" params={{ slug: r.slug }}><ChefHat /> Cuisine</Link></Button>

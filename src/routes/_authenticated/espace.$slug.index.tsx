@@ -14,7 +14,7 @@ import { allergenLabel } from "@/lib/allergens";
 import { euro } from "@/lib/menu";
 import { fmtTime } from "@/lib/shop";
 import { cn } from "@/lib/utils";
-import { BrandLogo, BrandTheme } from "@/lib/brand";
+import { BrandLogo } from "@/lib/brand";
 import { ThemeToggle } from "@/lib/theme";
 
 export const Route = createFileRoute("/_authenticated/espace/$slug/")({
@@ -178,8 +178,7 @@ function Kitchen() {
 
   const done = orders.filter((o) => o.status === "done");
   return (
-    <BrandTheme brand={restaurant?.brand}>
-    <div className="flex min-h-screen flex-col">
+    <div className="admin-kitchen flex min-h-screen flex-col">
       <header className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3">
         {restaurants.length > 1 && <Button asChild variant="ghost" size="icon" aria-label="Mes restaurants"><Link to="/espace"><ArrowLeft /></Link></Button>}
         <BrandLogo src={restaurant?.logo_url} name={restaurant?.name ?? ""} />
@@ -273,6 +272,5 @@ function Kitchen() {
       </div>
       {locked && rid && <KitchenLock restaurantId={rid} name={restaurant?.name ?? ""} onUnlock={() => setLock(false)} />}
     </div>
-    </BrandTheme>
   );
 }
