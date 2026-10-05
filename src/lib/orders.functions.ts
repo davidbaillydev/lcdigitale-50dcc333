@@ -6,7 +6,8 @@ import { RESTAURANT_COLUMNS, deliveryFee, isValidSlot, modeEnabled, paymentEnabl
 
 const orderSchema = z.object({
   restaurant: z.string().max(40),
-  mode: z.enum(["pickup", "delivery"]),
+  mode: z.enum(["pickup", "delivery", "dine_in"]),
+  table: z.string().trim().regex(/^[0-9]{1,3}$/).optional(),
   slot: z.string().max(40),
   customer_name: z.string().trim().min(2).max(80),
   phone: z.string().trim().regex(/^[0-9 +().-]{8,20}$/),
@@ -33,13 +34,17 @@ export const createOrder = createServerFn({ method: "POST" })
     if (!r) throw new Error("Restaurant introuvable");
     const catalog = getCatalog(r);
 
-    if (!isValidSlot(r, data.mode, data.slot)) throw new Error("Ce créneau n'est plus disponible, merci d'en choisir un autre.");
+    const dineIn = data.mode === "dine_in";
+    if (dineIn) {
+      const n = Number(data.table);
+      if (!data.table || !(n >= 1 && n <= (r.config.qr?.tables ?? 0))) throw new Error("Table inconnue : scannez à nouveau le QR code de votre table.");
+    } else if (!isValidSlot(r, data.mode, data.slot)) throw new Error("Ce créneau n'est plus disponible, merci d'en choisir un autre.");
     const { stripeForRestaurant, stripeCall, startOnlinePayment } = await import("./payments.functions");
     const provider = data.payment_method === "online" ? (data.provider ?? "stripe") : null;
     const stripe = provider === "stripe" ? await stripeForRestaurant(r.id) : null;
     if (provider === "stripe" && !stripe) throw new Error("Le paiement en ligne n'est pas disponible pour ce restaurant.");
     if ((provider === "paypal" || provider === "lyra") && !data.origin) throw new Error("Paiement en ligne indisponible.");
-    if (!modeEnabled(r, data.mode)) throw new Error(data.mode === "delivery" ? "La livraison n'est pas proposée par ce restaurant." : "La vente à emporter n'est pas proposée.");
+    if (!dineIn && !modeEnabled(r, data.mode)) throw new Error(data.mode === "delivery" ? "La livraison n'est pas proposée par ce restaurant." : "La vente à emporter n'est pas proposée.");
     if (data.payment_method === "on_site" && !paymentEnabled(r, "on_site")) throw new Error("Ce mode de paiement n'est pas accepté.");
 
     const items = data.lines.map((l) => {
@@ -77,7 +82,8 @@ export const createOrder = createServerFn({ method: "POST" })
         address: data.mode === "delivery" ? (data.address ?? null) : null,
         postal_code: data.mode === "delivery" ? (data.postal_code ?? null) : null,
         city,
-        slot: data.slot,
+        slot: dineIn ? new Date().toISOString() : data.slot,
+        table_label: dineIn ? data.table : null,
         items,
         notes: data.notes || null,
         subtotal,
@@ -122,10 +128,12 @@ export const getOrderStatus = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("orders")
-      .select("id, order_number, status, mode, slot, total, items, payment_method, payment_status, customer_name, discount, promo_code, delivery_fee, restaurants(slug)")
+      .select("id, order_number, status, mode, slot, total, items, payment_method, payment_status, customer_name, discount, promo_code, delivery_fee, table_label, restaurants(slug, config)")
       .eq("id", data.id)
       .maybeSingle();
-    return row;
+    if (!row) return row;
+    const rest = row.restaurants as unknown as { slug: string; config: { qr?: { reviewUrl?: string } } | null } | null;
+    return { ...row, restaurants: rest ? { slug: rest.slug } : null, review_url: rest?.config?.qr?.reviewUrl ?? null };
   });
 
 const kioskSchema = z.object({
@@ -145,7 +153,7 @@ export const createKioskOrder = createServerFn({ method: "POST" })
     const { data: rRow } = await supabaseAdmin.from("restaurants").select(RESTAURANT_COLUMNS).eq("slug", data.restaurant).eq("active", true).maybeSingle();
     const r = rRow as unknown as Restaurant | null;
     if (!r) throw new Error("Restaurant introuvable");
-    if (!modeEnabled(r, data.mode)) throw new Error("Ce mode n'est pas proposé.");
+    if (!dineIn && !modeEnabled(r, data.mode)) throw new Error("Ce mode n'est pas proposé.");
     if (!paymentEnabled(r, data.payment_method)) throw new Error("Ce mode de paiement n'est pas accepté.");
     const catalog = getCatalog(r);
     const items = data.lines.map((l) => {
