@@ -26,7 +26,7 @@ export function ItemDialog({ item, onClose }: { item: MenuItem | null; onClose: 
   const stepped = !!item.builder;
   const visible = stepped ? groups.slice(step, step + 1) : groups;
   const price = unitPrice(item, sel);
-  const image = itemImage(item.id, catalog.categories);
+  const image = itemImage(item, catalog.categories);
 
   const toggle = (g: OptionGroup, id: string) => {
     setSel((prev) => {
@@ -60,7 +60,7 @@ export function ItemDialog({ item, onClose }: { item: MenuItem | null; onClose: 
           {item.desc && <DialogDescription>{item.desc}</DialogDescription>}
           <div className="pt-2"><AllergenInfo ids={item.allergens} /></div>
         </DialogHeader>
-        {image && <div><img src={image} alt={`Illustration pour ${item.name}`} loading="lazy" width={1024} height={768} className="h-36 w-full rounded-md object-cover sm:h-48" /><p className="mt-1 text-right text-xs text-muted-foreground">Photo d’illustration</p></div>}
+        {image && <div><img src={image.src} alt={image.real ? item.name : `Illustration pour ${item.name}`} loading="lazy" width={1024} height={768} className="h-36 w-full rounded-md object-cover sm:h-48" />{!image.real && <p className="mt-1 text-right text-xs text-muted-foreground">Photo d’illustration</p>}</div>}
 
         {stepped && (
           <div className="flex gap-1">

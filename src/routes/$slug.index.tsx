@@ -86,7 +86,8 @@ function MenuPage() {
             <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {c.items.map((i) => (
                 <button key={i.id} onClick={() => setOpen(i)}
-                  className={`group flex flex-col rounded-xl border bg-card p-4 text-left transition hover:-translate-y-0.5 hover:border-primary ${i.builder ? "border-primary/60 sm:col-span-2 lg:col-span-1" : "border-border"}`}>
+                  className={`group flex flex-col overflow-hidden rounded-xl border bg-card p-4 text-left transition hover:-translate-y-0.5 hover:border-primary ${i.builder ? "border-primary/60 sm:col-span-2 lg:col-span-1" : "border-border"}`}>
+                  {i.image && <img src={i.image} alt={i.name} loading="lazy" className="-mx-4 -mt-4 mb-3 aspect-[16/10] w-[calc(100%+2rem)] max-w-none object-cover transition group-hover:scale-[1.02]" />}
                   <div className="flex items-start justify-between gap-3">
                     <h3 className="text-2xl leading-tight">{i.name}</h3>
                     <span className="shrink-0 rounded-md bg-accent px-2 py-0.5 text-sm font-bold text-accent-foreground">{euro(i.price)}</span>

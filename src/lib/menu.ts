@@ -20,6 +20,7 @@ export type MenuItem = {
   builder?: boolean; // configurateur étape par étape
   hidden?: boolean; // masqué (rupture / indisponible)
   allergens?: string[]; // ids des 14 allergènes INCO (src/lib/allergens.ts)
+  image?: string; // photo du plat (/api/public/menu-photo/...)
 };
 export type Category = { id: string; label: string; note?: string; items: MenuItem[] };
 

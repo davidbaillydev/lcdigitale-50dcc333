@@ -21,7 +21,10 @@ export function menuImage(categoryId: string) {
   return images[categoryId];
 }
 
-export function itemImage(itemId: string, categories: { id: string; items: { id: string }[] }[]) {
-  const category = categories.find((c) => c.items.some((item) => item.id === itemId));
-  return category ? menuImage(category.id) : undefined;
+/** Photo du plat si le restaurant en a une ; sinon illustration de sa famille. */
+export function itemImage(item: { id: string; image?: string }, categories: { id: string; items: { id: string }[] }[]) {
+  if (item.image) return { src: item.image, real: true };
+  const category = categories.find((c) => c.items.some((i) => i.id === item.id));
+  const src = category ? menuImage(category.id) : undefined;
+  return src ? { src, real: false } : undefined;
 }
