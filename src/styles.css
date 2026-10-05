@@ -160,6 +160,10 @@
 
 /* Agency directory tokens preserve partner-specific branding elsewhere. */
 .restaurant-directory {
+  --secondary: oklch(0.955 0.009 260);
+  --secondary-foreground: oklch(0.264 0.008 248);
+  --font-display: "Outfit", sans-serif;
+  --font-sans: "Figtree", system-ui, sans-serif;
   --background: #f7f8fc;
   --foreground: #212529;
   --card: #ffffff;
@@ -179,6 +183,8 @@
   letter-spacing: 0;
 }
 .dark .restaurant-directory {
+  --secondary: oklch(0.32 0.016 294);
+  --secondary-foreground: oklch(1 0 0);
   --background: #222029;
   --foreground: #ffffff;
   --card: color-mix(in oklab, #222029 92%, #ffffff);
@@ -198,6 +204,22 @@
   transition: box-shadow 300ms ease;
 }
 .directory-card:hover { box-shadow: var(--directory-shadow-hover); }
+.directory-nav, .directory-poster-inner, .directory-partners { width: min(100% - 5rem, 80rem); margin-inline: auto; }
+.directory-nav { min-height: 5rem; }
+.directory-poster-inner { padding-block: 2rem; }
+.directory-title { font-size: 7rem; line-height: 1.05; margin-block: 1.25rem 1.5rem; overflow-wrap: anywhere; }
+.directory-partners { padding-top: 2.5rem; }
+.directory-image { aspect-ratio: 16 / 9; }
+.directory-partner-name { font-size: 2.5rem; line-height: 1.12; overflow-wrap: anywhere; }
+.directory-establishment:nth-child(even) { padding-top: 3rem; }
+@media (min-width: 1600px) { .directory-title { font-size: 8rem; } }
+@media (max-width: 767px) {
+  .directory-nav, .directory-poster-inner, .directory-partners { width: calc(100% - 2.5rem); }
+  .directory-title { font-size: 4rem; }
+  .directory-partner-name { font-size: 2rem; }
+  .directory-establishment:nth-child(even) { padding-top: 0; }
+}
+@media (max-width: 374px) { .directory-title { font-size: 3.25rem; } }
 
 /* Scope authenticated screens and body-portaled controls to the agency identity. */
 :root:has(.admin-workspace), .admin-workspace {
@@ -315,9 +337,18 @@
   padding: 1.75rem 0;
 }
 .admin-kitchen > header { padding: 1.5rem; }
-.admin-kitchen h1 { font-size: 1.75rem; margin-bottom: 0; }
-.admin-kitchen section { border-radius: 0; background: transparent; padding: 0.75rem; }
-.admin-kitchen section > h2 { border-bottom: 1px solid var(--border); padding-bottom: 1rem; font-size: 1.25rem; }
+.admin-kitchen h1 { font-size: 2rem; margin-bottom: 0; }
+.admin-kitchen section { border-radius: 0; background: transparent; padding: 0; }
+.admin-kitchen .kds-column-heading { border-bottom: 2px solid var(--border); padding-bottom: 1rem; font-size: 1.25rem; }
+.admin-kitchen [data-kds-status="new"] .kds-column-heading { border-color: var(--primary); }
+.admin-kitchen [data-kds-status="ready"] .kds-column-heading { border-color: var(--success); }
+.kds-ticket { color: var(--card-foreground); border-top-width: 4px; box-shadow: var(--admin-shadow); }
+.kds-ticket button { touch-action: manipulation; }
+.kds-empty { border-block: 1px dashed var(--border); }
+.admin-kitchen .kds-navigation button, .admin-kitchen .kds-navigation a { min-height: 2.75rem; }
+@media (min-width: 1024px) {
+  .admin-kitchen .kds-board > section + section { border-left: 1px solid var(--border); padding-left: 1.25rem; }
+}
 :root:has(.admin-workspace) [role="dialog"] { font-family: var(--font-sans); border-radius: var(--radius); width: calc(100vw - 2rem); }
 :root:has(.admin-workspace) [role="dialog"] .tracking-tight { letter-spacing: 0; }
 @media (max-width: 639px) {
