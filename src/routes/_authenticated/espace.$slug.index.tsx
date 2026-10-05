@@ -34,7 +34,7 @@ export const Route = createFileRoute("/_authenticated/espace/$slug/")({
 type Order = {
   id: string; order_number: number; customer_name: string; phone: string; mode: string; address: string | null; city: string | null;
   slot: string; items: { name: string; qty: number; details: string[]; allergens?: string[] }[]; notes: string | null; total: number;
-  payment_method: string; payment_status?: string; status: string; source?: string; created_at: string;
+  payment_method: string; payment_status?: string; status: string; source?: string; created_at: string; table_label?: string | null;
 };
 
 type PrintLog = { id: string; kinds: string; status: string; reprint: boolean; auto: boolean; created_at: string };
