@@ -198,7 +198,7 @@ function Kitchen() {
         <ThemeToggle />
         <Button variant="ghost" size="icon" onClick={() => supabase.auth.signOut()} aria-label="Déconnexion"><LogOut /></Button>
       </header>
-      <div className="grid flex-1 gap-4 p-4 md:grid-cols-3">
+      <div className="grid flex-1 gap-4 p-4 xl:grid-cols-3">
         {COLS.map((c) => {
           const list = orders.filter((o) => o.status === c.s);
           return (
@@ -209,8 +209,8 @@ function Kitchen() {
               <div className="space-y-3">
                 {list.map((o) => (
                   <article key={o.id} className={cn("rounded-lg border bg-card p-4", c.s === "new" ? "border-accent" : "border-border")}>
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
+                    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
+                      <div className="min-w-0 break-words">
                         <p className="font-display text-3xl leading-none">n° {o.order_number}</p>
                         <p className="text-sm">{o.customer_name}</p>
                       </div>
@@ -232,7 +232,7 @@ function Kitchen() {
                     </ul>
                     {o.notes && <p className="mt-2 rounded bg-accent/20 p-2 text-sm">⚠ {o.notes}</p>}
                     {o.mode === "delivery" && <p className="mt-2 text-sm">{o.address}, {o.city}</p>}
-                    <div className="mt-2 flex items-center justify-between text-sm text-muted-foreground">
+                    <div className="mt-2 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-start gap-2 break-words text-sm text-muted-foreground">
                       {o.source === "kiosk" ? <span /> : <a href={`tel:${o.phone}`} className="flex items-center gap-1"><Phone className="h-3 w-3" />{o.phone}</a>}
                       <span>{euro(Number(o.total))} · {o.payment_method === "online" && o.payment_status === "paid" ? `Payé en ligne (${String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("paypal:") ? "PayPal" : String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("lyra:") ? "Lyra" : "Stripe"})` : o.payment_status === "paid" ? "payé (terminal)" : o.payment_method === "online" ? "payé" : o.payment_method === "card_terminal" ? "CB au comptoir" : o.payment_method === "counter" ? "espèces/TR au comptoir" : "à encaisser"}</span>
                     </div>

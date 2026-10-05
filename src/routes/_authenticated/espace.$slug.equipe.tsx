@@ -90,8 +90,8 @@ function Team() {
       <ul className="mt-6 divide-y divide-border rounded-xl border border-border bg-card">
         {data?.length === 0 && <li className="p-4 text-sm text-muted-foreground">Aucun membre pour le moment.</li>}
         {data?.map((u) => (
-          <li key={u.id} className="flex flex-wrap items-center gap-4 p-4">
-            <span className="mr-auto min-w-0 truncate">{u.email}</span>
+          <li key={u.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-4 sm:flex sm:flex-wrap">
+            <span className="col-span-2 min-w-0 break-words font-medium sm:mr-auto">{u.email}</span>
             <label className="flex items-center gap-2 text-sm">Cuisine <Switch checked={u.roles.includes("kitchen")} onCheckedChange={(v) => toggle(u.id, "kitchen", v)} /></label>
             <Button size="sm" variant="ghost" onClick={() => copyLink(u.id)} title="Lien d'activation à partager (SMS, WhatsApp…)"><Link2 /> Lien</Button>
             <label className="flex items-center gap-2 text-sm">Gérant <Switch checked={u.roles.includes("manager")} onCheckedChange={(v) => toggle(u.id, "manager", v)} /></label>
