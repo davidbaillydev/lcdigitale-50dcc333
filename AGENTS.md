@@ -29,3 +29,4 @@
 - Imprimante directe ESC/POS par appareil (Bluetooth BLE, USB, réseau via pont LC Print) : `src/lib/printer.ts` + `escpos.ts`; repli navigateur si aucune configurée. Why: le navigateur ne peut pas ouvrir de socket réseau.
 - Directory, restaurant workspace and KDS styling stays scoped; records stay database-driven. Why: preserve public branding, agency screens and service behavior.
 - Mobile admin: labelled records, constrained grids, 48px actions/44px toggles, bounded portals/sticky close bars. Desktop/public unchanged. Why: touch access without overflow.
+- Legal pages (mentions, RGPD, CGV, cookies) are generated from templates in src/lib/legal.ts filled with restaurants.legal (agency-only writes); orders store cgv_accepted_at + cgv_version server-side. Why: every new site is compliant by default with a traceable CGV acceptance.

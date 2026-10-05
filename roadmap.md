@@ -18,3 +18,5 @@ Verified on a temporary restaurant, now deactivated: upload and reload persisten
 - [ ] Étape 2 : zones de livraison (CP/rayon), livreurs, statuts de livraison
 - [ ] Étape 3 : menu FR/EN/ES/DE + réservations avec acompte Stripe
 - [ ] Étape 4 : SMS/WhatsApp (attend compte Twilio) + application installable
+- [x] Pages légales auto par restaurant (mentions, RGPD, CGV, cookies) + bandeau cookies + case CGV
+- [ ] Facturation : facture PDF par commande, puis Factur-X / plateforme agréée (compte externe requis)
