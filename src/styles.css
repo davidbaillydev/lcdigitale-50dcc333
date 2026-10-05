@@ -349,7 +349,7 @@
     touch-action: manipulation;
   }
   :is(.admin-workspace, :root:has(.admin-workspace) [role="dialog"]) [role="switch"] > span { width: 1.5rem; height: 1.5rem; }
-  :is(.admin-workspace, :root:has(.admin-workspace) [role="dialog"]) [role="switch"] > span[data-state="checked"] { transform: translateX(1.875rem); }
+  :is(.admin-workspace, :root:has(.admin-workspace) [role="dialog"]) [role="switch"] > span[data-state="checked"] { translate: 1.875rem 0; }
   :is(.admin-workspace, :root:has(.admin-workspace) [role="dialog"]) :is([role="checkbox"], [role="radio"], input[type="checkbox"], input[type="radio"]) {
     width: 2.75rem;
     height: 2.75rem;
