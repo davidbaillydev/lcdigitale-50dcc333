@@ -27,5 +27,5 @@
 - Phone orders (Vapi voice assistant) arrive via /api/public/vapi/$restaurantId, authenticated by a per-restaurant x-vapi-secret stored in `restaurant_voice_channels` (service-role only, agency-managed); orders use source 'phone' and server-recomputed prices. Why: public webhook must never trust caller or prices.
 - Web voice ordering (Vapi Web SDK) uses per-restaurant public key + assistant id stored on restaurants (publicly readable, never the private key); the SDK is dynamically imported client-side only. Why: avoid SSR import of browser-only code and secret leakage.
 - Imprimante directe ESC/POS par appareil (Bluetooth BLE, USB, réseau via pont LC Print) : `src/lib/printer.ts` + `escpos.ts`; repli navigateur si aucune configurée. Why: le navigateur ne peut pas ouvrir de socket réseau.
-- Directory tokens are scoped; entries stay database-driven. Why: preserve partner branding.
+- Directory and KDS poster styling stays scoped; entries and tickets stay database-driven. Why: preserve partner branding and live service behavior.
 - Mobile admin: labelled records, constrained grids, 48px actions/44px toggles, bounded portals/sticky close bars. Desktop/public unchanged. Why: touch access without overflow.
