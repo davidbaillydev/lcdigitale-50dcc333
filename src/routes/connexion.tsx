@@ -47,7 +47,7 @@ function Login() {
   };
 
   return (
-    <div className="connexion-screen min-h-screen bg-background text-foreground">
+    <div className="admin-workspace connexion-screen min-h-screen bg-background text-foreground">
       <header className="connexion-top border-b border-border">
         <div className="workspace-inner flex items-center justify-between gap-4 py-5">
           <Link to="/" className="font-display text-xl font-bold text-primary">LC Digitale<span aria-hidden="true">.</span></Link>
