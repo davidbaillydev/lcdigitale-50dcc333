@@ -1,0 +1,1 @@
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS table_label text CHECK (table_label IS NULL OR char_length(table_label) <= 20);

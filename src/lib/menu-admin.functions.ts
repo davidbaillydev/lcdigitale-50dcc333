@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { ALLERGEN_IDS } from "./allergens";
+import { MENU_PHOTO_RE } from "./menu-photos.functions";
 
 const id = z.string().trim().min(1).max(80);
 const choice = z.object({ id, label: z.string().max(120), price: z.number().min(0).max(1000).optional() });
@@ -12,6 +13,7 @@ const group = z.object({
 const item = z.object({
   id, name: z.string().trim().min(1).max(120), desc: z.string().max(500).optional(), price: z.number().min(0).max(1000),
   tag: z.string().max(40).optional(), options: z.array(group).max(20).optional(), builder: z.boolean().optional(), hidden: z.boolean().optional(), allergens: z.array(z.enum(ALLERGEN_IDS)).max(14).optional(),
+  image: z.string().max(200).regex(MENU_PHOTO_RE).optional(),
 });
 const category = z.object({ id, label: z.string().trim().min(1).max(80), note: z.string().max(300).optional(), items: z.array(item).max(300) });
 
@@ -24,6 +26,7 @@ export const saveMenu = createServerFn({ method: "POST" })
     if (!ok) throw new Error("Réservé au gérant ou à l'agence");
     const ids = data.menu?.flatMap((c) => c.items.map((i) => i.id)) ?? [];
     if (new Set(ids).size !== ids.length) throw new Error("Deux plats ont le même identifiant");
+    if (data.menu?.some((c) => c.items.some((i) => i.image && i.image.match(MENU_PHOTO_RE)?.[1] !== data.restaurantId))) throw new Error("Photo d'un autre restaurant");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("restaurants").update({ menu: data.menu }).eq("id", data.restaurantId);
     if (error) throw new Error(error.message);

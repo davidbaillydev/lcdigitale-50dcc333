@@ -57,11 +57,30 @@ export const saveRestaurantSettings = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: cur } = await supabaseAdmin.from("restaurants").select("config").eq("id", data.restaurantId).single();
     const marketing = (cur?.config as { marketing?: unknown } | null)?.marketing;
+    const qr = (cur?.config as { qr?: unknown } | null)?.qr;
     // L'impression est un réglage agence : un gérant ne peut pas la modifier.
     const { data: isAgency } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
     const printing = (cur?.config as { printing?: unknown } | null)?.printing;
     if (!isAgency && printing) s.config.printing = printing as typeof s.config.printing;
-    const { error } = await supabaseAdmin.from("restaurants").update({ opening: s.opening, delivery: s.delivery, config: { ...s.config, ...(marketing ? { marketing } : {}) } as never }).eq("id", data.restaurantId);
+    const { error } = await supabaseAdmin.from("restaurants").update({ opening: s.opening, delivery: s.delivery, config: { ...s.config, ...(marketing ? { marketing } : {}), ...(qr ? { qr } : {}) } as never }).eq("id", data.restaurantId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Menu QR par table et lien d'avis Google (gérant ou agence). */
+export const saveQrSettings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    restaurantId: z.string().uuid(),
+    tables: z.number().int().min(0).max(300),
+    reviewUrl: z.string().trim().max(300).regex(/^https:\/\/[^\s]+$/).optional().or(z.literal("")),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertManager(context.supabase, context.userId, data.restaurantId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: cur } = await supabaseAdmin.from("restaurants").select("config").eq("id", data.restaurantId).single();
+    const config = { ...((cur?.config as Record<string, unknown>) ?? {}), qr: { tables: data.tables, ...(data.reviewUrl ? { reviewUrl: data.reviewUrl } : {}) } };
+    const { error } = await supabaseAdmin.from("restaurants").update({ config: config as never }).eq("id", data.restaurantId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

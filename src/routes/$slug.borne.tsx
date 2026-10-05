@@ -179,7 +179,8 @@ function Kiosk() {
             <div className="grid grid-cols-2 gap-4 pb-32 lg:grid-cols-3 2xl:grid-cols-4 min-[2200px]:grid-cols-5">
               {category?.items.map((it) => (
                 <button key={it.id} onClick={() => it.options?.length || it.allergens?.length ? setItem(it) : add(it.id, {}, 1)}
-                  className="flex min-h-40 flex-col justify-between rounded-2xl border-2 border-border bg-card p-5 text-left active:border-primary">
+                  className="flex min-h-40 flex-col justify-between overflow-hidden rounded-2xl border-2 border-border bg-card p-5 text-left active:border-primary">
+                  {it.image && <img src={it.image} alt={it.name} loading="lazy" className="-mx-5 -mt-5 mb-3 aspect-[4/3] w-[calc(100%+2.5rem)] max-w-none object-cover" />}
                   <span>
                     <span className="block text-2xl font-semibold leading-tight">{it.name}</span>
                     {it.desc && <span className="mt-1 line-clamp-2 block text-base text-muted-foreground">{it.desc}</span>}
@@ -300,7 +301,7 @@ function Kiosk() {
           </div>
         </div>
       )}
-      {item && <KioskItem item={item} image={itemImage(item.id, catalog.categories)} onClose={() => setItem(null)} onAdd={(sel, q) => { add(item.id, sel, q); setItem(null); }} />}
+      {item && <KioskItem item={item} image={itemImage(item, catalog.categories)?.src} onClose={() => setItem(null)} onAdd={(sel, q) => { add(item.id, sel, q); setItem(null); }} />}
 
       {warn && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80">
@@ -342,7 +343,7 @@ function KioskItem({ item, image, onClose, onAdd }: { item: MenuItem; image: str
       </div>
       {stepped && <div className="flex gap-2 px-6 pt-4">{groups.map((g, i) => <div key={g.id} className={cn("h-2 flex-1 rounded-full", i <= step ? "bg-primary" : "bg-muted")} />)}</div>}
       <div className="min-h-0 flex-1 space-y-8 overflow-y-auto p-6">
-        {image && <div className="flex items-center gap-4"><img src={image} alt={`Illustration pour ${item.name}`} loading="lazy" width={1024} height={768} className="h-32 w-44 rounded-md object-cover" /><span className="text-base text-muted-foreground">Photo d’illustration</span></div>}
+        {image && <div className="flex items-center gap-4"><img src={image} alt={`Illustration pour ${item.name}`} loading="lazy" width={1024} height={768} className="h-32 w-44 rounded-md object-cover" />{!item.image && <span className="text-base text-muted-foreground">Photo d’illustration</span>}</div>}
         <div className="rounded-2xl border-2 border-border p-5"><AllergenInfo ids={item.allergens} size="lg" /></div>
         {visible.map((g) => {
           const picked = sel[g.id] ?? [];

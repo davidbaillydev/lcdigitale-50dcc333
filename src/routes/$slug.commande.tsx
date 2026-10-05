@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useCart } from "@/lib/cart";
 import { euro } from "@/lib/menu";
+import { useTable } from "@/lib/table";
 import { availableSlots, deliveryFee, fmtTime, modeEnabled } from "@/lib/shop";
 import { createOrder } from "@/lib/orders.functions";
 import { onlinePaymentInfo } from "@/lib/payments.functions";
@@ -37,6 +38,7 @@ function Checkout() {
   const navigate = useNavigate();
   const submitFn = useServerFn(createOrder);
   const [mode, setMode] = useState<"pickup" | "delivery">(modeEnabled(restaurant, "pickup") ? "pickup" : "delivery");
+  const table = useTable(restaurant.slug, restaurant.config.qr?.tables ?? 0);
   const [slots, setSlots] = useState<string[]>([]);
   const [slot, setSlot] = useState("");
   const [f, setF] = useState({ customer_name: "", phone: "", email: "", address: "", postal_code: "", notes: "" });
@@ -68,9 +70,9 @@ function Checkout() {
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
 
   const canSubmit = useMemo(
-    () => lines.length && slot && f.customer_name.trim().length > 1 && f.phone.trim().length >= 8 && !belowMin &&
+    () => table ? lines.length && f.customer_name.trim().length > 1 && f.phone.trim().length >= 8 : lines.length && slot && f.customer_name.trim().length > 1 && f.phone.trim().length >= 8 && !belowMin &&
       (mode === "pickup" || (f.address.trim().length > 4 && f.postal_code)),
-    [lines, slot, f, belowMin, mode],
+    [lines, slot, f, belowMin, mode, table],
   );
 
   const submit = async () => {
@@ -79,7 +81,7 @@ function Checkout() {
     try {
       const res = await submitFn({
         data: {
-          ...f, restaurant: restaurant.slug, mode, slot, ...(promo.code ? { promo_code: promo.code } : {}),
+          ...f, restaurant: restaurant.slug, ...(table ? { mode: "dine_in" as const, table, slot: new Date().toISOString(), address: "", postal_code: "" } : { mode, slot }), ...(promo.code ? { promo_code: promo.code } : {}),
           payment_method: pay === "on_site" ? "on_site" : "online",
           ...(pay !== "on_site" ? { provider: pay, origin: window.location.origin } : {}),
           lines: lines.map((l) => ({ itemId: l.itemId, qty: l.qty, sel: l.sel })),
@@ -108,7 +110,7 @@ function Checkout() {
   };
 
   const options = [
-    ...(onSiteOk ? [{ v: "on_site" as const, Icon: Store, t: mode === "delivery" ? "À la livraison" : "Au retrait", s: "Espèces, CB ou tickets resto", ok: true }] : []),
+    ...(onSiteOk ? [{ v: "on_site" as const, Icon: Store, t: table ? "À table / au comptoir" : mode === "delivery" ? "À la livraison" : "Au retrait", s: "Espèces, CB ou tickets resto", ok: true }] : []),
     { v: "stripe" as const, Icon: CreditCard, t: "Carte bancaire", s: online.stripe ? "Carte, Apple Pay, Google Pay" : "Non proposé par ce restaurant", ok: !!online.stripe },
     ...(online.paypal ? [{ v: "paypal" as const, Icon: Wallet, t: "PayPal", s: "Compte PayPal ou carte via PayPal", ok: true }] : []),
     ...(online.lyra ? [{ v: "lyra" as const, Icon: Landmark, t: "Carte bancaire (banque)", s: "Page de paiement sécurisée Lyra / PayZen", ok: true }] : []),
@@ -129,6 +131,7 @@ function Checkout() {
       <SiteHeader hideCart />
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-8 lg:grid-cols-[1fr_380px]">
         <div className="space-y-8">
+          {table ? <section className="rounded-xl border border-primary bg-primary/10 p-4"><h2 className="text-3xl">Sur place · Table {table}</h2><p className="text-sm text-muted-foreground">Votre commande part directement en cuisine et vous est servie à table.</p></section> : <>
           <section>
             <h2 className="text-3xl">1. Mode de retrait</h2>
             <div className="mt-3 grid grid-cols-2 gap-3">
@@ -156,14 +159,15 @@ function Checkout() {
               <p className="mt-3 rounded-lg bg-card p-4 text-sm text-muted-foreground">Plus aucun créneau disponible aujourd'hui. {restaurant.config.hoursLabel ? `Horaires : ${restaurant.config.hoursLabel}.` : ""}</p>
             )}
           </section>
+          </>}
 
           <section className="space-y-3">
-            <h2 className="text-3xl">3. Vos coordonnées</h2>
+            <h2 className="text-3xl">{table ? "Vos coordonnées" : "3. Vos coordonnées"}</h2>
             <div className="grid gap-3 sm:grid-cols-2">
               <div><Label htmlFor="n">Nom *</Label><Input id="n" maxLength={80} value={f.customer_name} onChange={set("customer_name")} /></div>
               <div><Label htmlFor="p">Téléphone *</Label><Input id="p" type="tel" maxLength={20} value={f.phone} onChange={set("phone")} /></div>
               <div className="sm:col-span-2"><Label htmlFor="e">Email (pour la confirmation)</Label><Input id="e" type="email" maxLength={255} value={f.email} onChange={set("email")} /></div>
-              {mode === "delivery" && (
+              {mode === "delivery" && !table && (
                 <>
                   <div className="sm:col-span-2"><Label htmlFor="a">Adresse *</Label><Input id="a" maxLength={200} placeholder="N°, rue, bâtiment, étage…" value={f.address} onChange={set("address")} /></div>
                   <div className="sm:col-span-2">

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { menuImage } from "@/lib/menu-images";
 import { AllergenBadges, AllergenPicker } from "@/components/Allergens";
 import { safeFor } from "@/lib/allergens";
+import { useTable } from "@/lib/table";
 
 export const Route = createFileRoute("/$slug/")({
   loader: ({ params }) => getRestaurant({ data: { slug: params.slug } }),
@@ -32,10 +33,12 @@ function MenuPage() {
   const [excluded, setExcluded] = useState<string[]>([]);
   const shown = catalog.categories.map((c) => ({ ...c, items: c.items.filter((i) => safeFor(i, excluded)) })).filter((c) => c.items.length);
   const d = restaurant.delivery;
+  const table = useTable(restaurant.slug, restaurant.config.qr?.tables ?? 0);
 
   return (
     <div className="min-h-screen pb-24">
       <SiteHeader />
+      {table && <p className="bg-primary px-4 py-2 text-center font-semibold text-primary-foreground" role="status">Table {table} · commandez ici, nous vous servons à table</p>}
       <section className="relative overflow-hidden">
         <RestaurantBanner restaurant={restaurant} />
         <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent" />
@@ -86,7 +89,8 @@ function MenuPage() {
             <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {c.items.map((i) => (
                 <button key={i.id} onClick={() => setOpen(i)}
-                  className={`group flex flex-col rounded-xl border bg-card p-4 text-left transition hover:-translate-y-0.5 hover:border-primary ${i.builder ? "border-primary/60 sm:col-span-2 lg:col-span-1" : "border-border"}`}>
+                  className={`group flex flex-col overflow-hidden rounded-xl border bg-card p-4 text-left transition hover:-translate-y-0.5 hover:border-primary ${i.builder ? "border-primary/60 sm:col-span-2 lg:col-span-1" : "border-border"}`}>
+                  {i.image && <img src={i.image} alt={i.name} loading="lazy" className="-mx-4 -mt-4 mb-3 aspect-[16/10] w-[calc(100%+2rem)] max-w-none object-cover transition group-hover:scale-[1.02]" />}
                   <div className="flex items-start justify-between gap-3">
                     <h3 className="text-2xl leading-tight">{i.name}</h3>
                     <span className="shrink-0 rounded-md bg-accent px-2 py-0.5 text-sm font-bold text-accent-foreground">{euro(i.price)}</span>

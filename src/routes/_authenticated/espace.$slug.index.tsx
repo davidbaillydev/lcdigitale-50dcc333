@@ -34,7 +34,7 @@ export const Route = createFileRoute("/_authenticated/espace/$slug/")({
 type Order = {
   id: string; order_number: number; customer_name: string; phone: string; mode: string; address: string | null; city: string | null;
   slot: string; items: { name: string; qty: number; details: string[]; allergens?: string[] }[]; notes: string | null; total: number;
-  payment_method: string; payment_status?: string; status: string; source?: string; created_at: string;
+  payment_method: string; payment_status?: string; status: string; source?: string; created_at: string; table_label?: string | null;
 };
 
 type PrintLog = { id: string; kinds: string; status: string; reprint: boolean; auto: boolean; created_at: string };
@@ -194,6 +194,7 @@ function Kitchen() {
         <nav aria-label="Gestion du restaurant" className="kds-navigation mt-5 flex flex-wrap items-center gap-2 border-t border-border pt-4">
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/carte" params={{ slug }}>Carte</Link></Button>}
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/reglages" params={{ slug }}>Réglages</Link></Button>}
+        {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/qr" params={{ slug }}>QR tables & avis</Link></Button>}
         {restaurant?.role === "agency" && <Button asChild variant="secondary"><Link to="/espace/$slug/equipe" params={{ slug }}><Users /> Équipe</Link></Button>}
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/clients" params={{ slug }}>Clients</Link></Button>}
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/tableau-de-bord">Tableau de bord</Link></Button>}
@@ -225,7 +226,7 @@ function Kitchen() {
                         <p className="flex items-center justify-end gap-1 font-display text-3xl leading-none text-primary">
                           {o.mode === "delivery" ? <Bike className="h-5 w-5" /> : <ShoppingBag className="h-5 w-5" />}{fmtTime(o.slot)}
                         </p>
-                        <p className="text-xs text-muted-foreground">{o.source === "kiosk" ? "BORNE · " : o.source === "phone" ? "TÉLÉPHONE IA · " : ""}{o.mode === "delivery" ? "Livraison" : o.mode === "dine_in" ? "Sur place" : "À emporter"}</p>
+                        <p className="text-xs text-muted-foreground">{o.source === "kiosk" ? "BORNE · " : o.source === "phone" ? "TÉLÉPHONE IA · " : ""}{o.mode === "delivery" ? "Livraison" : o.mode === "dine_in" ? (o.table_label ? `Sur place · TABLE ${o.table_label}` : "Sur place") : "À emporter"}</p>
                       </div>
                     </div>
                     <ul className="mt-3 space-y-1.5 border-t border-border pt-3">

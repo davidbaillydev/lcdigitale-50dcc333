@@ -3,8 +3,8 @@ export type ImportPage = { type: "text" | "image"; content: string };
 const MAX_FILE = 8 * 1024 * 1024;
 const imageTypes = ["image/jpeg", "image/png", "image/webp"];
 
-function imageDataUrl(source: CanvasImageSource, width: number, height: number): string {
-  const scale = Math.min(1, 1600 / Math.max(width, height));
+export function imageDataUrl(source: CanvasImageSource, width: number, height: number, max = 1600): string {
+  const scale = Math.min(1, max / Math.max(width, height));
   const canvas = document.createElement("canvas");
   canvas.width = Math.max(1, Math.round(width * scale));
   canvas.height = Math.max(1, Math.round(height * scale));
