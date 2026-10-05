@@ -368,7 +368,7 @@
     scroll-padding-block: 5rem 1rem;
     padding: 1rem;
   }
-  :root:has(.admin-workspace) [data-console-dialog="modal"] { top: 1rem; translate: -50% 0; transform: none; }
+  :root:has(.admin-workspace) [data-console-dialog="modal"] { top: 1rem; --tw-translate-y: 0; translate: -50% 0 !important; transform: none; }
   :root:has(.admin-workspace) [data-console-dialog="sheet"] { height: calc(100dvh - 2rem); top: 1rem; }
   :root:has(.admin-workspace) [data-console-close-bar] {
     display: flex;
