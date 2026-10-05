@@ -32,6 +32,7 @@ export const Route = createFileRoute("/$slug/")({
 function MenuPage() {
   const [open, setOpen] = useState<MenuItem | null>(null);
   const { count, subtotal, restaurant, catalog, qr } = useCart();
+  const { consent } = useConsent();
   const view = qr.view;
   const [excluded, setExcluded] = useState<string[]>([]);
   const shown = catalog.categories.map((c) => ({ ...c, items: c.items.filter((i) => safeFor(i, excluded)) })).filter((c) => c.items.length);

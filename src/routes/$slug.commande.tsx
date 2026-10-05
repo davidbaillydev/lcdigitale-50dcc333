@@ -47,6 +47,7 @@ function Checkout() {
   const [f, setF] = useState({ customer_name: "", phone: "", email: "", address: "", postal_code: "", notes: "" });
   const [pay, setPay] = useState<"on_site" | "stripe" | "paypal" | "lyra">("on_site");
   const [busy, setBusy] = useState(false);
+  const [cgv, setCgv] = useState(false);
   const infoFn = useServerFn(onlinePaymentInfo);
   const [online, setOnline] = useState<{ stripe: string | null; paypal: boolean; lyra: boolean }>({ stripe: null, paypal: false, lyra: false });
   const [payment, setPayment] = useState<{ id: string; clientSecret: string } | null>(null);
@@ -85,7 +86,7 @@ function Checkout() {
       const res = await submitFn({
         data: {
           ...f, restaurant: restaurant.slug, ...(table ? { mode: "dine_in" as const, ...(tableNo ? { table: tableNo } : {}), ...(qr.room ? { room: qr.room } : {}), ...(qr.self ? { qr: "self" as const } : {}), slot: new Date().toISOString(), address: "", postal_code: "" } : { mode, slot }), ...(promo.code ? { promo_code: promo.code } : {}),
-          payment_method: pay === "on_site" ? "on_site" : "online",
+          payment_method: pay === "on_site" ? "on_site" : "online", cgv: true as const,
           ...(pay !== "on_site" ? { provider: pay, origin: window.location.origin } : {}),
           lines: lines.map((l) => ({ itemId: l.itemId, qty: l.qty, sel: l.sel })),
         },
@@ -217,8 +218,12 @@ function Checkout() {
               <StripePayment publishableKey={online.stripe} clientSecret={payment.clientSecret} label={`Payer ${euro(total)}`}
                 returnUrl={`${window.location.origin}/${restaurant.slug}/suivi/${payment.id}`} onCancel={() => setPayment(null)} />
             </div>
-          ) : (
-            <Button size="lg" className="mt-4 w-full font-semibold" disabled={!canSubmit || busy || (pay === "on_site" && !onSiteOk)} onClick={submit}>
+          ) : (<>
+            <label className="mt-4 flex min-h-11 items-start gap-3 text-sm">
+              <input type="checkbox" className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--primary)]" checked={cgv} onChange={(e) => setCgv(e.target.checked)} />
+              <span>J'accepte les <Link to="/$slug/cgv" params={{ slug: restaurant.slug }} target="_blank" className="underline">conditions générales de vente</Link> et la <Link to="/$slug/confidentialite" params={{ slug: restaurant.slug }} target="_blank" className="underline">politique de confidentialité</Link>.</span>
+            </label>
+            <Button size="lg" className="mt-4 w-full font-semibold" disabled={!canSubmit || !cgv || busy || (pay === "on_site" && !onSiteOk)} onClick={submit}>
               {busy ? "Envoi…" : pay === "on_site" ? `Valider la commande · ${euro(total)}` : pay === "paypal" ? `Payer avec PayPal · ${euro(total)}` : `Continuer vers le paiement · ${euro(total)}`}
             </Button>
           )}
