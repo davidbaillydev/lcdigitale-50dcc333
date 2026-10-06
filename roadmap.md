@@ -21,3 +21,7 @@ Verified on a temporary restaurant, now deactivated: upload and reload persisten
 - [x] Pages légales auto par restaurant (mentions, RGPD, CGV, cookies) + bandeau cookies + case CGV
 - [ ] Facturation : facture PDF par commande, puis Factur-X / plateforme agréée (compte externe requis)
 - [x] Factures PDF normalisées + Factur-X par commande
+
+- [x] Facturation électronique A : FAC-AAAA-NNNNN, TVA par plat, Factur-X BASIC, facture client, page Factures (ZIP/CSV/Excel)
+- [ ] Étape B : push web + emails Brevo (+ Twilio optionnel)
+- [ ] Étape C : traductions en base, empreinte CB réservations, cache
