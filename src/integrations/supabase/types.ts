@@ -201,6 +201,60 @@ export type Database = {
           },
         ]
       }
+      push_subscriptions: {
+        Row: {
+          audience: string
+          created_at: string
+          endpoint: string
+          id: string
+          last_at: string | null
+          last_body: string | null
+          last_title: string | null
+          last_url: string | null
+          order_id: string | null
+          restaurant_id: string | null
+        }
+        Insert: {
+          audience?: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          last_at?: string | null
+          last_body?: string | null
+          last_title?: string | null
+          last_url?: string | null
+          order_id?: string | null
+          restaurant_id?: string | null
+        }
+        Update: {
+          audience?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          last_at?: string | null
+          last_body?: string | null
+          last_title?: string | null
+          last_url?: string | null
+          order_id?: string | null
+          restaurant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "push_subscriptions_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurant_campaigns: {
         Row: {
           created_at: string
