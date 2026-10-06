@@ -117,6 +117,10 @@ export const createOrder = createServerFn({ method: "POST" })
       const { data: pc } = await supabaseAdmin.from("restaurant_promo_codes").select("id, uses").eq("restaurant_id", r.id).eq("code", promo.code).maybeSingle();
       if (pc) await supabaseAdmin.from("restaurant_promo_codes").update({ uses: pc.uses + 1 }).eq("id", pc.id);
     }
+    if (!provider && data.email) {
+      const { sendOrderConfirmation } = await import("./order-email.server");
+      await sendOrderConfirmation(supabaseAdmin, row.id, data.origin).catch((e) => console.error(e));
+    }
     const base = { id: row.id, order_number: row.order_number, clientSecret: null as string | null, redirectUrl: null as string | null, form: null as { action: string; fields: Record<string, string> } | null };
     if (provider === "paypal" || provider === "lyra") {
       const res = await startOnlinePayment(provider, { id: row.id, order_number: row.order_number, total: Number(row.total), restaurant_id: r.id, email: data.email || null }, r.name, `${data.origin}/${r.slug}/suivi/${row.id}`);
