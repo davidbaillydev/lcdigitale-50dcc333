@@ -30,3 +30,5 @@
 - Mobile admin: labelled records, constrained grids, 48px actions/44px toggles, bounded portals/sticky close bars. Desktop/public unchanged. Why: touch access without overflow.
 - Legal pages come from src/lib/legal.ts templates + restaurants.legal (agency writes); orders store CGV acceptance server-side. Why: compliant by default, traceable.
 - Web Push: payload-less VAPID pushes (no encryption lib); public/push-sw.js fetches the last message from /api/public/push/message; push_subscriptions is service-role only. Why: free, Worker-compatible, no third-party push service.
+- Reservations: public server fns insert via admin and create a Stripe SetupIntent with the restaurant's own keys (no charge); staff read/update via RLS + Realtime; no-show charge is an off-session PaymentIntent from a server fn after RLS read. Why: card guarantee without fees unless no-show.
+- Public restaurant data is cached in TanStack Query (15 min, key ['restaurant', slug]); live data (orders, stock, reservations) relies on Realtime invalidation. Why: fewer DB reads without stale service data.
