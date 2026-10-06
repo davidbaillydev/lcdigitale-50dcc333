@@ -23,5 +23,6 @@ Verified on a temporary restaurant, now deactivated: upload and reload persisten
 - [x] Factures PDF normalisées + Factur-X par commande
 
 - [x] Facturation électronique A : FAC-AAAA-NNNNN, TVA par plat, Factur-X BASIC, facture client, page Factures (ZIP/CSV/Excel)
-- [ ] Étape B : push web + emails Brevo (+ Twilio optionnel)
+- [x] Étape B1 : push web clients + application installable (icônes, Capacitor)
+- [ ] Étape B2 : push livreurs (attend le module Livreurs, étape 2), emails Brevo, Twilio optionnel
 - [ ] Étape C : traductions en base, empreinte CB réservations, cache

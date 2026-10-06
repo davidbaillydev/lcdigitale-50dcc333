@@ -29,3 +29,4 @@
 - Directory, restaurant workspace and KDS styling stays scoped; records stay database-driven. Why: preserve public branding, agency screens and service behavior.
 - Mobile admin: labelled records, constrained grids, 48px actions/44px toggles, bounded portals/sticky close bars. Desktop/public unchanged. Why: touch access without overflow.
 - Legal pages come from src/lib/legal.ts templates + restaurants.legal (agency writes); orders store CGV acceptance server-side. Why: compliant by default, traceable.
+- Web Push: payload-less VAPID pushes (no encryption lib); public/push-sw.js fetches the last message from /api/public/push/message; push_subscriptions is service-role only. Why: free, Worker-compatible, no third-party push service.
