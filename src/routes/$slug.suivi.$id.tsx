@@ -7,10 +7,12 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { getOrderStatus } from "@/lib/orders.functions";
 import { getCustomerInvoice } from "@/lib/invoice.functions";
+import { subscribeOrderPush } from "@/lib/push.functions";
+import { getPushEndpoint, needsInstallForPush, pushSupported } from "@/lib/push";
 import { toast } from "sonner";
 import { confirmOnlinePayment } from "@/lib/payments.functions";
 import { useCart } from "@/lib/cart";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { euro } from "@/lib/menu";
 import { fmtTime } from "@/lib/shop";
 import { cn } from "@/lib/utils";
@@ -109,6 +111,7 @@ function Tracking() {
             ))}
           </div>
         )}
+        {!["done", "cancelled"].includes(data.status) && <PushOptIn orderId={data.id} />}
         {["accepted", "preparing", "ready", "delivering", "done"].includes(data.status) && <InvoiceDownload orderId={data.id} />}
         {data.review_url && (data.status === "ready" || data.status === "done") && (
           <div className="mt-8 rounded-xl border border-primary bg-primary/10 p-4 text-center">
@@ -143,5 +146,24 @@ function InvoiceDownload({ orderId }: { orderId: string }) {
       try { const inv = await get({ data: { orderId } }); const { downloadInvoice } = await import("@/lib/invoice"); await downloadInvoice(inv); }
       catch (e) { toast.error(e instanceof Error ? e.message : "Facture indisponible"); }
     }}>Télécharger ma facture (PDF / Factur-X)</Button>
+  );
+}
+
+function PushOptIn({ orderId }: { orderId: string }) {
+  const sub = useServerFn(subscribeOrderPush);
+  const [state, setState] = useState<"idle" | "busy" | "on" | "off">("idle");
+  useEffect(() => { if (!pushSupported()) setState("off"); else if (Notification.permission === "granted" && localStorage.getItem(`push-${orderId}`)) setState("on"); }, [orderId]);
+  if (state === "off") return needsInstallForPush() ? <p className="mt-4 text-sm text-muted-foreground">Pour être prévenu sur iPhone, ajoutez ce site à l'écran d'accueil (Partager → « Sur l'écran d'accueil »).</p> : null;
+  if (state === "on") return <p className="mt-4 text-sm text-muted-foreground">Notifications activées : vous serez prévenu à chaque étape.</p>;
+  return (
+    <Button variant="secondary" className="mt-4 min-h-12 w-full" disabled={state === "busy"} onClick={async () => {
+      setState("busy");
+      try {
+        const ep = await getPushEndpoint();
+        if (!ep) { toast.error("Notifications refusées par l'appareil."); setState("idle"); return; }
+        await sub({ data: { orderId, endpoint: ep } });
+        localStorage.setItem(`push-${orderId}`, "1"); setState("on"); toast.success("Notifications activées");
+      } catch (e) { toast.error(e instanceof Error ? e.message : "Activation impossible"); setState("idle"); }
+    }}>Me prévenir quand ma commande avance</Button>
   );
 }

@@ -43,6 +43,7 @@ import { Route as AuthenticatedEspaceSlugClientsRouteImport } from './routes/_au
 import { Route as AuthenticatedEspaceSlugEquipeRouteImport } from './routes/_authenticated/espace.$slug.equipe'
 import { Route as AuthenticatedEspaceSlugQrRouteImport } from './routes/_authenticated/espace.$slug.qr'
 import { Route as AuthenticatedEspaceSlugReglagesRouteImport } from './routes/_authenticated/espace.$slug.reglages'
+import { Route as ApiPublicPushMessageRouteImport } from './routes/api/public/push/message'
 import { Route as ApiPublicRestaurantBannerIdRouteImport } from './routes/api/public/restaurant-banner/$id'
 import { Route as ApiPublicVapiRestaurantIdRouteImport } from './routes/api/public/vapi.$restaurantId'
 import { Route as ApiPublicMenuPhotoRestaurantIdFileRouteImport } from './routes/api/public/menu-photo.$restaurantId.$file'
@@ -225,6 +226,11 @@ const AuthenticatedEspaceSlugReglagesRoute =
     path: '/espace/$slug/reglages',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicPushMessageRoute = ApiPublicPushMessageRouteImport.update({
+  id: '/api/public/push/message',
+  path: '/api/public/push/message',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicRestaurantBannerIdRoute =
   ApiPublicRestaurantBannerIdRouteImport.update({
     id: '/api/public/restaurant-banner/$id',
@@ -277,6 +283,7 @@ export interface FileRoutesByFullPath {
   '/espace/$slug/equipe': typeof AuthenticatedEspaceSlugEquipeRoute
   '/espace/$slug/qr': typeof AuthenticatedEspaceSlugQrRoute
   '/espace/$slug/reglages': typeof AuthenticatedEspaceSlugReglagesRoute
+  '/api/public/push/message': typeof ApiPublicPushMessageRoute
   '/api/public/restaurant-banner/$id': typeof ApiPublicRestaurantBannerIdRoute
   '/api/public/vapi/$restaurantId': typeof ApiPublicVapiRestaurantIdRoute
   '/espace/$slug/': typeof AuthenticatedEspaceSlugIndexRoute
@@ -313,6 +320,7 @@ export interface FileRoutesByTo {
   '/espace/$slug/equipe': typeof AuthenticatedEspaceSlugEquipeRoute
   '/espace/$slug/qr': typeof AuthenticatedEspaceSlugQrRoute
   '/espace/$slug/reglages': typeof AuthenticatedEspaceSlugReglagesRoute
+  '/api/public/push/message': typeof ApiPublicPushMessageRoute
   '/api/public/restaurant-banner/$id': typeof ApiPublicRestaurantBannerIdRoute
   '/api/public/vapi/$restaurantId': typeof ApiPublicVapiRestaurantIdRoute
   '/espace/$slug': typeof AuthenticatedEspaceSlugIndexRoute
@@ -353,6 +361,7 @@ export interface FileRoutesById {
   '/_authenticated/espace/$slug/equipe': typeof AuthenticatedEspaceSlugEquipeRoute
   '/_authenticated/espace/$slug/qr': typeof AuthenticatedEspaceSlugQrRoute
   '/_authenticated/espace/$slug/reglages': typeof AuthenticatedEspaceSlugReglagesRoute
+  '/api/public/push/message': typeof ApiPublicPushMessageRoute
   '/api/public/restaurant-banner/$id': typeof ApiPublicRestaurantBannerIdRoute
   '/api/public/vapi/$restaurantId': typeof ApiPublicVapiRestaurantIdRoute
   '/_authenticated/espace/$slug/': typeof AuthenticatedEspaceSlugIndexRoute
@@ -393,6 +402,7 @@ export interface FileRouteTypes {
     | '/espace/$slug/equipe'
     | '/espace/$slug/qr'
     | '/espace/$slug/reglages'
+    | '/api/public/push/message'
     | '/api/public/restaurant-banner/$id'
     | '/api/public/vapi/$restaurantId'
     | '/espace/$slug/'
@@ -429,6 +439,7 @@ export interface FileRouteTypes {
     | '/espace/$slug/equipe'
     | '/espace/$slug/qr'
     | '/espace/$slug/reglages'
+    | '/api/public/push/message'
     | '/api/public/restaurant-banner/$id'
     | '/api/public/vapi/$restaurantId'
     | '/espace/$slug'
@@ -468,6 +479,7 @@ export interface FileRouteTypes {
     | '/_authenticated/espace/$slug/equipe'
     | '/_authenticated/espace/$slug/qr'
     | '/_authenticated/espace/$slug/reglages'
+    | '/api/public/push/message'
     | '/api/public/restaurant-banner/$id'
     | '/api/public/vapi/$restaurantId'
     | '/_authenticated/espace/$slug/'
@@ -488,6 +500,7 @@ export interface RootRouteChildren {
   SuiviIdRoute: typeof SuiviIdRoute
   CuisineIndexRoute: typeof CuisineIndexRoute
   ApiPublicLyraIpnRoute: typeof ApiPublicLyraIpnRoute
+  ApiPublicPushMessageRoute: typeof ApiPublicPushMessageRoute
   ApiPublicRestaurantBannerIdRoute: typeof ApiPublicRestaurantBannerIdRoute
   ApiPublicVapiRestaurantIdRoute: typeof ApiPublicVapiRestaurantIdRoute
   ApiPublicMenuPhotoRestaurantIdFileRoute: typeof ApiPublicMenuPhotoRestaurantIdFileRoute
@@ -733,6 +746,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEspaceSlugReglagesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/push/message': {
+      id: '/api/public/push/message'
+      path: '/api/public/push/message'
+      fullPath: '/api/public/push/message'
+      preLoaderRoute: typeof ApiPublicPushMessageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/restaurant-banner/$id': {
       id: '/api/public/restaurant-banner/$id'
       path: '/api/public/restaurant-banner/$id'
@@ -839,6 +859,7 @@ const rootRouteChildren: RootRouteChildren = {
   SuiviIdRoute: SuiviIdRoute,
   CuisineIndexRoute: CuisineIndexRoute,
   ApiPublicLyraIpnRoute: ApiPublicLyraIpnRoute,
+  ApiPublicPushMessageRoute: ApiPublicPushMessageRoute,
   ApiPublicRestaurantBannerIdRoute: ApiPublicRestaurantBannerIdRoute,
   ApiPublicVapiRestaurantIdRoute: ApiPublicVapiRestaurantIdRoute,
   ApiPublicMenuPhotoRestaurantIdFileRoute:

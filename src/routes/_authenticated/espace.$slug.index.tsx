@@ -8,6 +8,7 @@ import { KitchenLock } from "@/components/KitchenLock";
 import { PrinterSetup } from "@/components/PrinterSetup";
 import { StockDialog } from "@/components/StockDialog";
 import { issueInvoice } from "@/lib/invoice.functions";
+import { notifyOrderStatus } from "@/lib/push.functions";
 import { downloadInvoice } from "@/lib/invoice";
 import { FileText } from "lucide-react";
 import { toast } from "sonner";
@@ -163,10 +164,12 @@ function Kitchen() {
     audio.current.resume(); beep(audio.current); setSound(true);
   };
 
+  const notify = useServerFn(notifyOrderStatus);
   const move = async (o: Order, status: string) => {
     setOrders((prev) => prev.map((x) => (x.id === o.id ? { ...x, status } : x)));
     const { error } = await supabase.from("orders").update({ status, updated_at: new Date().toISOString() }).eq("id", o.id);
-    if (error) { toast.error("Mise à jour impossible"); load(); }
+    if (error) { toast.error("Mise à jour impossible"); load(); return; }
+    notify({ data: { orderId: o.id } }).catch(() => {});
   };
 
   if (loading) return <p className="p-10 text-center text-muted-foreground">Chargement…</p>;
