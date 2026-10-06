@@ -1,12 +1,16 @@
 /** Facture PDF + Factur-X (profil MINIMUM, XML CII embarqué). Appeler depuis un gestionnaire d'événement. */
 export type InvoiceData = {
-  seller: { company: string; form: string; capital: string; siret: string; rcs: string; vat: string; tradeName: string; address: string; city: string; phone: string; email: string };
+  seller: { company: string; form: string; capital: string; siret: string; rcs: string; vat: string; seat?: string; tradeName: string; address: string; city: string; phone: string; email: string; logo?: string };
   buyer: { name: string; email: string; address: string };
-  orderNumber: number; orderDate: string;
-  lines: { name: string; qty: number; unitTTC: number; totalTTC: number }[];
-  vatRate: number; totalHT: number; totalVAT: number; totalTTC: number; paid: boolean; paymentMethod: string;
+  orderNumber: number; orderId?: string; orderDate: string; serviceDate?: string;
+  lines: { name: string; qty: number; unitTTC: number; totalTTC: number; vatRate?: number }[];
+  vatRate: number; vatBreakdown?: { rate: number; ht: number; vat: number; ttc: number }[];
+  totalHT: number; totalVAT: number; totalTTC: number; paid: boolean; paymentMethod: string; paymentLabel?: string;
 };
 export type Invoice = { number: string; issued_at: string; data: InvoiceData };
+
+export const breakdown = (d: InvoiceData) => d.vatBreakdown ?? [{ rate: d.vatRate, ht: d.totalHT, vat: d.totalVAT, ttc: d.totalTTC }];
+const lineRate = (d: InvoiceData, l: InvoiceData["lines"][number]) => l.vatRate ?? d.vatRate;
 
 const esc = (s: string) => s.replace(/[<>&"']/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&apos;" })[c]!);
 const d8 = (iso: string) => iso.slice(0, 10).replace(/-/g, "");
@@ -17,17 +21,19 @@ export function facturxXml(inv: Invoice) {
   const { seller: s, buyer: b } = inv.data;
   return `<?xml version="1.0" encoding="UTF-8"?>
 <rsm:CrossIndustryInvoice xmlns:rsm="urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100" xmlns:ram="urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100" xmlns:udt="urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100">
-<rsm:ExchangedDocumentContext><ram:GuidelineSpecifiedDocumentContextParameter><ram:ID>urn:factur-x.eu:1p0:minimum</ram:ID></ram:GuidelineSpecifiedDocumentContextParameter></rsm:ExchangedDocumentContext>
+<rsm:ExchangedDocumentContext><ram:GuidelineSpecifiedDocumentContextParameter><ram:ID>urn:cen.eu:en16931:2017#compliant#urn:factur-x.eu:1p0:basic</ram:ID></ram:GuidelineSpecifiedDocumentContextParameter></rsm:ExchangedDocumentContext>
 <rsm:ExchangedDocument><ram:ID>${esc(inv.number)}</ram:ID><ram:TypeCode>380</ram:TypeCode><ram:IssueDateTime><udt:DateTimeString format="102">${d8(inv.issued_at)}</udt:DateTimeString></ram:IssueDateTime></rsm:ExchangedDocument>
 <rsm:SupplyChainTradeTransaction>
+${inv.data.lines.map((l, i) => { const r = lineRate(inv.data, l); const k = 1 + r / 100; return `<ram:IncludedSupplyChainTradeLineItem><ram:AssociatedDocumentLineDocument><ram:LineID>${i + 1}</ram:LineID></ram:AssociatedDocumentLineDocument><ram:SpecifiedTradeProduct><ram:Name>${esc(l.name)}</ram:Name></ram:SpecifiedTradeProduct><ram:SpecifiedLineTradeAgreement><ram:NetPriceProductTradePrice><ram:ChargeAmount>${n2(l.unitTTC / k)}</ram:ChargeAmount></ram:NetPriceProductTradePrice></ram:SpecifiedLineTradeAgreement><ram:SpecifiedLineTradeDelivery><ram:BilledQuantity unitCode="C62">${l.qty}</ram:BilledQuantity></ram:SpecifiedLineTradeDelivery><ram:SpecifiedLineTradeSettlement><ram:ApplicableTradeTax><ram:TypeCode>VAT</ram:TypeCode><ram:CategoryCode>S</ram:CategoryCode><ram:RateApplicablePercent>${r}</ram:RateApplicablePercent></ram:ApplicableTradeTax><ram:SpecifiedTradeSettlementLineMonetarySummation><ram:LineTotalAmount>${n2(l.totalTTC / k)}</ram:LineTotalAmount></ram:SpecifiedTradeSettlementLineMonetarySummation></ram:SpecifiedLineTradeSettlement></ram:IncludedSupplyChainTradeLineItem>`; }).join("\n")}
 <ram:ApplicableHeaderTradeAgreement>
 <ram:BuyerReference>${inv.data.orderNumber}</ram:BuyerReference>
-<ram:SellerTradeParty><ram:Name>${esc(s.company)}</ram:Name><ram:SpecifiedLegalOrganization><ram:ID schemeID="0002">${esc(s.siret.replace(/\s/g, "").slice(0, 9))}</ram:ID></ram:SpecifiedLegalOrganization><ram:PostalTradeAddress><ram:CountryID>FR</ram:CountryID></ram:PostalTradeAddress>${s.vat ? `<ram:SpecifiedTaxRegistration><ram:ID schemeID="VA">${esc(s.vat.replace(/\s/g, ""))}</ram:ID></ram:SpecifiedTaxRegistration>` : ""}</ram:SellerTradeParty>
+<ram:SellerTradeParty><ram:Name>${esc(s.company)}</ram:Name><ram:SpecifiedLegalOrganization><ram:ID schemeID="0002">${esc(s.siret.replace(/\s/g, "").slice(0, 9))}</ram:ID></ram:SpecifiedLegalOrganization><ram:PostalTradeAddress><ram:LineOne>${esc(s.seat || [s.address, s.city].filter(Boolean).join(", "))}</ram:LineOne><ram:CountryID>FR</ram:CountryID></ram:PostalTradeAddress>${s.vat ? `<ram:SpecifiedTaxRegistration><ram:ID schemeID="VA">${esc(s.vat.replace(/\s/g, ""))}</ram:ID></ram:SpecifiedTaxRegistration>` : ""}</ram:SellerTradeParty>
 <ram:BuyerTradeParty><ram:Name>${esc(b.name)}</ram:Name></ram:BuyerTradeParty>
 </ram:ApplicableHeaderTradeAgreement>
-<ram:ApplicableHeaderTradeDelivery/>
+<ram:ApplicableHeaderTradeDelivery><ram:ActualDeliverySupplyChainEvent><ram:OccurrenceDateTime><udt:DateTimeString format="102">${d8(inv.data.serviceDate ?? inv.data.orderDate)}</udt:DateTimeString></ram:OccurrenceDateTime></ram:ActualDeliverySupplyChainEvent></ram:ApplicableHeaderTradeDelivery>
 <ram:ApplicableHeaderTradeSettlement><ram:InvoiceCurrencyCode>EUR</ram:InvoiceCurrencyCode>
-<ram:SpecifiedTradeSettlementHeaderMonetarySummation><ram:TaxBasisTotalAmount>${n2(inv.data.totalHT)}</ram:TaxBasisTotalAmount><ram:TaxTotalAmount currencyID="EUR">${n2(inv.data.totalVAT)}</ram:TaxTotalAmount><ram:GrandTotalAmount>${n2(inv.data.totalTTC)}</ram:GrandTotalAmount><ram:DuePayableAmount>${n2(inv.data.paid ? 0 : inv.data.totalTTC)}</ram:DuePayableAmount></ram:SpecifiedTradeSettlementHeaderMonetarySummation>
+${breakdown(inv.data).map((b) => `<ram:ApplicableTradeTax><ram:CalculatedAmount>${n2(b.vat)}</ram:CalculatedAmount><ram:TypeCode>VAT</ram:TypeCode><ram:BasisAmount>${n2(b.ht)}</ram:BasisAmount><ram:CategoryCode>S</ram:CategoryCode><ram:RateApplicablePercent>${b.rate}</ram:RateApplicablePercent></ram:ApplicableTradeTax>`).join("")}
+<ram:SpecifiedTradeSettlementHeaderMonetarySummation><ram:LineTotalAmount>${n2(inv.data.totalHT)}</ram:LineTotalAmount><ram:TaxBasisTotalAmount>${n2(inv.data.totalHT)}</ram:TaxBasisTotalAmount><ram:TaxTotalAmount currencyID="EUR">${n2(inv.data.totalVAT)}</ram:TaxTotalAmount><ram:GrandTotalAmount>${n2(inv.data.totalTTC)}</ram:GrandTotalAmount><ram:DuePayableAmount>${n2(inv.data.paid ? 0 : inv.data.totalTTC)}</ram:DuePayableAmount></ram:SpecifiedTradeSettlementHeaderMonetarySummation>
 </ram:ApplicableHeaderTradeSettlement>
 </rsm:SupplyChainTradeTransaction>
 </rsm:CrossIndustryInvoice>`;
@@ -37,7 +43,7 @@ const XMP = (title: string) => `<?xpacket begin="\ufeff" id="W5M0MpCehiHzreSzNTc
 <x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
 <rdf:Description rdf:about="" xmlns:pdfaid="http://www.aiim.org/pdfa/ns/id/"><pdfaid:part>3</pdfaid:part><pdfaid:conformance>B</pdfaid:conformance></rdf:Description>
 <rdf:Description rdf:about="" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title><rdf:Alt><rdf:li xml:lang="x-default">${esc(title)}</rdf:li></rdf:Alt></dc:title></rdf:Description>
-<rdf:Description rdf:about="" xmlns:fx="urn:factur-x:pdfa:CrossIndustryDocument:invoice:1p0#"><fx:DocumentType>INVOICE</fx:DocumentType><fx:DocumentFileName>factur-x.xml</fx:DocumentFileName><fx:Version>1.0</fx:Version><fx:ConformanceLevel>MINIMUM</fx:ConformanceLevel></rdf:Description>
+<rdf:Description rdf:about="" xmlns:fx="urn:factur-x:pdfa:CrossIndustryDocument:invoice:1p0#"><fx:DocumentType>INVOICE</fx:DocumentType><fx:DocumentFileName>factur-x.xml</fx:DocumentFileName><fx:Version>1.0</fx:Version><fx:ConformanceLevel>BASIC</fx:ConformanceLevel></rdf:Description>
 <rdf:Description rdf:about="" xmlns:pdfaExtension="http://www.aiim.org/pdfa/ns/extension/" xmlns:pdfaSchema="http://www.aiim.org/pdfa/ns/schema#" xmlns:pdfaProperty="http://www.aiim.org/pdfa/ns/property#"><pdfaExtension:schemas><rdf:Bag><rdf:li rdf:parseType="Resource"><pdfaSchema:schema>Factur-X PDFA Extension Schema</pdfaSchema:schema><pdfaSchema:namespaceURI>urn:factur-x:pdfa:CrossIndustryDocument:invoice:1p0#</pdfaSchema:namespaceURI><pdfaSchema:prefix>fx</pdfaSchema:prefix><pdfaSchema:property><rdf:Seq>
 <rdf:li rdf:parseType="Resource"><pdfaProperty:name>DocumentFileName</pdfaProperty:name><pdfaProperty:valueType>Text</pdfaProperty:valueType><pdfaProperty:category>external</pdfaProperty:category><pdfaProperty:description>Name of the embedded XML invoice file</pdfaProperty:description></rdf:li>
 <rdf:li rdf:parseType="Resource"><pdfaProperty:name>DocumentType</pdfaProperty:name><pdfaProperty:valueType>Text</pdfaProperty:valueType><pdfaProperty:category>external</pdfaProperty:category><pdfaProperty:description>INVOICE</pdfaProperty:description></rdf:li>
@@ -46,33 +52,37 @@ const XMP = (title: string) => `<?xpacket begin="\ufeff" id="W5M0MpCehiHzreSzNTc
 </rdf:Seq></pdfaSchema:property></rdf:li></rdf:Bag></pdfaExtension:schemas></rdf:Description>
 </rdf:RDF></x:xmpmeta><?xpacket end="w"?>`;
 
-export async function downloadInvoice(inv: Invoice) {
+export async function buildInvoicePdf(inv: Invoice): Promise<Uint8Array> {
   const { jsPDF } = await import("jspdf");
   const { default: autoTable } = await import("jspdf-autotable");
   const { seller: s, buyer: b } = inv.data;
   const doc = new jsPDF();
   doc.setFontSize(20); doc.text("FACTURE", 14, 20);
   doc.setFontSize(10);
-  doc.text([`N° ${inv.number}`, `Date d'émission : ${new Date(inv.issued_at).toLocaleDateString("fr-FR")}`, `Date de la vente : ${new Date(inv.data.orderDate).toLocaleDateString("fr-FR")}`, `Commande n° ${inv.data.orderNumber}`], 140, 16);
+  doc.text([`N° ${inv.number}`, `Date d'émission : ${new Date(inv.issued_at).toLocaleDateString("fr-FR")}`, `Date de prestation : ${new Date(inv.data.serviceDate ?? inv.data.orderDate).toLocaleDateString("fr-FR")}`, `Commande n° ${inv.data.orderNumber}`], 135, 16);
+  if (inv.data.orderId) { doc.setFontSize(7); doc.text(`Réf. ${inv.data.orderId}`, 135, 37); doc.setFontSize(10); }
   doc.setFont("helvetica", "bold"); doc.text("Vendeur", 14, 42); doc.text("Client", 110, 42); doc.setFont("helvetica", "normal");
-  doc.text([s.company + (s.form ? ` (${s.form})` : ""), s.tradeName !== s.company ? `Enseigne : ${s.tradeName}` : "", [s.address, s.city].filter(Boolean).join(", "), `SIRET : ${s.siret}${s.rcs ? ` — RCS ${s.rcs}` : ""}`, s.capital ? `Capital : ${s.capital}` : "", `TVA intracom. : ${s.vat || "non communiqué"}`].filter(Boolean), 14, 48, { maxWidth: 90 });
+  doc.text([s.company + (s.form ? ` (${s.form})` : ""), s.tradeName !== s.company ? `Enseigne : ${s.tradeName}` : "", [s.address, s.city].filter(Boolean).join(", "), s.seat ? `Siège : ${s.seat}` : "", `SIRET : ${s.siret}${s.rcs ? ` — RCS ${s.rcs}` : ""}`, s.capital ? `Capital : ${s.capital}` : "", `TVA intracom. : ${s.vat || "non communiqué"}`].filter(Boolean), 14, 48, { maxWidth: 90 });
   doc.text([b.name, b.address, b.email].filter(Boolean), 110, 48, { maxWidth: 85 });
-  const k = 1 + inv.data.vatRate / 100;
   autoTable(doc, {
     startY: 82,
     head: [["Désignation", "Qté", "PU HT", "TVA", "Total HT", "Total TTC"]],
-    body: inv.data.lines.map((l) => [l.name, String(l.qty), eur(l.unitTTC / k), `${inv.data.vatRate} %`, eur(l.totalTTC / k), eur(l.totalTTC)]),
+    body: inv.data.lines.map((l) => { const r = lineRate(inv.data, l); const k = 1 + r / 100; return [l.name, String(l.qty), eur(l.unitTTC / k), `${String(r).replace(".", ",")} %`, eur(l.totalTTC / k), eur(l.totalTTC)]; }),
     styles: { fontSize: 8 }, headStyles: { fillColor: [0, 122, 245] }, columnStyles: { 0: { cellWidth: 70 } },
   });
   let y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
-  doc.text([`Total HT : ${eur(inv.data.totalHT)}`, `TVA ${inv.data.vatRate} % : ${eur(inv.data.totalVAT)}`], 140, y);
-  doc.setFont("helvetica", "bold"); doc.text(`Total TTC : ${eur(inv.data.totalTTC)}`, 140, y + 12); doc.setFont("helvetica", "normal");
-  y += 24;
+  const bd = breakdown(inv.data);
+  doc.text([`Total HT : ${eur(inv.data.totalHT)}`, ...bd.map((b) => `TVA ${String(b.rate).replace(".", ",")} % (base ${eur(b.ht)}) : ${eur(b.vat)}`), `Total TVA : ${eur(inv.data.totalVAT)}`], 120, y);
+  y += 6 * (bd.length + 2);
+  doc.setFont("helvetica", "bold"); doc.text(`Total TTC : ${eur(inv.data.totalTTC)}`, 120, y); doc.setFont("helvetica", "normal");
+  y += 8;
+  doc.text(`Paiement : ${inv.data.paymentLabel ?? inv.data.paymentMethod} — ${inv.data.paid ? "Payée" : "À régler"}`, 14, y);
+  y += 10;
   doc.setFontSize(8);
   doc.text([
-    inv.data.paid ? `Facture acquittée${inv.data.paymentMethod === "online" ? " — paiement en ligne" : ""}.` : "Paiement à réception, sans escompte.",
+    inv.data.paid ? "Facture acquittée." : "Paiement à réception, pas d'escompte pour paiement anticipé.",
     "Pénalités de retard : 3 fois le taux d'intérêt légal. Indemnité forfaitaire pour frais de recouvrement (clients professionnels) : 40 € (art. L441-10 C. com.).",
-    "Document généré au format Factur-X (XML CII embarqué).",
+    "Document généré au format Factur-X BASIC (EN 16931, XML CII embarqué, PDF/A-3). Conservez cette facture 10 ans (art. L123-22 C. com.).",
   ], 14, y, { maxWidth: 180 });
   const base = new Uint8Array(doc.output("arraybuffer"));
 
@@ -83,7 +93,11 @@ export async function downloadInvoice(inv: Invoice) {
   await pdf.attach(new TextEncoder().encode(facturxXml(inv)), "factur-x.xml", { mimeType: "text/xml", description: "Factur-X invoice", afRelationship: AFRelationship.Data, creationDate: new Date(inv.issued_at), modificationDate: new Date(inv.issued_at) });
   const meta = pdf.context.stream(XMP(title), { Type: "Metadata", Subtype: "XML" });
   pdf.catalog.set(PDFName.of("Metadata"), pdf.context.register(meta));
-  const bytes = await pdf.save({ useObjectStreams: false });
+  return pdf.save({ useObjectStreams: false });
+}
+
+export async function downloadInvoice(inv: Invoice) {
+  const bytes = await buildInvoicePdf(inv);
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([bytes as BlobPart], { type: "application/pdf" }));
   a.download = `${inv.number}.pdf`; a.click();
