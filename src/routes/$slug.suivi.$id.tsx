@@ -141,12 +141,18 @@ function Tracking() {
 
 function InvoiceDownload({ orderId }: { orderId: string }) {
   const get = useServerFn(getCustomerInvoice);
-  return (
-    <Button variant="secondary" className="mt-4 min-h-12 w-full" onClick={async () => {
-      try { const inv = await get({ data: { orderId } }); const { downloadInvoice } = await import("@/lib/invoice"); await downloadInvoice(inv); }
-      catch (e) { toast.error(e instanceof Error ? e.message : "Facture indisponible"); }
-    }}>Télécharger ma facture (PDF / Factur-X)</Button>
-  );
+  const run = async () => {
+    try { const inv = await get({ data: { orderId } }); const { downloadInvoice } = await import("@/lib/invoice"); await downloadInvoice(inv); }
+    catch (e) { toast.error(e instanceof Error ? e.message : "Facture indisponible"); }
+  };
+  const done = useRef(false);
+  useEffect(() => {
+    if (done.current || new URLSearchParams(window.location.search).get("facture") !== "1") return;
+    done.current = true;
+    window.history.replaceState(null, "", window.location.pathname);
+    run();
+  }, []);
+  return <Button variant="secondary" className="mt-4 min-h-12 w-full" onClick={run}>Télécharger ma facture (PDF / Factur-X)</Button>;
 }
 
 function PushOptIn({ orderId }: { orderId: string }) {
