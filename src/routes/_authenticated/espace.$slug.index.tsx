@@ -200,6 +200,7 @@ function Kitchen() {
         </div>
         <nav aria-label="Gestion du restaurant" className="kds-navigation mt-5 flex flex-wrap items-center gap-2 border-t border-border pt-4">
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/carte" params={{ slug }}>Carte</Link></Button>}
+        <Button asChild variant="secondary"><Link to="/espace/$slug/reservations" params={{ slug }}>Réservations</Link></Button>
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/reglages" params={{ slug }}>Réglages</Link></Button>}
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/qr" params={{ slug }}>QR tables & avis</Link></Button>}
         {restaurant?.role === "agency" && <Button asChild variant="secondary"><Link to="/espace/$slug/equipe" params={{ slug }}><Users /> Équipe</Link></Button>}
