@@ -1,0 +1,6 @@
+{
+  "appId": "app.lcdigitale.commande",
+  "appName": "LC Digitale",
+  "webDir": "dist/client",
+  "server": { "url": "https://lcdigitale.lovable.app", "cleartext": false }
+}
