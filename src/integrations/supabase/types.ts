@@ -258,6 +258,74 @@ export type Database = {
           },
         ]
       }
+      reservations: {
+        Row: {
+          charge_ref: string | null
+          charged_amount: number | null
+          created_at: string
+          customer_name: string
+          email: string | null
+          id: string
+          no_show_fee: number
+          notes: string | null
+          party_size: number
+          payment_method: string | null
+          phone: string
+          restaurant_id: string
+          setup_intent: string | null
+          starts_at: string
+          status: string
+          stripe_customer: string | null
+          updated_at: string
+        }
+        Insert: {
+          charge_ref?: string | null
+          charged_amount?: number | null
+          created_at?: string
+          customer_name: string
+          email?: string | null
+          id?: string
+          no_show_fee?: number
+          notes?: string | null
+          party_size: number
+          payment_method?: string | null
+          phone: string
+          restaurant_id: string
+          setup_intent?: string | null
+          starts_at: string
+          status?: string
+          stripe_customer?: string | null
+          updated_at?: string
+        }
+        Update: {
+          charge_ref?: string | null
+          charged_amount?: number | null
+          created_at?: string
+          customer_name?: string
+          email?: string | null
+          id?: string
+          no_show_fee?: number
+          notes?: string | null
+          party_size?: number
+          payment_method?: string | null
+          phone?: string
+          restaurant_id?: string
+          setup_intent?: string | null
+          starts_at?: string
+          status?: string
+          stripe_customer?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservations_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurant_campaigns: {
         Row: {
           created_at: string

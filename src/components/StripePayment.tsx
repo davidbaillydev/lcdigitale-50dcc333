@@ -6,17 +6,17 @@ import { Button } from "@/components/ui/button";
 const cache: Record<string, ReturnType<typeof loadStripe>> = {};
 
 /** Formulaire sécurisé Stripe (carte, Apple Pay, Google Pay). */
-export function StripePayment({ publishableKey, clientSecret, returnUrl, label, onCancel }: { publishableKey: string; clientSecret: string; returnUrl: string; label: string; onCancel: () => void }) {
+export function StripePayment({ publishableKey, clientSecret, returnUrl, label, onCancel, setup = false }: { publishableKey: string; clientSecret: string; returnUrl: string; label: string; onCancel: () => void; setup?: boolean }) {
   const stripe = useMemo(() => (cache[publishableKey] ??= loadStripe(publishableKey)), [publishableKey]);
   const dark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
   return (
     <Elements stripe={stripe} options={{ clientSecret, locale: "fr", appearance: { theme: dark ? "night" : "stripe" } }}>
-      <Form returnUrl={returnUrl} label={label} onCancel={onCancel} />
+      <Form returnUrl={returnUrl} label={label} onCancel={onCancel} setup={setup} />
     </Elements>
   );
 }
 
-function Form({ returnUrl, label, onCancel }: { returnUrl: string; label: string; onCancel: () => void }) {
+function Form({ returnUrl, label, onCancel, setup }: { returnUrl: string; label: string; onCancel: () => void; setup: boolean }) {
   const stripe = useStripe();
   const elements = useElements();
   const [busy, setBusy] = useState(false);
@@ -24,7 +24,9 @@ function Form({ returnUrl, label, onCancel }: { returnUrl: string; label: string
   const pay = async () => {
     if (!stripe || !elements) return;
     setBusy(true); setErr("");
-    const { error } = await stripe.confirmPayment({ elements, confirmParams: { return_url: returnUrl } });
+    const { error } = setup
+      ? await stripe.confirmSetup({ elements, confirmParams: { return_url: returnUrl } })
+      : await stripe.confirmPayment({ elements, confirmParams: { return_url: returnUrl } });
     // On n'arrive ici qu'en cas d'erreur (sinon Stripe redirige vers la page de suivi)
     setErr(error?.message ?? "Le paiement n'a pas abouti.");
     setBusy(false);

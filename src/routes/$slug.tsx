@@ -4,9 +4,18 @@ import { getRestaurant } from "@/lib/restaurants.functions";
 import { CartProvider } from "@/lib/cart";
 import { BrandTheme } from "@/lib/brand";
 
+// Carte, horaires et mentions légales : mis en cache 15 min côté navigateur
+const restaurantQuery = (slug: string) => ({
+  queryKey: ["restaurant", slug],
+  queryFn: () => getRestaurant({ data: { slug } }),
+  staleTime: 15 * 60_000,
+});
+
 export const Route = createFileRoute("/$slug")({
-  loader: async ({ params }) => {
-    const restaurant = await getRestaurant({ data: { slug: params.slug } });
+  loader: async ({ params, context }) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const queryClient = (context as any).queryClient as import("@tanstack/react-query").QueryClient | undefined;
+    const restaurant = queryClient ? await queryClient.ensureQueryData(restaurantQuery(params.slug)) : await getRestaurant({ data: { slug: params.slug } });
     if (!restaurant) throw notFound();
     return { restaurant };
   },
