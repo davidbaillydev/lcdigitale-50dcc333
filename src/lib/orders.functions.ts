@@ -62,7 +62,7 @@ export const createOrder = createServerFn({ method: "POST" })
       const err = validateSelections(item, l.sel);
       if (err) throw new Error(err);
       const unit = unitPrice(item, l.sel);
-      return { id: item.id, name: item.name, qty: l.qty, unit, total: Math.round(unit * l.qty * 100) / 100, details: describeSelections(item, l.sel), ...(item.allergens?.length ? { allergens: item.allergens } : {}) };
+      return { id: item.id, name: item.name, qty: l.qty, unit, total: Math.round(unit * l.qty * 100) / 100, details: describeSelections(item, l.sel), ...(item.allergens?.length ? { allergens: item.allergens } : {}), ...(item.vatRate ? { vatRate: item.vatRate } : {}) };
     });
     const subtotal = Math.round(items.reduce((s, i) => s + i.total, 0) * 100) / 100;
 
@@ -178,7 +178,7 @@ export const createKioskOrder = createServerFn({ method: "POST" })
       const err = validateSelections(item, l.sel);
       if (err) throw new Error(err);
       const unit = unitPrice(item, l.sel);
-      return { id: item.id, name: item.name, qty: l.qty, unit, total: Math.round(unit * l.qty * 100) / 100, details: describeSelections(item, l.sel), ...(item.allergens?.length ? { allergens: item.allergens } : {}) };
+      return { id: item.id, name: item.name, qty: l.qty, unit, total: Math.round(unit * l.qty * 100) / 100, details: describeSelections(item, l.sel), ...(item.allergens?.length ? { allergens: item.allergens } : {}), ...(item.vatRate ? { vatRate: item.vatRate } : {}) };
     });
     const subtotal = Math.round(items.reduce((s, i) => s + i.total, 0) * 100) / 100;
     const { resolveDiscount } = await import("./promo.server");

@@ -20,6 +20,7 @@ export type MenuItem = {
   builder?: boolean; // configurateur étape par étape
   hidden?: boolean; // masqué (rupture / indisponible)
   allergens?: string[]; // ids des 14 allergènes INCO (src/lib/allergens.ts)
+  vatRate?: 5.5 | 10 | 20; // taux de TVA du plat (défaut : taux restauration de l'établissement)
   image?: string | undefined; // photo du plat (/api/public/menu-photo/...)
 };
 export type Category = { id: string; label: string; note?: string; items: MenuItem[] };
