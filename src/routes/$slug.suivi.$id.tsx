@@ -6,6 +6,8 @@ import { printTickets, type TicketOrder } from "@/lib/ticket";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { getOrderStatus } from "@/lib/orders.functions";
+import { getCustomerInvoice } from "@/lib/invoice.functions";
+import { toast } from "sonner";
 import { confirmOnlinePayment } from "@/lib/payments.functions";
 import { useCart } from "@/lib/cart";
 import { useEffect, useRef } from "react";
@@ -107,6 +109,7 @@ function Tracking() {
             ))}
           </div>
         )}
+        {["accepted", "preparing", "ready", "delivering", "done"].includes(data.status) && <InvoiceDownload orderId={data.id} />}
         {data.review_url && (data.status === "ready" || data.status === "done") && (
           <div className="mt-8 rounded-xl border border-primary bg-primary/10 p-4 text-center">
             <p className="font-semibold">Vous avez aimé ? Votre avis nous aide énormément ★★★★★</p>
@@ -130,5 +133,15 @@ function Tracking() {
         </div>
       </div>
     </div>
+  );
+}
+
+function InvoiceDownload({ orderId }: { orderId: string }) {
+  const get = useServerFn(getCustomerInvoice);
+  return (
+    <Button variant="secondary" className="mt-4 min-h-12 w-full" onClick={async () => {
+      try { const inv = await get({ data: { orderId } }); const { downloadInvoice } = await import("@/lib/invoice"); await downloadInvoice(inv); }
+      catch (e) { toast.error(e instanceof Error ? e.message : "Facture indisponible"); }
+    }}>Télécharger ma facture (PDF / Factur-X)</Button>
   );
 }

@@ -4,7 +4,7 @@ import type { Restaurant } from "./shop";
 export type LegalInfo = {
   company?: string; form?: string; capital?: string; siret?: string; rcs?: string; vat?: string;
   representative?: string; dpoEmail?: string; mediator?: string; mediatorUrl?: string;
-  host?: string; updatedAt?: string; vatRate?: string;
+  host?: string; updatedAt?: string; vatRate?: string; seat?: string;
 };
 
 export const DEFAULT_HOST = "Lovable Labs Inc. — infrastructure Cloudflare, Inc., 101 Townsend St, San Francisco, CA 94107, États-Unis";
@@ -15,6 +15,7 @@ export const LEGAL_FIELDS: { key: keyof LegalInfo; label: string; required?: boo
   { key: "form", label: "Forme juridique", required: true, placeholder: "SARL, SAS, EI…" },
   { key: "capital", label: "Capital social", placeholder: "10 000 €" },
   { key: "siret", label: "SIRET", required: true, placeholder: "123 456 789 00012" },
+  { key: "seat", label: "Adresse du siège social", placeholder: "12 rue …, 31770 Colomiers" },
   { key: "rcs", label: "RCS (ville)", placeholder: "Toulouse" },
   { key: "vat", label: "N° TVA intracommunautaire", placeholder: "FR12 123456789" },
   { key: "representative", label: "Représentant légal / directeur de publication", required: true },
