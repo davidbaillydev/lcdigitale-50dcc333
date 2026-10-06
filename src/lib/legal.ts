@@ -4,7 +4,7 @@ import type { Restaurant } from "./shop";
 export type LegalInfo = {
   company?: string; form?: string; capital?: string; siret?: string; rcs?: string; vat?: string;
   representative?: string; dpoEmail?: string; mediator?: string; mediatorUrl?: string;
-  host?: string; updatedAt?: string;
+  host?: string; updatedAt?: string; vatRate?: string;
 };
 
 export const DEFAULT_HOST = "Lovable Labs Inc. — infrastructure Cloudflare, Inc., 101 Townsend St, San Francisco, CA 94107, États-Unis";
@@ -22,6 +22,7 @@ export const LEGAL_FIELDS: { key: keyof LegalInfo; label: string; required?: boo
   { key: "mediator", label: "Médiateur de la consommation", required: true, placeholder: "CM2C" },
   { key: "mediatorUrl", label: "Site du médiateur", placeholder: "https://www.cm2c.net" },
   { key: "host", label: "Hébergeur" },
+  { key: "vatRate", label: "Taux de TVA restauration (%) — factures", placeholder: "10" },
 ];
 
 export const missingLegal = (l: LegalInfo) => LEGAL_FIELDS.filter((f) => f.required && !String(l[f.key] ?? "").trim()).map((f) => f.label);

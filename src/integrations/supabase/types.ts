@@ -295,6 +295,54 @@ export type Database = {
           },
         ]
       }
+      restaurant_invoices: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          issued_at: string
+          number: string
+          order_id: string
+          restaurant_id: string
+          seq: number
+        }
+        Insert: {
+          created_at?: string
+          data: Json
+          id?: string
+          issued_at?: string
+          number: string
+          order_id: string
+          restaurant_id: string
+          seq: number
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          issued_at?: string
+          number?: string
+          order_id?: string
+          restaurant_id?: string
+          seq?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_invoices_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restaurant_invoices_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurant_kitchen_pins: {
         Row: {
           failed_attempts: number
@@ -655,6 +703,25 @@ export type Database = {
         Returns: boolean
       }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      issue_invoice: {
+        Args: { _data: Json; _order_id: string; _restaurant_id: string }
+        Returns: {
+          created_at: string
+          data: Json
+          id: string
+          issued_at: string
+          number: string
+          order_id: string
+          restaurant_id: string
+          seq: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "restaurant_invoices"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       app_role: "admin" | "staff"
