@@ -9,7 +9,7 @@ export const LANG_LABELS: Record<Lang, string> = { fr: "FR", en: "EN", es: "ES",
 export const LANG_NAMES: Record<ForeignLang, string> = { en: "Anglais", es: "Espagnol", de: "Allemand" };
 
 /** Traduction d'un plat, stockée avec le plat (aucun appel de traduction à l'affichage). */
-export type ItemTranslation = { name: string; description?: string };
+export type ItemTranslation = { name: string; description?: string | undefined };
 export type ItemTranslations = Partial<Record<ForeignLang, ItemTranslation>>;
 export type LabelTranslations = Partial<Record<ForeignLang, string>>;
 
