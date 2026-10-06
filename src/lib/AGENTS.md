@@ -9,3 +9,4 @@
 - Table QR ordering: restaurants.config.qr {tables, reviewUrl}; /$slug?table=N is kept in sessionStorage, createOrder accepts mode dine_in only for a table within config.qr.tables and stores orders.table_label. Why: server validates the table, kitchen and tickets show it.
 
 - Imprimante directe ESC/POS par appareil (Bluetooth BLE, USB, réseau via pont LC Print) : `src/lib/printer.ts` + `escpos.ts`; repli navigateur si aucune configurée. Why: le navigateur ne peut pas ouvrir de socket réseau.
+- New restaurants default to the blank menu_key `vierge` (no base catalog); templates remain selectable. Why: menus are built via AI import or by hand.
