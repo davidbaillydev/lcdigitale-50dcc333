@@ -34,6 +34,7 @@ import { Route as SlugSuiviIdRouteImport } from './routes/$slug.suivi.$id'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminSlugRouteImport } from './routes/_authenticated/admin.$slug'
 import { Route as AuthenticatedEspaceIndexRouteImport } from './routes/_authenticated/espace.index'
+import { Route as AuthenticatedEspaceFacturesRouteImport } from './routes/_authenticated/espace.factures'
 import { Route as AuthenticatedEspaceTableauDeBordRouteImport } from './routes/_authenticated/espace.tableau-de-bord'
 import { Route as ApiPublicLyraIpnRouteImport } from './routes/api/public/lyra-ipn'
 import { Route as AuthenticatedEspaceSlugIndexRouteImport } from './routes/_authenticated/espace.$slug.index'
@@ -171,6 +172,12 @@ const AuthenticatedEspaceIndexRoute =
     path: '/espace/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedEspaceFacturesRoute =
+  AuthenticatedEspaceFacturesRouteImport.update({
+    id: '/espace/factures',
+    path: '/espace/factures',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedEspaceTableauDeBordRoute =
   AuthenticatedEspaceTableauDeBordRouteImport.update({
     id: '/espace/tableau-de-bord',
@@ -260,6 +267,7 @@ export interface FileRoutesByFullPath {
   '/cuisine/': typeof CuisineIndexRoute
   '/$slug/suivi/$id': typeof SlugSuiviIdRoute
   '/admin/$slug': typeof AuthenticatedAdminSlugRoute
+  '/espace/factures': typeof AuthenticatedEspaceFacturesRoute
   '/espace/tableau-de-bord': typeof AuthenticatedEspaceTableauDeBordRoute
   '/api/public/lyra-ipn': typeof ApiPublicLyraIpnRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
@@ -295,6 +303,7 @@ export interface FileRoutesByTo {
   '/cuisine': typeof CuisineIndexRoute
   '/$slug/suivi/$id': typeof SlugSuiviIdRoute
   '/admin/$slug': typeof AuthenticatedAdminSlugRoute
+  '/espace/factures': typeof AuthenticatedEspaceFacturesRoute
   '/espace/tableau-de-bord': typeof AuthenticatedEspaceTableauDeBordRoute
   '/api/public/lyra-ipn': typeof ApiPublicLyraIpnRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
@@ -334,6 +343,7 @@ export interface FileRoutesById {
   '/cuisine/': typeof CuisineIndexRoute
   '/$slug/suivi/$id': typeof SlugSuiviIdRoute
   '/_authenticated/admin/$slug': typeof AuthenticatedAdminSlugRoute
+  '/_authenticated/espace/factures': typeof AuthenticatedEspaceFacturesRoute
   '/_authenticated/espace/tableau-de-bord': typeof AuthenticatedEspaceTableauDeBordRoute
   '/api/public/lyra-ipn': typeof ApiPublicLyraIpnRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
@@ -373,6 +383,7 @@ export interface FileRouteTypes {
     | '/cuisine/'
     | '/$slug/suivi/$id'
     | '/admin/$slug'
+    | '/espace/factures'
     | '/espace/tableau-de-bord'
     | '/api/public/lyra-ipn'
     | '/admin/'
@@ -408,6 +419,7 @@ export interface FileRouteTypes {
     | '/cuisine'
     | '/$slug/suivi/$id'
     | '/admin/$slug'
+    | '/espace/factures'
     | '/espace/tableau-de-bord'
     | '/api/public/lyra-ipn'
     | '/admin'
@@ -446,6 +458,7 @@ export interface FileRouteTypes {
     | '/cuisine/'
     | '/$slug/suivi/$id'
     | '/_authenticated/admin/$slug'
+    | '/_authenticated/espace/factures'
     | '/_authenticated/espace/tableau-de-bord'
     | '/api/public/lyra-ipn'
     | '/_authenticated/admin/'
@@ -657,6 +670,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEspaceIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/espace/factures': {
+      id: '/_authenticated/espace/factures'
+      path: '/espace/factures'
+      fullPath: '/espace/factures'
+      preLoaderRoute: typeof AuthenticatedEspaceFacturesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/espace/tableau-de-bord': {
       id: '/_authenticated/espace/tableau-de-bord'
       path: '/espace/tableau-de-bord'
@@ -752,6 +772,7 @@ const AuthenticatedAdminRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
+  AuthenticatedEspaceFacturesRoute: typeof AuthenticatedEspaceFacturesRoute
   AuthenticatedEspaceTableauDeBordRoute: typeof AuthenticatedEspaceTableauDeBordRoute
   AuthenticatedEspaceIndexRoute: typeof AuthenticatedEspaceIndexRoute
   AuthenticatedEspaceSlugCarteRoute: typeof AuthenticatedEspaceSlugCarteRoute
@@ -764,6 +785,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
+  AuthenticatedEspaceFacturesRoute: AuthenticatedEspaceFacturesRoute,
   AuthenticatedEspaceTableauDeBordRoute: AuthenticatedEspaceTableauDeBordRoute,
   AuthenticatedEspaceIndexRoute: AuthenticatedEspaceIndexRoute,
   AuthenticatedEspaceSlugCarteRoute: AuthenticatedEspaceSlugCarteRoute,
