@@ -28,12 +28,17 @@ export const subscribeOrderPush = createServerFn({ method: "POST" })
 /** Personnel : envoie la notification correspondant au statut actuel de la commande. */
 export const notifyOrderStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
+  .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid(), origin: z.string().url().max(200).regex(/^https?:\/\/[^/]+$/).optional() }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: o } = await context.supabase.from("orders").select("id, order_number, status, mode, restaurants(slug, name)").eq("id", data.orderId).maybeSingle();
     if (!o) return { sent: 0 };
     const text = STATUS_MSG[o.status];
     if (!text) return { sent: 0 };
+    {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { sendOrderConfirmation } = await import("./order-email.server");
+      await sendOrderConfirmation(supabaseAdmin, o.id, data.origin).catch((e) => console.error(e));
+    }
     const r = o.restaurants as unknown as { slug: string; name: string } | null;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { notifySubscribers } = await import("./push.server");

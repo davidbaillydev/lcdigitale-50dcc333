@@ -169,7 +169,7 @@ function Kitchen() {
     setOrders((prev) => prev.map((x) => (x.id === o.id ? { ...x, status } : x)));
     const { error } = await supabase.from("orders").update({ status, updated_at: new Date().toISOString() }).eq("id", o.id);
     if (error) { toast.error("Mise à jour impossible"); load(); return; }
-    notify({ data: { orderId: o.id } }).catch(() => {});
+    notify({ data: { orderId: o.id, origin: window.location.origin } }).catch(() => {});
   };
 
   if (loading) return <p className="p-10 text-center text-muted-foreground">Chargement…</p>;

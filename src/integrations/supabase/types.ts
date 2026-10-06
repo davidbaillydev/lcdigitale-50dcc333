@@ -100,6 +100,7 @@ export type Database = {
           cgv_accepted_at: string | null
           cgv_version: string | null
           city: string | null
+          confirmation_email_at: string | null
           created_at: string
           customer_name: string
           delivery_fee: number
@@ -132,6 +133,7 @@ export type Database = {
           cgv_accepted_at?: string | null
           cgv_version?: string | null
           city?: string | null
+          confirmation_email_at?: string | null
           created_at?: string
           customer_name: string
           delivery_fee?: number
@@ -164,6 +166,7 @@ export type Database = {
           cgv_accepted_at?: string | null
           cgv_version?: string | null
           city?: string | null
+          confirmation_email_at?: string | null
           created_at?: string
           customer_name?: string
           delivery_fee?: number

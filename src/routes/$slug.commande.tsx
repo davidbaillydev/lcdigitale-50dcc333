@@ -87,7 +87,8 @@ function Checkout() {
         data: {
           ...f, restaurant: restaurant.slug, ...(table ? { mode: "dine_in" as const, ...(tableNo ? { table: tableNo } : {}), ...(qr.room ? { room: qr.room } : {}), ...(qr.self ? { qr: "self" as const } : {}), slot: new Date().toISOString(), address: "", postal_code: "" } : { mode, slot }), ...(promo.code ? { promo_code: promo.code } : {}),
           payment_method: pay === "on_site" ? "on_site" : "online", cgv: true as const,
-          ...(pay !== "on_site" ? { provider: pay, origin: window.location.origin } : {}),
+          origin: window.location.origin,
+          ...(pay !== "on_site" ? { provider: pay } : {}),
           lines: lines.map((l) => ({ itemId: l.itemId, qty: l.qty, sel: l.sel })),
         },
       });
