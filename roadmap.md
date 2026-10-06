@@ -25,4 +25,6 @@ Verified on a temporary restaurant, now deactivated: upload and reload persisten
 - [x] Facturation électronique A : FAC-AAAA-NNNNN, TVA par plat, Factur-X BASIC, facture client, page Factures (ZIP/CSV/Excel)
 - [x] Étape B1 : push web clients + application installable (icônes, Capacitor)
 - [ ] Étape B2 : push livreurs (attend le module Livreurs, étape 2), emails Brevo, Twilio optionnel
-- [ ] Étape C : traductions en base, empreinte CB réservations, cache
+- [x] Étape C1 : traductions de la carte stockées (EN/ES/DE), sélecteur de langue client
+- [ ] Étape C2 : réservations + empreinte CB Stripe (SetupIntent) + débit no-show
+- [ ] Étape C3 : cache 15 min carte/légal, invalidation ciblée
