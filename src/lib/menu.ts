@@ -22,8 +22,9 @@ export type MenuItem = {
   allergens?: string[]; // ids des 14 allergènes INCO (src/lib/allergens.ts)
   vatRate?: 5.5 | 10 | 20 | undefined; // taux de TVA du plat (défaut : taux restauration de l'établissement)
   image?: string | undefined; // photo du plat (/api/public/menu-photo/...)
+  translations?: import("./i18n").ItemTranslations | undefined; // EN/ES/DE pré-traduits, stockés avec la carte
 };
-export type Category = { id: string; label: string; note?: string; items: MenuItem[] };
+export type Category = { id: string; label: string; note?: string; items: MenuItem[]; translations?: import("./i18n").LabelTranslations | undefined };
 
 const accomp = (n: number, list = ["Salade chou", "Salade okame", "Riz nature", "Riz vinaigré"]): OptionGroup => ({
   id: "accomp",
