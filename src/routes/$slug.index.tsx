@@ -133,7 +133,7 @@ function MenuPage() {
             <p className="flex items-center gap-2"><Clock className="h-4 w-4 shrink-0" /> {restaurant.config.hoursLabel}</p>
           )}
           {restaurant.config.reservations?.enabled && (
-            <p><Link to="/$slug/reserver" params={{ slug: restaurant.slug }} className="font-semibold text-primary underline">Réserver une table</Link></p>
+            <p><Link to="/$slug/reserver" params={{ slug: restaurant.slug }} search={{ r: undefined }} className="font-semibold text-primary underline">Réserver une table</Link></p>
           )}
           <p><Link to="/connexion" className="underline">Espace restaurant</Link></p>
           <LegalFooter slug={restaurant.slug} />
