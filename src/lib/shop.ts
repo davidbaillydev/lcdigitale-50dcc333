@@ -31,6 +31,7 @@ export type Restaurant = {
     marketing?: import("./promo").Marketing;
     /** Menu QR par table (nombre de tables) et lien d'avis Google proposé après la commande */
     qr?: { tables?: number; reviewUrl?: string; room?: boolean; self?: boolean };
+    reservations?: { enabled?: boolean; noShowFee?: number; maxParty?: number };
   };
 };
 
