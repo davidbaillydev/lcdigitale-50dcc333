@@ -3,7 +3,11 @@ import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 
 export const getRouter = () => {
-  const queryClient = new QueryClient();
+  // Cache client : évite de redemander la carte et les infos légales à chaque navigation.
+  // Les données vivantes (commandes, ruptures, réservations) sont rafraîchies par Realtime.
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { staleTime: 60_000, gcTime: 30 * 60_000, refetchOnWindowFocus: false } },
+  });
 
   const router = createRouter({
     routeTree,

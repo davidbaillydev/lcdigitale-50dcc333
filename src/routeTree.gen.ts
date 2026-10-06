@@ -25,6 +25,7 @@ import { Route as SlugConfidentialiteRouteImport } from './routes/$slug.confiden
 import { Route as SlugCookiesRouteImport } from './routes/$slug.cookies'
 import { Route as SlugCuisineRouteImport } from './routes/$slug.cuisine'
 import { Route as SlugMentionsLegalesRouteImport } from './routes/$slug.mentions-legales'
+import { Route as SlugReserverRouteImport } from './routes/$slug.reserver'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as ApiMenuPhotoGenerateRouteImport } from './routes/api/menu-photo-generate'
 import { Route as CuisineIndexRouteImport } from './routes/cuisine.index'
@@ -43,6 +44,7 @@ import { Route as AuthenticatedEspaceSlugClientsRouteImport } from './routes/_au
 import { Route as AuthenticatedEspaceSlugEquipeRouteImport } from './routes/_authenticated/espace.$slug.equipe'
 import { Route as AuthenticatedEspaceSlugQrRouteImport } from './routes/_authenticated/espace.$slug.qr'
 import { Route as AuthenticatedEspaceSlugReglagesRouteImport } from './routes/_authenticated/espace.$slug.reglages'
+import { Route as AuthenticatedEspaceSlugReservationsRouteImport } from './routes/_authenticated/espace.$slug.reservations'
 import { Route as ApiPublicPushMessageRouteImport } from './routes/api/public/push/message'
 import { Route as ApiPublicRestaurantBannerIdRouteImport } from './routes/api/public/restaurant-banner/$id'
 import { Route as ApiPublicVapiRestaurantIdRouteImport } from './routes/api/public/vapi.$restaurantId'
@@ -125,6 +127,11 @@ const SlugCuisineRoute = SlugCuisineRouteImport.update({
 const SlugMentionsLegalesRoute = SlugMentionsLegalesRouteImport.update({
   id: '/mentions-legales',
   path: '/mentions-legales',
+  getParentRoute: () => SlugRoute,
+} as any)
+const SlugReserverRoute = SlugReserverRouteImport.update({
+  id: '/reserver',
+  path: '/reserver',
   getParentRoute: () => SlugRoute,
 } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
@@ -226,6 +233,12 @@ const AuthenticatedEspaceSlugReglagesRoute =
     path: '/espace/$slug/reglages',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedEspaceSlugReservationsRoute =
+  AuthenticatedEspaceSlugReservationsRouteImport.update({
+    id: '/espace/$slug/reservations',
+    path: '/espace/$slug/reservations',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const ApiPublicPushMessageRoute = ApiPublicPushMessageRouteImport.update({
   id: '/api/public/push/message',
   path: '/api/public/push/message',
@@ -265,6 +278,7 @@ export interface FileRoutesByFullPath {
   '/$slug/cookies': typeof SlugCookiesRoute
   '/$slug/cuisine': typeof SlugCuisineRoute
   '/$slug/mentions-legales': typeof SlugMentionsLegalesRoute
+  '/$slug/reserver': typeof SlugReserverRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/api/menu-photo-generate': typeof ApiMenuPhotoGenerateRoute
   '/cuisine/$': typeof CuisineSplatRoute
@@ -283,6 +297,7 @@ export interface FileRoutesByFullPath {
   '/espace/$slug/equipe': typeof AuthenticatedEspaceSlugEquipeRoute
   '/espace/$slug/qr': typeof AuthenticatedEspaceSlugQrRoute
   '/espace/$slug/reglages': typeof AuthenticatedEspaceSlugReglagesRoute
+  '/espace/$slug/reservations': typeof AuthenticatedEspaceSlugReservationsRoute
   '/api/public/push/message': typeof ApiPublicPushMessageRoute
   '/api/public/restaurant-banner/$id': typeof ApiPublicRestaurantBannerIdRoute
   '/api/public/vapi/$restaurantId': typeof ApiPublicVapiRestaurantIdRoute
@@ -303,6 +318,7 @@ export interface FileRoutesByTo {
   '/$slug/cookies': typeof SlugCookiesRoute
   '/$slug/cuisine': typeof SlugCuisineRoute
   '/$slug/mentions-legales': typeof SlugMentionsLegalesRoute
+  '/$slug/reserver': typeof SlugReserverRoute
   '/api/menu-photo-generate': typeof ApiMenuPhotoGenerateRoute
   '/cuisine/$': typeof CuisineSplatRoute
   '/suivi/$id': typeof SuiviIdRoute
@@ -320,6 +336,7 @@ export interface FileRoutesByTo {
   '/espace/$slug/equipe': typeof AuthenticatedEspaceSlugEquipeRoute
   '/espace/$slug/qr': typeof AuthenticatedEspaceSlugQrRoute
   '/espace/$slug/reglages': typeof AuthenticatedEspaceSlugReglagesRoute
+  '/espace/$slug/reservations': typeof AuthenticatedEspaceSlugReservationsRoute
   '/api/public/push/message': typeof ApiPublicPushMessageRoute
   '/api/public/restaurant-banner/$id': typeof ApiPublicRestaurantBannerIdRoute
   '/api/public/vapi/$restaurantId': typeof ApiPublicVapiRestaurantIdRoute
@@ -343,6 +360,7 @@ export interface FileRoutesById {
   '/$slug/cookies': typeof SlugCookiesRoute
   '/$slug/cuisine': typeof SlugCuisineRoute
   '/$slug/mentions-legales': typeof SlugMentionsLegalesRoute
+  '/$slug/reserver': typeof SlugReserverRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/api/menu-photo-generate': typeof ApiMenuPhotoGenerateRoute
   '/cuisine/$': typeof CuisineSplatRoute
@@ -361,6 +379,7 @@ export interface FileRoutesById {
   '/_authenticated/espace/$slug/equipe': typeof AuthenticatedEspaceSlugEquipeRoute
   '/_authenticated/espace/$slug/qr': typeof AuthenticatedEspaceSlugQrRoute
   '/_authenticated/espace/$slug/reglages': typeof AuthenticatedEspaceSlugReglagesRoute
+  '/_authenticated/espace/$slug/reservations': typeof AuthenticatedEspaceSlugReservationsRoute
   '/api/public/push/message': typeof ApiPublicPushMessageRoute
   '/api/public/restaurant-banner/$id': typeof ApiPublicRestaurantBannerIdRoute
   '/api/public/vapi/$restaurantId': typeof ApiPublicVapiRestaurantIdRoute
@@ -384,6 +403,7 @@ export interface FileRouteTypes {
     | '/$slug/cookies'
     | '/$slug/cuisine'
     | '/$slug/mentions-legales'
+    | '/$slug/reserver'
     | '/admin'
     | '/api/menu-photo-generate'
     | '/cuisine/$'
@@ -402,6 +422,7 @@ export interface FileRouteTypes {
     | '/espace/$slug/equipe'
     | '/espace/$slug/qr'
     | '/espace/$slug/reglages'
+    | '/espace/$slug/reservations'
     | '/api/public/push/message'
     | '/api/public/restaurant-banner/$id'
     | '/api/public/vapi/$restaurantId'
@@ -422,6 +443,7 @@ export interface FileRouteTypes {
     | '/$slug/cookies'
     | '/$slug/cuisine'
     | '/$slug/mentions-legales'
+    | '/$slug/reserver'
     | '/api/menu-photo-generate'
     | '/cuisine/$'
     | '/suivi/$id'
@@ -439,6 +461,7 @@ export interface FileRouteTypes {
     | '/espace/$slug/equipe'
     | '/espace/$slug/qr'
     | '/espace/$slug/reglages'
+    | '/espace/$slug/reservations'
     | '/api/public/push/message'
     | '/api/public/restaurant-banner/$id'
     | '/api/public/vapi/$restaurantId'
@@ -461,6 +484,7 @@ export interface FileRouteTypes {
     | '/$slug/cookies'
     | '/$slug/cuisine'
     | '/$slug/mentions-legales'
+    | '/$slug/reserver'
     | '/_authenticated/admin'
     | '/api/menu-photo-generate'
     | '/cuisine/$'
@@ -479,6 +503,7 @@ export interface FileRouteTypes {
     | '/_authenticated/espace/$slug/equipe'
     | '/_authenticated/espace/$slug/qr'
     | '/_authenticated/espace/$slug/reglages'
+    | '/_authenticated/espace/$slug/reservations'
     | '/api/public/push/message'
     | '/api/public/restaurant-banner/$id'
     | '/api/public/vapi/$restaurantId'
@@ -620,6 +645,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SlugMentionsLegalesRouteImport
       parentRoute: typeof SlugRoute
     }
+    '/$slug/reserver': {
+      id: '/$slug/reserver'
+      path: '/reserver'
+      fullPath: '/$slug/reserver'
+      preLoaderRoute: typeof SlugReserverRouteImport
+      parentRoute: typeof SlugRoute
+    }
     '/_authenticated/admin': {
       id: '/_authenticated/admin'
       path: '/admin'
@@ -746,6 +778,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEspaceSlugReglagesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/espace/$slug/reservations': {
+      id: '/_authenticated/espace/$slug/reservations'
+      path: '/espace/$slug/reservations'
+      fullPath: '/espace/$slug/reservations'
+      preLoaderRoute: typeof AuthenticatedEspaceSlugReservationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/public/push/message': {
       id: '/api/public/push/message'
       path: '/api/public/push/message'
@@ -800,6 +839,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEspaceSlugEquipeRoute: typeof AuthenticatedEspaceSlugEquipeRoute
   AuthenticatedEspaceSlugQrRoute: typeof AuthenticatedEspaceSlugQrRoute
   AuthenticatedEspaceSlugReglagesRoute: typeof AuthenticatedEspaceSlugReglagesRoute
+  AuthenticatedEspaceSlugReservationsRoute: typeof AuthenticatedEspaceSlugReservationsRoute
   AuthenticatedEspaceSlugIndexRoute: typeof AuthenticatedEspaceSlugIndexRoute
 }
 
@@ -813,6 +853,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEspaceSlugEquipeRoute: AuthenticatedEspaceSlugEquipeRoute,
   AuthenticatedEspaceSlugQrRoute: AuthenticatedEspaceSlugQrRoute,
   AuthenticatedEspaceSlugReglagesRoute: AuthenticatedEspaceSlugReglagesRoute,
+  AuthenticatedEspaceSlugReservationsRoute:
+    AuthenticatedEspaceSlugReservationsRoute,
   AuthenticatedEspaceSlugIndexRoute: AuthenticatedEspaceSlugIndexRoute,
 }
 
@@ -827,6 +869,7 @@ interface SlugRouteChildren {
   SlugCookiesRoute: typeof SlugCookiesRoute
   SlugCuisineRoute: typeof SlugCuisineRoute
   SlugMentionsLegalesRoute: typeof SlugMentionsLegalesRoute
+  SlugReserverRoute: typeof SlugReserverRoute
   SlugIndexRoute: typeof SlugIndexRoute
   SlugSuiviIdRoute: typeof SlugSuiviIdRoute
 }
@@ -839,6 +882,7 @@ const SlugRouteChildren: SlugRouteChildren = {
   SlugCookiesRoute: SlugCookiesRoute,
   SlugCuisineRoute: SlugCuisineRoute,
   SlugMentionsLegalesRoute: SlugMentionsLegalesRoute,
+  SlugReserverRoute: SlugReserverRoute,
   SlugIndexRoute: SlugIndexRoute,
   SlugSuiviIdRoute: SlugSuiviIdRoute,
 }
