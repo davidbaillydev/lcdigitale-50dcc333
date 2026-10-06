@@ -305,6 +305,7 @@ export type Database = {
           order_id: string
           restaurant_id: string
           seq: number
+          year: number | null
         }
         Insert: {
           created_at?: string
@@ -315,6 +316,7 @@ export type Database = {
           order_id: string
           restaurant_id: string
           seq: number
+          year?: number | null
         }
         Update: {
           created_at?: string
@@ -325,6 +327,7 @@ export type Database = {
           order_id?: string
           restaurant_id?: string
           seq?: number
+          year?: number | null
         }
         Relationships: [
           {
@@ -714,6 +717,7 @@ export type Database = {
           order_id: string
           restaurant_id: string
           seq: number
+          year: number | null
         }
         SetofOptions: {
           from: "*"
