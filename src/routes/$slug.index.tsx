@@ -15,6 +15,7 @@ import { menuImage } from "@/lib/menu-images";
 import { AllergenBadges, AllergenPicker } from "@/components/Allergens";
 import { safeFor } from "@/lib/allergens";
 import { useTable } from "@/lib/table";
+import { catLabel, itemText, LANG_LABELS, UI, useMenuLang, type Lang } from "@/lib/i18n";
 
 export const Route = createFileRoute("/$slug/")({
   loader: ({ params }) => getRestaurant({ data: { slug: params.slug } }),
@@ -37,6 +38,8 @@ function MenuPage() {
   const [excluded, setExcluded] = useState<string[]>([]);
   const shown = catalog.categories.map((c) => ({ ...c, items: c.items.filter((i) => safeFor(i, excluded)) })).filter((c) => c.items.length);
   const d = restaurant.delivery;
+  const [lang, setLang] = useMenuLang();
+  const ui = UI[lang];
   const table = useTable(restaurant.slug, restaurant.config.qr?.tables ?? 0);
 
   return (
@@ -71,25 +74,28 @@ function MenuPage() {
 
       <nav className="sticky top-[61px] z-30 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl gap-2 overflow-x-auto px-4 py-3">
+          <div className="flex shrink-0 overflow-hidden rounded-full border border-border" role="group" aria-label="Langue de la carte">
+            {(Object.keys(LANG_LABELS) as Lang[]).map((l) => <button key={l} onClick={() => setLang(l)} aria-pressed={lang === l} className={`px-2.5 py-1.5 text-xs font-bold ${lang === l ? "bg-primary text-primary-foreground" : "hover:text-primary"}`}>{LANG_LABELS[l]}</button>)}
+          </div>
           {shown.map((c) => (
-            <a key={c.id} href={`#${c.id}`} className="shrink-0 rounded-full border border-border px-3 py-1.5 text-sm hover:border-primary hover:text-primary">{c.label}</a>
+            <a key={c.id} href={`#${c.id}`} className="shrink-0 rounded-full border border-border px-3 py-1.5 text-sm hover:border-primary hover:text-primary">{catLabel(c, lang)}</a>
           ))}
         </div>
       </nav>
 
       <main className="mx-auto max-w-6xl space-y-14 px-4 py-10">
         <details className="rounded-xl border border-border bg-card p-4" open={excluded.length > 0}>
-          <summary className="cursor-pointer font-semibold">Allergies ? Masquer les plats contenant… {excluded.length > 0 && <span className="text-primary">({excluded.length} exclu{excluded.length > 1 ? "s" : ""})</span>}</summary>
+          <summary className="cursor-pointer font-semibold">{ui.allergies} {excluded.length > 0 && <span className="text-primary">({excluded.length} exclu{excluded.length > 1 ? "s" : ""})</span>}</summary>
           <div className="mt-3"><AllergenPicker value={excluded} onChange={setExcluded} /></div>
           {excluded.length > 0 && <button className="mt-2 text-sm underline" onClick={() => setExcluded([])}>Tout réafficher</button>}
           <p className="mt-2 text-xs text-muted-foreground">Les plats dont les allergènes ne sont pas renseignés sont aussi masqués. Informations déclarées par le restaurant. En cas d'allergie sévère, contactez-le avant de commander.</p>
         </details>
-        {!catalog.categories.length && <p className="py-10 text-center text-muted-foreground">La carte arrive bientôt.</p>}
+        {!catalog.categories.length && <p className="py-10 text-center text-muted-foreground">{ui.soon}</p>}
         {excluded.length > 0 && !shown.length && <p className="py-10 text-center text-muted-foreground">Aucun plat sans ces allergènes.</p>}
         {shown.map((c) => (
           <section key={c.id} id={c.id} className="scroll-mt-32">
             <div className="flex items-center justify-between gap-4 border-b border-border pb-4">
-              <h2 className="inline-block -rotate-1 brush px-5 py-1 text-4xl">{c.label}</h2>
+              <h2 className="inline-block -rotate-1 brush px-5 py-1 text-4xl">{catLabel(c, lang)}</h2>
               {menuImage(c.id) && <img src={menuImage(c.id)} alt={`Illustration de la catégorie ${c.label}`} loading="lazy" width={1024} height={768} className="h-24 w-32 shrink-0 rounded-md object-cover sm:h-32 sm:w-48" />}
             </div>
             {c.note && <p className="mt-3 text-sm text-muted-foreground">{c.note}</p>}
@@ -99,13 +105,13 @@ function MenuPage() {
                   className={`group flex flex-col overflow-hidden rounded-xl border bg-card p-4 text-left transition hover:-translate-y-0.5 hover:border-primary ${i.builder ? "border-primary/60 sm:col-span-2 lg:col-span-1" : "border-border"}`}>
                   {i.image && <img src={i.image} alt={i.name} loading="lazy" className="-mx-4 -mt-4 mb-3 aspect-[16/10] w-[calc(100%+2rem)] max-w-none object-cover transition group-hover:scale-[1.02]" />}
                   <div className="flex items-start justify-between gap-3">
-                    <h3 className="text-2xl leading-tight">{i.name}</h3>
+                    <h3 className="text-2xl leading-tight">{itemText(i, lang).name}</h3>
                     <span className="shrink-0 rounded-md bg-accent px-2 py-0.5 text-sm font-bold text-accent-foreground">{euro(i.price)}</span>
                   </div>
-                  {i.desc && <p className="mt-1 text-sm text-muted-foreground">{i.desc}</p>}
+                  {itemText(i, lang).desc && <p className="mt-1 text-sm text-muted-foreground">{itemText(i, lang).desc}</p>}
                   <AllergenBadges ids={i.allergens} className="mt-2" />
                   {!view && <span className="mt-auto pt-3 text-sm font-semibold text-primary opacity-80 group-hover:opacity-100">
-                    {i.builder ? "Composer →" : i.options?.length ? "Choisir les options →" : "+ Ajouter"}
+                    {i.builder ? ui.compose : i.options?.length ? ui.options : ui.add}
                   </span>}
                 </button>
               ))}
