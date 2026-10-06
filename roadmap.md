@@ -20,3 +20,4 @@ Verified on a temporary restaurant, now deactivated: upload and reload persisten
 - [ ] Étape 4 : SMS/WhatsApp (attend compte Twilio) + application installable
 - [x] Pages légales auto par restaurant (mentions, RGPD, CGV, cookies) + bandeau cookies + case CGV
 - [ ] Facturation : facture PDF par commande, puis Factur-X / plateforme agréée (compte externe requis)
+- [x] Factures PDF normalisées + Factur-X par commande
