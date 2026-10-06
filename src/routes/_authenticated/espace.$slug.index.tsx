@@ -7,6 +7,9 @@ import { hasKitchenPin } from "@/lib/kitchen-pin.functions";
 import { KitchenLock } from "@/components/KitchenLock";
 import { PrinterSetup } from "@/components/PrinterSetup";
 import { StockDialog } from "@/components/StockDialog";
+import { issueInvoice } from "@/lib/invoice.functions";
+import { downloadInvoice } from "@/lib/invoice";
+import { FileText } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useStaff } from "@/hooks/use-staff";
@@ -270,6 +273,7 @@ function Kitchen() {
                     <div className="mt-2 flex gap-2">
                       <Button size="sm" variant="secondary" className="min-h-12 min-w-0 flex-1" onClick={() => doPrint(o, ["kitchen"])}><Printer /> {logs[o.id]?.length ? "Réimprimer cuisine" : "Cuisine"}</Button>
                       <Button size="sm" variant="secondary" className="min-h-12 min-w-0 flex-1" onClick={() => doPrint(o, ["receipt"])}><Printer /> Caisse</Button>
+                      <InvoiceButton orderId={o.id} />
                     </div>
                     {(printState[o.id] ?? logs[o.id]?.at(-1)?.status) === "failed" && <p role="alert" className="mt-2 rounded bg-destructive/20 p-2 text-sm">Impression échouée — vérifiez l'imprimante puis réimprimez.</p>}
                     {!!logs[o.id]?.length && (
@@ -299,5 +303,18 @@ function Kitchen() {
       </div>
       {locked && rid && <KitchenLock restaurantId={rid} name={restaurant?.name ?? ""} onUnlock={() => setLock(false)} />}
     </div>
+  );
+}
+
+function InvoiceButton({ orderId }: { orderId: string }) {
+  const issue = useServerFn(issueInvoice);
+  const [busy, setBusy] = useState(false);
+  return (
+    <Button size="sm" variant="secondary" className="min-h-12 min-w-0 flex-1" disabled={busy} onClick={async () => {
+      setBusy(true);
+      try { const inv = await issue({ data: { orderId } }); await downloadInvoice(inv); toast.success(`Facture ${inv.number} téléchargée`); }
+      catch (e) { toast.error(e instanceof Error ? e.message : "Facture impossible"); }
+      finally { setBusy(false); }
+    }}><FileText /> Facture</Button>
   );
 }
