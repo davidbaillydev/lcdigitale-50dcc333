@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Bike, ShoppingBag, CreditCard, Store, Wallet, Landmark } from "lucide-react";
+import { Bike, CalendarClock, Clock, ShoppingBag, CreditCard, Store, Wallet, Landmark } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { CartLines } from "@/components/CartSheet";
 import { Button } from "@/components/ui/button";
