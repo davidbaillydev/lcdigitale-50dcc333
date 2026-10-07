@@ -8,6 +8,13 @@
       "when": 1791378775872,
       "tag": "0000_b2b_billing",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791397393366,
+      "tag": "0001_restaurant_pdp_configs",
+      "breakpoints": true
     }
   ]
 }
