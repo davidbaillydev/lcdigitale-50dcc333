@@ -159,7 +159,7 @@ function Kitchen() {
         if ((p.eventType === "INSERT" && n.status !== "awaiting_payment") || becamePaid) {
           toast.success(n.status === "pending_approval" ? `Nouvelle commande ${n.table_label ? `Table ${n.table_label}` : n.room_label ? `Chambre ${n.room_label}` : "libre-service"} · à valider` : `Nouvelle commande n° ${n.order_number}`, n.status === "pending_approval" ? { duration: 15000 } : undefined);
           if (audio.current && soundRef.current) beep(audio.current);
-          if (printRef.current.auto && n.status !== "pending_validation") void printRef.current.doPrint(p.new as Order, ["kitchen", "receipt"], true);
+          if (printRef.current.auto && n.status !== "pending_approval") void printRef.current.doPrint(p.new as Order, ["kitchen", "receipt"], true);
         }
         load();
       })
@@ -276,11 +276,11 @@ function Kitchen() {
         <p className="flex items-center gap-3 font-display text-2xl font-semibold"><ChefHat aria-hidden="true" /> Le service<span aria-hidden="true">.</span></p>
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm"><span><strong className="text-xl tabular-nums">{orders.filter((o) => COLS.some((c) => c.s === o.status)).length}</strong> en cours</span><span><strong className="text-xl tabular-nums">{done.length}</strong> terminée(s)</span><span>CA <strong className="text-xl tabular-nums">{euro(done.reduce((s, o) => s + Number(o.total), 0))}</strong></span></div>
       </div>
-      {orders.some((o) => o.status === "pending_validation") && (
+      {orders.some((o) => o.status === "pending_approval") && (
         <section aria-label="Commandes libre-service à valider" className="border-b border-border bg-card px-4 py-4 lg:px-6">
           <h2 className="text-2xl">À valider par le service</h2>
           <ul className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {orders.filter((o) => o.status === "pending_validation").map((o) => (
+            {orders.filter((o) => o.status === "pending_approval").map((o) => (
               <li key={o.id} className="kds-incoming rounded-xl border border-primary p-3">
                 <p className="text-xl font-bold">Nouvelle commande {o.table_label ? `Table ${o.table_label}` : o.room_label ? `Chambre ${o.room_label}` : "libre-service"}</p>
                 <p className="font-semibold">N° {o.order_number} · {o.customer_name} · {euro(Number(o.total))}</p>

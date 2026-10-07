@@ -128,7 +128,7 @@ export const createOrder = createServerFn({ method: "POST" })
         payment_method: data.payment_method,
         cgv_accepted_at: new Date().toISOString(),
         cgv_version: cgvVersion(r.legal ?? {}),
-        status: provider ? "awaiting_payment" : dineIn && ((data.qr === "self" && !data.table && !data.room) || (!!data.table && !!r.config.qr?.tableValidation)) ? "pending_validation" : r.config.autoAccept ? "accepted" : "new",
+        status: provider ? "awaiting_payment" : dineIn && ((data.qr === "self" && !data.table && !data.room) || (!!data.table && !!r.config.qr?.tableValidation)) ? "pending_approval" : r.config.autoAccept ? "accepted" : "new",
       })
       .select("id, order_number, total")
       .single();

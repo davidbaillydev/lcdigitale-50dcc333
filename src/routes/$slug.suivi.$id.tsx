@@ -97,7 +97,9 @@ function Tracking() {
           {data.mode === "dine_in" ? <>Sur place{data.table_label ? <> · <strong className="text-foreground">Table {data.table_label}</strong></> : null}</> : <>{data.mode === "delivery" ? "Livraison" : "Retrait"} prévu à <strong className="text-foreground">{fmtTime(data.slot)}</strong></>}
           {" · "}{data.payment_method === "on_site" ? `paiement ${data.mode === "delivery" ? "à la livraison" : data.mode === "dine_in" ? "à table ou au comptoir" : "au retrait"}` : data.payment_status === "paid" ? "payé en ligne ✓" : "paiement en ligne"}
         </p>
-        {data.status === "cancelled" ? (
+        {data.status === "pending_approval" ? (
+          <p role="status" className="mt-6 animate-pulse rounded-lg border border-primary bg-primary/10 p-4 font-semibold">Commande transmise à l'équipe, en attente de confirmation.</p>
+        ) : data.status === "cancelled" ? (
           <p className="mt-6 rounded-lg bg-destructive/20 p-4">Cette commande a été annulée. Contactez le restaurant pour plus d'informations.</p>
         ) : (
           <div className="mt-8 grid grid-cols-4 gap-2">
