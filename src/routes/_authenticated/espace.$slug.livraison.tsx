@@ -2,8 +2,9 @@ import { createFileRoute, Link, ClientOnly } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
-import { Circle, Hexagon, KeyRound, MapPin, Plus, Save, Trash2, Undo2 } from "lucide-react";
+import { Bike, Copy, ExternalLink, Circle, Hexagon, KeyRound, MapPin, Plus, Save, Trash2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
+import { BrandLogo } from "@/lib/brand";
 import { Crumbs } from "@/components/Crumbs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,7 +52,7 @@ function Page() {
   const pinStatus = useServerFn(courierPinStatus);
   const savePin = useServerFn(setCourierPin);
   const { data: r, refetch } = useQuery({ queryKey: ["delivery-admin", slug], queryFn: () => load({ data: { slug } }), enabled: canManage });
-  const { data: pin, refetch: refetchPin } = useQuery({ queryKey: ["courier-pin", r?.id], queryFn: () => pinStatus({ data: { restaurantId: r!.id } }), enabled: !!r });
+  const { data: pin, refetch: refetchPin } = useQuery({ queryKey: ["courier-pin", r?.id], queryFn: () => pinStatus({ data: { restaurantId: r?.id ?? "" } }), enabled: !!r });
   const [zones, setZones] = useState<GeoZone[]>([]);
   const [origin, setOrigin] = useState<LatLng>(DEFAULT_CENTER);
   const [sel, setSel] = useState<string | null>(null);
@@ -68,8 +69,8 @@ function Page() {
     if (!r) return;
     const since = new Date(Date.now() - 12 * 3600_000).toISOString();
     const fetchO = async () => {
-      const { data } = await supabase.from("orders").select("id, order_number, customer_name, address, slot, status, courier_status, courier_name, zone_name, driver_id").eq("restaurant_id", r.id).eq("mode", "delivery").gte("created_at", since).neq("status", "awaiting_payment").order("slot");
-      setOrders((data ?? []) as Del[]);
+      const { data, error } = await supabase.from("orders").select("id, order_number, customer_name, address, slot, status, courier_status, courier_name, zone_name, driver_id").eq("restaurant_id", r.id).eq("mode", "delivery").gte("created_at", since).neq("status", "awaiting_payment").order("slot");
+      if (error) { toast.error("Livraisons indisponibles"); return; } setOrders((data ?? []) as Del[]);
     };
     fetchO();
     const ch = supabase.channel(`deliv-${r.id}`).on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `restaurant_id=eq.${r.id}` }, fetchO).subscribe();
@@ -106,7 +107,7 @@ function Page() {
   return (
     <div className="mx-auto max-w-6xl p-4 pb-20 sm:p-6">
       <div className="flex items-center justify-between gap-3"><Crumbs slug={slug} page="Livraison" /><ThemeToggle /></div>
-      <h1 className="mt-4 text-4xl sm:text-5xl">Livraison · {r?.name}</h1>
+      <header className="mt-4 flex items-center gap-4"><BrandLogo src={r?.logo_url} name={r?.name ?? "Restaurant"} className="h-14 w-14 rounded-lg object-contain" /><div><p className="text-sm text-muted-foreground">{r?.name}</p><h1 className="text-4xl sm:text-5xl">Livraison & livreurs</h1></div></header>
       <p className="text-sm text-muted-foreground">Dessinez vos zones sur la carte. Dès qu'une zone existe, le client vérifie son adresse et l'éligibilité est calculée automatiquement (les codes postaux des Réglages ne servent plus).</p>
 
       <div className="mt-4 flex flex-wrap gap-2">
@@ -143,7 +144,7 @@ function Page() {
               )}
               {z.type === "polygon" && (
                 <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" className="min-h-11" disabled={!z.points?.length} onClick={() => patch({ points: z.points!.slice(0, -1) })}><Undo2 /> Annuler le dernier point</Button>
+                  <Button variant="ghost" size="sm" className="min-h-11" disabled={!z.points?.length} onClick={() => patch({ points: (z.points ?? []).slice(0, -1) })}><Undo2 /> Annuler le dernier point</Button>
                   <Button variant="ghost" size="sm" className="min-h-11" onClick={() => patch({ points: [] })}>Effacer</Button>
                 </div>
               )}
@@ -156,9 +157,9 @@ function Page() {
                 <p className="text-sm font-semibold">Frais dégressifs</p>
                 {(z.tiers ?? []).map((t, i) => (
                   <div key={i} className="mt-2 flex items-center gap-2 text-sm">
-                    dès <Input className="w-20" inputMode="decimal" value={t.from} onChange={(e) => patch({ tiers: z.tiers!.map((x, j) => (j === i ? { ...x, from: num(e.target.value) } : x)) })} aria-label="À partir de (€)" />
-                    € → <Input className="w-20" inputMode="decimal" value={t.fee} onChange={(e) => patch({ tiers: z.tiers!.map((x, j) => (j === i ? { ...x, fee: num(e.target.value) } : x)) })} aria-label="Frais (€)" /> €
-                    <Button size="icon" variant="ghost" onClick={() => patch({ tiers: z.tiers!.filter((_, j) => j !== i) })} aria-label="Supprimer le palier"><Trash2 /></Button>
+                    dès <Input className="w-20" inputMode="decimal" value={t.from} onChange={(e) => patch({ tiers: (z.tiers ?? []).map((x, j) => (j === i ? { ...x, from: num(e.target.value) } : x)) })} aria-label="À partir de (€)" />
+                    € → <Input className="w-20" inputMode="decimal" value={t.fee} onChange={(e) => patch({ tiers: (z.tiers ?? []).map((x, j) => (j === i ? { ...x, fee: num(e.target.value) } : x)) })} aria-label="Frais (€)" /> €
+                    <Button size="icon" variant="ghost" onClick={() => patch({ tiers: (z.tiers ?? []).filter((_, j) => j !== i) })} aria-label="Supprimer le palier"><Trash2 /></Button>
                   </div>
                 ))}
                 {(z.tiers?.length ?? 0) < 5 && <Button variant="ghost" size="sm" className="mt-1 min-h-11" onClick={() => patch({ tiers: [...(z.tiers ?? []), { from: 25, fee: 1.5 }] })}><Plus /> Ajouter un palier</Button>}
@@ -172,13 +173,13 @@ function Page() {
       <section className="mt-8 grid gap-4 md:grid-cols-[320px_minmax(0,1fr)]">
         <div className="space-y-3 rounded-xl border border-border bg-card p-4">
           <h2 className="flex items-center gap-2 text-2xl"><KeyRound className="h-5 w-5 text-primary" /> Accès livreurs</h2>
-          <p className="text-sm text-muted-foreground">Les livreurs ouvrent <strong className="break-all">{courierUrl}</strong> sur leur téléphone et saisissent ce code.</p>
+          <div className="flex flex-wrap gap-2"><Button variant="secondary" asChild className="min-h-12"><a href={courierUrl} target="_blank" rel="noreferrer"><ExternalLink /> Ouvrir l’accès</a></Button><Button variant="outline" className="min-h-12" onClick={async () => { try { await navigator.clipboard.writeText(courierUrl); toast.success("Lien copié"); } catch { toast.error("Copie indisponible"); } }}><Copy /> Copier le lien</Button></div>
           <p className="text-sm">{pin?.enabled ? "Code actif." : "Aucun code : l'écran livreur est fermé."}</p>
           <div className="flex gap-2">
             <Input inputMode="numeric" maxLength={6} placeholder="4 à 6 chiffres" value={newPin} onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ""))} aria-label="Nouveau code livreur" />
-            <Button className="min-h-11" disabled={!/^\d{4,6}$/.test(newPin) || !r} onClick={async () => { try { await savePin({ data: { restaurantId: r!.id, pin: newPin } }); setNewPin(""); refetchPin(); toast.success("Code livreur enregistré"); } catch (e) { toast.error((e as Error).message); } }}>Définir</Button>
+            <Button className="min-h-11" disabled={!/^\d{4,6}$/.test(newPin) || !r} onClick={async () => { try { await savePin({ data: { restaurantId: r?.id ?? "", pin: newPin } }); setNewPin(""); refetchPin(); toast.success("Code livreur enregistré"); } catch (e) { toast.error((e as Error).message); } }}>Définir</Button>
           </div>
-          {pin?.enabled && <Button variant="ghost" className="min-h-11" onClick={async () => { await savePin({ data: { restaurantId: r!.id, pin: null } }); refetchPin(); toast.success("Écran livreur fermé"); }}>Désactiver le code</Button>}
+          {pin?.enabled && <Button variant="ghost" className="min-h-11" onClick={async () => { await savePin({ data: { restaurantId: r?.id ?? "", pin: null } }); refetchPin(); toast.success("Écran livreur fermé"); }}>Désactiver le code</Button>}
         </div>
         <div className="rounded-xl border border-border bg-card p-4">
           <h2 className="text-2xl">Livraisons du jour</h2>
@@ -196,22 +197,23 @@ function Page() {
             </ul>
           )}
         </div>
-        <div className="space-y-3 rounded-xl border border-border bg-card p-4 md:col-start-1">
-          <h2 className="text-2xl">Livreurs</h2>
+        <div className="space-y-3 border-t border-border pt-4 md:col-span-2">
+          <h2 className="flex items-center gap-2 text-2xl"><Bike className="text-primary" /> Équipe de livraison</h2>
+          {!drivers.length && <p className="text-sm text-muted-foreground">Aucun livreur enregistré.</p>}
           <ul className="divide-y divide-border">
             {drivers.map((d) => (
               <li key={d.id} className="flex min-h-12 items-center justify-between gap-2">
-                <span className={d.active ? "" : "text-muted-foreground line-through"}>{d.name}</span>
+                <span>{d.name}<span className="ml-2 text-xs text-muted-foreground">{d.active ? "Actif" : "Inactif"}</span></span>
                 <span className="flex gap-1">
-                  <Button size="sm" variant="ghost" className="min-h-11" onClick={async () => { await supabase.from("restaurant_drivers").update({ active: !d.active }).eq("id", d.id); }}>{d.active ? "Désactiver" : "Réactiver"}</Button>
-                  <Button size="icon" variant="ghost" aria-label={`Supprimer ${d.name}`} onClick={async () => { if (confirm(`Supprimer ${d.name} ?`)) await supabase.from("restaurant_drivers").delete().eq("id", d.id); }}><Trash2 /></Button>
+                  <Button size="sm" variant="ghost" className="min-h-11" onClick={async () => { const { error } = await supabase.from("restaurant_drivers").update({ active: !d.active }).eq("id", d.id); if (error) toast.error("Modification impossible"); else toast.success(d.active ? "Livreur désactivé" : "Livreur réactivé"); }}>{d.active ? "Désactiver" : "Réactiver"}</Button>
+                  <Button size="icon" variant="ghost" aria-label={`Supprimer ${d.name}`} onClick={async () => { if (confirm(`Supprimer ${d.name} ?`)) { const { error } = await supabase.from("restaurant_drivers").delete().eq("id", d.id); if (error) toast.error("Suppression impossible"); else toast.success("Livreur supprimé"); } }}><Trash2 /></Button>
                 </span>
               </li>
             ))}
           </ul>
           <form className="flex gap-2" onSubmit={async (e) => { e.preventDefault(); if (!r || drvName.trim().length < 2) return; const { error } = await supabase.from("restaurant_drivers").insert({ restaurant_id: r.id, name: drvName.trim().slice(0, 40) }); if (error) toast.error("Ajout impossible"); else setDrvName(""); }}>
             <Input placeholder="Prénom du livreur" value={drvName} maxLength={40} onChange={(e) => setDrvName(e.target.value)} aria-label="Prénom du livreur" />
-            <Button type="submit" className="min-h-11"><Plus /> Ajouter</Button>
+            <Button type="submit" className="min-h-12" disabled={drvName.trim().length < 2}><Plus /> Ajouter</Button>
           </form>
         </div>
       </section>
