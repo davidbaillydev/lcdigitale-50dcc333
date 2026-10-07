@@ -31,3 +31,9 @@ Verified on a temporary restaurant, now deactivated: upload and reload persisten
 
 - [x] Logistique : zones carte (rayon/polygone), éligibilité adresse, écran /livreur PIN, ruptures 1 clic (carte), QR logo + PNG/PDF + validation tables, /admin/qrcodes
 - [x] Validation libre-service (pending_approval), dispatch livreurs (driver_id), tests E2E
+
+## Finalisation demandée le 7 octobre 2026
+- [ ] Harmoniser l'écran livreur avec l'établissement et clarifier accès/actions ; préserver l'identité éditoriale du back-office.
+- [ ] Analyser les alertes de sécurité et corriger les risques sans casser les parcours.
+- [ ] Préparer le raccordement plateforme agréée B2B et préciser les informations externes requises.
+- [ ] Compléter les E2E room service/libre-service et préparer la session gérant enregistrée.
