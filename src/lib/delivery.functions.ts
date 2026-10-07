@@ -114,32 +114,43 @@ export const courierLogin = createServerFn({ method: "POST" })
     }
     await supabaseAdmin.from("restaurant_courier_pins").update({ failed_attempts: 0, locked_until: null }).eq("restaurant_id", r.id);
     const exp = Date.now() + 14 * 3600_000;
-    return { token: `${r.id}.${exp}.${await sign(r.id, exp, row.pin_hash)}`, name: r.name };
+    const { data: drivers } = await supabaseAdmin.from("restaurant_drivers").select("id, name").eq("restaurant_id", r.id).eq("active", true).order("name");
+    return { token: `${r.id}.${exp}.${await sign(r.id, exp, row.pin_hash)}`, name: r.name, drivers: drivers ?? [] };
   });
 
-const DELIVERY_COLS = "id, order_number, customer_name, phone, address, postal_code, city, notes, slot, total, payment_method, payment_status, status, delivery_lat, delivery_lng, zone_name, courier_status, courier_name";
+const DELIVERY_COLS = "id, order_number, customer_name, phone, address, postal_code, city, notes, slot, total, payment_method, payment_status, status, delivery_lat, delivery_lng, zone_name, courier_status, courier_name, driver_id";
 
 export const courierOrders = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ token: z.string().max(200) }).parse(d))
+  .inputValidator((d: unknown) => z.object({ token: z.string().max(200), driverId: z.string().uuid().optional() }).parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const rid = await checkToken(supabaseAdmin, data.token);
     const since = new Date(Date.now() - 12 * 3600_000).toISOString();
-    const { data: rows } = await supabaseAdmin.from("orders").select(DELIVERY_COLS).eq("restaurant_id", rid).eq("mode", "delivery")
-      .in("status", ["accepted", "ready", "done"]).gte("created_at", since).order("slot");
-    type Row = { id: string; order_number: number; customer_name: string; phone: string; address: string | null; postal_code: string | null; city: string | null; notes: string | null; slot: string; total: number; payment_method: string; payment_status: string; status: string; delivery_lat: number | null; delivery_lng: number | null; zone_name: string | null; courier_status: string | null; courier_name: string | null };
+    let q = supabaseAdmin.from("orders").select(DELIVERY_COLS).eq("restaurant_id", rid).eq("mode", "delivery")
+      .in("status", ["accepted", "ready", "done"]).gte("created_at", since);
+    // Un livreur identifié voit ses courses et celles non attribuées, jamais celles d'un collègue.
+    if (data.driverId) q = q.or(`driver_id.eq.${data.driverId},driver_id.is.null`);
+    const { data: rows } = await q.order("slot");
+    type Row = { id: string; order_number: number; customer_name: string; phone: string; address: string | null; postal_code: string | null; city: string | null; notes: string | null; slot: string; total: number; payment_method: string; payment_status: string; status: string; delivery_lat: number | null; delivery_lng: number | null; zone_name: string | null; courier_status: string | null; courier_name: string | null; driver_id: string | null };
     return ((rows ?? []) as unknown as Row[]).filter((o) => o.status !== "done" || o.courier_status === "delivered");
   });
 
 export const courierUpdate = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ token: z.string().max(200), orderId: z.string().uuid(), step: z.enum(["assigned", "en_route", "delivered"]), name: z.string().trim().max(40).optional() }).parse(d))
+  .inputValidator((d: unknown) => z.object({ token: z.string().max(200), orderId: z.string().uuid(), step: z.enum(["assigned", "en_route", "delivered"]), name: z.string().trim().max(40).optional(), driverId: z.string().uuid().optional() }).parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const rid = await checkToken(supabaseAdmin, data.token);
     const patch: Record<string, unknown> = { courier_status: data.step, courier_at: new Date().toISOString() };
     if (data.name) patch["courier_name"] = data.name;
     if (data.step === "delivered") patch["status"] = "done";
-    const { data: o, error } = await supabaseAdmin.from("orders").update(patch as never).eq("id", data.orderId).eq("restaurant_id", rid).eq("mode", "delivery")
+    if (data.driverId) {
+      const { data: d } = await supabaseAdmin.from("restaurant_drivers").select("id, name").eq("id", data.driverId).eq("restaurant_id", rid).eq("active", true).maybeSingle();
+      if (!d) throw new Error("Livreur inconnu");
+      patch["driver_id"] = d.id; patch["courier_name"] = d.name;
+    }
+    let uq = supabaseAdmin.from("orders").update(patch as never).eq("id", data.orderId).eq("restaurant_id", rid).eq("mode", "delivery");
+    if (data.driverId) uq = uq.or(`driver_id.eq.${data.driverId},driver_id.is.null`);
+    const { data: o, error } = await uq
       .select("id, order_number, restaurants(slug, name)").maybeSingle();
     if (error || !o) throw new Error("Commande introuvable");
     if (data.step !== "assigned") {

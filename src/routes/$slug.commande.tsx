@@ -43,7 +43,7 @@ function Checkout() {
   const tableNo = useTable(restaurant.slug, restaurant.config.qr?.tables ?? 0);
   const table = tableNo ?? qr.room ?? (qr.self ? "self" : null);
   const onsiteTitle = qr.room ? `Room service · Chambre ${qr.room}` : qr.self && !tableNo ? "Libre-service" : `Sur place · Table ${tableNo}`;
-  const onsiteText = qr.room ? "Votre commande est préparée puis livrée dans votre chambre." : qr.self ? "Votre commande sera vérifiée par notre équipe avant d'être envoyée en cuisine." : "Votre commande part directement en cuisine et vous est servie à table.";
+  const onsiteText = qr.room ? "Votre commande est préparée puis livrée dans votre chambre." : qr.self || restaurant.config.qr?.tableValidation ? "Votre commande sera vérifiée par notre équipe avant d'être envoyée en cuisine." : "Votre commande part directement en cuisine et vous est servie à table.";
   const [slots, setSlots] = useState<string[]>([]);
   const [slot, setSlot] = useState("");
   const timing = timingOf(restaurant);
