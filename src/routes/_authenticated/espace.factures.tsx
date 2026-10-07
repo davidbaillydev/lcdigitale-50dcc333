@@ -183,7 +183,7 @@ function B2BDialog({ row, onClose }: { row: Row; onClose: () => void }) {
   );
 }
 
-function PdpCard({ restaurantId, name, status }: { restaurantId: string; name: string; status?: PdpStatus }) {
+function PdpCard({ restaurantId, name, status }: { restaurantId: string; name: string; status?: PdpStatus | undefined }) {
   const save = useServerFn(savePdpConfig);
   const qc = useQueryClient();
   const [provider, setProvider] = useState<string>(status?.provider ?? "");
