@@ -98,6 +98,7 @@ export type Database = {
         Row: {
           address: string | null
           asap: boolean
+          billing: Json | null
           cgv_accepted_at: string | null
           cgv_version: string | null
           city: string | null
@@ -139,6 +140,7 @@ export type Database = {
         Insert: {
           address?: string | null
           asap?: boolean
+          billing?: Json | null
           cgv_accepted_at?: string | null
           cgv_version?: string | null
           city?: string | null
@@ -180,6 +182,7 @@ export type Database = {
         Update: {
           address?: string | null
           asap?: boolean
+          billing?: Json | null
           cgv_accepted_at?: string | null
           cgv_version?: string | null
           city?: string | null
@@ -523,6 +526,9 @@ export type Database = {
       }
       restaurant_invoices: {
         Row: {
+          buyer_b2b: Json | null
+          buyer_b2b_by: string | null
+          buyer_b2b_updated_at: string | null
           created_at: string
           data: Json
           id: string
@@ -534,6 +540,9 @@ export type Database = {
           year: number | null
         }
         Insert: {
+          buyer_b2b?: Json | null
+          buyer_b2b_by?: string | null
+          buyer_b2b_updated_at?: string | null
           created_at?: string
           data: Json
           id?: string
@@ -545,6 +554,9 @@ export type Database = {
           year?: number | null
         }
         Update: {
+          buyer_b2b?: Json | null
+          buyer_b2b_by?: string | null
+          buyer_b2b_updated_at?: string | null
           created_at?: string
           data?: Json
           id?: string
@@ -935,6 +947,9 @@ export type Database = {
       issue_invoice: {
         Args: { _data: Json; _order_id: string; _restaurant_id: string }
         Returns: {
+          buyer_b2b: Json | null
+          buyer_b2b_by: string | null
+          buyer_b2b_updated_at: string | null
           created_at: string
           data: Json
           id: string
