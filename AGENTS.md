@@ -30,3 +30,4 @@
 - Public restaurant data: TanStack Query cache 15 min; live data uses Realtime. Why: fewer reads, fresh service data.
 - Kitchen and courier PINs: hashed in service-role-only tables (`restaurant_kitchen_pins`, `restaurant_courier_pins`) with attempt lockout; courier sessions are HMAC tokens keyed on the PIN hash. Why: no extra accounts, PIN change revokes sessions.
 - Delivery geo zones (circle/polygon) live in restaurants.delivery.geoZones; createOrder recomputes eligibility/fees via src/lib/geo.ts. Why: browser prices never trusted.
+- E2E tests live in e2e/ (Playwright, `bun run test:e2e`); write/staff scenarios are gated by E2E_ALLOW_WRITES / E2E_STAFF_STATE and skip when the feature is off. Why: never create real orders or need credentials by default.
