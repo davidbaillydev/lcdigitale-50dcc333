@@ -58,12 +58,13 @@ export const Route = createFileRoute("/api/public/vapi/$restaurantId")({
 
         const { RESTAURANT_COLUMNS, isValidSlot, modeEnabled, deliveryFee } = await import("@/lib/shop");
         const { getCatalog } = await import("@/lib/catalogs");
-        const { unitPrice, validateSelections, describeSelections } = await import("@/lib/menu");
+        const { validateSelections, orderLine } = await import("@/lib/menu");
+        const { loadOptionData, withOptions } = await import("@/lib/menu-options");
         const { data: rRow } = await supabaseAdmin.from("restaurants").select(RESTAURANT_COLUMNS).eq("id", params.restaurantId).eq("active", true).maybeSingle();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const r = rRow as any;
         if (!r) return Response.json({ results: [] });
-        const catalog = getCatalog(r);
+        const catalog = withOptions(getCatalog(r), await loadOptionData(supabaseAdmin, r.id));
 
         const results = [];
         for (const call of msg.toolCallList ?? msg.toolCalls ?? []) {
@@ -90,9 +91,8 @@ export const Route = createFileRoute("/api/public/vapi/$restaurantId")({
                 const sel = l.sel ?? {};
                 const err = validateSelections(item, sel);
                 if (err) throw new Error(`${item.name} : ${err}`);
-                const unit = unitPrice(item, sel);
-                const details = [...describeSelections(item, sel), ...(l.notes ? [l.notes] : [])];
-                return { id: item.id, name: item.name, qty: l.qty, unit, total: Math.round(unit * l.qty * 100) / 100, details, ...(item.allergens?.length ? { allergens: item.allergens } : {}) };
+                const line = orderLine(item, sel, l.qty);
+                return { ...line, details: [...line.details, ...(l.notes ? [l.notes] : [])] };
               });
               const subtotal = Math.round(items.reduce((s, i) => s + i.total, 0) * 100) / 100;
               let fee = 0; let city: string | null = null;
