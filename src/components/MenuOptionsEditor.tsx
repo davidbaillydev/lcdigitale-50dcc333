@@ -15,7 +15,7 @@ const num = (v: string) => Math.max(0, Math.round(Number(v.replace(",", ".")) * 
 /** Section « Groupes de suppléments & options » de la page Carte. */
 export function OptionGroupsPanel({ restaurantId, data, reload }: { restaurantId: string; data: OptionData; reload: () => void }) {
   const [name, setName] = useState("");
-  const act = (p: PromiseLike<{ error: { message: string } | null }>, ok?: string) => run(p).then(() => { if (ok) toast.success(ok); reload(); }).catch(fail);
+  const act = (p: PromiseLike<{ error: { message: string } | null }>, ok?: string) => run(p).then(() => { if (ok) toast.success(ok); reload(); }).catch((e) => { fail(e); });
 
   return (
     <section className="mt-6 rounded-xl border border-border bg-card p-4" aria-labelledby="opt-groups">
@@ -35,7 +35,7 @@ export function OptionGroupsPanel({ restaurantId, data, reload }: { restaurantId
 
 function GroupCard({ g, items, uses, restaurantId, act }: { g: OptionData["groups"][number]; items: OptionData["items"]; uses: number; restaurantId: string; act: (p: PromiseLike<{ error: { message: string } | null }>, ok?: string) => Promise<void> }) {
   const [label, setLabel] = useState(""); const [price, setPrice] = useState("");
-  const upd = (patch: Record<string, unknown>) => act(supabase.from("option_groups").update(patch).eq("id", g.id));
+  const upd = (patch: { name?: string; is_required?: boolean; min_selection?: number; max_selection?: number }) => act(supabase.from("option_groups").update(patch).eq("id", g.id));
   return (
     <div className="rounded-lg border border-border p-3">
       <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
@@ -72,7 +72,7 @@ export function ItemOptionsEditor({ restaurantId, productId, data, reload }: { r
   const sizes = data.variants.filter((v) => v.product_id === productId);
   const links = data.links.filter((l) => l.product_id === productId);
   const [nm, setNm] = useState(""); const [pr, setPr] = useState("");
-  const act = (p: PromiseLike<{ error: { message: string } | null }>, ok?: string) => run(p).then(() => { if (ok) toast.success(ok); reload(); }).catch(fail);
+  const act = (p: PromiseLike<{ error: { message: string } | null }>, ok?: string) => run(p).then(() => { if (ok) toast.success(ok); reload(); }).catch((e) => { fail(e); });
   const scopeOf = (gid: string) => links.filter((l) => l.group_id === gid);
   const setScope = async (gid: string, scope: string) => {
     try {
