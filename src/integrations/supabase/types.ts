@@ -97,6 +97,7 @@ export type Database = {
       orders: {
         Row: {
           address: string | null
+          asap: boolean
           cgv_accepted_at: string | null
           cgv_version: string | null
           city: string | null
@@ -130,6 +131,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          asap?: boolean
           cgv_accepted_at?: string | null
           cgv_version?: string | null
           city?: string | null
@@ -163,6 +165,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          asap?: boolean
           cgv_accepted_at?: string | null
           cgv_version?: string | null
           city?: string | null
