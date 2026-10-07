@@ -10,3 +10,4 @@
 
 - Imprimante directe ESC/POS par appareil (Bluetooth BLE, USB, réseau via pont LC Print) : `src/lib/printer.ts` + `escpos.ts`; repli navigateur si aucune configurée. Why: le navigateur ne peut pas ouvrir de socket réseau.
 - New restaurants default to the blank menu_key `vierge` (no base catalog); templates remain selectable. Why: menus are built via AI import or by hand.
+- Mobile admin UI: labelled records, constrained grids, 48px actions/44px toggles, bounded portals with sticky close bars. Why: touch access without overflow.
