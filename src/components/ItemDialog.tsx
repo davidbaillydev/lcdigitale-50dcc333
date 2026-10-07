@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { euro, groupCost, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
+import { activeGroups, euro, groupCost, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
 import { useCart } from "@/lib/cart";
 import { itemImage } from "@/lib/menu-images";
 import { AllergenInfo } from "@/components/Allergens";
@@ -22,7 +22,7 @@ export function ItemDialog({ item, onClose }: { item: MenuItem | null; onClose: 
   }, [item?.id]);
 
   if (!item) return null;
-  const groups = item.options ?? [];
+  const groups = activeGroups(item, sel);
   const stepped = !!item.builder;
   const visible = stepped ? groups.slice(step, step + 1) : groups;
   const price = unitPrice(item, sel);
@@ -31,6 +31,7 @@ export function ItemDialog({ item, onClose }: { item: MenuItem | null; onClose: 
   const toggle = (g: OptionGroup, id: string) => {
     setSel((prev) => {
       const cur = prev[g.id] ?? [];
+      if (g.kind === "size") return Object.fromEntries([...Object.entries(prev).filter(([k]) => !(item.options ?? []).find((x) => x.id === k)?.forSize), [g.id, [id]]]);
       if (g.max === 1) return { ...prev, [g.id]: [id] };
       if (cur.includes(id)) return { ...prev, [g.id]: cur.filter((x) => x !== id) };
       if (cur.length >= g.max) return prev;
@@ -76,7 +77,7 @@ export function ItemDialog({ item, onClose }: { item: MenuItem | null; onClose: 
           return (
             <div key={g.id} className="space-y-3">
               <div className="flex items-baseline justify-between gap-2">
-                <h3 className="text-xl">{g.label}</h3>
+                <h3 className="text-xl">{g.label}{g.kind === "size" ? <span className="ml-2 text-xs font-semibold uppercase text-primary">Obligatoire</span> : g.min > 0 ? <span className="ml-2 text-xs font-semibold uppercase text-primary">Obligatoire</span> : null}</h3>
                 <span className="text-xs text-muted-foreground">
                   {g.min === g.max ? `${g.min} choix` : `${g.min ? `min ${g.min} · ` : ""}max ${g.max}`}
                   {g.included !== undefined && g.extraPrice ? ` · ${g.included} compris, +${euro(g.extraPrice)} le supplément` : ""}
@@ -89,15 +90,18 @@ export function ItemDialog({ item, onClose }: { item: MenuItem | null; onClose: 
                     <button
                       key={c.id}
                       type="button"
+                      role={g.kind === "size" ? "radio" : "checkbox"}
+                      aria-checked={on}
+                      disabled={c.soldOut}
                       onClick={() => toggle(g, c.id)}
                       className={cn(
-                        "flex items-center justify-between gap-2 rounded-lg border px-3 py-3 text-left text-sm transition-colors",
+                        "flex min-h-12 items-center justify-between gap-2 rounded-lg border px-3 py-3 text-left text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50",
                         on ? "border-primary bg-primary/15" : "border-border hover:border-primary/50",
                       )}
                     >
                       <span className="min-w-0">
                         {c.label}
-                        {c.price ? <span className="block text-xs text-primary">+{euro(c.price)}</span> : null}
+                        {c.soldOut ? <span className="block text-xs text-destructive">Épuisé</span> : g.kind === "size" ? <span className="block text-xs text-primary">{euro(c.price ?? 0)}</span> : c.price ? <span className="block text-xs text-primary">+{euro(c.price)}</span> : null}
                       </span>
                       {on && <Check className="h-4 w-4 shrink-0 text-primary" />}
                     </button>
