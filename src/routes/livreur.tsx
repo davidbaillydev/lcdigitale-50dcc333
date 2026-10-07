@@ -29,7 +29,8 @@ export const Route = createFileRoute("/livreur")({
 });
 
 type O = Awaited<ReturnType<typeof courierOrders>>[number];
-type Session = { token: string; name: string; slug: string; me: string };
+type Session = { token: string; name: string; slug: string; me: string; driverId?: string | undefined };
+type Drv = { id: string; name: string };
 const err = (e: unknown) => (e instanceof Error ? e.message : "Erreur");
 
 function Courier() {
@@ -51,12 +52,19 @@ function Login({ onDone }: { onDone: (s: Session) => void }) {
   const [pin, setPin] = useState("");
   const [me, setMe] = useState("");
   const [busy, setBusy] = useState(false);
+  const [pending, setPending] = useState<{ token: string; name: string; drivers: Drv[] } | null>(null);
   useEffect(() => { setSlug(new URLSearchParams(window.location.search).get("r") ?? ""); }, []);
   const go = async () => {
     setBusy(true);
-    try { const r = await login({ data: { slug, pin } }); onDone({ ...r, slug, me: me.trim() }); }
+    try { const r = await login({ data: { slug, pin } }); if (r.drivers.length) setPending(r); else onDone({ token: r.token, name: r.name, slug, me: me.trim() }); }
     catch (e) { toast.error(err(e)); setPin(""); } finally { setBusy(false); }
   };
+  if (pending) return (
+    <section className="mx-auto mt-10 max-w-sm space-y-3 rounded-2xl border border-border bg-card p-6">
+      <h1 className="text-3xl">Qui êtes-vous ?</h1>
+      {pending.drivers.map((d) => <Button key={d.id} variant="secondary" className="min-h-14 w-full text-lg" onClick={() => onDone({ token: pending.token, name: pending.name, slug, me: d.name, driverId: d.id })}>{d.name}</Button>)}
+    </section>
+  );
   return (
     <section className="mx-auto mt-10 max-w-sm space-y-4 rounded-2xl border border-border bg-card p-6">
       <h1 className="flex items-center gap-2 text-4xl"><Bike className="h-8 w-8 text-primary" /> Livreur</h1>
@@ -74,13 +82,13 @@ function Board({ s, onLogout }: { s: Session; onLogout: () => void }) {
   const [orders, setOrders] = useState<O[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const refresh = useCallback(async () => {
-    try { setOrders(await list({ data: { token: s.token } })); }
+    try { setOrders(await list({ data: { token: s.token, ...(s.driverId ? { driverId: s.driverId } : {}) } })); }
     catch (e) { toast.error(err(e)); if (/Session/.test(err(e))) onLogout(); }
-  }, [list, s.token, onLogout]);
-  useEffect(() => { refresh(); const t = setInterval(refresh, 20_000); return () => clearInterval(t); }, [refresh]);
+  }, [list, s.token, s.driverId, onLogout]);
+  useEffect(() => { refresh(); const t = setInterval(refresh, 10_000); return () => clearInterval(t); }, [refresh]);
   const step = async (o: O, st: "assigned" | "en_route" | "delivered") => {
     setBusy(o.id);
-    try { await update({ data: { token: s.token, orderId: o.id, step: st, ...(s.me ? { name: s.me } : {}) } }); await refresh(); }
+    try { await update({ data: { token: s.token, orderId: o.id, step: st, ...(s.driverId ? { driverId: s.driverId } : s.me ? { name: s.me } : {}) } }); await refresh(); }
     catch (e) { toast.error(err(e)); } finally { setBusy(null); }
   };
   const todo = (orders ?? []).filter((o) => o.courier_status !== "delivered");
@@ -106,11 +114,11 @@ function Board({ s, onLogout }: { s: Session; onLogout: () => void }) {
       )}
       {orders === null ? <Skeleton className="mt-4 h-40 w-full" /> : !todo.length ? <p className="mt-8 text-center text-muted-foreground">Aucune livraison en attente. La liste s'actualise toute seule.</p> : (
         <ul className="mt-4 space-y-3">
-          {todo.map((o) => (
+          {[...todo].sort((a, b) => Number(b.driver_id === s.driverId) - Number(a.driver_id === s.driverId)).map((o) => (
             <li key={o.id} className="rounded-2xl border border-border bg-card p-4">
               <div className="flex items-start justify-between gap-2">
                 <div><p className="text-2xl font-bold">n°{o.order_number} · {fmtTime(o.slot)}</p><p className="font-semibold">{o.customer_name}</p></div>
-                <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold">{o.courier_status === "en_route" ? "En cours" : o.courier_status === "assigned" ? "Assignée" : o.status === "ready" ? "Prête" : "En préparation"}</span>
+                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${s.driverId && o.driver_id === s.driverId ? "bg-primary text-primary-foreground" : "bg-muted"}`}>{s.driverId && o.driver_id === s.driverId ? "Pour vous · " : ""}{o.courier_status === "en_route" ? "En cours" : o.courier_status === "assigned" ? "Assignée" : o.status === "ready" ? "Prête" : "En préparation"}</span>
               </div>
               <p className="mt-1">{o.address}{o.city ? `, ${o.city}` : ""}</p>
               {o.notes && <p className="mt-1 text-sm text-muted-foreground">« {o.notes} »</p>}
@@ -124,7 +132,7 @@ function Board({ s, onLogout }: { s: Session; onLogout: () => void }) {
                 {o.courier_status !== "en_route"
                   ? <Button className="min-h-14 col-span-2" disabled={busy === o.id} onClick={() => step(o, "en_route")}><Bike /> En cours de livraison</Button>
                   : <Button className="min-h-14 col-span-2" disabled={busy === o.id} onClick={() => step(o, "delivered")}><CheckCircle2 /> Livré</Button>}
-                {!o.courier_status && <Button variant="ghost" className="min-h-12 col-span-2" disabled={busy === o.id} onClick={() => step(o, "assigned")}>Je la prends</Button>}
+                {!o.driver_id && !o.courier_status && <Button variant="ghost" className="min-h-12 col-span-2" disabled={busy === o.id} onClick={() => step(o, "assigned")}>Je la prends</Button>}
               </div>
             </li>
           ))}

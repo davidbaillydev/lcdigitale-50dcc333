@@ -30,3 +30,4 @@ Verified on a temporary restaurant, now deactivated: upload and reload persisten
 - [x] Étape C3 : cache 15 min carte/légal (TanStack Query), Realtime réservations
 
 - [x] Logistique : zones carte (rayon/polygone), éligibilité adresse, écran /livreur PIN, ruptures 1 clic (carte), QR logo + PNG/PDF + validation tables, /admin/qrcodes
+- [x] Validation libre-service (pending_approval), dispatch livreurs (driver_id), tests E2E

@@ -9,6 +9,7 @@ import { PrinterSetup } from "@/components/PrinterSetup";
 import { StockDialog } from "@/components/StockDialog";
 import { issueInvoice } from "@/lib/invoice.functions";
 import { notifyOrderStatus } from "@/lib/push.functions";
+import { DriverSelect, useDrivers } from "@/components/DriverSelect";
 import { downloadInvoice } from "@/lib/invoice";
 import { FileText } from "lucide-react";
 import { toast } from "sonner";
@@ -42,7 +43,7 @@ export const Route = createFileRoute("/_authenticated/espace/$slug/")({
 type Order = {
   id: string; order_number: number; customer_name: string; phone: string; mode: string; address: string | null; city: string | null;
   slot: string; items: { name: string; qty: number; details: string[]; allergens?: string[] }[]; notes: string | null; total: number;
-  payment_method: string; payment_status?: string; status: string; source?: string; created_at: string; table_label?: string | null; room_label?: string | null; asap?: boolean;
+  payment_method: string; payment_status?: string; status: string; source?: string; created_at: string; table_label?: string | null; room_label?: string | null; asap?: boolean; driver_id?: string | null; courier_status?: string | null;
 };
 
 type PrintLog = { id: string; kinds: string; status: string; reprint: boolean; auto: boolean; created_at: string };
@@ -148,6 +149,7 @@ function Kitchen() {
 
   const ordersRef = useRef<Order[]>([]);
   ordersRef.current = orders;
+  const drivers = useDrivers(rid);
   useEffect(() => {
     if (!isStaff || !rid) return;
     load();
@@ -157,9 +159,9 @@ function Kitchen() {
         const n = p.new as Order;
         const becamePaid = p.eventType === "UPDATE" && n.status !== "awaiting_payment" && n.payment_method === "online" && n.payment_status === "paid" && !ordersRef.current.some((x) => x.id === n.id);
         if ((p.eventType === "INSERT" && n.status !== "awaiting_payment") || becamePaid) {
-          toast.success(`Nouvelle commande n° ${(p.new as Order).order_number}`);
+          toast.success(n.status === "pending_approval" ? `Nouvelle commande ${n.table_label ? `Table ${n.table_label}` : n.room_label ? `Chambre ${n.room_label}` : "libre-service"} · à valider` : `Nouvelle commande n° ${n.order_number}`, n.status === "pending_approval" ? { duration: 15000 } : undefined);
           if (audio.current && soundRef.current) beep(audio.current);
-          if (printRef.current.auto && n.status !== "pending_validation") void printRef.current.doPrint(p.new as Order, ["kitchen", "receipt"], true);
+          if (printRef.current.auto && n.status !== "pending_approval") void printRef.current.doPrint(p.new as Order, ["kitchen", "receipt"], true);
         }
         load();
       })
@@ -168,7 +170,7 @@ function Kitchen() {
   }, [isStaff, rid, load]);
 
   // Rappel sonore tant qu'il reste des commandes non acceptées
-  const pending = orders.filter((o) => o.status === "new").length;
+  const pending = orders.filter((o) => o.status === "new" || o.status === "pending_approval").length;
   useEffect(() => {
     if (!sound || !pending) return;
     const t = setInterval(() => audio.current && beep(audio.current), 10000);
@@ -276,16 +278,17 @@ function Kitchen() {
         <p className="flex items-center gap-3 font-display text-2xl font-semibold"><ChefHat aria-hidden="true" /> Le service<span aria-hidden="true">.</span></p>
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm"><span><strong className="text-xl tabular-nums">{orders.filter((o) => COLS.some((c) => c.s === o.status)).length}</strong> en cours</span><span><strong className="text-xl tabular-nums">{done.length}</strong> terminée(s)</span><span>CA <strong className="text-xl tabular-nums">{euro(done.reduce((s, o) => s + Number(o.total), 0))}</strong></span></div>
       </div>
-      {orders.some((o) => o.status === "pending_validation") && (
+      {orders.some((o) => o.status === "pending_approval") && (
         <section aria-label="Commandes libre-service à valider" className="border-b border-border bg-card px-4 py-4 lg:px-6">
-          <h2 className="text-2xl">À valider · libre-service</h2>
+          <h2 className="text-2xl">À valider par le service</h2>
           <ul className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {orders.filter((o) => o.status === "pending_validation").map((o) => (
-              <li key={o.id} className="rounded-xl border border-primary p-3">
+            {orders.filter((o) => o.status === "pending_approval").map((o) => (
+              <li key={o.id} className="kds-incoming rounded-xl border border-primary p-3">
+                <p className="text-xl font-bold">Nouvelle commande {o.table_label ? `Table ${o.table_label}` : o.room_label ? `Chambre ${o.room_label}` : "libre-service"}</p>
                 <p className="font-semibold">N° {o.order_number} · {o.customer_name} · {euro(Number(o.total))}</p>
                 <p className="text-sm text-muted-foreground">{o.items.map((i) => `${i.qty}× ${i.name}`).join(", ")}</p>
                 <div className="mt-2 flex gap-2">
-                  <Button className="min-h-12 flex-1" onClick={() => move(o, "new")}><Check /> Valider et envoyer en cuisine</Button>
+                  <Button className="min-h-12 flex-1" onClick={() => move(o, "accepted")}><Check /> Valider & Envoyer en cuisine</Button>
                   <Button variant="outline" className="min-h-12" onClick={() => confirm("Refuser cette commande ?") && move(o, "cancelled")}>Refuser</Button>
                 </div>
               </li>
@@ -327,7 +330,7 @@ function Kitchen() {
                       ))}
                     </ul>
                     {o.notes && <p className="mt-2 rounded border-l-4 border-primary bg-accent p-3 text-sm font-medium">⚠ {o.notes}</p>}
-                    {o.mode === "delivery" && <p className="mt-2 text-sm">{o.address}, {o.city}</p>}
+                    {o.mode === "delivery" && <div className="mt-2 space-y-2"><p className="text-sm">{o.address}{o.city ? `, ${o.city}` : ""}</p><DriverSelect orderId={o.id} driverId={o.driver_id ?? null} drivers={drivers} courierStatus={o.courier_status ?? null} /></div>}
                     <div className="mt-2 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-start gap-2 break-words text-sm text-muted-foreground">
                       {o.source === "kiosk" ? <span /> : <a href={`tel:${o.phone}`} className="flex items-center gap-1"><Phone className="h-3 w-3" />{o.phone}</a>}
                       <span>{euro(Number(o.total))} · {o.payment_method === "online" && o.payment_status === "paid" ? `Payé en ligne (${String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("paypal:") ? "PayPal" : String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("lyra:") ? "Lyra" : "Stripe"})` : o.payment_status === "paid" ? "payé (terminal)" : o.payment_method === "online" ? "payé" : o.payment_method === "card_terminal" ? "CB au comptoir" : o.payment_method === "counter" ? "espèces/TR au comptoir" : "à encaisser"}</span>
