@@ -45,6 +45,7 @@ function MenuEditor() {
   const { loading, restaurants } = useStaff();
   const r = restaurants.find((x) => x.slug === slug);
   const soldOut = useSoldOut(r?.id);
+  const opt = useOptionData(r?.id);
   const canManage = r?.role === "agency" || r?.role === "manager";
   const load = useServerFn(loadMenu);
   const save = useServerFn(saveMenu);
