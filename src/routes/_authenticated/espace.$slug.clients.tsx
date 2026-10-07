@@ -33,7 +33,7 @@ export const Route = createFileRoute("/_authenticated/espace/$slug/clients")({
 
 type Customer = { id: string; name: string | null; email: string | null; phone: string | null; marketing_consent: boolean; consent_at: string | null; consent_source: string | null; source: string; created_at: string };
 type Stats = { orders: number; spent: number; last: string | null };
-const SRC: Record<string, string> = { import: "Import", order: "Commande", manual: "Manuel" };
+const SRC: Record<string, string> = { import: "Fichier importé", order: "Commande en ligne", reservation: "Réservation", manual: "Manuel" };
 
 function Page() {
   const { slug } = Route.useParams();
@@ -45,19 +45,48 @@ function Page() {
   const { data, refetch, isFetching } = useQuery({
     queryKey: ["customers", rid], enabled: !!rid && !!canManage,
     queryFn: async () => {
-      const customers: Customer[] = [];
-      for (let i = 0; ; i += 1000) {
-        const { data: c, error } = await supabase.from("restaurant_customers").select("id, name, email, phone, marketing_consent, consent_at, consent_source, source, created_at").eq("restaurant_id", rid!).order("created_at", { ascending: false }).range(i, i + 999);
-        if (error) throw error;
-        customers.push(...(c ?? []));
-        if (!c || c.length < 1000) break;
-      }
+      const loadCustomers = async () => {
+        const out: Customer[] = [];
+        for (let i = 0; ; i += 1000) {
+          const { data: c, error } = await supabase.from("restaurant_customers").select("id, name, email, phone, marketing_consent, consent_at, consent_source, source, created_at").eq("restaurant_id", rid!).order("created_at", { ascending: false }).range(i, i + 999);
+          if (error) throw error;
+          out.push(...(c ?? []));
+          if (!c || c.length < 1000) break;
+        }
+        return out;
+      };
+      let customers = await loadCustomers();
       const orders: { customer_name: string; email: string | null; phone: string; total: number; created_at: string }[] = [];
       for (let i = 0; ; i += 1000) {
-        const { data: o } = await supabase.from("orders").select("customer_name, email, phone, total, created_at").eq("restaurant_id", rid!).not("status", "in", "(awaiting_payment,cancelled)").range(i, i + 999);
+        const { data: o, error } = await supabase.from("orders").select("customer_name, email, phone, total, created_at").eq("restaurant_id", rid!).not("status", "in", "(awaiting_payment,cancelled)").range(i, i + 999);
+        if (error) throw error;
         orders.push(...((o ?? []) as typeof orders));
         if (!o || o.length < 1000) break;
       }
+      const resas: { customer_name: string; email: string | null; phone: string }[] = [];
+      for (let i = 0; ; i += 1000) {
+        const { data: v, error } = await supabase.from("reservations").select("customer_name, email, phone").eq("restaurant_id", rid!).range(i, i + 999);
+        if (error) throw error;
+        resas.push(...(v ?? []));
+        if (!v || v.length < 1000) break;
+      }
+      // Ajout automatique des clients des commandes et réservations (périmètre de CE restaurant uniquement)
+      const known = new Set(customers.flatMap((c) => [c.email && `e:${c.email}`, c.phone && `p:${c.phone}`].filter(Boolean) as string[]));
+      const collect = (list: { customer_name: string; email: string | null; phone: string }[]) => {
+        const add: ImportRow[] = [];
+        list.forEach((o) => {
+          const email = normEmail(o.email), phone = normPhone(o.phone);
+          const keys = [email && `e:${email}`, phone && `p:${phone}`].filter(Boolean) as string[];
+          if (!keys.length || keys.some((k) => known.has(k))) return;
+          keys.forEach((k) => known.add(k));
+          add.push({ name: o.customer_name, email, phone, consent: false });
+        });
+        return add;
+      };
+      const fromOrders = collect(orders), fromResas = collect(resas);
+      if (fromOrders.length) await insertChunks(rid!, fromOrders, "order", false);
+      if (fromResas.length) await insertChunks(rid!, fromResas, "reservation", false);
+      if (fromOrders.length || fromResas.length) customers = await loadCustomers();
       return { customers, orders };
     },
   });
