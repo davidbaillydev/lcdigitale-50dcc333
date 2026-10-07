@@ -53,6 +53,10 @@ function Checkout() {
   const [pay, setPay] = useState<"on_site" | "stripe" | "paypal" | "lyra">("on_site");
   const [busy, setBusy] = useState(false);
   const [cgv, setCgv] = useState(false);
+  const [pro, setPro] = useState(false);
+  const [bill, setBill] = useState({ company: "", siren: "", vatNumber: "", address: "", postalCode: "", city: "", email: "" });
+  const setB = (k: keyof typeof bill) => (e: React.ChangeEvent<HTMLInputElement>) => setBill((b) => ({ ...b, [k]: k === "siren" ? e.target.value.replace(/\D/g, "").slice(0, 9) : k === "vatNumber" ? e.target.value.toUpperCase().replace(/\s/g, "") : e.target.value }));
+  const proOk = !pro || (bill.company.trim().length >= 2 && /^\d{9}$/.test(bill.siren) && bill.address.trim().length >= 3 && /^\d{5}$/.test(bill.postalCode) && !!bill.city.trim());
   const infoFn = useServerFn(onlinePaymentInfo);
   const [online, setOnline] = useState<{ stripe: string | null; paypal: boolean; lyra: boolean }>({ stripe: null, paypal: false, lyra: false });
   const [payment, setPayment] = useState<{ id: string; clientSecret: string } | null>(null);
@@ -111,6 +115,7 @@ function Checkout() {
         data: {
           ...f, restaurant: restaurant.slug, ...(table ? { mode: "dine_in" as const, ...(tableNo ? { table: tableNo } : {}), ...(qr.room ? { room: qr.room } : {}), ...(qr.self ? { qr: "self" as const } : {}), slot: new Date().toISOString(), address: "", postal_code: "" } : { mode, slot: asap ? new Date().toISOString() : slot, asap, ...(mode === "delivery" && geo ? { lat: geo.lat, lng: geo.lng } : {}) }), ...(promo.code ? { promo_code: promo.code } : {}),
           payment_method: pay === "on_site" ? "on_site" : "online", cgv: true as const,
+          ...(pro ? { billing: bill } : {}),
           origin: window.location.origin,
           ...(pay !== "on_site" ? { provider: pay } : {}),
           lines: lines.map((l) => ({ itemId: l.itemId, qty: l.qty, sel: l.sel })),
@@ -241,6 +246,23 @@ function Checkout() {
                 </>
               )}
               <div className="sm:col-span-2"><Label htmlFor="no">Remarques (allergies, digicode…)</Label><Textarea id="no" maxLength={500} value={f.notes} onChange={set("notes")} /></div>
+              <div className="sm:col-span-2 rounded-lg border border-border p-3">
+                <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-medium">
+                  <span>Commande professionnelle <span className="block text-xs font-normal opacity-70">Facture au nom de votre société (SIREN)</span></span>
+                  <input type="checkbox" role="switch" aria-label="Commande professionnelle" className="h-6 w-6 accent-[var(--primary)]" checked={pro} onChange={(e) => setPro(e.target.checked)} />
+                </label>
+                {pro && (
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <div className="sm:col-span-2"><Label htmlFor="bc">Raison sociale *</Label><Input id="bc" maxLength={120} value={bill.company} onChange={setB("company")} /></div>
+                    <div><Label htmlFor="bs">SIREN (9 chiffres) *</Label><Input id="bs" inputMode="numeric" value={bill.siren} onChange={setB("siren")} aria-invalid={!!bill.siren && !/^\d{9}$/.test(bill.siren)} /></div>
+                    <div><Label htmlFor="bv">N° TVA intracom.</Label><Input id="bv" maxLength={15} placeholder="FR…" value={bill.vatNumber} onChange={setB("vatNumber")} /></div>
+                    <div className="sm:col-span-2"><Label htmlFor="ba">Adresse de facturation *</Label><Input id="ba" maxLength={200} value={bill.address} onChange={setB("address")} /></div>
+                    <div><Label htmlFor="bp">Code postal *</Label><Input id="bp" inputMode="numeric" maxLength={5} value={bill.postalCode} onChange={setB("postalCode")} /></div>
+                    <div><Label htmlFor="bt">Ville *</Label><Input id="bt" maxLength={80} value={bill.city} onChange={setB("city")} /></div>
+                    <div className="sm:col-span-2"><Label htmlFor="be">Email de facturation</Label><Input id="be" type="email" maxLength={255} value={bill.email} onChange={setB("email")} /></div>
+                  </div>
+                )}
+              </div>
             </div>
           </section>
 
