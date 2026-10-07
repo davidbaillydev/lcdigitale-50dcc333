@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/lib/theme";
 import { downloadCSV, downloadXLSX, eur } from "@/lib/export";
 import { breakdown, type Invoice, type InvoiceData } from "@/lib/invoice";
+import { invoicePlatformReadiness } from "@/lib/invoice-platform";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/espace/factures")({
   head: () => ({
@@ -33,6 +35,7 @@ function Invoices() {
   const [to, setTo] = useState(new Date().toISOString().slice(0, 10));
   const [rest, setRest] = useState("");
   const [busy, setBusy] = useState(false);
+  const [preparation, setPreparation] = useState<Row | null>(null);
   const { data = [], isLoading } = useQuery({
     queryKey: ["invoices", from, to],
     staleTime: 60_000,
@@ -60,6 +63,7 @@ function Invoices() {
         <div className="mr-auto"><p className="text-sm font-semibold text-primary">Facturation électronique</p><h1 className="text-5xl">Factures</h1></div>
         <ThemeToggle />
       </header>
+      <p role="status" className="border-l-4 border-primary pl-3 text-sm text-muted-foreground">Plateforme agréée : non raccordée. Le téléchargement PDF ne vaut pas transmission fiscale B2B.</p>
       <div className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4">
         <label className="text-sm">Du <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></label>
         <label className="text-sm">Au <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></label>
@@ -87,11 +91,18 @@ function Invoices() {
             <div key={r.id} className="flex flex-wrap items-center gap-3 p-3">
               <div className="min-w-0 flex-1"><p className="font-semibold">{r.number}</p><p className="text-sm text-muted-foreground">{new Date(r.issued_at).toLocaleDateString("fr-FR")} · {r.restaurants?.name} · {d.buyer.name} · cmd n° {d.orderNumber}</p></div>
               <span className="text-sm">{eur(Number(d.totalTTC))}</span>
+               <Button size="sm" variant="outline" className="min-h-12" onClick={() => setPreparation(r)}>Préparation B2B</Button>
               <Button size="sm" variant="secondary" className="min-h-12" onClick={async () => { const { downloadInvoice } = await import("@/lib/invoice"); await downloadInvoice(r); }}><FileText /> PDF</Button>
             </div>
           ); })}
         </div>
       )}
+      <Dialog open={!!preparation} onOpenChange={(open) => { if (!open) setPreparation(null); }}>
+        <DialogContent><DialogHeader><DialogTitle>Raccordement B2B · {preparation?.number}</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">Non raccordé — prérequis manquants</p>
+          <ul className="list-disc space-y-2 pl-5 text-sm">{preparation && invoicePlatformReadiness(preparation).missing.map((item) => <li key={item}>{item}</li>)}</ul>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

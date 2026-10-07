@@ -12,7 +12,7 @@
 - Restaurants store hours, delivery and config as jsonb; public pages use `/$slug`. Base menus live in `src/lib/catalogs.ts` by `menu_key`; `restaurants.menu` (same Category shape) overrides them through shared getCatalog(restaurant). Servers recompute every order total, never trusting client prices.
 - Customer orders are inserted by a public server function with the admin client; staff read/update orders via RLS (`can_access_restaurant`) and Realtime filtered by restaurant_id.
 - Agency (global) role is `admin` in user_roles (first account via trigger); per-restaurant access (manager/kitchen) lives in `restaurant_members`.
-- Public site/kiosk use BrandTheme; all authenticated screens and portaled dialogs use scoped editorial administration tokens, with restaurant logos/swatches/previews only. Agency writes require has_role. Why: consistent admin identity, independent public branding.
+- Site/kiosk/courier use BrandTheme; authenticated screens/dialogs use editorial tokens with restaurant logos. Agency writes require has_role. Why: recognizable restaurants, consistent administration.
 - Authenticated menu imports stay staged in the editor until manager review/save; uploads are not persisted. Why: uncertain AI extraction must never silently replace live prices or another restaurant's menu.
 - Private screens live under `src/routes/_authenticated/`: `/admin/*` (agency only, has_role gate in admin.tsx beforeLoad) and `/espace/*` (restaurateurs: per-restaurant pages check membership); every server function re-checks the role. Why: UI gates are UX, server checks are the boundary.
 - Restaurateur accounts are invite-only (public signup disabled; inviteMember adds restaurant_members, invite lands on /reset-password). Team lists expose only that restaurant's members. Why: no cross-restaurant email exposure or self-signup.
@@ -30,4 +30,5 @@
 - Public restaurant data: TanStack Query cache 15 min; live data uses Realtime. Why: fewer reads, fresh service data.
 - Kitchen and courier PINs: hashed in service-role-only tables (`restaurant_kitchen_pins`, `restaurant_courier_pins`) with attempt lockout; courier sessions are HMAC tokens keyed on the PIN hash. Why: no extra accounts, PIN change revokes sessions.
 - Delivery geo zones (circle/polygon) live in restaurants.delivery.geoZones; createOrder recomputes eligibility/fees via src/lib/geo.ts. Why: browser prices never trusted.
-- E2E tests live in e2e/ (Playwright, `bun run test:e2e`); write/staff scenarios are gated by E2E_ALLOW_WRITES / E2E_STAFF_STATE and skip when the feature is off. Why: never create real orders or need credentials by default.
+- E2E in e2e/ gates writes/staff via E2E_ALLOW_WRITES/E2E_STAFF_STATE; skip disabled modes. Store sessions only outside the repo. Why: no production writes or credential leaks by default.
+- invoice-platform defines B2B readiness/contracts; transmission stays disabled pending provider, buyer identity and normative validation. Why: PDFs are not fiscal network compliance.
