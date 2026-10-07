@@ -52,7 +52,7 @@ function Page() {
   return (
     <main className="mx-auto max-w-6xl space-y-6 p-4 md:p-8">
       <div className="flex items-center justify-between gap-3">
-        <Crumbs items={[{ label: "Console agence", to: "/admin" }, { label: "Clients" }]} />
+        <Crumbs page="Clients" />
         <ThemeToggle />
       </div>
       <h1 className="text-3xl font-semibold">Clients — tous les restaurants</h1>
