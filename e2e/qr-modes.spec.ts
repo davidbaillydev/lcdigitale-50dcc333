@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { STAFF_STATE, WRITES, SLUG, bannerText, openMenu } from "./helpers";
+import { STAFF_STATE, WRITES, SLUG, bannerText, openMenu, addSimpleDish } from "./helpers";
 
 test.describe("QR codes", () => {
   test("Consultation seule : menu visible, aucun ajout au panier", async ({ page }) => {
@@ -24,8 +24,7 @@ test.describe("QR codes", () => {
     test.skip(!WRITES, "E2E_ALLOW_WRITES=1 requis pour créer une vraie commande");
 
     // Ajout du premier plat simple puis commande
-    await page.locator("button").filter({ hasText: "€" }).first().click();
-    await page.getByRole("button", { name: /Ajouter/ }).last().click();
+    await addSimpleDish(page);
     await page.goto(`/${SLUG}/commande`);
     await expect(page.getByText("vérifiée par notre équipe")).toBeVisible();
     await page.getByLabel("Nom *").fill("Test E2E");

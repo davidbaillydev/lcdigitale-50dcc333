@@ -15,3 +15,16 @@ export async function openMenu(page: Page, query = "") {
 export async function bannerText(page: Page) {
   return (await page.getByRole("status").allTextContents()).join(" | ");
 }
+
+/** Ajoute au panier le premier plat sans choix obligatoire. */
+export async function addSimpleDish(page: Page) {
+  const dishes = page.locator("main button, section button").filter({ hasText: "€" });
+  const n = Math.min(await dishes.count(), 15);
+  for (let i = 0; i < n; i++) {
+    await dishes.nth(i).click();
+    const add = page.getByRole("button", { name: /^Ajouter ·/ });
+    if (await add.isVisible({ timeout: 3000 }).catch(() => false)) { await add.click(); return; }
+    await page.keyboard.press("Escape");
+  }
+  throw new Error("Aucun plat simple trouvé");
+}

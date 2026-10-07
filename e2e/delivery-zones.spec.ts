@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { SLUG } from "./helpers";
+import { SLUG, addSimpleDish } from "./helpers";
 
 // Les calculs (rayon, polygone, frais dégressifs) sont couverts par src/lib/geo.test.ts.
 // Ici : le parcours client réel, avec une adresse dans et hors zone.
@@ -9,8 +9,7 @@ const OUTSIDE = process.env["E2E_ADDR_OUT"] ?? "1 Place du Capitole, 31000 Toulo
 async function checkout(page: import("@playwright/test").Page) {
   await page.goto(`/${SLUG}`);
   await page.waitForLoadState("networkidle");
-  await page.locator("button").filter({ hasText: "€" }).first().click();
-  await page.getByRole("button", { name: /Ajouter/ }).last().click();
+  await addSimpleDish(page);
   await page.goto(`/${SLUG}/commande`);
   await page.getByRole("button", { name: /Livraison/ }).first().click();
 }
