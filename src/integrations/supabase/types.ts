@@ -686,6 +686,41 @@ export type Database = {
           },
         ]
       }
+      restaurant_pdp_configs: {
+        Row: {
+          account_id: string
+          mandate_signed: boolean
+          provider: string
+          restaurant_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          account_id?: string
+          mandate_signed?: boolean
+          provider: string
+          restaurant_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          account_id?: string
+          mandate_signed?: boolean
+          provider?: string
+          restaurant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_pdp_configs_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: true
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurant_promo_codes: {
         Row: {
           active: boolean
