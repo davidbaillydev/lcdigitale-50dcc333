@@ -30,3 +30,4 @@
 - Web Push: payload-less VAPID pushes (no encryption lib); public/push-sw.js fetches the last message from /api/public/push/message; push_subscriptions is service-role only. Why: free, Worker-compatible, no third-party push service.
 - Reservations: public fns insert via admin + Stripe SetupIntent (restaurant keys, no charge); staff use RLS + Realtime; no-show is an off-session PaymentIntent. Why: guarantee without fees.
 - Public restaurant data: TanStack Query cache 15 min; live data uses Realtime. Why: fewer reads, fresh service data.
+- Delivery zones (circle/polygon) live in restaurants.delivery.geoZones; eligibility and fees are recomputed server-side in createOrder via src/lib/geo.ts; couriers use a per-restaurant PIN (restaurant_courier_pins, service-role only) and HMAC tokens keyed on the PIN hash. Why: no courier accounts, changing the PIN revokes sessions, prices never trusted from the browser.

@@ -28,3 +28,5 @@ Verified on a temporary restaurant, now deactivated: upload and reload persisten
 - [x] Étape C1 : traductions de la carte stockées (EN/ES/DE), sélecteur de langue client
 - [x] Étape C2 : réservations + empreinte CB Stripe (SetupIntent) + débit no-show
 - [x] Étape C3 : cache 15 min carte/légal (TanStack Query), Realtime réservations
+
+- [x] Logistique : zones carte (rayon/polygone), éligibilité adresse, écran /livreur PIN, ruptures 1 clic (carte), QR logo + PNG/PDF + validation tables, /admin/qrcodes
