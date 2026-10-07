@@ -118,6 +118,14 @@ export const courierLogin = createServerFn({ method: "POST" })
     return { token: `${r.id}.${exp}.${await sign(r.id, exp, row.pin_hash)}`, name: r.name, drivers: drivers ?? [] };
   });
 
+/** Active roster requires a valid profile; omission must never widen access. */
+async function checkDriver(admin: Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"], rid: string, driverId?: string) {
+  const { data: roster, error } = await admin.from("restaurant_drivers").select("id").eq("restaurant_id", rid).eq("active", true);
+  if (error) throw new Error("Vérification du profil indisponible");
+  if (driverId && !roster?.some((d) => d.id === driverId)) throw new Error("Livreur inactif : reconnectez-vous");
+  if (roster?.length && !driverId) throw new Error("Choisissez votre profil : reconnectez-vous");
+}
+
 const DELIVERY_COLS = "id, order_number, customer_name, phone, address, postal_code, city, notes, slot, total, payment_method, payment_status, status, delivery_lat, delivery_lng, zone_name, courier_status, courier_name, driver_id";
 
 export const courierOrders = createServerFn({ method: "POST" })
@@ -125,10 +133,12 @@ export const courierOrders = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const rid = await checkToken(supabaseAdmin, data.token);
+    await checkDriver(supabaseAdmin, rid, data.driverId);
     const since = new Date(Date.now() - 12 * 3600_000).toISOString();
     let q = supabaseAdmin.from("orders").select(DELIVERY_COLS).eq("restaurant_id", rid).eq("mode", "delivery")
       .in("status", ["accepted", "ready", "done"]).gte("created_at", since);
     // Un livreur identifié voit ses courses et celles non attribuées, jamais celles d'un collègue.
+    if (!data.driverId) q = q.is("driver_id", null);
     if (data.driverId) q = q.or(`driver_id.eq.${data.driverId},driver_id.is.null`);
     const { data: rows } = await q.order("slot");
     type Row = { id: string; order_number: number; customer_name: string; phone: string; address: string | null; postal_code: string | null; city: string | null; notes: string | null; slot: string; total: number; payment_method: string; payment_status: string; status: string; delivery_lat: number | null; delivery_lng: number | null; zone_name: string | null; courier_status: string | null; courier_name: string | null; driver_id: string | null };
@@ -140,6 +150,7 @@ export const courierUpdate = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const rid = await checkToken(supabaseAdmin, data.token);
+    await checkDriver(supabaseAdmin, rid, data.driverId);
     const patch: Record<string, unknown> = { courier_status: data.step, courier_at: new Date().toISOString() };
     if (data.name) patch["courier_name"] = data.name;
     if (data.step === "delivered") patch["status"] = "done";
@@ -149,6 +160,9 @@ export const courierUpdate = createServerFn({ method: "POST" })
       patch["driver_id"] = d.id; patch["courier_name"] = d.name;
     }
     let uq = supabaseAdmin.from("orders").update(patch as never).eq("id", data.orderId).eq("restaurant_id", rid).eq("mode", "delivery");
+    if (!data.driverId) uq = uq.is("driver_id", null);
+    uq = uq.in("status", data.step === "assigned" ? ["accepted", "ready"] : ["ready"]);
+    if (data.step === "delivered") uq = uq.eq("courier_status", "en_route");
     if (data.driverId) uq = uq.or(`driver_id.eq.${data.driverId},driver_id.is.null`);
     const { data: o, error } = await uq
       .select("id, order_number, restaurants(slug, name)").maybeSingle();
