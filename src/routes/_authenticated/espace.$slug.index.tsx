@@ -9,6 +9,7 @@ import { PrinterSetup } from "@/components/PrinterSetup";
 import { StockDialog } from "@/components/StockDialog";
 import { issueInvoice } from "@/lib/invoice.functions";
 import { notifyOrderStatus } from "@/lib/push.functions";
+import { DriverSelect, useDrivers } from "@/components/DriverSelect";
 import { downloadInvoice } from "@/lib/invoice";
 import { FileText } from "lucide-react";
 import { toast } from "sonner";
@@ -42,7 +43,7 @@ export const Route = createFileRoute("/_authenticated/espace/$slug/")({
 type Order = {
   id: string; order_number: number; customer_name: string; phone: string; mode: string; address: string | null; city: string | null;
   slot: string; items: { name: string; qty: number; details: string[]; allergens?: string[] }[]; notes: string | null; total: number;
-  payment_method: string; payment_status?: string; status: string; source?: string; created_at: string; table_label?: string | null; room_label?: string | null; asap?: boolean;
+  payment_method: string; payment_status?: string; status: string; source?: string; created_at: string; table_label?: string | null; room_label?: string | null; asap?: boolean; driver_id?: string | null; courier_status?: string | null;
 };
 
 type PrintLog = { id: string; kinds: string; status: string; reprint: boolean; auto: boolean; created_at: string };
@@ -148,6 +149,7 @@ function Kitchen() {
 
   const ordersRef = useRef<Order[]>([]);
   ordersRef.current = orders;
+  const drivers = useDrivers(rid);
   useEffect(() => {
     if (!isStaff || !rid) return;
     load();
@@ -328,7 +330,7 @@ function Kitchen() {
                       ))}
                     </ul>
                     {o.notes && <p className="mt-2 rounded border-l-4 border-primary bg-accent p-3 text-sm font-medium">⚠ {o.notes}</p>}
-                    {o.mode === "delivery" && <p className="mt-2 text-sm">{o.address}, {o.city}</p>}
+                    {o.mode === "delivery" && <div className="mt-2 space-y-2"><p className="text-sm">{o.address}{o.city ? `, ${o.city}` : ""}</p><DriverSelect orderId={o.id} driverId={o.driver_id ?? null} drivers={drivers} courierStatus={o.courier_status ?? null} /></div>}
                     <div className="mt-2 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-start gap-2 break-words text-sm text-muted-foreground">
                       {o.source === "kiosk" ? <span /> : <a href={`tel:${o.phone}`} className="flex items-center gap-1"><Phone className="h-3 w-3" />{o.phone}</a>}
                       <span>{euro(Number(o.total))} · {o.payment_method === "online" && o.payment_status === "paid" ? `Payé en ligne (${String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("paypal:") ? "PayPal" : String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("lyra:") ? "Lyra" : "Stripe"})` : o.payment_status === "paid" ? "payé (terminal)" : o.payment_method === "online" ? "payé" : o.payment_method === "card_terminal" ? "CB au comptoir" : o.payment_method === "counter" ? "espèces/TR au comptoir" : "à encaisser"}</span>
