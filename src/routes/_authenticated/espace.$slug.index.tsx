@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, Bell, BellOff, Bike, Check, ChefHat, Lock, LogOut, Phone, Printer, ShoppingBag, Users } from "lucide-react";
+import { ArrowLeft, ArrowRight, Bell, BellOff, Bike, Check, ChefHat, Lock, LogOut, Phone, Printer, ShoppingBag, Users, Volume2, VolumeX } from "lucide-react";
 import { printTickets, printingDefaults, type PrintingConfig, type TicketKind } from "@/lib/ticket";
 import { hasKitchenPin } from "@/lib/kitchen-pin.functions";
 import { KitchenLock } from "@/components/KitchenLock";
@@ -17,7 +17,10 @@ import { useStaff } from "@/hooks/use-staff";
 import { Button } from "@/components/ui/button";
 import { allergenLabel } from "@/lib/allergens";
 import { euro } from "@/lib/menu";
-import { fmtTime } from "@/lib/shop";
+import { fmtTime, timingOf, type Restaurant } from "@/lib/shop";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { BrandLogo } from "@/lib/brand";
 import { ThemeToggle } from "@/lib/theme";
@@ -39,7 +42,7 @@ export const Route = createFileRoute("/_authenticated/espace/$slug/")({
 type Order = {
   id: string; order_number: number; customer_name: string; phone: string; mode: string; address: string | null; city: string | null;
   slot: string; items: { name: string; qty: number; details: string[]; allergens?: string[] }[]; notes: string | null; total: number;
-  payment_method: string; payment_status?: string; status: string; source?: string; created_at: string; table_label?: string | null; room_label?: string | null;
+  payment_method: string; payment_status?: string; status: string; source?: string; created_at: string; table_label?: string | null; room_label?: string | null; asap?: boolean;
 };
 
 type PrintLog = { id: string; kinds: string; status: string; reprint: boolean; auto: boolean; created_at: string };
@@ -51,13 +54,21 @@ const COLS = [
   { s: "ready", label: "Prêtes", next: "done", action: "Terminée" },
 ] as const;
 
+/** Carillon « Ding-Dong » : deux notes de cloche (Mi5 puis Do5) avec harmoniques douces et longue résonance. */
 function beep(ctx: AudioContext) {
-  [0, 0.25, 0.5].forEach((t, i) => {
-    const o = ctx.createOscillator(); const g = ctx.createGain();
-    o.frequency.value = i === 2 ? 1320 : 880; o.type = "square";
-    g.gain.setValueAtTime(0.25, ctx.currentTime + t); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.2);
-    o.connect(g).connect(ctx.destination); o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + 0.22);
-  });
+  const out = ctx.createGain(); out.gain.value = 0.9; out.connect(ctx.destination);
+  const bell = (freq: number, at: number) => {
+    [[1, 0.5], [2, 0.18], [3, 0.08], [4.2, 0.04]].forEach(([mult, amp]) => {
+      const o = ctx.createOscillator(); const g = ctx.createGain();
+      o.type = "sine"; o.frequency.value = freq * mult!;
+      const t = ctx.currentTime + at;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(amp!, t + 0.015);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 1.6 / mult!);
+      o.connect(g).connect(out); o.start(t); o.stop(t + 1.7);
+    });
+  };
+  bell(659.25, 0); bell(523.25, 0.55);
 }
 
 function Kitchen() {
@@ -88,6 +99,11 @@ function Kitchen() {
   }, [restaurant, rid, logs, printing.width, printing.kitchen]);
   const printRef = useRef({ auto: false, doPrint }); printRef.current = { auto: printing.auto, doPrint };
   const [sound, setSound] = useState(false);
+  const [started, setStarted] = useState(false);
+  const soundRef = useRef(false); soundRef.current = sound;
+  const [acceptFor, setAcceptFor] = useState<Order | null>(null);
+  const [customTime, setCustomTime] = useState("");
+  const timing = timingOf({ config: (restaurant?.config ?? {}) as Restaurant["config"] });
   const audio = useRef<AudioContext | null>(null);
   const checkPin = useServerFn(hasKitchenPin);
   const [pinEnabled, setPinEnabled] = useState(false);
@@ -142,7 +158,7 @@ function Kitchen() {
         const becamePaid = p.eventType === "UPDATE" && n.status !== "awaiting_payment" && n.payment_method === "online" && n.payment_status === "paid" && !ordersRef.current.some((x) => x.id === n.id);
         if ((p.eventType === "INSERT" && n.status !== "awaiting_payment") || becamePaid) {
           toast.success(`Nouvelle commande n° ${(p.new as Order).order_number}`);
-          if (audio.current) beep(audio.current);
+          if (audio.current && soundRef.current) beep(audio.current);
           if (printRef.current.auto && n.status !== "pending_validation") void printRef.current.doPrint(p.new as Order, ["kitchen", "receipt"], true);
         }
         load();
@@ -155,19 +171,36 @@ function Kitchen() {
   const pending = orders.filter((o) => o.status === "new").length;
   useEffect(() => {
     if (!sound || !pending) return;
-    const t = setInterval(() => audio.current && beep(audio.current), 20000);
+    const t = setInterval(() => audio.current && beep(audio.current), 10000);
     return () => clearInterval(t);
   }, [sound, pending]);
 
   const enableSound = () => {
     if (!audio.current) audio.current = new AudioContext();
-    audio.current.resume(); beep(audio.current); setSound(true);
+    audio.current.resume(); beep(audio.current); setSound(true); setStarted(true);
+  };
+
+  /** Accepter : heure prévue fixée par le délai par défaut, ou choisie dans la modale (mode manuel). */
+  const accept = (o: Order) => {
+    if (timing.prepMode === "manual") { setCustomTime(""); setAcceptFor(o); return; }
+    void move(o, "accepted", o.asap ? new Date(Date.now() + timing.defaultPrep * 60000).toISOString() : undefined);
+  };
+  const confirmAccept = (minutes?: number) => {
+    const o = acceptFor; if (!o) return;
+    let slot: string;
+    if (minutes) slot = new Date(Date.now() + minutes * 60000).toISOString();
+    else {
+      const [h, m] = customTime.split(":").map(Number); const d = new Date(); d.setHours(h ?? 0, m ?? 0, 0, 0);
+      if (d.getTime() < Date.now()) { toast.error("Choisissez une heure à venir"); return; }
+      slot = d.toISOString();
+    }
+    setAcceptFor(null); void move(o, "accepted", slot);
   };
 
   const notify = useServerFn(notifyOrderStatus);
-  const move = async (o: Order, status: string) => {
-    setOrders((prev) => prev.map((x) => (x.id === o.id ? { ...x, status } : x)));
-    const { error } = await supabase.from("orders").update({ status, updated_at: new Date().toISOString() }).eq("id", o.id);
+  const move = async (o: Order, status: string, slot?: string) => {
+    setOrders((prev) => prev.map((x) => (x.id === o.id ? { ...x, status, ...(slot ? { slot } : {}) } : x)));
+    const { error } = await supabase.from("orders").update({ status, ...(slot ? { slot } : {}), updated_at: new Date().toISOString() }).eq("id", o.id);
     if (error) { toast.error("Mise à jour impossible"); load(); return; }
     notify({ data: { orderId: o.id, origin: window.location.origin } }).catch(() => {});
   };
@@ -186,13 +219,40 @@ function Kitchen() {
   const done = orders.filter((o) => o.status === "done");
   return (
     <div className="admin-kitchen flex min-h-screen flex-col">
+      {!started && (
+        <div role="dialog" aria-modal="true" aria-labelledby="kds-start" className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 p-6">
+          <div className="max-w-md rounded-xl border border-border bg-card p-6 text-center">
+            <Volume2 className="mx-auto h-10 w-10 text-primary" />
+            <h2 id="kds-start" className="mt-3 text-3xl">Démarrer le service</h2>
+            <p className="mt-2 text-muted-foreground">Le navigateur exige un appui pour autoriser l'alerte sonore des nouvelles commandes.</p>
+            <Button size="lg" className="mt-5 min-h-14 w-full text-base" onClick={enableSound}><Bell /> Démarrer avec le son</Button>
+            <Button variant="ghost" className="mt-2 min-h-12 w-full" onClick={() => setStarted(true)}>Continuer sans son</Button>
+          </div>
+        </div>
+      )}
+      <Dialog open={!!acceptFor} onOpenChange={(v) => !v && setAcceptFor(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Accepter la commande n° {acceptFor?.order_number}</DialogTitle>
+            <DialogDescription>Quand sera-t-elle prête ? Le client sera informé de cette heure.{acceptFor && !acceptFor.asap ? ` Heure demandée : ${fmtTime(acceptFor.slot)}.` : ""}</DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-3 gap-2">
+            {[15, 30, 45].map((m) => <Button key={m} size="lg" className="min-h-14 text-lg" onClick={() => confirmAccept(m)}>+{m} min</Button>)}
+          </div>
+          {acceptFor && !acceptFor.asap && <Button variant="secondary" className="min-h-12" onClick={() => { const o = acceptFor; setAcceptFor(null); void move(o, "accepted"); }}>Garder l'heure demandée ({fmtTime(acceptFor.slot)})</Button>}
+          <div className="flex items-end gap-2">
+            <div className="flex-1"><Label htmlFor="accept-time">Ou une heure précise</Label><Input id="accept-time" type="time" className="h-12" value={customTime} onChange={(e) => setCustomTime(e.target.value)} /></div>
+            <Button size="lg" className="min-h-12" disabled={!customTime} onClick={() => confirmAccept()}><Check /> Valider</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       <header className="kds-header border-b border-border">
         <div className="flex flex-wrap items-center gap-3">
         {restaurants.length > 1 && <Button asChild variant="ghost" size="icon" className="text-foreground" aria-label="Mes restaurants"><Link to="/espace"><ArrowLeft /></Link></Button>}
         <BrandLogo src={restaurant?.logo_url} name={restaurant?.name ?? ""} />
         <div className="mr-auto min-w-0"><p className="text-sm text-muted-foreground">Écran cuisine</p><h1>{restaurant?.name}</h1></div>
-        <Button variant={sound ? "secondary" : "default"} onClick={sound ? () => setSound(false) : enableSound} aria-pressed={sound} className="min-h-12">
-          {sound ? <Bell /> : <BellOff />} {sound ? "Son activé" : "Activer le son"}
+        <Button variant={sound ? "secondary" : "destructive"} size="lg" onClick={sound ? () => setSound(false) : enableSound} aria-pressed={sound} className="min-h-12 text-base">
+          {sound ? <Volume2 /> : <VolumeX />} {sound ? "Son activé — couper" : "Son coupé — activer"}
         </Button>
         {pinEnabled && <Button variant="secondary" onClick={() => setLock(true)}><Lock /> Verrouiller</Button>}
         <ThemeToggle />
@@ -242,7 +302,7 @@ function Kitchen() {
               </h2>
               <div className="space-y-3">
                 {list.map((o) => (
-                   <article key={o.id} className={cn("kds-ticket rounded-lg border bg-card p-4", c.s === "new" ? "border-primary" : "border-border")}>
+                   <article key={o.id} className={cn("kds-ticket rounded-lg border bg-card p-4", c.s === "new" ? "kds-incoming border-primary" : "border-border")}>
                     <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
                       <div className="min-w-0 break-words">
                         <p className="font-display text-3xl leading-none">n° {o.order_number}</p>
@@ -252,6 +312,7 @@ function Kitchen() {
                         <p className="flex items-center justify-end gap-1 font-display text-3xl leading-none text-primary">
                           {o.mode === "delivery" ? <Bike className="h-5 w-5" /> : <ShoppingBag className="h-5 w-5" />}{fmtTime(o.slot)}
                         </p>
+                        {o.asap && c.s === "new" && <p className="text-xs font-semibold uppercase text-primary">Dès que possible</p>}
                         <p className="text-xs text-muted-foreground">{o.source === "kiosk" ? "BORNE · " : o.source === "phone" ? "TÉLÉPHONE IA · " : ""}{o.mode === "delivery" ? "Livraison" : o.mode === "dine_in" ? (o.room_label ? `ROOM SERVICE · CHAMBRE ${o.room_label}` : o.table_label ? `Sur place · TABLE ${o.table_label}` : "Sur place") : "À emporter"}</p>
                       </div>
                     </div>
@@ -271,7 +332,7 @@ function Kitchen() {
                       <span>{euro(Number(o.total))} · {o.payment_method === "online" && o.payment_status === "paid" ? `Payé en ligne (${String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("paypal:") ? "PayPal" : String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("lyra:") ? "Lyra" : "Stripe"})` : o.payment_status === "paid" ? "payé (terminal)" : o.payment_method === "online" ? "payé" : o.payment_method === "card_terminal" ? "CB au comptoir" : o.payment_method === "counter" ? "espèces/TR au comptoir" : "à encaisser"}</span>
                     </div>
                     <div className="mt-3 flex gap-2">
-                      <Button size="lg" className="min-h-14 flex-1 text-base font-semibold" onClick={() => move(o, c.next)}>{c.action}<ArrowRight aria-hidden="true" /></Button>
+                      <Button size="lg" className="min-h-14 flex-1 text-base font-semibold" onClick={() => (c.s === "new" ? accept(o) : move(o, c.next))}>{c.action}<ArrowRight aria-hidden="true" /></Button>
                       {c.s === "new" && <Button size="lg" variant="outline" className="min-h-14" onClick={() => confirm("Refuser cette commande ?") && move(o, "cancelled")}>Refuser</Button>}
                     </div>
                     <div className="mt-2 flex gap-2">

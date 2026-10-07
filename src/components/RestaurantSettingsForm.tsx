@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { saveRestaurantSettings, type Settings } from "@/lib/restaurant-settings.functions";
-import type { Restaurant } from "@/lib/shop";
+import { timingOf, type Restaurant } from "@/lib/shop";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,6 +24,7 @@ export function initialSettings(r: Restaurant): Settings {
     config: {
       slotMinutes: c.slotMinutes ?? 20, lead: c.lead ?? { pickup: 20, delivery: 40 }, hoursLabel: c.hoursLabel ?? "", tagline: c.tagline,
       autoAccept: c.autoAccept ?? false,
+      timing: timingOf(r),
       modes: { pickup: c.modes?.pickup !== false, delivery: c.modes?.delivery !== false, dine_in: c.modes?.dine_in !== false },
       payments: { on_site: c.payments?.on_site !== false, counter: c.payments?.counter !== false, card_terminal: c.payments?.card_terminal !== false },
       printing: printingDefaults(c.printing),
@@ -103,6 +104,20 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
         <Toggle label="Livraison (site)" checked={s.config.modes.delivery} onChange={(v) => cfg({ modes: { ...s.config.modes, delivery: v } })} />
         <Toggle label="Sur place (borne)" checked={s.config.modes.dine_in} onChange={(v) => cfg({ modes: { ...s.config.modes, dine_in: v } })} />
         <Toggle label="Acceptation automatique" hint="Sinon, chaque commande doit être acceptée en cuisine." checked={s.config.autoAccept} onChange={(v) => cfg({ autoAccept: v })} />
+        <p className="mt-4 text-sm font-semibold">Moment de la commande</p>
+        <Toggle label="Autoriser les commandes « Dès que possible »" checked={s.config.timing.asap} onChange={(v) => cfg({ timing: { ...s.config.timing, asap: v } })} />
+        <Toggle label="Autoriser les commandes planifiées" hint="Le client choisit un horaire dans vos heures d'ouverture." checked={s.config.timing.scheduled} onChange={(v) => cfg({ timing: { ...s.config.timing, scheduled: v } })} />
+        {!s.config.timing.asap && !s.config.timing.scheduled && <p role="alert" className="text-sm text-destructive">Activez au moins une des deux options.</p>}
+        <p className="mt-4 text-sm font-semibold">À l'acceptation en cuisine</p>
+        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+          {([["auto", "Délai par défaut", "Heure prévue = acceptation + délai"], ["manual", "Délai à chaque commande", "La cuisine choisit +15/+30/+45 min ou une heure"]] as const).map(([v, t, h]) => (
+            <button key={v} type="button" aria-pressed={s.config.timing.prepMode === v} onClick={() => cfg({ timing: { ...s.config.timing, prepMode: v } })}
+              className={"min-h-12 rounded-lg border p-3 text-left " + (s.config.timing.prepMode === v ? "border-primary bg-primary/10" : "border-border")}>
+              <span className="block font-medium">{t}</span><span className="block text-sm text-muted-foreground">{h}</span>
+            </button>
+          ))}
+        </div>
+        {s.config.timing.prepMode === "auto" && <div className="mt-3 max-w-xs"><Num id="dp" label="Délai de préparation par défaut (min)" value={s.config.timing.defaultPrep} onChange={(v) => cfg({ timing: { ...s.config.timing, defaultPrep: v } })} /></div>}
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
           <Num id="slot" label="Créneaux (minutes)" value={s.config.slotMinutes} onChange={(v) => cfg({ slotMinutes: v })} />
           <Num id="lp" label="Préparation à emporter (min)" value={s.config.lead.pickup} onChange={(v) => cfg({ lead: { ...s.config.lead, pickup: v } })} />

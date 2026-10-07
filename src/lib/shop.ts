@@ -31,9 +31,19 @@ export type Restaurant = {
     marketing?: import("./promo").Marketing;
     /** Menu QR par table (nombre de tables) et lien d'avis Google proposé après la commande */
     qr?: { tables?: number; reviewUrl?: string; room?: boolean; self?: boolean };
+    /** Moment de commande (ASAP / planifiée) et acceptation en cuisine */
+    timing?: TimingConfig;
     reservations?: { enabled?: boolean; noShowFee?: number; maxParty?: number };
   };
 };
+
+export type TimingConfig = { asap?: boolean; scheduled?: boolean; prepMode?: "auto" | "manual"; defaultPrep?: number };
+export function timingOf(r: Pick<Restaurant, "config">) {
+  const t = r.config?.timing ?? {};
+  let asap = t.asap !== false, scheduled = t.scheduled !== false;
+  if (!asap && !scheduled) { asap = true; scheduled = true; }
+  return { asap, scheduled, prepMode: t.prepMode === "manual" ? "manual" as const : "auto" as const, defaultPrep: t.defaultPrep ?? 20 };
+}
 
 export const RESTAURANT_COLUMNS = "id, slug, name, city, address, phone, email, menu_key, logo_url, brand, menu, opening, delivery, config, legal, vapi_assistant_id, vapi_public_key, vapi_phone_number, is_vapi_web_enabled";
 
@@ -69,6 +79,15 @@ export function isValidSlot(r: Restaurant, mode: "pickup" | "delivery", iso: str
   const t = new Date(iso).getTime();
   return availableSlots(r, mode).some((s) => Math.abs(new Date(s).getTime() - t) < 60000);
 }
+
+/** Le restaurant est-il ouvert maintenant (et encore assez longtemps pour préparer) ? */
+export function isOpenNow(r: Restaurant, mode: "pickup" | "delivery", now = new Date()) {
+  const lead = (r.config.lead ?? { pickup: 20, delivery: 40 })[mode];
+  const { wd, minutes } = parisParts(now);
+  return (r.opening[String(wd)] ?? []).some(([a, b]) => minutes >= a && minutes + lead <= b + 15);
+}
+export const asapSlot = (r: Restaurant, mode: "pickup" | "delivery", now = new Date()) =>
+  new Date(now.getTime() + (r.config.lead ?? { pickup: 20, delivery: 40 })[mode] * 60000).toISOString();
 
 export const fmtTime = (iso: string) =>
   new Date(iso).toLocaleTimeString("fr-FR", { timeZone: TZ, hour: "2-digit", minute: "2-digit" });

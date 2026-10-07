@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { unitPrice, validateSelections, describeSelections } from "./menu";
 import { getCatalog } from "./catalogs";
-import { RESTAURANT_COLUMNS, deliveryFee, isValidSlot, modeEnabled, paymentEnabled, type Restaurant } from "./shop";
+import { RESTAURANT_COLUMNS, deliveryFee, isValidSlot, isOpenNow, asapSlot, timingOf, modeEnabled, paymentEnabled, type Restaurant } from "./shop";
 import { cgvVersion } from "./legal";
 
 const orderSchema = z.object({
@@ -12,6 +12,7 @@ const orderSchema = z.object({
   room: z.string().trim().regex(/^[A-Za-z0-9-]{1,8}$/).optional(),
   qr: z.literal("self").optional(),
   slot: z.string().max(40),
+  asap: z.boolean().optional(),
   customer_name: z.string().trim().min(2).max(80),
   phone: z.string().trim().regex(/^[0-9 +().-]{8,20}$/),
   email: z.string().trim().email().max(255).optional().or(z.literal("")),
@@ -44,7 +45,12 @@ export const createOrder = createServerFn({ method: "POST" })
       if (data.room) { if (!r.config.qr?.room) throw new Error("Le room service n'est pas proposé."); }
       else if (data.qr === "self" && !data.table) { if (!r.config.qr?.self) throw new Error("Le libre-service n'est pas proposé."); }
       else if (!data.table || !(n >= 1 && n <= (r.config.qr?.tables ?? 0))) throw new Error("Table inconnue : scannez à nouveau le QR code de votre table.");
-    } else if (!isValidSlot(r, data.mode as "pickup" | "delivery", data.slot)) throw new Error("Ce créneau n'est plus disponible, merci d'en choisir un autre.");
+    } else if (data.asap) {
+      if (!timingOf(r).asap) throw new Error("Les commandes « Dès que possible » ne sont pas proposées.");
+      if (!isOpenNow(r, data.mode as "pickup" | "delivery")) throw new Error("Le restaurant est fermé pour le moment : choisissez un horaire.");
+      data.slot = asapSlot(r, data.mode as "pickup" | "delivery");
+    } else if (!timingOf(r).scheduled) throw new Error("Les commandes planifiées ne sont pas proposées.");
+    else if (!isValidSlot(r, data.mode as "pickup" | "delivery", data.slot)) throw new Error("Ce créneau n'est plus disponible, merci d'en choisir un autre.");
     const { stripeForRestaurant, stripeCall, startOnlinePayment } = await import("./payments.functions");
     const provider = data.payment_method === "online" ? (data.provider ?? "stripe") : null;
     const stripe = provider === "stripe" ? await stripeForRestaurant(r.id) : null;
@@ -92,6 +98,7 @@ export const createOrder = createServerFn({ method: "POST" })
         postal_code: data.mode === "delivery" ? (data.postal_code ?? null) : null,
         city,
         slot: dineIn ? new Date().toISOString() : data.slot,
+        asap: !dineIn && !!data.asap,
         table_label: dineIn ? (data.table ?? null) : null,
         room_label: dineIn ? (data.room ?? null) : null,
         qr_mode: dineIn ? (data.room ? "room" : data.qr === "self" && !data.table ? "self" : "table") : null,
