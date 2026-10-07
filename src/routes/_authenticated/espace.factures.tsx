@@ -9,7 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/lib/theme";
 import { downloadCSV, downloadXLSX, eur } from "@/lib/export";
-import { breakdown, type Invoice, type InvoiceData } from "@/lib/invoice";
+import { breakdown, effectiveBuyer, type B2BBuyer, type Invoice, type InvoiceData } from "@/lib/invoice";
+import { useServerFn } from "@tanstack/react-start";
+import { useQueryClient } from "@tanstack/react-query";
+import { Label } from "@/components/ui/label";
+import { updateInvoiceBuyer } from "@/lib/invoice.functions";
 import { invoicePlatformReadiness } from "@/lib/invoice-platform";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -27,7 +31,7 @@ export const Route = createFileRoute("/_authenticated/espace/factures")({
   component: Invoices,
 });
 
-type Row = Invoice & { id: string; restaurant_id: string; restaurants: { name: string } | null };
+type Row = Invoice & { buyer_b2b: B2BBuyer | null; buyer_b2b_updated_at: string | null; id: string; restaurant_id: string; restaurants: { name: string } | null };
 const month = () => new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);
 
 function Invoices() {
@@ -36,11 +40,12 @@ function Invoices() {
   const [rest, setRest] = useState("");
   const [busy, setBusy] = useState(false);
   const [preparation, setPreparation] = useState<Row | null>(null);
+  const [editing, setEditing] = useState<Row | null>(null);
   const { data = [], isLoading } = useQuery({
     queryKey: ["invoices", from, to],
     staleTime: 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.from("restaurant_invoices").select("id, restaurant_id, number, issued_at, data, restaurants(name)")
+      const { data, error } = await supabase.from("restaurant_invoices").select("id, restaurant_id, number, issued_at, data, buyer_b2b, buyer_b2b_updated_at, restaurants(name)")
         .gte("issued_at", from).lt("issued_at", new Date(new Date(to).getTime() + 864e5).toISOString()).order("issued_at", { ascending: false }).limit(2000);
       if (error) throw error;
       return data as unknown as Row[];
@@ -50,7 +55,7 @@ function Invoices() {
   const list = rest ? data.filter((r) => r.restaurant_id === rest) : data;
   const accounting = () => list.map((r) => {
     const d = r.data as InvoiceData; const bd = breakdown(d); const at = (x: number) => bd.find((b) => b.rate === x);
-    return { Numéro: r.number, Date: r.issued_at.slice(0, 10), Établissement: r.restaurants?.name ?? "", Client: d.buyer.name, Commande: d.orderNumber,
+    return { Numéro: r.number, Date: r.issued_at.slice(0, 10), Établissement: r.restaurants?.name ?? "", Client: effectiveBuyer(r).name, "SIREN client": effectiveBuyer(r).siren ?? "", Commande: d.orderNumber,
       "HT 5,5%": at(5.5)?.ht ?? 0, "TVA 5,5%": at(5.5)?.vat ?? 0, "HT 10%": at(10)?.ht ?? 0, "TVA 10%": at(10)?.vat ?? 0, "HT 20%": at(20)?.ht ?? 0, "TVA 20%": at(20)?.vat ?? 0,
       "Total HT": d.totalHT, "Total TVA": d.totalVAT, "Total TTC": d.totalTTC, Paiement: d.paymentLabel ?? d.paymentMethod, Statut: d.paid ? "Payée" : "À régler" };
   });
@@ -89,14 +94,16 @@ function Invoices() {
         <div className="divide-y divide-border rounded-xl border border-border bg-card">
           {list.map((r) => { const d = r.data as InvoiceData; return (
             <div key={r.id} className="flex flex-wrap items-center gap-3 p-3">
-              <div className="min-w-0 flex-1"><p className="font-semibold">{r.number}</p><p className="text-sm text-muted-foreground">{new Date(r.issued_at).toLocaleDateString("fr-FR")} · {r.restaurants?.name} · {d.buyer.name} · cmd n° {d.orderNumber}</p></div>
+              <div className="min-w-0 flex-1"><p className="font-semibold">{r.number}</p><p className="text-sm text-muted-foreground">{new Date(r.issued_at).toLocaleDateString("fr-FR")} · {r.restaurants?.name} · {effectiveBuyer(r).name}{effectiveBuyer(r).siren ? ` (SIREN ${effectiveBuyer(r).siren})` : ""} · cmd n° {d.orderNumber}</p></div>
               <span className="text-sm">{eur(Number(d.totalTTC))}</span>
-               <Button size="sm" variant="outline" className="min-h-12" onClick={() => setPreparation(r)}>Préparation B2B</Button>
+              <Button size="sm" variant="outline" className="min-h-12" onClick={() => setEditing(r)}>{effectiveBuyer(r).siren ? "Client pro" : "Ajouter client pro"}</Button>
+              <Button size="sm" variant="outline" className="min-h-12" onClick={() => setPreparation(r)}>Préparation B2B</Button>
               <Button size="sm" variant="secondary" className="min-h-12" onClick={async () => { const { downloadInvoice } = await import("@/lib/invoice"); await downloadInvoice(r); }}><FileText /> PDF</Button>
             </div>
           ); })}
         </div>
       )}
+      {editing && <B2BDialog row={editing} onClose={() => setEditing(null)} />}
       <Dialog open={!!preparation} onOpenChange={(open) => { if (!open) setPreparation(null); }}>
         <DialogContent><DialogHeader><DialogTitle>Raccordement B2B · {preparation?.number}</DialogTitle></DialogHeader>
           <p className="text-sm text-muted-foreground">Non raccordé — prérequis manquants</p>
@@ -104,5 +111,39 @@ function Invoices() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function B2BDialog({ row, onClose }: { row: Row; onClose: () => void }) {
+  const save = useServerFn(updateInvoiceBuyer);
+  const qc = useQueryClient();
+  const b = effectiveBuyer(row);
+  const init: B2BBuyer = row.buyer_b2b ?? { company: b.siren ? b.name : "", siren: b.siren ?? "", vatNumber: b.vatNumber ?? "", address: "", postalCode: "", city: "", email: b.email };
+  const [v, setV] = useState<B2BBuyer>(init);
+  const [busy, setBusy] = useState(false);
+  const f = (k: keyof B2BBuyer, label: string, extra: Record<string, unknown> = {}) => (
+    <div className={k === "company" || k === "address" || k === "email" ? "sm:col-span-2" : ""}><Label htmlFor={`b2b-${k}`}>{label}</Label>
+      <Input id={`b2b-${k}`} className="min-h-11" value={v[k] ?? ""} onChange={(e) => setV({ ...v, [k]: k === "siren" ? e.target.value.replace(/\D/g, "").slice(0, 9) : k === "vatNumber" ? e.target.value.toUpperCase().replace(/\s/g, "") : e.target.value })} {...extra} /></div>
+  );
+  return (
+    <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent><DialogHeader><DialogTitle>Client professionnel · {row.number}</DialogTitle></DialogHeader>
+        <p className="text-sm text-muted-foreground">La facture émise reste figée. Ces informations sont ajoutées en complément, datées et attribuées à votre compte, puis reprises dans le PDF et le Factur-X.</p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {f("company", "Raison sociale *")}{f("siren", "SIREN (9 chiffres) *", { inputMode: "numeric" })}{f("vatNumber", "N° TVA intracom.")}
+          {f("address", "Adresse de facturation *")}{f("postalCode", "Code postal *", { inputMode: "numeric", maxLength: 5 })}{f("city", "Ville *")}{f("email", "Email de facturation", { type: "email" })}
+        </div>
+        {row.buyer_b2b_updated_at && <p className="text-xs text-muted-foreground">Dernière modification : {new Date(row.buyer_b2b_updated_at).toLocaleString("fr-FR")}</p>}
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" className="min-h-11" onClick={onClose}>Annuler</Button>
+          <Button className="min-h-11" disabled={busy} onClick={async () => {
+            setBusy(true);
+            try { await save({ data: { invoiceId: row.id, buyer: v } }); toast.success("Client professionnel enregistré"); await qc.invalidateQueries({ queryKey: ["invoices"] }); onClose(); }
+            catch (e) { const m = (e as Error).message; toast.error(m.startsWith("[") ? "Vérifiez les champs : SIREN 9 chiffres, code postal 5 chiffres, raison sociale et adresse." : m); }
+            finally { setBusy(false); }
+          }}>{busy ? "Enregistrement…" : "Enregistrer"}</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
