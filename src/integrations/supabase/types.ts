@@ -111,6 +111,7 @@ export type Database = {
           delivery_lat: number | null
           delivery_lng: number | null
           discount: number
+          driver_id: string | null
           email: string | null
           id: string
           items: Json
@@ -151,6 +152,7 @@ export type Database = {
           delivery_lat?: number | null
           delivery_lng?: number | null
           discount?: number
+          driver_id?: string | null
           email?: string | null
           id?: string
           items: Json
@@ -191,6 +193,7 @@ export type Database = {
           delivery_lat?: number | null
           delivery_lng?: number | null
           discount?: number
+          driver_id?: string | null
           email?: string | null
           id?: string
           items?: Json
@@ -216,6 +219,13 @@ export type Database = {
           zone_name?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "orders_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "restaurant_drivers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "orders_restaurant_id_fkey"
             columns: ["restaurant_id"]
@@ -469,6 +479,41 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "restaurant_customers_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurant_drivers: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          phone: string | null
+          restaurant_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          phone?: string | null
+          restaurant_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          phone?: string | null
+          restaurant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_drivers_restaurant_id_fkey"
             columns: ["restaurant_id"]
             isOneToOne: false
             referencedRelation: "restaurants"
