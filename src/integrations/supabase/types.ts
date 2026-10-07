@@ -102,9 +102,14 @@ export type Database = {
           cgv_version: string | null
           city: string | null
           confirmation_email_at: string | null
+          courier_at: string | null
+          courier_name: string | null
+          courier_status: string | null
           created_at: string
           customer_name: string
           delivery_fee: number
+          delivery_lat: number | null
+          delivery_lng: number | null
           discount: number
           email: string | null
           id: string
@@ -128,6 +133,7 @@ export type Database = {
           table_label: string | null
           total: number
           updated_at: string
+          zone_name: string | null
         }
         Insert: {
           address?: string | null
@@ -136,9 +142,14 @@ export type Database = {
           cgv_version?: string | null
           city?: string | null
           confirmation_email_at?: string | null
+          courier_at?: string | null
+          courier_name?: string | null
+          courier_status?: string | null
           created_at?: string
           customer_name: string
           delivery_fee?: number
+          delivery_lat?: number | null
+          delivery_lng?: number | null
           discount?: number
           email?: string | null
           id?: string
@@ -162,6 +173,7 @@ export type Database = {
           table_label?: string | null
           total: number
           updated_at?: string
+          zone_name?: string | null
         }
         Update: {
           address?: string | null
@@ -170,9 +182,14 @@ export type Database = {
           cgv_version?: string | null
           city?: string | null
           confirmation_email_at?: string | null
+          courier_at?: string | null
+          courier_name?: string | null
+          courier_status?: string | null
           created_at?: string
           customer_name?: string
           delivery_fee?: number
+          delivery_lat?: number | null
+          delivery_lng?: number | null
           discount?: number
           email?: string | null
           id?: string
@@ -196,6 +213,7 @@ export type Database = {
           table_label?: string | null
           total?: number
           updated_at?: string
+          zone_name?: string | null
         }
         Relationships: [
           {
@@ -365,6 +383,41 @@ export type Database = {
             foreignKeyName: "restaurant_campaigns_restaurant_id_fkey"
             columns: ["restaurant_id"]
             isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurant_courier_pins: {
+        Row: {
+          failed_attempts: number
+          locked_until: string | null
+          pin_hash: string
+          restaurant_id: string
+          salt: string
+          updated_at: string
+        }
+        Insert: {
+          failed_attempts?: number
+          locked_until?: string | null
+          pin_hash: string
+          restaurant_id: string
+          salt: string
+          updated_at?: string
+        }
+        Update: {
+          failed_attempts?: number
+          locked_until?: string | null
+          pin_hash?: string
+          restaurant_id?: string
+          salt?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_courier_pins_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: true
             referencedRelation: "restaurants"
             referencedColumns: ["id"]
           },

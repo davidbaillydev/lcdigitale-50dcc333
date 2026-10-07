@@ -66,6 +66,7 @@ function Console() {
         </div>
         <Button variant="secondary" asChild><Link to="/espace/tableau-de-bord">Tableau de bord</Link></Button>
         <Button variant="secondary" asChild><Link to="/espace/factures">Factures</Link></Button>
+        <Button variant="secondary" asChild><Link to="/admin/qrcodes">QR codes</Link></Button>
         <Button className="min-w-0" onClick={() => setForm({ ...EMPTY })}><Plus /> Nouveau restaurant</Button>
         <ThemeToggle />
         <Button variant="ghost" size="icon" onClick={async () => { await supabase.auth.signOut(); navigate({ to: "/connexion", replace: true }); }} aria-label="Déconnexion"><LogOut /></Button>
