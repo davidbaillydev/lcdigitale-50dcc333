@@ -158,6 +158,13 @@
   color: var(--primary-foreground);
 }
 
+/* Courier layout inherits validated restaurant colors through BrandTheme. */
+.courier-workspace { --radius: 0.5rem; --font-display: "Outfit", sans-serif; --font-sans: "Figtree", system-ui, sans-serif; font-family: var(--font-sans); }
+.courier-workspace :is(h1,h2,h3,p,span,label,button) { letter-spacing: 0; overflow-wrap: anywhere; }
+.courier-workspace :is(h1,h2,h3) { font-family: var(--font-display); font-weight: 600; }
+.courier-workspace .grid > * { min-width: 0; }
+.courier-workspace button { white-space: normal; }
+
 /* Agency directory tokens preserve partner-specific branding elsewhere. */
 .restaurant-directory {
   --secondary: oklch(0.955 0.009 260);

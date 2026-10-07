@@ -33,7 +33,7 @@ export async function issueForOrder(admin: Admin, orderId: string) {
     buyer: { name: o.customer_name, email: o.email ?? "", address: where },
     orderNumber: o.order_number, orderId: o.id, orderDate: o.created_at, serviceDate: o.slot,
     lines, vatRate: def, vatBreakdown, totalHT: ht, totalVAT: r2(ttc - ht), totalTTC: ttc,
-    paid: o.payment_status === "paid" || o.status === "done" || o.status === "ready", paymentMethod: o.payment_method, paymentLabel: PAY[o.payment_method] ?? o.payment_method,
+    paid: o.payment_status === "paid", paymentMethod: o.payment_method, paymentLabel: PAY[o.payment_method] ?? o.payment_method,
   };
   const { data: inv, error } = await admin.rpc("issue_invoice", { _order_id: o.id, _restaurant_id: o.restaurant_id, _data: snapshot as never });
   if (error || !inv) { console.error(error); throw new Error("Impossible d'émettre la facture."); }

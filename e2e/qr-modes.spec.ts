@@ -8,6 +8,9 @@ test.describe("QR codes", () => {
     const dish = page.locator("button[disabled]").filter({ hasText: "€" }).first();
     await expect(dish).toBeVisible();
     await expect(page.getByText("Voir mon panier")).toHaveCount(0);
+    await page.reload();
+    await expect(page.getByText("Menu en consultation")).toBeVisible();
+    await expect(page.getByText("Voir mon panier")).toHaveCount(0);
   });
 
   test("Room service : le numéro de chambre est repris", async ({ page }) => {
@@ -15,6 +18,11 @@ test.describe("QR codes", () => {
     const txt = await bannerText(page);
     test.skip(!txt.includes("Room service"), "Room service non activé pour ce restaurant (page QR codes)");
     await expect(page.getByText("Room service · Chambre 102")).toBeVisible();
+    await page.reload();
+    await expect(page.getByText("Room service · Chambre 102")).toBeVisible();
+    await addSimpleDish(page);
+    await page.goto(`/${SLUG}/commande`);
+    await expect(page.getByText(/Chambre 102/).first()).toBeVisible();
   });
 
   test("Libre-service : commande en attente puis validée par le staff", async ({ page, browser }) => {
@@ -22,6 +30,7 @@ test.describe("QR codes", () => {
     const txt = await bannerText(page);
     test.skip(!txt.includes("Libre-service"), "Libre-service non activé pour ce restaurant");
     test.skip(!WRITES, "E2E_ALLOW_WRITES=1 requis pour créer une vraie commande");
+    test.skip(!STAFF_STATE, "Session staff requise avant toute création de commande");
 
     // Ajout du premier plat simple puis commande
     await addSimpleDish(page);
@@ -33,6 +42,7 @@ test.describe("QR codes", () => {
     await page.getByRole("button", { name: /Commander|Valider/ }).last().click();
     await expect(page.getByText("Commande transmise à l'équipe, en attente de confirmation")).toBeVisible({ timeout: 30_000 });
     const orderNo = (await page.locator("h1").first().textContent())?.match(/\d+/)?.[0];
+    expect(orderNo).toBeTruthy();
 
     test.skip(!STAFF_STATE, "E2E_STAFF_STATE requis pour la validation côté cuisine");
     const staff = await browser.newContext({ storageState: STAFF_STATE });
@@ -44,6 +54,8 @@ test.describe("QR codes", () => {
     await expect(card.getByText(/Nouvelle commande/)).toBeVisible({ timeout: 20_000 });
     await card.getByRole("button", { name: /Valider & Envoyer en cuisine/ }).click();
     await expect(page.getByText("en attente de confirmation")).toHaveCount(0, { timeout: 30_000 });
+    await page.reload();
+    await expect(page.getByText("en attente de confirmation")).toHaveCount(0);
     await staff.close();
   });
 });

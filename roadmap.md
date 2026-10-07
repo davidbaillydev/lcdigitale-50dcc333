@@ -31,3 +31,12 @@ Verified on a temporary restaurant, now deactivated: upload and reload persisten
 
 - [x] Logistique : zones carte (rayon/polygone), éligibilité adresse, écran /livreur PIN, ruptures 1 clic (carte), QR logo + PNG/PDF + validation tables, /admin/qrcodes
 - [x] Validation libre-service (pending_approval), dispatch livreurs (driver_id), tests E2E
+
+## Finalisation demandée le 7 octobre 2026
+- [x] Harmoniser écran livreur/identité établissement et accès/actions, gestion équipe/lien partagé ; back-office éditorial préservé. Accès et gestion connectée vérifiés ; aucune course réelle (PIN désactivé, équipe vide).
+- [x] Vérifier les scans accessibles (basic et dépendances sans alerte) ; empêcher l'omission de profil d'élargir les lectures/actions livreurs, vérifier actif/statuts côté serveur, ne plus déduire paiement de ready/done.
+- [ ] Analyser les 11 anciennes alertes : non retournées par le service actuel ; analyse approfondie non exécutée par les outils disponibles.
+- [x] Préparer contrat et diagnostic B2B par facture, documentation des prérequis ; aucune transmission ni conformité certifiée annoncée.
+- [ ] Raccorder plateforme agréée : attend choix, documentation sandbox, compte/mandat, identités juridiques et clients B2B, validation normative/comptable.
+- [x] Compléter persistance QR et caisse room service, garde staff avant écriture libre-service ; session autorisée enregistrée hors dépôt, test d'accès gestion connecté réussi, consultation réussie ; 7 tests unitaires réussis.
+- [ ] Exécuter room service/libre-service complets : attend restaurant de test avec modes activés et autorisation d'écriture (modes Wok & Sushi désactivés). Ne pas modifier la configuration de production pour les tests.
