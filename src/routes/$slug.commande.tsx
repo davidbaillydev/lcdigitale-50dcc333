@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useCart } from "@/lib/cart";
 import { euro } from "@/lib/menu";
 import { useTable } from "@/lib/table";
-import { availableSlots, deliveryFee, fmtTime, modeEnabled } from "@/lib/shop";
+import { asapSlot, availableSlots, deliveryFee, fmtTime, isOpenNow, modeEnabled, timingOf } from "@/lib/shop";
 import { createOrder } from "@/lib/orders.functions";
 import { onlinePaymentInfo } from "@/lib/payments.functions";
 import { StripePayment } from "@/components/StripePayment";
@@ -44,6 +44,9 @@ function Checkout() {
   const onsiteText = qr.room ? "Votre commande est préparée puis livrée dans votre chambre." : qr.self ? "Votre commande sera vérifiée par notre équipe avant d'être envoyée en cuisine." : "Votre commande part directement en cuisine et vous est servie à table.";
   const [slots, setSlots] = useState<string[]>([]);
   const [slot, setSlot] = useState("");
+  const timing = timingOf(restaurant);
+  const [openNow, setOpenNow] = useState(false);
+  const [when, setWhen] = useState<"asap" | "later">(timing.asap ? "asap" : "later");
   const [f, setF] = useState({ customer_name: "", phone: "", email: "", address: "", postal_code: "", notes: "" });
   const [pay, setPay] = useState<"on_site" | "stripe" | "paypal" | "lyra">("on_site");
   const [busy, setBusy] = useState(false);
@@ -65,7 +68,11 @@ function Checkout() {
     const s = availableSlots(restaurant, mode);
     setSlots(s);
     setSlot(s[0] ?? "");
+    const o = timingOf(restaurant).asap && isOpenNow(restaurant, mode);
+    setOpenNow(o);
+    if (!o) setWhen("later"); else if (!timingOf(restaurant).scheduled) setWhen("asap");
   }, [mode, restaurant]);
+  const asap = when === "asap" && openNow;
 
   const fee = mode === "delivery" ? deliveryFee(restaurant, subtotal) : 0;
   const discount = promo.d?.discount ?? 0;
@@ -74,9 +81,9 @@ function Checkout() {
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
 
   const canSubmit = useMemo(
-    () => table ? lines.length && f.customer_name.trim().length > 1 && f.phone.trim().length >= 8 : lines.length && slot && f.customer_name.trim().length > 1 && f.phone.trim().length >= 8 && !belowMin &&
+    () => table ? lines.length && f.customer_name.trim().length > 1 && f.phone.trim().length >= 8 : lines.length && (asap || (timing.scheduled && slot)) && f.customer_name.trim().length > 1 && f.phone.trim().length >= 8 && !belowMin &&
       (mode === "pickup" || (f.address.trim().length > 4 && f.postal_code)),
-    [lines, slot, f, belowMin, mode, table],
+    [lines, slot, f, belowMin, mode, table, asap, timing.scheduled],
   );
 
   const submit = async () => {
@@ -85,7 +92,7 @@ function Checkout() {
     try {
       const res = await submitFn({
         data: {
-          ...f, restaurant: restaurant.slug, ...(table ? { mode: "dine_in" as const, ...(tableNo ? { table: tableNo } : {}), ...(qr.room ? { room: qr.room } : {}), ...(qr.self ? { qr: "self" as const } : {}), slot: new Date().toISOString(), address: "", postal_code: "" } : { mode, slot }), ...(promo.code ? { promo_code: promo.code } : {}),
+          ...f, restaurant: restaurant.slug, ...(table ? { mode: "dine_in" as const, ...(tableNo ? { table: tableNo } : {}), ...(qr.room ? { room: qr.room } : {}), ...(qr.self ? { qr: "self" as const } : {}), slot: new Date().toISOString(), address: "", postal_code: "" } : { mode, slot: asap ? new Date().toISOString() : slot, asap }), ...(promo.code ? { promo_code: promo.code } : {}),
           payment_method: pay === "on_site" ? "on_site" : "online", cgv: true as const,
           origin: window.location.origin,
           ...(pay !== "on_site" ? { provider: pay } : {}),
@@ -151,16 +158,34 @@ function Checkout() {
           </section>
 
           <section>
-            <h2 className="text-3xl">2. Créneau {mode === "delivery" ? "de livraison" : "de retrait"}</h2>
-            {slots.length ? (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {slots.map((s) => (
-                  <button key={s} onClick={() => setSlot(s)} className={cn("rounded-lg border px-4 py-2 text-sm font-semibold", slot === s ? "border-primary bg-primary text-primary-foreground" : "border-border")}>
-                    {fmtTime(s)}
+            <h2 className="text-3xl">2. Quand souhaitez-vous votre commande ?</h2>
+            {(openNow || timing.scheduled) ? (
+              <div role="radiogroup" aria-label="Moment de la commande" className="mt-3 grid grid-cols-2 gap-3">
+                {openNow && (
+                  <button type="button" role="radio" aria-checked={when === "asap"} onClick={() => setWhen("asap")} className={cn("rounded-xl border p-4 text-left", when === "asap" ? "border-primary bg-primary/10" : "border-border")}>
+                    <Clock className="mb-2 h-6 w-6 text-primary" />
+                    <p className="font-semibold">Dès que possible</p>
+                    <p className="text-xs text-muted-foreground">Vers {fmtTime(asapSlot(restaurant, mode))} · heure confirmée par le restaurant</p>
                   </button>
-                ))}
+                )}
+                {timing.scheduled && (
+                  <button type="button" role="radio" aria-checked={when === "later"} onClick={() => setWhen("later")} className={cn("rounded-xl border p-4 text-left", when === "later" ? "border-primary bg-primary/10" : "border-border")}>
+                    <CalendarClock className="mb-2 h-6 w-6 text-primary" />
+                    <p className="font-semibold">Choisir un horaire</p>
+                    <p className="text-xs text-muted-foreground">{slots.length ? `${slots.length} créneau(x) aujourd'hui` : "Aucun créneau restant"}</p>
+                  </button>
+                )}
               </div>
-            ) : (
+            ) : null}
+            {when === "later" && timing.scheduled && slots.length > 0 && (
+              <div className="mt-3 max-w-xs">
+                <Label htmlFor="slot-select">Horaire {mode === "delivery" ? "de livraison" : "de retrait"}</Label>
+                <select id="slot-select" value={slot} onChange={(e) => setSlot(e.target.value)} className="mt-1 h-12 w-full rounded-lg border border-input bg-background px-3 text-base">
+                  {slots.map((s) => <option key={s} value={s}>{fmtTime(s)}</option>)}
+                </select>
+              </div>
+            )}
+            {!openNow && (!timing.scheduled || !slots.length) && (
               <p className="mt-3 rounded-lg bg-card p-4 text-sm text-muted-foreground">Plus aucun créneau disponible aujourd'hui. {restaurant.config.hoursLabel ? `Horaires : ${restaurant.config.hoursLabel}.` : ""}</p>
             )}
           </section>
