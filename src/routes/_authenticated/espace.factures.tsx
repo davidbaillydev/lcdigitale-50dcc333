@@ -16,6 +16,12 @@ import { Label } from "@/components/ui/label";
 import { updateInvoiceBuyer } from "@/lib/invoice.functions";
 import { invoicePlatformReadiness } from "@/lib/invoice-platform";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertTriangle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getPdpStatuses, savePdpConfig, PDP_PROVIDERS, type PdpStatus } from "@/lib/pdp.functions";
 
 export const Route = createFileRoute("/_authenticated/espace/factures")({
   head: () => ({
@@ -41,6 +47,8 @@ function Invoices() {
   const [busy, setBusy] = useState(false);
   const [preparation, setPreparation] = useState<Row | null>(null);
   const [editing, setEditing] = useState<Row | null>(null);
+  const [blocked, setBlocked] = useState<{ row: Row; errors: { msg: string; fix: "invoice" | "pdp" }[] } | null>(null);
+  const fetchPdp = useServerFn(getPdpStatuses);
   const { data = [], isLoading } = useQuery({
     queryKey: ["invoices", from, to],
     staleTime: 60_000,
@@ -52,6 +60,22 @@ function Invoices() {
     },
   });
   const names = useMemo(() => [...new Map(data.map((r) => [r.restaurant_id, r.restaurants?.name ?? ""])).entries()], [data]);
+  const ids = names.map(([id]) => id);
+  const { data: pdp = [] } = useQuery({ queryKey: ["pdp", ids], enabled: ids.length > 0, queryFn: () => fetchPdp({ data: { restaurantIds: ids } }) });
+  const download = async (r: Row) => {
+    const b = effectiveBuyer(r);
+    const isB2B = !!(r.buyer_b2b || b.siren);
+    if (isB2B) {
+      const errors: { msg: string; fix: "invoice" | "pdp" }[] = [];
+      if (!/^\d{9}$/.test(b.siren ?? "")) errors.push({ msg: "Le numéro SIREN du client professionnel est manquant.", fix: "invoice" });
+      const x = r.buyer_b2b;
+      const addrOk = x ? !!(x.address.trim() && /^\d{5}$/.test(x.postalCode) && x.city.trim()) : b.address.trim().length > 5;
+      if (!addrOk) errors.push({ msg: "L'adresse de facturation électronique du client est incomplète.", fix: "invoice" });
+      if (!pdp.find((p) => p.restaurantId === r.restaurant_id)?.complete) errors.push({ msg: "Le raccordement PDP n'est pas configuré dans vos paramètres.", fix: "pdp" });
+      if (errors.length) { setBlocked({ row: r, errors }); return; }
+    }
+    const { downloadInvoice } = await import("@/lib/invoice"); await downloadInvoice(r);
+  };
   const list = rest ? data.filter((r) => r.restaurant_id === rest) : data;
   const accounting = () => list.map((r) => {
     const d = r.data as InvoiceData; const bd = breakdown(d); const at = (x: number) => bd.find((b) => b.rate === x);
@@ -69,6 +93,7 @@ function Invoices() {
         <ThemeToggle />
       </header>
       <p role="status" className="border-l-4 border-primary pl-3 text-sm text-muted-foreground">Plateforme agréée : non raccordée. Le téléchargement PDF ne vaut pas transmission fiscale B2B.</p>
+      <div id="pdp-config" className="grid gap-4 md:grid-cols-2">{names.length ? names.map(([id, n]) => <PdpCard key={id} restaurantId={id} name={n} status={pdp.find((p) => p.restaurantId === id)} />) : <p className="text-sm text-muted-foreground">La configuration PDP apparaît dès qu'une facture est émise pour un établissement.</p>}</div>
       <div className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4">
         <label className="text-sm">Du <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></label>
         <label className="text-sm">Au <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></label>
@@ -98,11 +123,21 @@ function Invoices() {
               <span className="text-sm">{eur(Number(d.totalTTC))}</span>
               <Button size="sm" variant="outline" className="min-h-12" onClick={() => setEditing(r)}>{effectiveBuyer(r).siren ? "Client pro" : "Ajouter client pro"}</Button>
               <Button size="sm" variant="outline" className="min-h-12" onClick={() => setPreparation(r)}>Préparation B2B</Button>
-              <Button size="sm" variant="secondary" className="min-h-12" onClick={async () => { const { downloadInvoice } = await import("@/lib/invoice"); await downloadInvoice(r); }}><FileText /> PDF</Button>
+              <Button size="sm" variant="secondary" className="min-h-12" onClick={() => download(r)}><FileText /> Télécharger</Button>
             </div>
           ); })}
         </div>
       )}
+      <Dialog open={!!blocked} onOpenChange={(o) => { if (!o) setBlocked(null); }}>
+        <DialogContent><DialogHeader><DialogTitle>Prérequis Factur-X manquants</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">Facture {blocked?.row.number} : téléchargement PDF/A-3 + XML bloqué.</p>
+          <ul className="space-y-2">{blocked?.errors.map((e) => <li key={e.msg} className="flex gap-2 text-sm"><AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />{e.msg}</li>)}</ul>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" className="min-h-11" onClick={() => setBlocked(null)}>Fermer</Button>
+            <Button className="min-h-11" onClick={() => { const b = blocked!; setBlocked(null); if (b.errors.some((e) => e.fix === "invoice")) setEditing(b.row); else document.getElementById("pdp-config")?.scrollIntoView({ behavior: "smooth" }); }}>Compléter les infos</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       {editing && <B2BDialog row={editing} onClose={() => setEditing(null)} />}
       <Dialog open={!!preparation} onOpenChange={(open) => { if (!open) setPreparation(null); }}>
         <DialogContent><DialogHeader><DialogTitle>Raccordement B2B · {preparation?.number}</DialogTitle></DialogHeader>
@@ -145,5 +180,38 @@ function B2BDialog({ row, onClose }: { row: Row; onClose: () => void }) {
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function PdpCard({ restaurantId, name, status }: { restaurantId: string; name: string; status?: PdpStatus }) {
+  const save = useServerFn(savePdpConfig);
+  const qc = useQueryClient();
+  const [provider, setProvider] = useState<string>(status?.provider ?? "");
+  const [key, setKey] = useState("");
+  const [mandate, setMandate] = useState(status?.mandateSigned ?? false);
+  const [busy, setBusy] = useState(false);
+  const [seen, setSeen] = useState(status);
+  if (status !== seen) { setSeen(status); setProvider(status?.provider ?? ""); setMandate(status?.mandateSigned ?? false); }
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
+        <CardTitle className="text-lg">Raccordement PDP (Obligation 2026)<span className="block text-sm font-normal text-muted-foreground">{name}</span></CardTitle>
+        {status?.complete ? <Badge className="bg-primary text-primary-foreground">Configuration complète</Badge> : <Badge variant="destructive">Non raccordé</Badge>}
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div><Label>Plateforme agréée</Label>
+          <Select value={provider} onValueChange={setProvider}><SelectTrigger className="min-h-11"><SelectValue placeholder="Choisir…" /></SelectTrigger>
+            <SelectContent>{Object.entries(PDP_PROVIDERS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent></Select></div>
+        <div><Label htmlFor={`pdp-${restaurantId}`}>Identifiant de compte / Clé API</Label>
+          <Input id={`pdp-${restaurantId}`} type="password" autoComplete="off" className="min-h-11" placeholder={status?.accountHint ? `Enregistrée (${status.accountHint}) — laisser vide pour conserver` : ""} value={key} onChange={(e) => setKey(e.target.value)} /></div>
+        <label className="flex min-h-11 items-center gap-3 text-sm"><Switch checked={mandate} onCheckedChange={setMandate} /> Mandat de télétransmission signé</label>
+        <p className="text-xs text-muted-foreground">La clé est stockée côté serveur et n'est jamais réaffichée. L'envoi automatique vers la plateforme n'est pas encore activé.</p>
+        <Button className="min-h-11 w-full" disabled={busy || !provider} onClick={async () => {
+          setBusy(true);
+          try { await save({ data: { restaurantId, provider: provider as never, accountId: key || undefined, mandateSigned: mandate } }); setKey(""); toast.success("Configuration enregistrée"); await qc.invalidateQueries({ queryKey: ["pdp"] }); }
+          catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
+        }}>{busy ? "Enregistrement…" : "Enregistrer la configuration"}</Button>
+      </CardContent>
+    </Card>
   );
 }
