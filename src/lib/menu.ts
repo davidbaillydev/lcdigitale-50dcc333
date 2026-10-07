@@ -1,6 +1,6 @@
 // Catalogue Wok & Sushi — source unique des prix (client + serveur)
 
-export type Choice = { id: string; label: string; price?: number };
+export type Choice = { id: string; label: string; price?: number; soldOut?: boolean };
 export type OptionGroup = {
   id: string;
   label: string;
@@ -9,6 +9,8 @@ export type OptionGroup = {
   included?: number; // nb de choix compris dans le prix
   extraPrice?: number; // prix par choix au-delà de "included"
   choices: Choice[];
+  kind?: "size" | "extra"; // size = taille/format (remplace le prix de base) ; extra = groupe de suppléments géré en base
+  forSize?: string; // groupe proposé seulement pour cette taille
 };
 export type MenuItem = {
   id: string;
@@ -244,12 +246,22 @@ export function groupCost(g: OptionGroup, picked: string[]) {
   return cost;
 }
 
+/** Groupes actifs pour la taille choisie (les groupes liés à une autre taille sont ignorés). */
+export function activeGroups(item: MenuItem, sel: Selections): OptionGroup[] {
+  const size = item.options?.find((g) => g.kind === "size");
+  const picked = size ? sel[size.id]?.[0] : undefined;
+  return (item.options ?? []).filter((g) => !g.forSize || g.forSize === picked);
+}
+
 export function validateSelections(item: MenuItem, sel: Selections): string | null {
-  for (const g of item.options ?? []) {
+  const active = activeGroups(item, sel);
+  for (const k of Object.keys(sel)) if ((sel[k] ?? []).length && !active.some((g) => g.id === k)) return "Choix non disponible pour cette taille";
+  for (const g of active) {
     const picked = sel[g.id] ?? [];
     if (picked.some((id) => !g.choices.find((c) => c.id === id))) return `Choix invalide : ${g.label}`;
+    if (picked.some((id) => g.choices.find((c) => c.id === id)?.soldOut)) return `${g.label} : un choix est épuisé`;
     if (new Set(picked).size !== picked.length) return `Choix en double : ${g.label}`;
-    if (picked.length < g.min) return `${g.label} : ${g.min} choix minimum`;
+    if (picked.length < g.min) return g.kind === "size" ? "Choisissez une taille" : `${g.label} : ${g.min} choix minimum`;
     if (picked.length > g.max) return `${g.label} : ${g.max} choix maximum`;
   }
   if (item.id === "poke-compose") {
@@ -261,14 +273,54 @@ export function validateSelections(item: MenuItem, sel: Selections): string | nu
 
 export function unitPrice(item: MenuItem, sel: Selections) {
   let p = item.price;
-  for (const g of item.options ?? []) p += groupCost(g, sel[g.id] ?? []);
+  for (const g of activeGroups(item, sel)) {
+    if (g.kind === "size") { const c = g.choices.find((x) => x.id === sel[g.id]?.[0]); if (c) p = c.price ?? 0; }
+    else p += groupCost(g, sel[g.id] ?? []);
+  }
   return Math.round(p * 100) / 100;
 }
 
+/** Détails texte des options « classiques » (hors taille et suppléments gérés en base). */
 export function describeSelections(item: MenuItem, sel: Selections): string[] {
-  return (item.options ?? [])
-    .filter((g) => (sel[g.id] ?? []).length)
+  return activeGroups(item, sel)
+    .filter((g) => !g.kind && (sel[g.id] ?? []).length)
     .map((g) => `${g.label.replace(/^\d\.\s*/, "")} : ${(sel[g.id] ?? []).map((id) => g.choices.find((c) => c.id === id)?.label).join(", ")}`);
+}
+
+export type SelectedOption = { id: string; name: string; price: number };
+/** Taille choisie et suppléments choisis, figés dans la commande. */
+export function selectedExtras(item: MenuItem, sel: Selections): { size: SelectedOption | null; selected_options: SelectedOption[] } {
+  let size: SelectedOption | null = null;
+  const selected_options: SelectedOption[] = [];
+  for (const g of activeGroups(item, sel)) {
+    for (const id of sel[g.id] ?? []) {
+      const c = g.choices.find((x) => x.id === id);
+      if (!c) continue;
+      if (g.kind === "size") size = { id: c.id, name: c.label, price: c.price ?? 0 };
+      else if (g.kind === "extra") selected_options.push({ id: c.id, name: c.label, price: c.price ?? 0 });
+    }
+  }
+  return { size, selected_options };
+}
+
+/** Ligne de commande calculée côté serveur (prix jamais repris du navigateur). */
+export function orderLine(item: MenuItem, sel: Selections, qty: number) {
+  const unit = unitPrice(item, sel);
+  const { size, selected_options } = selectedExtras(item, sel);
+  return {
+    id: item.id, name: item.name, qty, unit, total: Math.round(unit * qty * 100) / 100,
+    details: describeSelections(item, sel),
+    ...(size ? { size } : {}), ...(selected_options.length ? { selected_options } : {}),
+    ...(item.allergens?.length ? { allergens: item.allergens } : {}), ...(item.vatRate ? { vatRate: item.vatRate } : {}),
+  };
+}
+
+/** Prix « à partir de » quand le plat a des tailles. */
+export function fromPrice(item: MenuItem): number | null {
+  const g = item.options?.find((x) => x.kind === "size");
+  if (!g) return null;
+  const prices = g.choices.filter((c) => !c.soldOut).map((c) => c.price ?? 0);
+  return prices.length ? Math.min(...prices) : null;
 }
 
 export const euro = (n: number) => n.toLocaleString("fr-FR", { style: "currency", currency: "EUR" });

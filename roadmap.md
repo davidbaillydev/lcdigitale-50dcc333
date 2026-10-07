@@ -40,3 +40,5 @@ Verified on a temporary restaurant, now deactivated: upload and reload persisten
 - [ ] Raccorder plateforme agréée : attend choix, documentation sandbox, compte/mandat, identités juridiques et clients B2B, validation normative/comptable.
 - [x] Compléter persistance QR et caisse room service, garde staff avant écriture libre-service ; session autorisée enregistrée hors dépôt, test d'accès gestion connecté réussi, consultation réussie ; 7 tests unitaires réussis.
 - [ ] Exécuter room service/libre-service complets : attend restaurant de test avec modes activés et autorisation d'écriture (modes Wok & Sushi désactivés). Ne pas modifier la configuration de production pour les tests.
+
+- [x] Tailles/formats + groupes de suppléments (BDD, carte, site/borne/QR, KDS, tickets)

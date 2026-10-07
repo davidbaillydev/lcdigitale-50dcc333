@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Clock, MapPin, Bike, ShoppingBag, Phone } from "lucide-react";
 import { RestaurantBanner } from "@/components/RestaurantBanner";
 import { getRestaurant } from "@/lib/restaurants.functions";
-import { euro, type MenuItem } from "@/lib/menu";
+import { euro, type MenuItem , fromPrice } from "@/lib/menu";
 import { ItemDialog } from "@/components/ItemDialog";
 import { SiteHeader } from "@/components/SiteHeader";
 import { VapiVoiceWidget } from "@/components/VapiVoiceWidget";
@@ -106,7 +106,7 @@ function MenuPage() {
                   {i.image && <img src={i.image} alt={i.name} loading="lazy" className="-mx-4 -mt-4 mb-3 aspect-[16/10] w-[calc(100%+2rem)] max-w-none object-cover transition group-hover:scale-[1.02]" />}
                   <div className="flex items-start justify-between gap-3">
                     <h3 className="text-2xl leading-tight">{itemText(i, lang).name}</h3>
-                    <span className="shrink-0 rounded-md bg-accent px-2 py-0.5 text-sm font-bold text-accent-foreground">{euro(i.price)}</span>
+                    <span className="shrink-0 rounded-md bg-accent px-2 py-0.5 text-sm font-bold text-accent-foreground">{fromPrice(i) != null ? `dès ${euro(fromPrice(i)!)}` : euro(i.price)}</span>
                   </div>
                   {itemText(i, lang).desc && <p className="mt-1 text-sm text-muted-foreground">{itemText(i, lang).desc}</p>}
                   <AllergenBadges ids={i.allergens} className="mt-2" />

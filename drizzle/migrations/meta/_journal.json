@@ -15,6 +15,13 @@
       "when": 1791397393366,
       "tag": "0001_restaurant_pdp_configs",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791405342002,
+      "tag": "0002_menu_variants_options",
+      "breakpoints": true
     }
   ]
 }

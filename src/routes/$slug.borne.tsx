@@ -8,7 +8,7 @@ import { safeFor } from "@/lib/allergens";
 import { useCart } from "@/lib/cart";
 import { createKioskOrder } from "@/lib/orders.functions";
 import { cancelKioskPayment, kioskPaymentStatus, kioskTerminalAvailable, startKioskCardPayment } from "@/lib/payments.functions";
-import { euro, groupCost, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
+import { activeGroups, fromPrice, selectedExtras, describeSelections, euro, groupCost, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
 import { itemImage, menuImage } from "@/lib/menu-images";
 import { BrandLogo } from "@/lib/brand";
 import { ThemeToggle } from "@/lib/theme";
@@ -187,7 +187,7 @@ function Kiosk() {
                     <AllergenBadges ids={it.allergens} className="mt-2" />
                   </span>
                   <span className="mt-3 flex items-center justify-between">
-                    <span className="font-display text-3xl text-primary">{euro(it.price)}</span>
+                    <span className="font-display text-3xl text-primary">{fromPrice(it) != null ? `dès ${euro(fromPrice(it)!)}` : euro(it.price)}</span>
                     <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground"><Plus className="h-8 w-8" /></span>
                   </span>
                 </button>
@@ -216,7 +216,9 @@ function Kiosk() {
               return (
                 <div key={l.key} className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4">
                   <div className="min-w-0 flex-1">
-                    <p className="text-2xl font-semibold">{it.name}</p>
+                    <p className="text-2xl font-semibold">{it.name}{selectedExtras(it, l.sel).size ? ` — Taille ${selectedExtras(it, l.sel).size!.name}` : ""}</p>
+                    {describeSelections(it, l.sel).map((d) => <p key={d} className="text-base text-muted-foreground">{d}</p>)}
+                    {selectedExtras(it, l.sel).selected_options.map((o) => <p key={o.id} className="text-base font-semibold">+ {o.name}{o.price ? ` (+${euro(o.price)})` : ""}</p>)}
                     <p className="text-lg text-primary">{euro(unitPrice(it, l.sel) * l.qty)}</p>
                   </div>
                   <button onClick={() => setQty(l.key, l.qty - 1)} className="flex h-16 w-16 items-center justify-center rounded-xl bg-muted" aria-label="Moins">{l.qty === 1 ? <Trash2 className="h-7 w-7" /> : <Minus className="h-8 w-8" />}</button>
@@ -320,13 +322,14 @@ function KioskItem({ item, image, onClose, onAdd }: { item: MenuItem; image: str
   const [qty, setQ] = useState(1);
   const [step, setStep] = useState(0);
   const [err, setErr] = useState<string | null>(null);
-  const groups = item.options ?? [];
+  const groups = activeGroups(item, sel);
   const stepped = !!item.builder;
   const visible = stepped ? groups.slice(step, step + 1) : groups;
   const isLast = !stepped || step === groups.length - 1;
   const price = unitPrice(item, sel);
   const toggle = (g: OptionGroup, id: string) => setSel((p) => {
     const cur = p[g.id] ?? [];
+    if (g.kind === "size") return Object.fromEntries([...Object.entries(p).filter(([k]) => !(item.options ?? []).find((x) => x.id === k)?.forSize), [g.id, [id]]]);
     if (g.max === 1) return { ...p, [g.id]: [id] };
     if (cur.includes(id)) return { ...p, [g.id]: cur.filter((x) => x !== id) };
     if (cur.length >= g.max) return p;
@@ -358,9 +361,9 @@ function KioskItem({ item, image, onClose, onAdd }: { item: MenuItem; image: str
                 {g.choices.map((c) => {
                   const on = picked.includes(c.id);
                   return (
-                    <button key={c.id} onClick={() => toggle(g, c.id)}
-                      className={cn("flex min-h-24 items-center justify-between gap-2 rounded-xl border-2 px-4 py-4 text-left text-xl", on ? "border-primary bg-primary/15" : "border-border bg-card")}>
-                      <span>{c.label}{c.price ? <span className="block text-base text-primary">+{euro(c.price)}</span> : null}</span>
+                    <button key={c.id} onClick={() => toggle(g, c.id)} disabled={c.soldOut} role={g.kind === "size" ? "radio" : "checkbox"} aria-checked={on}
+                      className={cn("flex min-h-24 items-center justify-between gap-2 rounded-xl border-2 px-4 py-4 text-left text-xl disabled:opacity-50", on ? "border-primary bg-primary/15" : "border-border bg-card")}>
+                      <span>{c.label}{c.soldOut ? <span className="block text-base text-destructive">Épuisé</span> : g.kind === "size" ? <span className="block text-base text-primary">{euro(c.price ?? 0)}</span> : c.price ? <span className="block text-base text-primary">+{euro(c.price)}</span> : null}</span>
                       {on && <Check className="h-7 w-7 shrink-0 text-primary" />}
                     </button>
                   );

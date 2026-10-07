@@ -42,7 +42,7 @@ export const Route = createFileRoute("/_authenticated/espace/$slug/")({
 
 type Order = {
   id: string; order_number: number; customer_name: string; phone: string; mode: string; address: string | null; city: string | null;
-  slot: string; items: { name: string; qty: number; details: string[]; allergens?: string[] }[]; notes: string | null; total: number;
+  slot: string; items: { name: string; qty: number; details: string[]; allergens?: string[]; size?: { name: string }; selected_options?: { id: string; name: string; price: number }[] }[]; notes: string | null; total: number;
   payment_method: string; payment_status?: string; status: string; source?: string; created_at: string; table_label?: string | null; room_label?: string | null; asap?: boolean; driver_id?: string | null; courier_status?: string | null;
 };
 
@@ -323,7 +323,8 @@ function Kitchen() {
                     <ul className="mt-3 space-y-1.5 border-t border-border pt-3">
                       {o.items.map((it, i) => (
                         <li key={i}>
-                          <p className="text-lg font-semibold"><span className="text-primary">{it.qty}×</span> {it.name}</p>
+                          <p className="text-lg font-semibold"><span className="text-primary">{it.qty}×</span> {it.size ? <>{it.name.toUpperCase()} <strong className="font-black">[{it.size.name.toUpperCase()}]</strong></> : it.name}</p>
+                          {it.selected_options?.map((op) => <p key={op.id} className="ml-5 mt-0.5 inline-block rounded bg-primary/15 px-2 py-0.5 text-sm font-bold text-primary">+ {op.name}</p>)}
                           {it.details.map((d) => <p key={d} className="pl-5 text-sm text-muted-foreground">{d}</p>)}
                           {!!it.allergens?.length && <p className="pl-5 text-sm font-semibold text-destructive">⚠ {it.allergens.map(allergenLabel).join(", ")}</p>}
                         </li>

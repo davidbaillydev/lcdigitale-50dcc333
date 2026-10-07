@@ -11,3 +11,4 @@
 - Imprimante directe ESC/POS par appareil (Bluetooth BLE, USB, réseau via pont LC Print) : `src/lib/printer.ts` + `escpos.ts`; repli navigateur si aucune configurée. Why: le navigateur ne peut pas ouvrir de socket réseau.
 - New restaurants default to the blank menu_key `vierge` (no base catalog); templates remain selectable. Why: menus are built via AI import or by hand.
 - Mobile admin UI: labelled records, constrained grids, 48px actions/44px toggles, bounded portals with sticky close bars. Why: touch access without overflow.
+- Sizes/formats and supplement groups live in product_variants / option_groups / option_items / product_option_groups (public read, manager writes, staff may only toggle is_available via trigger) and are merged into the catalog by src/lib/menu-options.ts on client and server; order lines snapshot size + selected_options. Why: one priced source for site, kiosk, QR, phone and tickets, recomputed server-side.

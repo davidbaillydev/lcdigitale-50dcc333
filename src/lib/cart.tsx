@@ -3,6 +3,8 @@ import { unitPrice, type Selections } from "./menu";
 import { getCatalog, type Catalog } from "./catalogs";
 import type { Restaurant } from "./shop";
 import { useSoldOut } from "./stock";
+import { withOptions } from "./menu-options";
+import { useOptionData } from "./menu-options-live";
 import { useQrMode, type QrMode } from "./table";
 
 export type CartLine = { key: string; itemId: string; qty: number; sel: Selections; note?: string };
@@ -23,12 +25,13 @@ const CartCtx = createContext<Ctx | null>(null);
 export function CartProvider({ restaurant, children }: { restaurant: Restaurant; children: ReactNode }) {
   const soldOut = useSoldOut(restaurant.id);
   const qr = useQrMode(restaurant.slug, restaurant.config.qr);
+  const { data: options } = useOptionData(restaurant.id);
   const catalog = useMemo<Catalog>(() => {
-    const base = getCatalog(restaurant);
+    const base = withOptions(getCatalog(restaurant), options);
     if (!soldOut.size) return base;
     const categories = base.categories.map((c) => ({ ...c, items: c.items.filter((i) => !soldOut.has(i.id)) })).filter((c) => c.items.length);
     return { categories, itemsById: Object.fromEntries(categories.flatMap((c) => c.items.map((i) => [i.id, i]))) };
-  }, [restaurant, soldOut]);
+  }, [restaurant, soldOut, options]);
   const KEY = `cart-v2-${restaurant.slug}`;
   const [lines, setLines] = useState<CartLine[]>([]);
   const [ready, setReady] = useState(false);

@@ -20,6 +20,8 @@ import { pretranslateMenu } from "@/lib/menu-translate.functions";
 import { FOREIGN_LANGS, LANG_NAMES, missingTranslations, type ForeignLang } from "@/lib/i18n";
 import { Languages, PackageX } from "lucide-react";
 import { setSoldOut, useSoldOut } from "@/lib/stock";
+import { useOptionData } from "@/lib/menu-options-live";
+import { ItemOptionsEditor, OptionGroupsPanel } from "@/components/MenuOptionsEditor";
 
 export const Route = createFileRoute("/_authenticated/espace/$slug/carte")({
   head: () => ({
@@ -43,6 +45,7 @@ function MenuEditor() {
   const { loading, restaurants } = useStaff();
   const r = restaurants.find((x) => x.slug === slug);
   const soldOut = useSoldOut(r?.id);
+  const opt = useOptionData(r?.id);
   const canManage = r?.role === "agency" || r?.role === "manager";
   const load = useServerFn(loadMenu);
   const save = useServerFn(saveMenu);
@@ -155,6 +158,8 @@ function MenuEditor() {
           {!missing && <Button variant="ghost" onClick={() => { if (confirm("Retraduire toute la carte ? Vos corrections de traduction seront remplacées.")) void pretranslate(true); }} disabled={translating}>Tout retraduire</Button>}
         </div>}
 
+        {r && <OptionGroupsPanel restaurantId={r.id} data={opt.data} reload={opt.reload} />}
+
         <div className="mt-6 space-y-3">
           {menu.map((c, ci) => (
             <section key={c.id} className="rounded-xl border border-border bg-card">
@@ -183,6 +188,7 @@ function MenuEditor() {
                             <Input value={it.translations?.[l]?.name ?? ""} placeholder={it.name} onChange={(e) => setTr(ci, ii, l, "name", e.target.value)} aria-label={`Nom en ${LANG_NAMES[l]}`} />
                             {it.desc && <Textarea rows={2} value={it.translations?.[l]?.description ?? ""} placeholder={it.desc} onChange={(e) => setTr(ci, ii, l, "description", e.target.value)} aria-label={`Description en ${LANG_NAMES[l]}`} />}</div>)}</div>
                         </details>
+                        <ItemOptionsEditor restaurantId={r!.id} productId={it.id} data={opt.data} reload={opt.reload} />
                         {!!it.options?.length && <p className="text-xs text-muted-foreground">Options conservées : {it.options.map((o) => o.label).join(" · ")}</p>}
                       </div>
                       <div>
