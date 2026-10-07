@@ -1,6 +1,6 @@
 // Encodeur ESC/POS : transforme une commande en octets pour imprimante thermique.
 import { allergenLabel } from "./allergens";
-import { printingDefaults, type KitchenFields, type TicketKind, type TicketOrder, type TicketShop, type TicketWidth } from "./ticket";
+import { itemTitle, printingDefaults, type KitchenFields, type TicketKind, type TicketOrder, type TicketShop, type TicketWidth } from "./ticket";
 
 const CP858: Record<string, number> = {
   "Ç": 0x80, "ü": 0x81, "é": 0x82, "â": 0x83, "ä": 0x84, "à": 0x85, "ç": 0x87, "ê": 0x88, "ë": 0x89, "è": 0x8a,
@@ -58,10 +58,11 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
   e.align(0).line(hr);
   for (const it of o.items) {
     e.bold(true);
-    const name = `${it.qty}x ${it.name}`;
+    const name = `${it.qty}x ${itemTitle(it)}`;
     if (f.prices && it.total != null) e.line(lr(name, eur(it.total), cols)); else wrap(name, cols).forEach((l) => e.line(l));
     e.bold(false);
     if (f.options) for (const d of it.details ?? []) wrap(`  ${d}`, cols).forEach((l) => e.line(l));
+    if (f.options) for (const op of it.selected_options ?? []) { const t = `  + ${op.name}`; if (f.prices && op.price) e.line(lr(t, `+${eur(op.price)}`, cols)); else wrap(t, cols).forEach((l) => e.line(l)); }
     if (f.allergens && it.allergens?.length) { e.bold(true); wrap(`  ! ALLERGENES : ${it.allergens.map((a) => allergenLabel(a).toUpperCase()).join(", ")}`, cols).forEach((l) => e.line(l)); e.bold(false); }
   }
   const allAlg = [...new Set(o.items.flatMap((i) => i.allergens ?? []))];

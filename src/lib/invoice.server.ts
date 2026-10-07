@@ -16,9 +16,9 @@ export async function issueForOrder(admin: Admin, orderId: string) {
   const legal = (r.legal ?? {}) as Record<string, string>;
   if (!legal["company"] || !legal["siret"]) throw new Error("Facturation indisponible : informations légales de l'établissement incomplètes.");
   const def = Math.min(Math.max(Number(String(legal["vatRate"] ?? "10").replace(",", ".")) || 10, 0), 30);
-  const items = o.items as { name: string; qty: number; unit: number; total: number; details?: string[]; vatRate?: number }[];
+  const items = o.items as { name: string; qty: number; unit: number; total: number; details?: string[]; vatRate?: number; size?: { name: string }; selected_options?: { name: string; price: number }[] }[];
   const lines = [
-    ...items.map((i) => ({ name: i.name + (i.details?.length ? ` (${i.details.join(", ")})` : ""), qty: i.qty, unitTTC: Number(i.unit), totalTTC: Number(i.total), vatRate: i.vatRate ?? def })),
+    ...items.map((i) => ({ name: i.name + (i.size ? ` — ${i.size.name}` : "") + ([...(i.details ?? []), ...(i.selected_options ?? []).map((o) => `+ ${o.name}`)].length ? ` (${[...(i.details ?? []), ...(i.selected_options ?? []).map((o) => `+ ${o.name}`)].join(", ")})` : ""), qty: i.qty, unitTTC: Number(i.unit), totalTTC: Number(i.total), vatRate: i.vatRate ?? def })),
     ...(Number(o.delivery_fee) > 0 ? [{ name: "Frais de livraison", qty: 1, unitTTC: Number(o.delivery_fee), totalTTC: Number(o.delivery_fee), vatRate: def }] : []),
     ...(Number(o.discount) > 0 ? [{ name: `Remise${o.promo_code ? ` ${o.promo_code}` : ""}`, qty: 1, unitTTC: -Number(o.discount), totalTTC: -Number(o.discount), vatRate: def }] : []),
   ];

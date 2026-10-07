@@ -3,7 +3,7 @@ import { Minus, Plus, ShoppingBag } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/lib/cart";
-import { describeSelections, euro, unitPrice } from "@/lib/menu";
+import { describeSelections, euro, selectedExtras, unitPrice } from "@/lib/menu";
 
 export function CartLines() {
   const { lines, setQty, catalog } = useCart();
@@ -16,9 +16,12 @@ export function CartLines() {
         return (
           <li key={l.key} className="flex gap-3 py-3">
             <div className="min-w-0 flex-1">
-              <p className="font-semibold">{item.name}</p>
+              <p className="font-semibold">{item.name}{selectedExtras(item, l.sel).size ? ` — Taille ${selectedExtras(item, l.sel).size!.name}` : ""}</p>
               {describeSelections(item, l.sel).map((d) => (
                 <p key={d} className="text-xs text-muted-foreground">{d}</p>
+              ))}
+              {selectedExtras(item, l.sel).selected_options.map((o) => (
+                <p key={o.id} className="text-xs font-medium">+ {o.name}{o.price ? ` (+${euro(o.price)})` : ""}</p>
               ))}
               <p className="mt-1 text-sm text-primary">{euro(unitPrice(item, l.sel) * l.qty)}</p>
             </div>

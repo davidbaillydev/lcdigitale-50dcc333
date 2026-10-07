@@ -1,12 +1,15 @@
 // Impression de tickets thermiques (80 mm / 58 mm) via le dialogue d'impression du navigateur.
 import { allergenLabel } from "./allergens";
 
+/** Nom du plat suivi de sa taille en majuscules : PIZZA ROYALE [XL]. */
+export const itemTitle = (it: { name: string; size?: { name: string } | null }) => (it.size ? `${it.name.toUpperCase()} [${it.size.name.toUpperCase()}]` : it.name);
+
 export type TicketWidth = 80 | 58;
 export type TicketKind = "kitchen" | "receipt";
 export type TicketOrder = {
   order_number: number; customer_name?: string | null; phone?: string | null; mode: string;
   address?: string | null; city?: string | null; slot: string; created_at?: string;
-  items: { name: string; qty: number; total?: number; details?: string[]; allergens?: string[] }[];
+  items: { name: string; qty: number; total?: number; details?: string[]; allergens?: string[]; size?: { name: string } | null; selected_options?: { name: string; price: number }[] }[];
   notes?: string | null; total: number | string; delivery_fee?: number | string | null;
   discount?: number | string | null; promo_code?: string | null;
   payment_method: string; source?: string | null; table_label?: string | null; room_label?: string | null;
@@ -44,8 +47,9 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
     : { ...printingDefaults().kitchen, ...(fieldsIn ?? {}) };
   const big = width === 80 ? 15 : 12;
   const items = o.items.map((it) => `
-    <div class="row"><b>${it.qty}× ${esc(it.name)}</b>${f.prices && it.total != null ? `<span>${eur(it.total)}</span>` : ""}</div>
+    <div class="row"><b>${it.qty}× ${esc(itemTitle(it))}</b>${f.prices && it.total != null ? `<span>${eur(it.total)}</span>` : ""}</div>
     ${(f.options ? it.details ?? [] : []).map((d) => `<div class="det">${esc(d)}</div>`).join("")}
+    ${(f.options ? it.selected_options ?? [] : []).map((op) => `<div class="row det"><b>+ ${esc(op.name)}</b>${f.prices && op.price ? `<span>+${eur(op.price)}</span>` : ""}</div>`).join("")}
     ${f.allergens && it.allergens?.length ? `<div class="alg">⚠ ALLERGÈNES : ${it.allergens.map((a) => esc(allergenLabel(a)).toUpperCase()).join(", ")}</div>` : ""}`).join("");
   const allAlg = [...new Set(o.items.flatMap((i) => i.allergens ?? []))];
   return `<!doctype html><html><head><meta charset="utf-8"><title>Ticket ${o.order_number}</title><style>
