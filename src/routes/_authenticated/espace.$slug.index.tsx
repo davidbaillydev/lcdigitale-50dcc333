@@ -157,7 +157,7 @@ function Kitchen() {
         const n = p.new as Order;
         const becamePaid = p.eventType === "UPDATE" && n.status !== "awaiting_payment" && n.payment_method === "online" && n.payment_status === "paid" && !ordersRef.current.some((x) => x.id === n.id);
         if ((p.eventType === "INSERT" && n.status !== "awaiting_payment") || becamePaid) {
-          toast.success(`Nouvelle commande n° ${(p.new as Order).order_number}`);
+          toast.success(n.status === "pending_approval" ? `Nouvelle commande ${n.table_label ? `Table ${n.table_label}` : n.room_label ? `Chambre ${n.room_label}` : "libre-service"} · à valider` : `Nouvelle commande n° ${n.order_number}`, n.status === "pending_approval" ? { duration: 15000 } : undefined);
           if (audio.current && soundRef.current) beep(audio.current);
           if (printRef.current.auto && n.status !== "pending_validation") void printRef.current.doPrint(p.new as Order, ["kitchen", "receipt"], true);
         }
@@ -168,7 +168,7 @@ function Kitchen() {
   }, [isStaff, rid, load]);
 
   // Rappel sonore tant qu'il reste des commandes non acceptées
-  const pending = orders.filter((o) => o.status === "new").length;
+  const pending = orders.filter((o) => o.status === "new" || o.status === "pending_approval").length;
   useEffect(() => {
     if (!sound || !pending) return;
     const t = setInterval(() => audio.current && beep(audio.current), 10000);
@@ -278,14 +278,15 @@ function Kitchen() {
       </div>
       {orders.some((o) => o.status === "pending_validation") && (
         <section aria-label="Commandes libre-service à valider" className="border-b border-border bg-card px-4 py-4 lg:px-6">
-          <h2 className="text-2xl">À valider · libre-service</h2>
+          <h2 className="text-2xl">À valider par le service</h2>
           <ul className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {orders.filter((o) => o.status === "pending_validation").map((o) => (
-              <li key={o.id} className="rounded-xl border border-primary p-3">
+              <li key={o.id} className="kds-incoming rounded-xl border border-primary p-3">
+                <p className="text-xl font-bold">Nouvelle commande {o.table_label ? `Table ${o.table_label}` : o.room_label ? `Chambre ${o.room_label}` : "libre-service"}</p>
                 <p className="font-semibold">N° {o.order_number} · {o.customer_name} · {euro(Number(o.total))}</p>
                 <p className="text-sm text-muted-foreground">{o.items.map((i) => `${i.qty}× ${i.name}`).join(", ")}</p>
                 <div className="mt-2 flex gap-2">
-                  <Button className="min-h-12 flex-1" onClick={() => move(o, "new")}><Check /> Valider et envoyer en cuisine</Button>
+                  <Button className="min-h-12 flex-1" onClick={() => move(o, "accepted")}><Check /> Valider & Envoyer en cuisine</Button>
                   <Button variant="outline" className="min-h-12" onClick={() => confirm("Refuser cette commande ?") && move(o, "cancelled")}>Refuser</Button>
                 </div>
               </li>
