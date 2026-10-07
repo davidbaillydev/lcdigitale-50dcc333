@@ -8,7 +8,7 @@ const PAY: Record<string, string> = { online: "Carte bancaire en ligne (Stripe/P
 export async function issueForOrder(admin: Admin, orderId: string) {
   const { data: existing } = await admin.from("restaurant_invoices").select("number, issued_at, data").eq("order_id", orderId).maybeSingle();
   if (existing) return existing as unknown as { number: string; issued_at: string; data: InvoiceData };
-  const { data: o } = await admin.from("orders").select("id, order_number, restaurant_id, customer_name, email, address, postal_code, city, table_label, room_label, items, delivery_fee, discount, promo_code, total, payment_method, payment_status, payment_ref, status, created_at, slot").eq("id", orderId).maybeSingle();
+  const { data: o } = await admin.from("orders").select("id, order_number, restaurant_id, customer_name, email, address, postal_code, city, table_label, room_label, items, delivery_fee, discount, promo_code, total, payment_method, payment_status, payment_ref, status, created_at, slot, billing").eq("id", orderId).maybeSingle();
   if (!o) throw new Error("Commande introuvable");
   if (["awaiting_payment", "cancelled", "pending_approval", "new"].includes(o.status)) throw new Error("Facture disponible une fois la commande confirmée.");
   const { data: r } = await admin.from("restaurants").select("name, address, city, phone, email, legal, logo_url").eq("id", o.restaurant_id).single();
@@ -30,7 +30,7 @@ export async function issueForOrder(admin: Admin, orderId: string) {
   const where = o.table_label ? `Table ${o.table_label}` : o.room_label ? `Chambre ${o.room_label}` : [o.address, o.postal_code, o.city].filter(Boolean).join(" ");
   const snapshot: InvoiceData = {
     seller: { company: legal["company"], form: legal["form"] ?? "", capital: legal["capital"] ?? "", siret: legal["siret"], rcs: legal["rcs"] ?? "", vat: legal["vat"] ?? "", seat: legal["seat"] ?? "", tradeName: r.name, address: r.address ?? "", city: r.city ?? "", phone: r.phone ?? "", email: r.email ?? "", logo: r.logo_url ?? "" },
-    buyer: { name: o.customer_name, email: o.email ?? "", address: where },
+    buyer: (() => { const b = o.billing as Record<string, string> | null; return b?.["siren"] ? { name: b["company"]!, email: b["email"] || (o.email ?? ""), address: `${b["address"]}, ${b["postalCode"]} ${b["city"]}`, siren: b["siren"], vatNumber: b["vatNumber"] || "", contact: o.customer_name } : { name: o.customer_name, email: o.email ?? "", address: where }; })(),
     orderNumber: o.order_number, orderId: o.id, orderDate: o.created_at, serviceDate: o.slot,
     lines, vatRate: def, vatBreakdown, totalHT: ht, totalVAT: r2(ttc - ht), totalTTC: ttc,
     paid: o.payment_status === "paid", paymentMethod: o.payment_method, paymentLabel: PAY[o.payment_method] ?? o.payment_method,

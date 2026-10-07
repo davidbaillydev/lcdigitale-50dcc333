@@ -13,7 +13,8 @@ export function invoicePlatformReadiness(invoice: Invoice) {
   if (!/^\d{14}$/.test(seller.siret.replace(/\s/g, ""))) missing.push("SIRET du vendeur (14 chiffres)");
   if (!(seller.seat || seller.address).trim()) missing.push("Adresse du vendeur");
   if (![totalHT, totalVAT, totalTTC].every(Number.isFinite) || Math.abs(totalHT + totalVAT - totalTTC) > 0.02) missing.push("Totaux HT / TVA / TTC cohérents");
-  // Existing snapshots do not collect legal buyer identity or fiscal routing.
-  missing.push("Identité et SIREN du client professionnel", "Adresse complète et adresse de facturation électronique du client", "Nature de l’opération et régime TVA", "Validation XML / PDF par la plateforme agréée", "Compte et mandat de l’établissement auprès d’une plateforme agréée");
+  const b = invoice.buyer_b2b ?? (invoice.data.buyer.siren ? { siren: invoice.data.buyer.siren } : null);
+  if (!b || !/^\d{9}$/.test(b.siren)) missing.push("Identité et SIREN du client professionnel");
+  missing.push("Adresse de facturation électronique du client (annuaire PPF)", "Nature de l’opération et régime TVA", "Validation XML / PDF par la plateforme agréée", "Compte et mandat de l’établissement auprès d’une plateforme agréée");
   return { status: "not_connected" as const, ready: false, missing };
 }

@@ -1,13 +1,16 @@
 /** Facture PDF + Factur-X (profil MINIMUM, XML CII embarqué). Appeler depuis un gestionnaire d'événement. */
 export type InvoiceData = {
   seller: { company: string; form: string; capital: string; siret: string; rcs: string; vat: string; seat?: string; tradeName: string; address: string; city: string; phone: string; email: string; logo?: string };
-  buyer: { name: string; email: string; address: string };
+  buyer: { name: string; email: string; address: string; siren?: string; vatNumber?: string; contact?: string };
   orderNumber: number; orderId?: string; orderDate: string; serviceDate?: string;
   lines: { name: string; qty: number; unitTTC: number; totalTTC: number; vatRate?: number }[];
   vatRate: number; vatBreakdown?: { rate: number; ht: number; vat: number; ttc: number }[];
   totalHT: number; totalVAT: number; totalTTC: number; paid: boolean; paymentMethod: string; paymentLabel?: string;
 };
-export type Invoice = { number: string; issued_at: string; data: InvoiceData };
+export type B2BBuyer = { company: string; siren: string; vatNumber?: string; address: string; postalCode: string; city: string; email?: string };
+export type Invoice = { number: string; issued_at: string; data: InvoiceData; buyer_b2b?: B2BBuyer | null; buyer_b2b_updated_at?: string | null };
+/** Acheteur effectif : données figées, ou complément B2B tracé ajouté après émission. */
+export const effectiveBuyer = (inv: Invoice): InvoiceData["buyer"] => inv.buyer_b2b ? { name: inv.buyer_b2b.company, email: inv.buyer_b2b.email || inv.data.buyer.email, address: `${inv.buyer_b2b.address}, ${inv.buyer_b2b.postalCode} ${inv.buyer_b2b.city}`, siren: inv.buyer_b2b.siren, vatNumber: inv.buyer_b2b.vatNumber ?? "", contact: inv.data.buyer.name } : inv.data.buyer;
 
 export const breakdown = (d: InvoiceData) => d.vatBreakdown ?? [{ rate: d.vatRate, ht: d.totalHT, vat: d.totalVAT, ttc: d.totalTTC }];
 const lineRate = (d: InvoiceData, l: InvoiceData["lines"][number]) => l.vatRate ?? d.vatRate;
@@ -18,7 +21,7 @@ const n2 = (n: number) => n.toFixed(2);
 const eur = (n: number) => n.toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
 
 export function facturxXml(inv: Invoice) {
-  const { seller: s, buyer: b } = inv.data;
+  const s = inv.data.seller, b = effectiveBuyer(inv);
   return `<?xml version="1.0" encoding="UTF-8"?>
 <rsm:CrossIndustryInvoice xmlns:rsm="urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100" xmlns:ram="urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100" xmlns:udt="urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100">
 <rsm:ExchangedDocumentContext><ram:GuidelineSpecifiedDocumentContextParameter><ram:ID>urn:cen.eu:en16931:2017#compliant#urn:factur-x.eu:1p0:basic</ram:ID></ram:GuidelineSpecifiedDocumentContextParameter></rsm:ExchangedDocumentContext>
@@ -28,7 +31,7 @@ ${inv.data.lines.map((l, i) => { const r = lineRate(inv.data, l); const k = 1 + 
 <ram:ApplicableHeaderTradeAgreement>
 <ram:BuyerReference>${inv.data.orderNumber}</ram:BuyerReference>
 <ram:SellerTradeParty><ram:Name>${esc(s.company)}</ram:Name><ram:SpecifiedLegalOrganization><ram:ID schemeID="0002">${esc(s.siret.replace(/\s/g, "").slice(0, 9))}</ram:ID></ram:SpecifiedLegalOrganization><ram:PostalTradeAddress><ram:LineOne>${esc(s.seat || [s.address, s.city].filter(Boolean).join(", "))}</ram:LineOne><ram:CountryID>FR</ram:CountryID></ram:PostalTradeAddress>${s.vat ? `<ram:SpecifiedTaxRegistration><ram:ID schemeID="VA">${esc(s.vat.replace(/\s/g, ""))}</ram:ID></ram:SpecifiedTaxRegistration>` : ""}</ram:SellerTradeParty>
-<ram:BuyerTradeParty><ram:Name>${esc(b.name)}</ram:Name></ram:BuyerTradeParty>
+<ram:BuyerTradeParty><ram:Name>${esc(b.name)}</ram:Name>${b.siren ? `<ram:SpecifiedLegalOrganization><ram:ID schemeID="0002">${esc(b.siren)}</ram:ID></ram:SpecifiedLegalOrganization>` : ""}${b.siren ? `<ram:PostalTradeAddress><ram:LineOne>${esc(b.address)}</ram:LineOne><ram:CountryID>FR</ram:CountryID></ram:PostalTradeAddress>` : ""}${b.vatNumber ? `<ram:SpecifiedTaxRegistration><ram:ID schemeID="VA">${esc(b.vatNumber)}</ram:ID></ram:SpecifiedTaxRegistration>` : ""}</ram:BuyerTradeParty>
 </ram:ApplicableHeaderTradeAgreement>
 <ram:ApplicableHeaderTradeDelivery><ram:ActualDeliverySupplyChainEvent><ram:OccurrenceDateTime><udt:DateTimeString format="102">${d8(inv.data.serviceDate ?? inv.data.orderDate)}</udt:DateTimeString></ram:OccurrenceDateTime></ram:ActualDeliverySupplyChainEvent></ram:ApplicableHeaderTradeDelivery>
 <ram:ApplicableHeaderTradeSettlement><ram:InvoiceCurrencyCode>EUR</ram:InvoiceCurrencyCode>
@@ -55,7 +58,7 @@ const XMP = (title: string) => `<?xpacket begin="\ufeff" id="W5M0MpCehiHzreSzNTc
 export async function buildInvoicePdf(inv: Invoice): Promise<Uint8Array> {
   const { jsPDF } = await import("jspdf");
   const { default: autoTable } = await import("jspdf-autotable");
-  const { seller: s, buyer: b } = inv.data;
+  const s = inv.data.seller, b = effectiveBuyer(inv);
   const doc = new jsPDF();
   doc.setFontSize(20); doc.text("FACTURE", 14, 20);
   doc.setFontSize(10);
@@ -63,7 +66,8 @@ export async function buildInvoicePdf(inv: Invoice): Promise<Uint8Array> {
   if (inv.data.orderId) { doc.setFontSize(7); doc.text(`Réf. ${inv.data.orderId}`, 135, 37); doc.setFontSize(10); }
   doc.setFont("helvetica", "bold"); doc.text("Vendeur", 14, 42); doc.text("Client", 110, 42); doc.setFont("helvetica", "normal");
   doc.text([s.company + (s.form ? ` (${s.form})` : ""), s.tradeName !== s.company ? `Enseigne : ${s.tradeName}` : "", [s.address, s.city].filter(Boolean).join(", "), s.seat ? `Siège : ${s.seat}` : "", `SIRET : ${s.siret}${s.rcs ? ` — RCS ${s.rcs}` : ""}`, s.capital ? `Capital : ${s.capital}` : "", `TVA intracom. : ${s.vat || "non communiqué"}`].filter(Boolean), 14, 48, { maxWidth: 90 });
-  doc.text([b.name, b.address, b.email].filter(Boolean), 110, 48, { maxWidth: 85 });
+  doc.text([b.name, b.contact ? `À l'attention de ${b.contact}` : "", b.address, b.siren ? `SIREN : ${b.siren}` : "", b.vatNumber ? `TVA intracom. : ${b.vatNumber}` : "", b.email].filter(Boolean), 110, 48, { maxWidth: 85 });
+  if (inv.buyer_b2b_updated_at) { doc.setFontSize(7); doc.text(`Identité client complétée le ${new Date(inv.buyer_b2b_updated_at).toLocaleDateString("fr-FR")}`, 110, 78); doc.setFontSize(10); }
   autoTable(doc, {
     startY: 82,
     head: [["Désignation", "Qté", "PU HT", "TVA", "Total HT", "Total TTC"]],
