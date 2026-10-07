@@ -55,7 +55,7 @@ function Checkout() {
   const [cgv, setCgv] = useState(false);
   const [pro, setPro] = useState(false);
   const [bill, setBill] = useState({ company: "", siren: "", vatNumber: "", address: "", postalCode: "", city: "", email: "" });
-  const setB = (k: keyof typeof bill) => (e: React.ChangeEvent<HTMLInputElement>) => setBill((b) => ({ ...b, [k]: k === "siren" ? e.target.value.replace(/\D/g, "").slice(0, 9) : k === "vatNumber" ? e.target.value.toUpperCase().replace(/\s/g, "") : e.target.value }));
+  const setB = (k: keyof typeof bill) => (e: { target: { value: string } }) => setBill((b) => ({ ...b, [k]: k === "siren" ? e.target.value.replace(/\D/g, "").slice(0, 9) : k === "vatNumber" ? e.target.value.toUpperCase().replace(/\s/g, "") : e.target.value }));
   const proOk = !pro || (bill.company.trim().length >= 2 && /^\d{9}$/.test(bill.siren) && bill.address.trim().length >= 3 && /^\d{5}$/.test(bill.postalCode) && !!bill.city.trim());
   const infoFn = useServerFn(onlinePaymentInfo);
   const [online, setOnline] = useState<{ stripe: string | null; paypal: boolean; lyra: boolean }>({ stripe: null, paypal: false, lyra: false });
@@ -302,7 +302,7 @@ function Checkout() {
               <input type="checkbox" className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--primary)]" checked={cgv} onChange={(e) => setCgv(e.target.checked)} />
               <span>J'accepte les <Link to="/$slug/cgv" params={{ slug: restaurant.slug }} target="_blank" className="underline">conditions générales de vente</Link> et la <Link to="/$slug/confidentialite" params={{ slug: restaurant.slug }} target="_blank" className="underline">politique de confidentialité</Link>.</span>
             </label>
-            <Button size="lg" className="mt-4 w-full font-semibold" disabled={!canSubmit || !cgv || busy || (pay === "on_site" && !onSiteOk)} onClick={submit}>
+            <Button size="lg" className="mt-4 w-full font-semibold" disabled={!canSubmit || !proOk || !cgv || busy || (pay === "on_site" && !onSiteOk)} onClick={submit}>
               {busy ? "Envoi…" : pay === "on_site" ? `Valider la commande · ${euro(total)}` : pay === "paypal" ? `Payer avec PayPal · ${euro(total)}` : `Continuer vers le paiement · ${euro(total)}`}
             </Button>
           </>)}
