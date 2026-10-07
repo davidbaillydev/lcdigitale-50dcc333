@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Bike, CalendarClock, Clock, ShoppingBag, CreditCard, Store, Wallet, Landmark } from "lucide-react";
+import { Bike, CalendarClock, Clock, ShoppingBag, CreditCard, Store, Wallet, Landmark, MapPin, LocateFixed } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { CartLines } from "@/components/CartSheet";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useCart } from "@/lib/cart";
 import { euro } from "@/lib/menu";
 import { useTable } from "@/lib/table";
+import { findZone, zoneFee, type GeoZone } from "@/lib/geo";
+import { geocodeAddress } from "@/lib/delivery.functions";
 import { asapSlot, availableSlots, deliveryFee, fmtTime, isOpenNow, modeEnabled, timingOf } from "@/lib/shop";
 import { createOrder } from "@/lib/orders.functions";
 import { onlinePaymentInfo } from "@/lib/payments.functions";
@@ -74,16 +76,31 @@ function Checkout() {
   }, [mode, restaurant]);
   const asap = when === "asap" && openNow;
 
-  const fee = mode === "delivery" ? deliveryFee(restaurant, subtotal) : 0;
+  const geoZones = DELIVERY.geoZones ?? [];
+  const geoFn = useServerFn(geocodeAddress);
+  const [geo, setGeo] = useState<{ lat: number; lng: number; zone: GeoZone | null; label?: string | undefined } | null>(null);
+  const [geoBusy, setGeoBusy] = useState(false);
+  const checkPoint = (lat: number, lng: number, label?: string) => setGeo({ lat, lng, zone: findZone([lat, lng], geoZones), label });
+  const checkAddress = async () => {
+    setGeoBusy(true);
+    try { const r = await geoFn({ data: { q: `${f.address} ${f.postal_code}`.trim() } }); if (!r) toast.error("Adresse introuvable, précisez la rue et la ville."); else checkPoint(r.lat, r.lng, r.label); }
+    catch (e) { toast.error((e as Error).message); } finally { setGeoBusy(false); }
+  };
+  const locateMe = () => {
+    if (!navigator.geolocation) { toast.error("Géolocalisation indisponible"); return; }
+    setGeoBusy(true);
+    navigator.geolocation.getCurrentPosition((p) => { checkPoint(p.coords.latitude, p.coords.longitude); setGeoBusy(false); }, () => { toast.error("Position refusée : saisissez votre adresse."); setGeoBusy(false); }, { enableHighAccuracy: true, timeout: 10000 });
+  };
+  const fee = mode === "delivery" ? (geoZones.length ? (geo?.zone ? zoneFee(geo.zone, subtotal) : 0) : deliveryFee(restaurant, subtotal)) : 0;
   const discount = promo.d?.discount ?? 0;
   const total = subtotal - discount + fee;
-  const belowMin = mode === "delivery" && subtotal < DELIVERY.minOrder;
+  const belowMin = mode === "delivery" && subtotal < (geoZones.length ? (geo?.zone?.minOrder ?? 0) : DELIVERY.minOrder);
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
 
   const canSubmit = useMemo(
     () => table ? lines.length && f.customer_name.trim().length > 1 && f.phone.trim().length >= 8 : lines.length && (asap || (timing.scheduled && slot)) && f.customer_name.trim().length > 1 && f.phone.trim().length >= 8 && !belowMin &&
-      (mode === "pickup" || (f.address.trim().length > 4 && f.postal_code)),
-    [lines, slot, f, belowMin, mode, table, asap, timing.scheduled],
+      (mode === "pickup" || (f.address.trim().length > 4 && (geoZones.length ? !!geo?.zone : f.postal_code))),
+    [lines, slot, f, belowMin, mode, table, asap, timing.scheduled, geo, geoZones.length],
   );
 
   const submit = async () => {
@@ -92,7 +109,7 @@ function Checkout() {
     try {
       const res = await submitFn({
         data: {
-          ...f, restaurant: restaurant.slug, ...(table ? { mode: "dine_in" as const, ...(tableNo ? { table: tableNo } : {}), ...(qr.room ? { room: qr.room } : {}), ...(qr.self ? { qr: "self" as const } : {}), slot: new Date().toISOString(), address: "", postal_code: "" } : { mode, slot: asap ? new Date().toISOString() : slot, asap }), ...(promo.code ? { promo_code: promo.code } : {}),
+          ...f, restaurant: restaurant.slug, ...(table ? { mode: "dine_in" as const, ...(tableNo ? { table: tableNo } : {}), ...(qr.room ? { room: qr.room } : {}), ...(qr.self ? { qr: "self" as const } : {}), slot: new Date().toISOString(), address: "", postal_code: "" } : { mode, slot: asap ? new Date().toISOString() : slot, asap, ...(mode === "delivery" && geo ? { lat: geo.lat, lng: geo.lng } : {}) }), ...(promo.code ? { promo_code: promo.code } : {}),
           payment_method: pay === "on_site" ? "on_site" : "online", cgv: true as const,
           origin: window.location.origin,
           ...(pay !== "on_site" ? { provider: pay } : {}),
@@ -147,7 +164,7 @@ function Checkout() {
           <section>
             <h2 className="text-3xl">1. Mode de retrait</h2>
             <div className="mt-3 grid grid-cols-2 gap-3">
-              {([["pickup", "À emporter", "Click & collect", ShoppingBag], ["delivery", "Livraison", DELIVERY.zones.length ? "Dans notre zone de livraison" : "Indisponible", Bike]] as const).filter(([v]) => modeEnabled(restaurant, v)).map(([v, t, s, Icon]) => (
+              {([["pickup", "À emporter", "Click & collect", ShoppingBag], ["delivery", "Livraison", DELIVERY.zones.length || geoZones.length ? "Dans notre zone de livraison" : "Indisponible", Bike]] as const).filter(([v]) => modeEnabled(restaurant, v)).map(([v, t, s, Icon]) => (
                 <button key={v} onClick={() => setMode(v)} className={cn("rounded-xl border p-4 text-left", mode === v ? "border-primary bg-primary/10" : "border-border")}>
                   <Icon className="mb-2 h-6 w-6 text-primary" />
                   <p className="font-semibold">{t}</p>
@@ -199,7 +216,20 @@ function Checkout() {
               <div className="sm:col-span-2"><Label htmlFor="e">Email (pour la confirmation)</Label><Input id="e" type="email" maxLength={255} value={f.email} onChange={set("email")} /></div>
               {mode === "delivery" && !table && (
                 <>
-                  <div className="sm:col-span-2"><Label htmlFor="a">Adresse *</Label><Input id="a" maxLength={200} placeholder="N°, rue, bâtiment, étage…" value={f.address} onChange={set("address")} /></div>
+                  <div className="sm:col-span-2"><Label htmlFor="a">Adresse *</Label><Input id="a" maxLength={200} placeholder="N°, rue, bâtiment, étage…" value={f.address} onChange={(e) => { setGeo(null); set("address")(e); }} /></div>
+                  {geoZones.length > 0 ? (
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="cp">Code postal et ville *</Label>
+                    <Input id="cp" maxLength={80} placeholder="31770 Colomiers" value={f.postal_code} onChange={(e) => { setGeo(null); set("postal_code")(e); }} />
+                    <div className="flex flex-wrap gap-2">
+                      <Button type="button" variant="secondary" className="min-h-11" disabled={geoBusy || f.address.trim().length < 5} onClick={checkAddress}><MapPin /> Vérifier mon adresse</Button>
+                      <Button type="button" variant="ghost" className="min-h-11" disabled={geoBusy} onClick={locateMe}><LocateFixed /> Me géolocaliser</Button>
+                    </div>
+                    {geo && (geo.zone
+                      ? <p role="status" className="rounded-lg border border-primary bg-primary/10 p-3 text-sm">✓ Livrable — {geo.zone.name} · minimum {geo.zone.minOrder} € · frais {zoneFee(geo.zone, subtotal) ? `${zoneFee(geo.zone, subtotal).toFixed(2)} €` : "offerts"}</p>
+                      : <p role="alert" className="rounded-lg border border-destructive bg-destructive/10 p-3 text-sm">Désolé, cette adresse est hors de notre zone de livraison.</p>)}
+                  </div>
+                  ) : (
                   <div className="sm:col-span-2">
                     <Label htmlFor="cp">Ville *</Label>
                     <select id="cp" value={f.postal_code} onChange={set("postal_code")} className="mt-1 h-9 w-full rounded-md border border-input bg-background px-3 text-sm">
@@ -207,6 +237,7 @@ function Checkout() {
                       {DELIVERY.zones.map((z) => <option key={z.cp} value={z.cp}>{z.cp} — {z.city}</option>)}
                     </select>
                   </div>
+                  )}
                 </>
               )}
               <div className="sm:col-span-2"><Label htmlFor="no">Remarques (allergies, digicode…)</Label><Textarea id="no" maxLength={500} value={f.notes} onChange={set("notes")} /></div>

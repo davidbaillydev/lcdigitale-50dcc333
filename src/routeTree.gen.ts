@@ -16,6 +16,7 @@ import { Route as AgenceRouteImport } from './routes/agence'
 import { Route as CommandeRouteImport } from './routes/commande'
 import { Route as ConnexionRouteImport } from './routes/connexion'
 import { Route as DesabonnementRouteImport } from './routes/desabonnement'
+import { Route as LivreurRouteImport } from './routes/livreur'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SlugIndexRouteImport } from './routes/$slug.index'
 import { Route as SlugBorneRouteImport } from './routes/$slug.borne'
@@ -34,6 +35,7 @@ import { Route as SuiviIdRouteImport } from './routes/suivi.$id'
 import { Route as SlugSuiviIdRouteImport } from './routes/$slug.suivi.$id'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminSlugRouteImport } from './routes/_authenticated/admin.$slug'
+import { Route as AuthenticatedAdminQrcodesRouteImport } from './routes/_authenticated/admin.qrcodes'
 import { Route as AuthenticatedEspaceIndexRouteImport } from './routes/_authenticated/espace.index'
 import { Route as AuthenticatedEspaceFacturesRouteImport } from './routes/_authenticated/espace.factures'
 import { Route as AuthenticatedEspaceTableauDeBordRouteImport } from './routes/_authenticated/espace.tableau-de-bord'
@@ -42,6 +44,7 @@ import { Route as AuthenticatedEspaceSlugIndexRouteImport } from './routes/_auth
 import { Route as AuthenticatedEspaceSlugCarteRouteImport } from './routes/_authenticated/espace.$slug.carte'
 import { Route as AuthenticatedEspaceSlugClientsRouteImport } from './routes/_authenticated/espace.$slug.clients'
 import { Route as AuthenticatedEspaceSlugEquipeRouteImport } from './routes/_authenticated/espace.$slug.equipe'
+import { Route as AuthenticatedEspaceSlugLivraisonRouteImport } from './routes/_authenticated/espace.$slug.livraison'
 import { Route as AuthenticatedEspaceSlugQrRouteImport } from './routes/_authenticated/espace.$slug.qr'
 import { Route as AuthenticatedEspaceSlugReglagesRouteImport } from './routes/_authenticated/espace.$slug.reglages'
 import { Route as AuthenticatedEspaceSlugReservationsRouteImport } from './routes/_authenticated/espace.$slug.reservations'
@@ -82,6 +85,11 @@ const ConnexionRoute = ConnexionRouteImport.update({
 const DesabonnementRoute = DesabonnementRouteImport.update({
   id: '/desabonnement',
   path: '/desabonnement',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LivreurRoute = LivreurRouteImport.update({
+  id: '/livreur',
+  path: '/livreur',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -174,6 +182,12 @@ const AuthenticatedAdminSlugRoute = AuthenticatedAdminSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminQrcodesRoute =
+  AuthenticatedAdminQrcodesRouteImport.update({
+    id: '/qrcodes',
+    path: '/qrcodes',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedEspaceIndexRoute =
   AuthenticatedEspaceIndexRouteImport.update({
     id: '/espace/',
@@ -219,6 +233,12 @@ const AuthenticatedEspaceSlugEquipeRoute =
   AuthenticatedEspaceSlugEquipeRouteImport.update({
     id: '/espace/$slug/equipe',
     path: '/espace/$slug/equipe',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedEspaceSlugLivraisonRoute =
+  AuthenticatedEspaceSlugLivraisonRouteImport.update({
+    id: '/espace/$slug/livraison',
+    path: '/espace/$slug/livraison',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedEspaceSlugQrRoute =
@@ -270,6 +290,7 @@ export interface FileRoutesByFullPath {
   '/commande': typeof CommandeRoute
   '/connexion': typeof ConnexionRoute
   '/desabonnement': typeof DesabonnementRoute
+  '/livreur': typeof LivreurRoute
   '/reset-password': typeof ResetPasswordRoute
   '/$slug/borne': typeof SlugBorneRoute
   '/$slug/cgv': typeof SlugCgvRoute
@@ -287,6 +308,7 @@ export interface FileRoutesByFullPath {
   '/cuisine/': typeof CuisineIndexRoute
   '/$slug/suivi/$id': typeof SlugSuiviIdRoute
   '/admin/$slug': typeof AuthenticatedAdminSlugRoute
+  '/admin/qrcodes': typeof AuthenticatedAdminQrcodesRoute
   '/espace/factures': typeof AuthenticatedEspaceFacturesRoute
   '/espace/tableau-de-bord': typeof AuthenticatedEspaceTableauDeBordRoute
   '/api/public/lyra-ipn': typeof ApiPublicLyraIpnRoute
@@ -295,6 +317,7 @@ export interface FileRoutesByFullPath {
   '/espace/$slug/carte': typeof AuthenticatedEspaceSlugCarteRoute
   '/espace/$slug/clients': typeof AuthenticatedEspaceSlugClientsRoute
   '/espace/$slug/equipe': typeof AuthenticatedEspaceSlugEquipeRoute
+  '/espace/$slug/livraison': typeof AuthenticatedEspaceSlugLivraisonRoute
   '/espace/$slug/qr': typeof AuthenticatedEspaceSlugQrRoute
   '/espace/$slug/reglages': typeof AuthenticatedEspaceSlugReglagesRoute
   '/espace/$slug/reservations': typeof AuthenticatedEspaceSlugReservationsRoute
@@ -310,6 +333,7 @@ export interface FileRoutesByTo {
   '/commande': typeof CommandeRoute
   '/connexion': typeof ConnexionRoute
   '/desabonnement': typeof DesabonnementRoute
+  '/livreur': typeof LivreurRoute
   '/reset-password': typeof ResetPasswordRoute
   '/$slug/borne': typeof SlugBorneRoute
   '/$slug/cgv': typeof SlugCgvRoute
@@ -326,6 +350,7 @@ export interface FileRoutesByTo {
   '/cuisine': typeof CuisineIndexRoute
   '/$slug/suivi/$id': typeof SlugSuiviIdRoute
   '/admin/$slug': typeof AuthenticatedAdminSlugRoute
+  '/admin/qrcodes': typeof AuthenticatedAdminQrcodesRoute
   '/espace/factures': typeof AuthenticatedEspaceFacturesRoute
   '/espace/tableau-de-bord': typeof AuthenticatedEspaceTableauDeBordRoute
   '/api/public/lyra-ipn': typeof ApiPublicLyraIpnRoute
@@ -334,6 +359,7 @@ export interface FileRoutesByTo {
   '/espace/$slug/carte': typeof AuthenticatedEspaceSlugCarteRoute
   '/espace/$slug/clients': typeof AuthenticatedEspaceSlugClientsRoute
   '/espace/$slug/equipe': typeof AuthenticatedEspaceSlugEquipeRoute
+  '/espace/$slug/livraison': typeof AuthenticatedEspaceSlugLivraisonRoute
   '/espace/$slug/qr': typeof AuthenticatedEspaceSlugQrRoute
   '/espace/$slug/reglages': typeof AuthenticatedEspaceSlugReglagesRoute
   '/espace/$slug/reservations': typeof AuthenticatedEspaceSlugReservationsRoute
@@ -352,6 +378,7 @@ export interface FileRoutesById {
   '/commande': typeof CommandeRoute
   '/connexion': typeof ConnexionRoute
   '/desabonnement': typeof DesabonnementRoute
+  '/livreur': typeof LivreurRoute
   '/reset-password': typeof ResetPasswordRoute
   '/$slug/borne': typeof SlugBorneRoute
   '/$slug/cgv': typeof SlugCgvRoute
@@ -369,6 +396,7 @@ export interface FileRoutesById {
   '/cuisine/': typeof CuisineIndexRoute
   '/$slug/suivi/$id': typeof SlugSuiviIdRoute
   '/_authenticated/admin/$slug': typeof AuthenticatedAdminSlugRoute
+  '/_authenticated/admin/qrcodes': typeof AuthenticatedAdminQrcodesRoute
   '/_authenticated/espace/factures': typeof AuthenticatedEspaceFacturesRoute
   '/_authenticated/espace/tableau-de-bord': typeof AuthenticatedEspaceTableauDeBordRoute
   '/api/public/lyra-ipn': typeof ApiPublicLyraIpnRoute
@@ -377,6 +405,7 @@ export interface FileRoutesById {
   '/_authenticated/espace/$slug/carte': typeof AuthenticatedEspaceSlugCarteRoute
   '/_authenticated/espace/$slug/clients': typeof AuthenticatedEspaceSlugClientsRoute
   '/_authenticated/espace/$slug/equipe': typeof AuthenticatedEspaceSlugEquipeRoute
+  '/_authenticated/espace/$slug/livraison': typeof AuthenticatedEspaceSlugLivraisonRoute
   '/_authenticated/espace/$slug/qr': typeof AuthenticatedEspaceSlugQrRoute
   '/_authenticated/espace/$slug/reglages': typeof AuthenticatedEspaceSlugReglagesRoute
   '/_authenticated/espace/$slug/reservations': typeof AuthenticatedEspaceSlugReservationsRoute
@@ -395,6 +424,7 @@ export interface FileRouteTypes {
     | '/commande'
     | '/connexion'
     | '/desabonnement'
+    | '/livreur'
     | '/reset-password'
     | '/$slug/borne'
     | '/$slug/cgv'
@@ -412,6 +442,7 @@ export interface FileRouteTypes {
     | '/cuisine/'
     | '/$slug/suivi/$id'
     | '/admin/$slug'
+    | '/admin/qrcodes'
     | '/espace/factures'
     | '/espace/tableau-de-bord'
     | '/api/public/lyra-ipn'
@@ -420,6 +451,7 @@ export interface FileRouteTypes {
     | '/espace/$slug/carte'
     | '/espace/$slug/clients'
     | '/espace/$slug/equipe'
+    | '/espace/$slug/livraison'
     | '/espace/$slug/qr'
     | '/espace/$slug/reglages'
     | '/espace/$slug/reservations'
@@ -435,6 +467,7 @@ export interface FileRouteTypes {
     | '/commande'
     | '/connexion'
     | '/desabonnement'
+    | '/livreur'
     | '/reset-password'
     | '/$slug/borne'
     | '/$slug/cgv'
@@ -451,6 +484,7 @@ export interface FileRouteTypes {
     | '/cuisine'
     | '/$slug/suivi/$id'
     | '/admin/$slug'
+    | '/admin/qrcodes'
     | '/espace/factures'
     | '/espace/tableau-de-bord'
     | '/api/public/lyra-ipn'
@@ -459,6 +493,7 @@ export interface FileRouteTypes {
     | '/espace/$slug/carte'
     | '/espace/$slug/clients'
     | '/espace/$slug/equipe'
+    | '/espace/$slug/livraison'
     | '/espace/$slug/qr'
     | '/espace/$slug/reglages'
     | '/espace/$slug/reservations'
@@ -476,6 +511,7 @@ export interface FileRouteTypes {
     | '/commande'
     | '/connexion'
     | '/desabonnement'
+    | '/livreur'
     | '/reset-password'
     | '/$slug/borne'
     | '/$slug/cgv'
@@ -493,6 +529,7 @@ export interface FileRouteTypes {
     | '/cuisine/'
     | '/$slug/suivi/$id'
     | '/_authenticated/admin/$slug'
+    | '/_authenticated/admin/qrcodes'
     | '/_authenticated/espace/factures'
     | '/_authenticated/espace/tableau-de-bord'
     | '/api/public/lyra-ipn'
@@ -501,6 +538,7 @@ export interface FileRouteTypes {
     | '/_authenticated/espace/$slug/carte'
     | '/_authenticated/espace/$slug/clients'
     | '/_authenticated/espace/$slug/equipe'
+    | '/_authenticated/espace/$slug/livraison'
     | '/_authenticated/espace/$slug/qr'
     | '/_authenticated/espace/$slug/reglages'
     | '/_authenticated/espace/$slug/reservations'
@@ -519,6 +557,7 @@ export interface RootRouteChildren {
   CommandeRoute: typeof CommandeRoute
   ConnexionRoute: typeof ConnexionRoute
   DesabonnementRoute: typeof DesabonnementRoute
+  LivreurRoute: typeof LivreurRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ApiMenuPhotoGenerateRoute: typeof ApiMenuPhotoGenerateRoute
   CuisineSplatRoute: typeof CuisineSplatRoute
@@ -580,6 +619,13 @@ declare module '@tanstack/react-router' {
       path: '/desabonnement'
       fullPath: '/desabonnement'
       preLoaderRoute: typeof DesabonnementRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/livreur': {
+      id: '/livreur'
+      path: '/livreur'
+      fullPath: '/livreur'
+      preLoaderRoute: typeof LivreurRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -708,6 +754,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminSlugRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/qrcodes': {
+      id: '/_authenticated/admin/qrcodes'
+      path: '/qrcodes'
+      fullPath: '/admin/qrcodes'
+      preLoaderRoute: typeof AuthenticatedAdminQrcodesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/espace/': {
       id: '/_authenticated/espace/'
       path: '/espace'
@@ -764,6 +817,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEspaceSlugEquipeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/espace/$slug/livraison': {
+      id: '/_authenticated/espace/$slug/livraison'
+      path: '/espace/$slug/livraison'
+      fullPath: '/espace/$slug/livraison'
+      preLoaderRoute: typeof AuthenticatedEspaceSlugLivraisonRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/espace/$slug/qr': {
       id: '/_authenticated/espace/$slug/qr'
       path: '/espace/$slug/qr'
@@ -818,11 +878,13 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminSlugRoute: typeof AuthenticatedAdminSlugRoute
+  AuthenticatedAdminQrcodesRoute: typeof AuthenticatedAdminQrcodesRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminSlugRoute: AuthenticatedAdminSlugRoute,
+  AuthenticatedAdminQrcodesRoute: AuthenticatedAdminQrcodesRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
 
@@ -837,6 +899,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEspaceSlugCarteRoute: typeof AuthenticatedEspaceSlugCarteRoute
   AuthenticatedEspaceSlugClientsRoute: typeof AuthenticatedEspaceSlugClientsRoute
   AuthenticatedEspaceSlugEquipeRoute: typeof AuthenticatedEspaceSlugEquipeRoute
+  AuthenticatedEspaceSlugLivraisonRoute: typeof AuthenticatedEspaceSlugLivraisonRoute
   AuthenticatedEspaceSlugQrRoute: typeof AuthenticatedEspaceSlugQrRoute
   AuthenticatedEspaceSlugReglagesRoute: typeof AuthenticatedEspaceSlugReglagesRoute
   AuthenticatedEspaceSlugReservationsRoute: typeof AuthenticatedEspaceSlugReservationsRoute
@@ -851,6 +914,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEspaceSlugCarteRoute: AuthenticatedEspaceSlugCarteRoute,
   AuthenticatedEspaceSlugClientsRoute: AuthenticatedEspaceSlugClientsRoute,
   AuthenticatedEspaceSlugEquipeRoute: AuthenticatedEspaceSlugEquipeRoute,
+  AuthenticatedEspaceSlugLivraisonRoute: AuthenticatedEspaceSlugLivraisonRoute,
   AuthenticatedEspaceSlugQrRoute: AuthenticatedEspaceSlugQrRoute,
   AuthenticatedEspaceSlugReglagesRoute: AuthenticatedEspaceSlugReglagesRoute,
   AuthenticatedEspaceSlugReservationsRoute:
@@ -897,6 +961,7 @@ const rootRouteChildren: RootRouteChildren = {
   CommandeRoute: CommandeRoute,
   ConnexionRoute: ConnexionRoute,
   DesabonnementRoute: DesabonnementRoute,
+  LivreurRoute: LivreurRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ApiMenuPhotoGenerateRoute: ApiMenuPhotoGenerateRoute,
   CuisineSplatRoute: CuisineSplatRoute,

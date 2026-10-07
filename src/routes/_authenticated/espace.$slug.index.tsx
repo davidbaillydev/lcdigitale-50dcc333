@@ -263,6 +263,7 @@ function Kitchen() {
         <Button asChild variant="secondary"><Link to="/espace/$slug/reservations" params={{ slug }}>Réservations</Link></Button>
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/reglages" params={{ slug }}>Réglages</Link></Button>}
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/qr" params={{ slug }}>QR tables & avis</Link></Button>}
+        {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/livraison" params={{ slug }}>Livraison & livreurs</Link></Button>}
         {restaurant?.role === "agency" && <Button asChild variant="secondary"><Link to="/espace/$slug/equipe" params={{ slug }}><Users /> Équipe</Link></Button>}
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/clients" params={{ slug }}>Clients</Link></Button>}
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/tableau-de-bord">Tableau de bord</Link></Button>}

@@ -1,6 +1,6 @@
 // Règles d'un restaurant : horaires, créneaux, livraison (config stockée par restaurant)
 export type Zone = { cp: string; city: string };
-export type DeliveryConfig = { minOrder: number; fee: number; freeFrom: number; zones: Zone[] };
+export type DeliveryConfig = { minOrder: number; fee: number; freeFrom: number; zones: Zone[]; geoZones?: import("./geo").GeoZone[]; origin?: import("./geo").LatLng };
 export type Restaurant = {
   id: string;
   slug: string;
@@ -30,7 +30,7 @@ export type Restaurant = {
     payments?: { on_site?: boolean; counter?: boolean; card_terminal?: boolean };
     marketing?: import("./promo").Marketing;
     /** Menu QR par table (nombre de tables) et lien d'avis Google proposé après la commande */
-    qr?: { tables?: number; reviewUrl?: string; room?: boolean; self?: boolean };
+    qr?: { tables?: number; reviewUrl?: string; room?: boolean; self?: boolean; tableValidation?: boolean };
     /** Moment de commande (ASAP / planifiée) et acceptation en cuisine */
     timing?: TimingConfig;
     reservations?: { enabled?: boolean; noShowFee?: number; maxParty?: number };

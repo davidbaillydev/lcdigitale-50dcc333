@@ -18,6 +18,8 @@ const orderSchema = z.object({
   email: z.string().trim().email().max(255).optional().or(z.literal("")),
   address: z.string().trim().max(200).optional(),
   postal_code: z.string().trim().max(10).optional(),
+  lat: z.number().min(-90).max(90).optional(),
+  lng: z.number().min(-180).max(180).optional(),
   notes: z.string().trim().max(500).optional(),
   payment_method: z.enum(["on_site", "online"]),
   promo_code: z.string().trim().max(30).optional(),
@@ -74,7 +76,18 @@ export const createOrder = createServerFn({ method: "POST" })
 
     let fee = 0;
     let city: string | null = null;
-    if (data.mode === "delivery") {
+    let zoneName: string | null = null;
+    const geo = r.delivery.geoZones ?? [];
+    if (data.mode === "delivery" && geo.length) {
+      if (data.lat == null || data.lng == null) throw new Error("Vérifiez votre adresse de livraison sur la carte.");
+      const { findZone, zoneFee } = await import("./geo");
+      const zone = findZone([data.lat, data.lng], geo);
+      if (!zone) throw new Error("Désolé, cette adresse est hors de notre zone de livraison.");
+      if (!data.address || data.address.length < 5) throw new Error("Adresse de livraison requise.");
+      if (subtotal < zone.minOrder) throw new Error(`Minimum de commande pour ${zone.name} : ${zone.minOrder} €`);
+      fee = zoneFee(zone, subtotal);
+      zoneName = zone.name;
+    } else if (data.mode === "delivery") {
       const zone = r.delivery.zones.find((z) => z.cp === data.postal_code);
       if (!zone) throw new Error("Désolé, cette adresse est hors de notre zone de livraison.");
       if (!data.address || data.address.length < 5) throw new Error("Adresse de livraison requise.");
@@ -97,6 +110,9 @@ export const createOrder = createServerFn({ method: "POST" })
         address: data.mode === "delivery" ? (data.address ?? null) : null,
         postal_code: data.mode === "delivery" ? (data.postal_code ?? null) : null,
         city,
+        delivery_lat: data.mode === "delivery" ? (data.lat ?? null) : null,
+        delivery_lng: data.mode === "delivery" ? (data.lng ?? null) : null,
+        zone_name: zoneName,
         slot: dineIn ? new Date().toISOString() : data.slot,
         asap: !dineIn && !!data.asap,
         table_label: dineIn ? (data.table ?? null) : null,
@@ -112,7 +128,7 @@ export const createOrder = createServerFn({ method: "POST" })
         payment_method: data.payment_method,
         cgv_accepted_at: new Date().toISOString(),
         cgv_version: cgvVersion(r.legal ?? {}),
-        status: provider ? "awaiting_payment" : dineIn && data.qr === "self" && !data.table && !data.room ? "pending_validation" : r.config.autoAccept ? "accepted" : "new",
+        status: provider ? "awaiting_payment" : dineIn && ((data.qr === "self" && !data.table && !data.room) || (!!data.table && !!r.config.qr?.tableValidation)) ? "pending_validation" : r.config.autoAccept ? "accepted" : "new",
       })
       .select("id, order_number, total")
       .single();

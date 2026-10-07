@@ -18,7 +18,8 @@ import { AllergenBadges, AllergenPicker } from "@/components/Allergens";
 import { DishPhoto } from "@/components/DishPhoto";
 import { pretranslateMenu } from "@/lib/menu-translate.functions";
 import { FOREIGN_LANGS, LANG_NAMES, missingTranslations, type ForeignLang } from "@/lib/i18n";
-import { Languages } from "lucide-react";
+import { Languages, PackageX } from "lucide-react";
+import { setSoldOut, useSoldOut } from "@/lib/stock";
 
 export const Route = createFileRoute("/_authenticated/espace/$slug/carte")({
   head: () => ({
@@ -41,6 +42,7 @@ function MenuEditor() {
   const { slug } = Route.useParams();
   const { loading, restaurants } = useStaff();
   const r = restaurants.find((x) => x.slug === slug);
+  const soldOut = useSoldOut(r?.id);
   const canManage = r?.role === "agency" || r?.role === "manager";
   const load = useServerFn(loadMenu);
   const save = useServerFn(saveMenu);
@@ -188,6 +190,7 @@ function MenuEditor() {
                         <span className="text-xs text-muted-foreground">Prix €</span>
                       </div>
                       <div className="flex items-start gap-1">
+                        <Button size="sm" variant={soldOut.has(it.id) ? "destructive" : "outline"} className="min-h-10" onClick={async () => { const on = !soldOut.has(it.id); try { await setSoldOut(r!.id, it.id, on); toast.success(on ? `${it.name} : épuisé` : `${it.name} : disponible`); } catch { toast.error("Modification impossible"); } }} title="Effet immédiat sur le site, la borne et le menu QR, sans enregistrer la carte"><PackageX /> {soldOut.has(it.id) ? "Épuisé" : "Marquer épuisé"}</Button>
                         <Button size="icon" variant="ghost" onClick={() => setItem(ci, ii, { hidden: !it.hidden })} aria-label={it.hidden ? "Afficher" : "Masquer"} title={it.hidden ? "Indisponible — cliquer pour afficher" : "Masquer (rupture)"}>{it.hidden ? <EyeOff /> : <Eye />}</Button>
                         <Button size="icon" variant="ghost" onClick={() => setCat(ci, { items: move(c.items, ii, -1) })} aria-label="Monter"><ArrowUp /></Button>
                         <Button size="icon" variant="ghost" onClick={() => setCat(ci, { items: c.items.filter((_, i) => i !== ii) })} aria-label="Supprimer le plat"><Trash2 /></Button>
