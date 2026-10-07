@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { unitPrice, validateSelections, describeSelections } from "./menu";
+import { validateSelections, orderLine } from "./menu";
+import { loadOptionData, withOptions } from "./menu-options";
 import { getCatalog } from "./catalogs";
 import { RESTAURANT_COLUMNS, deliveryFee, isValidSlot, isOpenNow, asapSlot, timingOf, modeEnabled, paymentEnabled, type Restaurant } from "./shop";
 import { cgvVersion } from "./legal";
@@ -40,7 +41,7 @@ export const createOrder = createServerFn({ method: "POST" })
     const { data: rRow } = await supabaseAdmin.from("restaurants").select(RESTAURANT_COLUMNS).eq("slug", data.restaurant).eq("active", true).maybeSingle();
     const r = rRow as unknown as Restaurant | null;
     if (!r) throw new Error("Restaurant introuvable");
-    const catalog = getCatalog(r);
+    const catalog = withOptions(getCatalog(r), await loadOptionData(supabaseAdmin, r.id));
 
     const dineIn = data.mode === "dine_in";
     if (dineIn) {
@@ -70,8 +71,7 @@ export const createOrder = createServerFn({ method: "POST" })
       if (soldOut.has(item.id)) throw new Error(`« ${item.name} » est momentanément épuisé. Retirez-le de votre panier.`);
       const err = validateSelections(item, l.sel);
       if (err) throw new Error(err);
-      const unit = unitPrice(item, l.sel);
-      return { id: item.id, name: item.name, qty: l.qty, unit, total: Math.round(unit * l.qty * 100) / 100, details: describeSelections(item, l.sel), ...(item.allergens?.length ? { allergens: item.allergens } : {}), ...(item.vatRate ? { vatRate: item.vatRate } : {}) };
+      return orderLine(item, l.sel, l.qty);
     });
     const subtotal = Math.round(items.reduce((s, i) => s + i.total, 0) * 100) / 100;
 
@@ -197,7 +197,7 @@ export const createKioskOrder = createServerFn({ method: "POST" })
     if (!r) throw new Error("Restaurant introuvable");
     if (!modeEnabled(r, data.mode)) throw new Error("Ce mode n'est pas proposé.");
     if (!paymentEnabled(r, data.payment_method)) throw new Error("Ce mode de paiement n'est pas accepté.");
-    const catalog = getCatalog(r);
+    const catalog = withOptions(getCatalog(r), await loadOptionData(supabaseAdmin, r.id));
     const { data: so } = await supabaseAdmin.from("menu_stock").select("item_id").eq("restaurant_id", r.id).eq("sold_out", true);
     const soldOut = new Set((so ?? []).map((x) => x.item_id));
     const items = data.lines.map((l) => {
@@ -206,8 +206,7 @@ export const createKioskOrder = createServerFn({ method: "POST" })
       if (soldOut.has(item.id)) throw new Error(`« ${item.name} » est momentanément épuisé. Retirez-le de votre panier.`);
       const err = validateSelections(item, l.sel);
       if (err) throw new Error(err);
-      const unit = unitPrice(item, l.sel);
-      return { id: item.id, name: item.name, qty: l.qty, unit, total: Math.round(unit * l.qty * 100) / 100, details: describeSelections(item, l.sel), ...(item.allergens?.length ? { allergens: item.allergens } : {}), ...(item.vatRate ? { vatRate: item.vatRate } : {}) };
+      return orderLine(item, l.sel, l.qty);
     });
     const subtotal = Math.round(items.reduce((s, i) => s + i.total, 0) * 100) / 100;
     const { resolveDiscount } = await import("./promo.server");
