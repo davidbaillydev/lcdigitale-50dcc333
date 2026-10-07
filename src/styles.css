@@ -462,3 +462,7 @@
   .directory-card { transition: none; }
   .admin-restaurant-card { transition: none; }
 }
+
+@keyframes kds-incoming { 0%,100% { box-shadow: var(--admin-shadow), 0 0 0 0 color-mix(in oklab, var(--primary) 45%, transparent); } 50% { box-shadow: var(--admin-shadow), 0 0 0 8px color-mix(in oklab, var(--primary) 0%, transparent); background-color: color-mix(in oklab, var(--primary) 8%, var(--card)); } }
+.kds-incoming { animation: kds-incoming 2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .kds-incoming { animation: none; } }
