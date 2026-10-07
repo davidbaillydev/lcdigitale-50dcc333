@@ -17,6 +17,7 @@ import { loadRestaurantAdmin } from "@/lib/restaurant-settings.functions";
 import { courierPinStatus, saveDeliveryZones, setCourierPin } from "@/lib/delivery.functions";
 import type { GeoZone, LatLng } from "@/lib/geo";
 import { fmtTime } from "@/lib/shop";
+import { DriverSelect, useDrivers } from "@/components/DriverSelect";
 
 const ZoneMap = lazy(() => import("@/components/ZoneMap"));
 const DEFAULT_CENTER: LatLng = [43.6112, 1.3353];
@@ -36,7 +37,7 @@ export const Route = createFileRoute("/_authenticated/espace/$slug/livraison")({
 });
 
 type Tool = "none" | "center" | "origin" | "polygon";
-type Del = { id: string; order_number: number; customer_name: string; address: string | null; slot: string; status: string; courier_status: string | null; courier_name: string | null; zone_name: string | null };
+type Del = { id: string; order_number: number; customer_name: string; address: string | null; slot: string; status: string; courier_status: string | null; courier_name: string | null; zone_name: string | null; driver_id: string | null };
 const uid = () => Math.random().toString(36).slice(2, 10);
 const COURIER: Record<string, string> = { assigned: "Assignée", en_route: "En cours", delivered: "Livrée" };
 
@@ -59,13 +60,15 @@ function Page() {
   const [busy, setBusy] = useState(false);
   const [newPin, setNewPin] = useState("");
   const [orders, setOrders] = useState<Del[]>([]);
+  const drivers = useDrivers(r?.id);
+  const [drvName, setDrvName] = useState("");
 
   useEffect(() => { if (r) { setZones(r.delivery.geoZones ?? []); setOrigin(r.delivery.origin ?? DEFAULT_CENTER); } }, [r]);
   useEffect(() => {
     if (!r) return;
     const since = new Date(Date.now() - 12 * 3600_000).toISOString();
     const fetchO = async () => {
-      const { data } = await supabase.from("orders").select("id, order_number, customer_name, address, slot, status, courier_status, courier_name, zone_name").eq("restaurant_id", r.id).eq("mode", "delivery").gte("created_at", since).neq("status", "awaiting_payment").order("slot");
+      const { data } = await supabase.from("orders").select("id, order_number, customer_name, address, slot, status, courier_status, courier_name, zone_name, driver_id").eq("restaurant_id", r.id).eq("mode", "delivery").gte("created_at", since).neq("status", "awaiting_payment").order("slot");
       setOrders((data ?? []) as Del[]);
     };
     fetchO();
@@ -184,13 +187,32 @@ function Page() {
               {orders.map((o) => (
                 <li key={o.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
                   <span><strong>n°{o.order_number}</strong> · {fmtTime(o.slot)} · {o.customer_name}<br /><span className="text-muted-foreground">{o.address}{o.zone_name ? ` · ${o.zone_name}` : ""}</span></span>
+                  <span className="flex flex-wrap items-center gap-2">{o.status !== "cancelled" && <DriverSelect orderId={o.id} driverId={o.driver_id} drivers={drivers} courierStatus={o.courier_status} />}
                   <span className={`rounded-full px-3 py-1 text-xs font-semibold ${o.courier_status === "delivered" ? "bg-primary/15 text-primary" : o.courier_status ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground"}`}>
                     {o.status === "cancelled" ? "Annulée" : o.courier_status ? `${COURIER[o.courier_status]}${o.courier_name ? ` · ${o.courier_name}` : ""}` : "À attribuer"}
-                  </span>
+                  </span></span>
                 </li>
               ))}
             </ul>
           )}
+        </div>
+        <div className="space-y-3 rounded-xl border border-border bg-card p-4 md:col-start-1">
+          <h2 className="text-2xl">Livreurs</h2>
+          <ul className="divide-y divide-border">
+            {drivers.map((d) => (
+              <li key={d.id} className="flex min-h-12 items-center justify-between gap-2">
+                <span className={d.active ? "" : "text-muted-foreground line-through"}>{d.name}</span>
+                <span className="flex gap-1">
+                  <Button size="sm" variant="ghost" className="min-h-11" onClick={async () => { await supabase.from("restaurant_drivers").update({ active: !d.active }).eq("id", d.id); }}>{d.active ? "Désactiver" : "Réactiver"}</Button>
+                  <Button size="icon" variant="ghost" aria-label={`Supprimer ${d.name}`} onClick={async () => { if (confirm(`Supprimer ${d.name} ?`)) await supabase.from("restaurant_drivers").delete().eq("id", d.id); }}><Trash2 /></Button>
+                </span>
+              </li>
+            ))}
+          </ul>
+          <form className="flex gap-2" onSubmit={async (e) => { e.preventDefault(); if (!r || drvName.trim().length < 2) return; const { error } = await supabase.from("restaurant_drivers").insert({ restaurant_id: r.id, name: drvName.trim().slice(0, 40) }); if (error) toast.error("Ajout impossible"); else setDrvName(""); }}>
+            <Input placeholder="Prénom du livreur" value={drvName} maxLength={40} onChange={(e) => setDrvName(e.target.value)} aria-label="Prénom du livreur" />
+            <Button type="submit" className="min-h-11"><Plus /> Ajouter</Button>
+          </form>
         </div>
       </section>
     </div>
