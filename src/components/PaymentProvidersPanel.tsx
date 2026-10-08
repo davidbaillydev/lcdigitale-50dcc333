@@ -2,11 +2,12 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { listPaymentProviders, pairSumupReader, savePaymentProvider, testLyra, testPaypal, testStripe, testSumup, type Provider } from "@/lib/payments.functions";
+import { listPaymentProviders, pairSumupReader, savePaymentProvider, testLyra, testMollie, testPaypal, testStripe, testSumup, type Provider } from "@/lib/payments.functions";
 
 const MODES: Partial<Record<Provider, { options: [string, string][]; hint?: string }>> = {
   stripe: { options: [["test", "Test (aucun vrai paiement)"], ["live", "Réel (live)"]], hint: "Apple Pay et Google Pay s'affichent automatiquement s'ils sont activés dans votre compte Stripe." },
   paypal: { options: [["sandbox", "Sandbox (test)"], ["live", "Live (réel)"]], hint: "Identifiants à créer dans PayPal Developer → Apps & Credentials." },
+  mollie: { options: [["test", "Test (aucun vrai paiement)"], ["live", "Production"]], hint: "Seule la clé du mode choisi est utilisée pour encaisser et rembourser." },
   lyra: { options: [["TEST", "Test"], ["PRODUCTION", "Production"]], hint: "Utilisez la clé correspondant au mode (back-office Lyra → Paramétrage → Boutique → Clés)." },
 };
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,14 @@ const META: Record<Provider, { name: string; desc: string; fields: { key: string
     fields: [
       { key: "clientId", label: "Client ID", secret: true, placeholder: "AXxx..." },
       { key: "secret", label: "Secret", secret: true, placeholder: "EXxx..." },
+    ],
+  },
+  mollie: {
+    name: "Mollie Payments", desc: "Activer les paiements en ligne via Mollie : carte, Bancontact, iDEAL, Apple Pay.", available: true,
+    fields: [
+      { key: "apiKeyTest", label: "Clé API Test", secret: true, placeholder: "test_..." },
+      { key: "apiKeyLive", label: "Clé API Live", secret: true, placeholder: "live_..." },
+      { key: "profileId", label: "Identifiant de profil (optionnel)", secret: false, placeholder: "pfl_..." },
     ],
   },
   lyra: {
@@ -70,6 +79,9 @@ function ProviderCard({ restaurantId, p, onChange }: { restaurantId: string; p: 
   const testP = useServerFn(testPaypal);
   const testL = useServerFn(testLyra);
   const pair = useServerFn(pairSumupReader);
+  const testM = useServerFn(testMollie);
+  const [methods, setMethods] = useState<{ id: string; name: string }[]>([]);
+  const [show, setShow] = useState<Record<string, boolean>>({});
   const [enabled, setEnabled] = useState(p.enabled);
   const [creds, setCreds] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
@@ -97,9 +109,12 @@ function ProviderCard({ restaurantId, p, onChange }: { restaurantId: string; p: 
             {m.fields.map((f) => (
               <div key={f.key}>
                 <Label htmlFor={`${p.provider}-${f.key}`}>{f.label}</Label>
-                <Input id={`${p.provider}-${f.key}`} type={f.secret ? "password" : "text"} autoComplete="off"
-                  placeholder={p.credentials[f.key] || f.placeholder} value={creds[f.key] ?? ""}
-                  onChange={(e) => setCreds({ ...creds, [f.key]: e.target.value })} />
+                <div className="flex gap-1">
+                  <Input id={`${p.provider}-${f.key}`} type={f.secret && !show[f.key] ? "password" : "text"} autoComplete="off"
+                    placeholder={p.credentials[f.key] || f.placeholder} value={creds[f.key] ?? ""}
+                    onChange={(e) => setCreds({ ...creds, [f.key]: e.target.value })} />
+                  {f.secret && <Button type="button" variant="ghost" size="sm" className="min-h-9" onClick={() => setShow({ ...show, [f.key]: !show[f.key] })}>{show[f.key] ? "Masquer" : "Afficher"}</Button>}
+                </div>
                 {p.credentials[f.key] && <p className="mt-1 text-xs text-muted-foreground">Enregistrée : {p.credentials[f.key]} (laisser vide pour conserver)</p>}
               </div>
             ))}
@@ -142,6 +157,13 @@ function ProviderCard({ restaurantId, p, onChange }: { restaurantId: string; p: 
                 setResult({ ok: true, msg: `Plateforme joignable (${r.gateway}) · mode ${r.mode === "PRODUCTION" ? "Production" : "Test"}. La clé sera validée par la banque au premier paiement : faites une commande test.` });
               })}>Tester la connexion</Button>
             )}
+            {p.provider === "mollie" && (
+              <Button variant="secondary" disabled={busy} onClick={() => run(async () => {
+                const r = await testM({ data: { restaurantId } });
+                setMethods(r.methods);
+                setResult({ ok: true, msg: `Connexion réussie · mode ${r.live ? "Production" : "Test"} · ${r.methods.length} moyen(s) de paiement actif(s)` });
+              })}>Tester la connexion</Button>
+            )}
             {p.provider === "sumup" && (
               <Button variant="secondary" disabled={busy} onClick={() => run(async () => {
                 const r = await test({ data: { restaurantId } });
@@ -170,6 +192,9 @@ function ProviderCard({ restaurantId, p, onChange }: { restaurantId: string; p: 
                 })}>Associer un nouveau terminal</Button>
               </div>
             </div>
+          )}
+          {p.provider === "mollie" && methods.length > 0 && (
+            <div className="flex flex-wrap gap-1">{methods.map((x) => <span key={x.id} className="rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary">{x.name}</span>)}</div>
           )}
           {result && <p role={result.ok ? "status" : "alert"} className={result.ok ? "rounded bg-primary/15 p-2 text-sm" : "rounded bg-destructive/20 p-2 text-sm"}>{result.msg}</p>}
         </div>

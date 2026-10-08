@@ -10,7 +10,7 @@ export async function issueForOrder(admin: Admin, orderId: string) {
   if (existing) return existing as unknown as import("./invoice").Invoice;
   const { data: o } = await admin.from("orders").select("id, order_number, restaurant_id, customer_name, email, address, postal_code, city, table_label, room_label, items, delivery_fee, discount, promo_code, total, payment_method, payment_status, payment_ref, status, created_at, slot, billing").eq("id", orderId).maybeSingle();
   if (!o) throw new Error("Commande introuvable");
-  if (["awaiting_payment", "cancelled", "pending_approval", "new"].includes(o.status)) throw new Error("Facture disponible une fois la commande confirmée.");
+  if (o.payment_status !== "paid" && ["awaiting_payment", "cancelled", "pending_approval", "new"].includes(o.status)) throw new Error("Facture disponible une fois la commande confirmée.");
   const { data: r } = await admin.from("restaurants").select("name, address, city, phone, email, legal, logo_url").eq("id", o.restaurant_id).single();
   if (!r) throw new Error("Restaurant introuvable");
   const legal = (r.legal ?? {}) as Record<string, string>;

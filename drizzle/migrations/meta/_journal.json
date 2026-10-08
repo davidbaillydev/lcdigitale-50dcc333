@@ -22,6 +22,20 @@
       "when": 1791405342002,
       "tag": "0002_menu_variants_options",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791480770515,
+      "tag": "0003_mollie_refunds_credit_notes",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791480789791,
+      "tag": "0004_widen_payment_checks_mollie",
+      "breakpoints": true
     }
   ]
 }

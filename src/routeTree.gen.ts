@@ -41,6 +41,7 @@ import { Route as AuthenticatedEspaceIndexRouteImport } from './routes/_authenti
 import { Route as AuthenticatedEspaceFacturesRouteImport } from './routes/_authenticated/espace.factures'
 import { Route as AuthenticatedEspaceTableauDeBordRouteImport } from './routes/_authenticated/espace.tableau-de-bord'
 import { Route as ApiPublicLyraIpnRouteImport } from './routes/api/public/lyra-ipn'
+import { Route as ApiPublicMollieWebhookRouteImport } from './routes/api/public/mollie-webhook'
 import { Route as AuthenticatedEspaceSlugIndexRouteImport } from './routes/_authenticated/espace.$slug.index'
 import { Route as AuthenticatedEspaceSlugCarteRouteImport } from './routes/_authenticated/espace.$slug.carte'
 import { Route as AuthenticatedEspaceSlugClientsRouteImport } from './routes/_authenticated/espace.$slug.clients'
@@ -218,6 +219,11 @@ const ApiPublicLyraIpnRoute = ApiPublicLyraIpnRouteImport.update({
   path: '/api/public/lyra-ipn',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicMollieWebhookRoute = ApiPublicMollieWebhookRouteImport.update({
+  id: '/api/public/mollie-webhook',
+  path: '/api/public/mollie-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedEspaceSlugIndexRoute =
   AuthenticatedEspaceSlugIndexRouteImport.update({
     id: '/espace/$slug/',
@@ -320,6 +326,7 @@ export interface FileRoutesByFullPath {
   '/espace/factures': typeof AuthenticatedEspaceFacturesRoute
   '/espace/tableau-de-bord': typeof AuthenticatedEspaceTableauDeBordRoute
   '/api/public/lyra-ipn': typeof ApiPublicLyraIpnRoute
+  '/api/public/mollie-webhook': typeof ApiPublicMollieWebhookRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/espace/': typeof AuthenticatedEspaceIndexRoute
   '/espace/$slug/carte': typeof AuthenticatedEspaceSlugCarteRoute
@@ -363,6 +370,7 @@ export interface FileRoutesByTo {
   '/espace/factures': typeof AuthenticatedEspaceFacturesRoute
   '/espace/tableau-de-bord': typeof AuthenticatedEspaceTableauDeBordRoute
   '/api/public/lyra-ipn': typeof ApiPublicLyraIpnRoute
+  '/api/public/mollie-webhook': typeof ApiPublicMollieWebhookRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/espace': typeof AuthenticatedEspaceIndexRoute
   '/espace/$slug/carte': typeof AuthenticatedEspaceSlugCarteRoute
@@ -410,6 +418,7 @@ export interface FileRoutesById {
   '/_authenticated/espace/factures': typeof AuthenticatedEspaceFacturesRoute
   '/_authenticated/espace/tableau-de-bord': typeof AuthenticatedEspaceTableauDeBordRoute
   '/api/public/lyra-ipn': typeof ApiPublicLyraIpnRoute
+  '/api/public/mollie-webhook': typeof ApiPublicMollieWebhookRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/espace/': typeof AuthenticatedEspaceIndexRoute
   '/_authenticated/espace/$slug/carte': typeof AuthenticatedEspaceSlugCarteRoute
@@ -457,6 +466,7 @@ export interface FileRouteTypes {
     | '/espace/factures'
     | '/espace/tableau-de-bord'
     | '/api/public/lyra-ipn'
+    | '/api/public/mollie-webhook'
     | '/admin/'
     | '/espace/'
     | '/espace/$slug/carte'
@@ -500,6 +510,7 @@ export interface FileRouteTypes {
     | '/espace/factures'
     | '/espace/tableau-de-bord'
     | '/api/public/lyra-ipn'
+    | '/api/public/mollie-webhook'
     | '/admin'
     | '/espace'
     | '/espace/$slug/carte'
@@ -546,6 +557,7 @@ export interface FileRouteTypes {
     | '/_authenticated/espace/factures'
     | '/_authenticated/espace/tableau-de-bord'
     | '/api/public/lyra-ipn'
+    | '/api/public/mollie-webhook'
     | '/_authenticated/admin/'
     | '/_authenticated/espace/'
     | '/_authenticated/espace/$slug/carte'
@@ -577,6 +589,7 @@ export interface RootRouteChildren {
   SuiviIdRoute: typeof SuiviIdRoute
   CuisineIndexRoute: typeof CuisineIndexRoute
   ApiPublicLyraIpnRoute: typeof ApiPublicLyraIpnRoute
+  ApiPublicMollieWebhookRoute: typeof ApiPublicMollieWebhookRoute
   ApiPublicPushMessageRoute: typeof ApiPublicPushMessageRoute
   ApiPublicRestaurantBannerIdRoute: typeof ApiPublicRestaurantBannerIdRoute
   ApiPublicVapiRestaurantIdRoute: typeof ApiPublicVapiRestaurantIdRoute
@@ -809,6 +822,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicLyraIpnRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/mollie-webhook': {
+      id: '/api/public/mollie-webhook'
+      path: '/api/public/mollie-webhook'
+      fullPath: '/api/public/mollie-webhook'
+      preLoaderRoute: typeof ApiPublicMollieWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/espace/$slug/': {
       id: '/_authenticated/espace/$slug/'
       path: '/espace/$slug'
@@ -990,6 +1010,7 @@ const rootRouteChildren: RootRouteChildren = {
   SuiviIdRoute: SuiviIdRoute,
   CuisineIndexRoute: CuisineIndexRoute,
   ApiPublicLyraIpnRoute: ApiPublicLyraIpnRoute,
+  ApiPublicMollieWebhookRoute: ApiPublicMollieWebhookRoute,
   ApiPublicPushMessageRoute: ApiPublicPushMessageRoute,
   ApiPublicRestaurantBannerIdRoute: ApiPublicRestaurantBannerIdRoute,
   ApiPublicVapiRestaurantIdRoute: ApiPublicVapiRestaurantIdRoute,

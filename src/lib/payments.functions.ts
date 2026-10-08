@@ -4,7 +4,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-export const PROVIDERS = ["sumup", "stripe", "paypal", "lyra"] as const;
+export const PROVIDERS = ["sumup", "stripe", "paypal", "lyra", "mollie"] as const;
 export type Provider = (typeof PROVIDERS)[number];
 const SUMUP = "https://api.sumup.com";
 
@@ -26,9 +26,9 @@ async function getRow(restaurantId: string, provider: Provider): Promise<Row | n
   const { data } = await db.from("restaurant_payment_providers").select("*").eq("restaurant_id", restaurantId).eq("provider", provider).maybeSingle();
   return data as Row | null;
 }
-const mask = (v?: string) => (v ? `••••${v.slice(-4)}` : "");
+const mask = (v?: string) => (v ? `${/^(test|live)_/.test(v) ? v.slice(0, 5) : ""}••••••••${v.slice(-4)}` : "");
 // Champs non secrets, réaffichés en clair dans les réglages
-const PUBLIC_FIELDS = ["merchantCode", "publishableKey", "mode", "siteId", "gateway"];
+const PUBLIC_FIELDS = ["merchantCode", "publishableKey", "mode", "siteId", "gateway", "profileId"];
 
 async function sumup(path: string, apiKey: string, init?: RequestInit) {
   const res = await fetch(`${SUMUP}${path}`, {
@@ -99,6 +99,13 @@ export const savePaymentProvider = createServerFn({ method: "POST" })
       if (credentials["siteId"] && !/^\d{8}$/.test(credentials["siteId"])) throw new Error("L'identifiant boutique doit contenir 8 chiffres.");
       if (credentials["gateway"] && !/^https:\/\/[a-z0-9.-]+\/vads-payment\/?$/i.test(credentials["gateway"])) throw new Error("Adresse de plateforme invalide (ex. https://secure.payzen.eu/vads-payment/).");
       if (data.enabled && (!credentials["siteId"] || !credentials["key"])) throw new Error("Renseignez l'identifiant boutique et la clé Lyra.");
+    }
+    if (data.provider === "mollie") {
+      credentials["mode"] = credentials["mode"] === "live" ? "live" : "test";
+      if (credentials["apiKeyTest"] && !/^test_[A-Za-z0-9]{20,}$/.test(credentials["apiKeyTest"])) throw new Error("La clé de test Mollie doit commencer par test_.");
+      if (credentials["apiKeyLive"] && !/^live_[A-Za-z0-9]{20,}$/.test(credentials["apiKeyLive"])) throw new Error("La clé de production Mollie doit commencer par live_.");
+      if (credentials["profileId"] && !/^pfl_[A-Za-z0-9]+$/.test(credentials["profileId"])) throw new Error("L'identifiant de profil Mollie commence par pfl_.");
+      if (data.enabled && !credentials[credentials["mode"] === "live" ? "apiKeyLive" : "apiKeyTest"]) throw new Error(`Renseignez la clé Mollie ${credentials["mode"] === "live" ? "de production" : "de test"}.`);
     }
     const db = await admin();
     const { error } = await db.from("restaurant_payment_providers").upsert({
@@ -303,6 +310,61 @@ export const testPaypal = createServerFn({ method: "POST" })
     return { live: p.live };
   });
 
+// ───────────── Mollie (paiement hébergé + webhook) ─────────────
+type MollieCfg = { key: string; live: boolean; profileId?: string | undefined };
+export async function mollieForRestaurant(restaurantId: string, requireEnabled = true): Promise<MollieCfg | null> {
+  const r = await getRow(restaurantId, "mollie");
+  const c = r?.credentials ?? {};
+  const live = c["mode"] === "live";
+  const key = live ? c["apiKeyLive"] : c["apiKeyTest"];
+  if ((requireEnabled && !r?.enabled) || !key) return null;
+  return { key, live, profileId: c["profileId"] || undefined };
+}
+export async function mollieCall(key: string, path: string, json?: unknown, idempotencyKey?: string) {
+  const res = await fetch(`https://api.mollie.com/v2${path}`, {
+    method: json === undefined ? "GET" : "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}) },
+    body: json === undefined ? null : JSON.stringify(json),
+  });
+  const body = await res.json().catch(() => null) as Record<string, unknown> | null;
+  if (!res.ok) {
+    console.error("Mollie", path, res.status, JSON.stringify(body).slice(0, 500));
+    throw new Error(`Mollie : ${(body as { detail?: string } | null)?.detail ?? `erreur ${res.status}`}`);
+  }
+  return body ?? {};
+}
+
+/** Vérifie la clé Mollie active et liste les moyens de paiement activés sur le compte. */
+export const testMollie = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ restaurantId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertManager(context.supabase, context.userId, data.restaurantId);
+    const m = await mollieForRestaurant(data.restaurantId, false);
+    if (!m) throw new Error("Enregistrez d'abord la clé correspondant au mode choisi.");
+    const res = await mollieCall(m.key, "/methods?locale=fr_FR") as { _embedded?: { methods?: { id: string; description: string }[] } };
+    return { live: m.live, methods: (res._embedded?.methods ?? []).map((x) => ({ id: x.id, name: x.description })) };
+  });
+
+const MOLLIE_FAIL = ["failed", "expired", "canceled"];
+/** Récupère le statut réel d'un paiement Mollie auprès de l'API et met la commande à jour (idempotent). */
+export async function handleMolliePayment(paymentId: string): Promise<"paid" | "failed" | "pending"> {
+  const db = await admin();
+  const { data: o } = await db.from("orders").select("id, restaurant_id, status, total, payment_method, payment_status, payment_ref").eq("payment_ref", `mollie:${paymentId}`).maybeSingle();
+  if (!o) return "pending";
+  if (o.payment_status !== "pending") return o.payment_status === "paid" ? "paid" : "failed";
+  const m = await mollieForRestaurant(o.restaurant_id, false);
+  if (!m) return "pending";
+  const p = await mollieCall(m.key, `/payments/${encodeURIComponent(paymentId)}`) as { status?: string; amount?: { value?: string; currency?: string }; metadata?: { order_id?: string } };
+  if (p.metadata?.order_id !== o.id) throw new Error("Paiement non reconnu");
+  if (p.status === "paid" && p.amount?.currency === "EUR" && Number(p.amount?.value) === Number(o.total)) { await markPaid(o); return "paid"; }
+  if (MOLLIE_FAIL.includes(p.status ?? "")) {
+    await db.from("orders").update({ payment_status: p.status === "expired" ? "expired" : "failed", status: "cancelled", updated_at: new Date().toISOString() }).eq("id", o.id).eq("payment_status", "pending");
+    return "failed";
+  }
+  return "pending";
+}
+
 // ───────────── Lyra / PayZen (formulaire de paiement V2 signé HMAC-SHA-256) ─────────────
 type LyraCfg = { siteId: string; key: string; mode: "TEST" | "PRODUCTION"; gateway: string };
 async function lyraForRestaurant(restaurantId: string, requireEnabled = true): Promise<LyraCfg | null> {
@@ -336,7 +398,7 @@ export const testLyra = createServerFn({ method: "POST" })
   });
 
 /** Prépare le paiement en ligne choisi pour une commande déjà enregistrée (appelé par createOrder). */
-export async function startOnlinePayment(provider: "paypal" | "lyra", o: { id: string; order_number: number; total: number; restaurant_id: string; email?: string | null }, restaurantName: string, returnBase: string) {
+export async function startOnlinePayment(provider: "paypal" | "lyra" | "mollie", o: { id: string; order_number: number; total: number; restaurant_id: string; email?: string | null }, restaurantName: string, returnBase: string) {
   const db = await admin();
   const amount = Math.round(Number(o.total) * 100);
   if (provider === "paypal") {
@@ -350,6 +412,24 @@ export async function startOnlinePayment(provider: "paypal" | "lyra", o: { id: s
     const url = res.links?.find((l) => l.rel === "approve" || l.rel === "payer-action")?.href;
     if (!url) throw new Error("PayPal : lien de paiement manquant");
     await db.from("orders").update({ payment_ref: `paypal:${res.id}` }).eq("id", o.id);
+    return { redirectUrl: url };
+  }
+  if (provider === "mollie") {
+    const m = await mollieForRestaurant(o.restaurant_id);
+    if (!m) throw new Error("Mollie n'est pas disponible pour ce restaurant.");
+    const origin = new URL(returnBase).origin;
+    const publicHook = !/localhost|127\.0\.0\.1/.test(origin);
+    const res = await mollieCall(m.key, "/payments", {
+      amount: { currency: "EUR", value: (amount / 100).toFixed(2) },
+      description: `${restaurantName} — commande n° ${o.order_number}`.slice(0, 255),
+      redirectUrl: `${returnBase}?origin=mollie`, cancelUrl: `${returnBase}?origin=mollie&annule=1`,
+      ...(publicHook ? { webhookUrl: `${origin}/api/public/mollie-webhook` } : {}),
+      locale: "fr_FR", metadata: { order_id: o.id },
+      ...(m.profileId ? { profileId: m.profileId } : {}),
+    }, `pay_${o.id}`) as { id: string; _links?: { checkout?: { href?: string } } };
+    const url = res._links?.checkout?.href;
+    if (!url) throw new Error("Mollie : lien de paiement manquant");
+    await db.from("orders").update({ payment_ref: `mollie:${res.id}` }).eq("id", o.id);
     return { redirectUrl: url };
   }
   const l = await lyraForRestaurant(o.restaurant_id);
@@ -375,6 +455,9 @@ async function markPaid(o: { id: string; restaurant_id: string; status: string }
   const { data: r } = await db.from("restaurants").select("config").eq("id", o.restaurant_id).maybeSingle();
   const next = (r?.config as { autoAccept?: boolean } | null)?.autoAccept ? "accepted" : "new";
   await db.from("orders").update({ payment_status: "paid", status: o.status === "awaiting_payment" ? next : o.status, updated_at: new Date().toISOString() }).eq("id", o.id);
+  // Email de confirmation Brevo (envoyé une seule fois, seulement si la commande est acceptée)
+  const { sendOrderConfirmation } = await import("./order-email.server");
+  await sendOrderConfirmation(db, o.id).catch((e) => console.error(e));
 }
 
 const LYRA_OK = ["AUTHORISED", "CAPTURED", "ACCEPTED", "AUTHORISED_TO_VALIDATE"];
@@ -401,9 +484,9 @@ export const onlinePaymentInfo = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const db = await admin();
     const { data: r } = await db.from("restaurants").select("id").eq("slug", data.slug).eq("active", true).maybeSingle();
-    if (!r) return { stripe: null as string | null, paypal: false, lyra: false };
-    const [s, p, l] = await Promise.all([stripeForRestaurant(r.id), paypalForRestaurant(r.id), lyraForRestaurant(r.id)]);
-    return { stripe: s?.publishable ?? null, paypal: !!p, lyra: !!l };
+    if (!r) return { stripe: null as string | null, paypal: false, lyra: false, mollie: false };
+    const [s, p, l, m] = await Promise.all([stripeForRestaurant(r.id), paypalForRestaurant(r.id), lyraForRestaurant(r.id), mollieForRestaurant(r.id)]);
+    return { stripe: s?.publishable ?? null, paypal: !!p, lyra: !!l, mollie: !!m };
   });
 
 /** Vérifie auprès du prestataire le paiement d'une commande en ligne et l'envoie en cuisine si payé. */
@@ -418,6 +501,7 @@ export const confirmOnlinePayment = createServerFn({ method: "POST" })
     const { data: o } = await db.from("orders").select("id, restaurant_id, status, total, payment_method, payment_status, payment_ref").eq("id", data.orderId).maybeSingle();
     if (!o || o.payment_method !== "online") throw new Error("Commande introuvable");
     if (o.payment_status === "paid") return { status: "paid" as const };
+    if (o.payment_status !== "pending") return { status: "failed" as const };
     if (!o.payment_ref) return { status: "failed" as const };
     const ref = String(o.payment_ref);
 
@@ -427,6 +511,11 @@ export const confirmOnlinePayment = createServerFn({ method: "POST" })
         return { status: r === "failed" ? "retry" as const : r };
       }
       return { status: data.cancelled ? "retry" as const : "pending" as const };
+    }
+
+    if (ref.startsWith("mollie:")) {
+      const r = await handleMolliePayment(ref.slice(7));
+      return { status: r === "failed" ? "failed" as const : r === "pending" && data.cancelled ? "retry" as const : r };
     }
 
     if (ref.startsWith("paypal:")) {

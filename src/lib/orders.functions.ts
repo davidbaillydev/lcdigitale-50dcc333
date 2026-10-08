@@ -26,7 +26,7 @@ const orderSchema = z.object({
   payment_method: z.enum(["on_site", "online"]),
   promo_code: z.string().trim().max(30).optional(),
   cgv: z.literal(true, { message: "Merci d'accepter les conditions générales de vente." }),
-  provider: z.enum(["stripe", "paypal", "lyra"]).optional(),
+  provider: z.enum(["stripe", "paypal", "lyra", "mollie"]).optional(),
   origin: z.string().url().max(200).regex(/^https?:\/\/[^/]+$/).optional(),
   lines: z
     .array(z.object({ itemId: z.string().max(80), qty: z.number().int().min(1).max(50), sel: z.record(z.string(), z.array(z.string().max(60)).max(12)) }))
@@ -59,7 +59,7 @@ export const createOrder = createServerFn({ method: "POST" })
     const provider = data.payment_method === "online" ? (data.provider ?? "stripe") : null;
     const stripe = provider === "stripe" ? await stripeForRestaurant(r.id) : null;
     if (provider === "stripe" && !stripe) throw new Error("Le paiement en ligne n'est pas disponible pour ce restaurant.");
-    if ((provider === "paypal" || provider === "lyra") && !data.origin) throw new Error("Paiement en ligne indisponible.");
+    if ((provider === "paypal" || provider === "lyra" || provider === "mollie") && !data.origin) throw new Error("Paiement en ligne indisponible.");
     if (!dineIn && !modeEnabled(r, data.mode)) throw new Error(data.mode === "delivery" ? "La livraison n'est pas proposée par ce restaurant." : "La vente à emporter n'est pas proposée.");
     if (data.payment_method === "on_site" && !paymentEnabled(r, "on_site")) throw new Error("Ce mode de paiement n'est pas accepté.");
 
@@ -147,7 +147,7 @@ export const createOrder = createServerFn({ method: "POST" })
       await sendOrderConfirmation(supabaseAdmin, row.id, data.origin).catch((e) => console.error(e));
     }
     const base = { id: row.id, order_number: row.order_number, clientSecret: null as string | null, redirectUrl: null as string | null, form: null as { action: string; fields: Record<string, string> } | null };
-    if (provider === "paypal" || provider === "lyra") {
+    if (provider === "paypal" || provider === "lyra" || provider === "mollie") {
       const res = await startOnlinePayment(provider, { id: row.id, order_number: row.order_number, total: Number(row.total), restaurant_id: r.id, email: data.email || null }, r.name, `${data.origin}/${r.slug}/suivi/${row.id}`);
       return { ...base, redirectUrl: "redirectUrl" in res ? res.redirectUrl : null, form: "form" in res ? res.form : null };
     }

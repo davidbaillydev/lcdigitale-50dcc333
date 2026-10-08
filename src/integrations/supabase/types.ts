@@ -183,6 +183,72 @@ export type Database = {
           },
         ]
       }
+      order_refunds: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          credit_note_number: string
+          data: Json
+          id: string
+          idempotency_key: string
+          order_id: string
+          payment_provider: string
+          provider_refund_id: string | null
+          reason: string
+          restaurant_id: string
+          seq: number
+          year: number
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          credit_note_number: string
+          data: Json
+          id?: string
+          idempotency_key: string
+          order_id: string
+          payment_provider: string
+          provider_refund_id?: string | null
+          reason: string
+          restaurant_id: string
+          seq: number
+          year: number
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          credit_note_number?: string
+          data?: Json
+          id?: string
+          idempotency_key?: string
+          order_id?: string
+          payment_provider?: string
+          provider_refund_id?: string | null
+          reason?: string
+          restaurant_id?: string
+          seq?: number
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_refunds_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_refunds_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           address: string | null
@@ -215,6 +281,8 @@ export type Database = {
           postal_code: string | null
           promo_code: string | null
           qr_mode: string | null
+          refund_status: string
+          refunded_amount: number
           restaurant_id: string
           room_label: string | null
           slot: string
@@ -257,6 +325,8 @@ export type Database = {
           postal_code?: string | null
           promo_code?: string | null
           qr_mode?: string | null
+          refund_status?: string
+          refunded_amount?: number
           restaurant_id: string
           room_label?: string | null
           slot: string
@@ -299,6 +369,8 @@ export type Database = {
           postal_code?: string | null
           promo_code?: string | null
           qr_mode?: string | null
+          refund_status?: string
+          refunded_amount?: number
           restaurant_id?: string
           room_label?: string | null
           slot?: string
@@ -1180,6 +1252,41 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "restaurant_invoices"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      record_refund: {
+        Args: {
+          _amount: number
+          _data: Json
+          _key: string
+          _order_id: string
+          _provider: string
+          _provider_refund_id: string
+          _reason: string
+          _restaurant_id: string
+          _user: string
+        }
+        Returns: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          credit_note_number: string
+          data: Json
+          id: string
+          idempotency_key: string
+          order_id: string
+          payment_provider: string
+          provider_refund_id: string | null
+          reason: string
+          restaurant_id: string
+          seq: number
+          year: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "order_refunds"
           isOneToOne: true
           isSetofReturn: false
         }

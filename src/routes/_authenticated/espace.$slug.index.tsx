@@ -12,6 +12,7 @@ import { notifyOrderStatus } from "@/lib/push.functions";
 import { DriverSelect, useDrivers } from "@/components/DriverSelect";
 import { downloadInvoice } from "@/lib/invoice";
 import { FileText } from "lucide-react";
+import { RefundBadge, RefundButton } from "@/components/RefundButton";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useStaff } from "@/hooks/use-staff";
@@ -334,7 +335,7 @@ function Kitchen() {
                     {o.mode === "delivery" && <div className="mt-2 space-y-2"><p className="text-sm">{o.address}{o.city ? `, ${o.city}` : ""}</p><DriverSelect orderId={o.id} driverId={o.driver_id ?? null} drivers={drivers} courierStatus={o.courier_status ?? null} /></div>}
                     <div className="mt-2 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-start gap-2 break-words text-sm text-muted-foreground">
                       {o.source === "kiosk" ? <span /> : <a href={`tel:${o.phone}`} className="flex items-center gap-1"><Phone className="h-3 w-3" />{o.phone}</a>}
-                      <span>{euro(Number(o.total))} · {o.payment_method === "online" && o.payment_status === "paid" ? `Payé en ligne (${String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("paypal:") ? "PayPal" : String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("lyra:") ? "Lyra" : "Stripe"})` : o.payment_status === "paid" ? "payé (terminal)" : o.payment_method === "online" ? "payé" : o.payment_method === "card_terminal" ? "CB au comptoir" : o.payment_method === "counter" ? "espèces/TR au comptoir" : "à encaisser"}</span>
+                      <span>{euro(Number(o.total))} · {o.payment_method === "online" && o.payment_status === "paid" ? `Payé en ligne (${String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("mollie:") ? "Mollie" : String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("paypal:") ? "PayPal" : String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("lyra:") ? "Lyra" : "Stripe"})` : o.payment_status === "paid" ? "payé (terminal)" : o.payment_method === "online" ? "payé" : o.payment_method === "card_terminal" ? "CB au comptoir" : o.payment_method === "counter" ? "espèces/TR au comptoir" : "à encaisser"}</span>
                     </div>
                     <div className="mt-3 flex gap-2">
                       <Button size="lg" className="min-h-14 flex-1 text-base font-semibold" onClick={() => (c.s === "new" ? accept(o) : move(o, c.next))}>{c.action}<ArrowRight aria-hidden="true" /></Button>
@@ -345,6 +346,7 @@ function Kitchen() {
                       <Button size="sm" variant="secondary" className="min-h-12 min-w-0 flex-1" onClick={() => doPrint(o, ["receipt"])}><Printer /> Caisse</Button>
                       <InvoiceButton orderId={o.id} />
                     </div>
+                    <div className="mt-2 space-y-2"><RefundBadge o={o as never} /><RefundButton o={o as never} /></div>
                     {(printState[o.id] ?? logs[o.id]?.at(-1)?.status) === "failed" && <p role="alert" className="mt-2 rounded bg-destructive/20 p-2 text-sm">Impression échouée — vérifiez l'imprimante puis réimprimez.</p>}
                     {!!logs[o.id]?.length && (
                       <div className="mt-1">
