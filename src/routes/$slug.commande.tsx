@@ -50,7 +50,7 @@ function Checkout() {
   const [openNow, setOpenNow] = useState(false);
   const [when, setWhen] = useState<"asap" | "later">(timing.asap ? "asap" : "later");
   const [f, setF] = useState({ customer_name: "", phone: "", email: "", address: "", postal_code: "", notes: "" });
-  const [pay, setPay] = useState<"on_site" | "stripe" | "paypal" | "lyra">("on_site");
+  const [pay, setPay] = useState<"on_site" | "stripe" | "paypal" | "lyra" | "mollie">("on_site");
   const [busy, setBusy] = useState(false);
   const [cgv, setCgv] = useState(false);
   const [pro, setPro] = useState(false);
@@ -58,7 +58,7 @@ function Checkout() {
   const setB = (k: keyof typeof bill) => (e: { target: { value: string } }) => setBill((b) => ({ ...b, [k]: k === "siren" ? e.target.value.replace(/\D/g, "").slice(0, 9) : k === "vatNumber" ? e.target.value.toUpperCase().replace(/\s/g, "") : e.target.value }));
   const proOk = !pro || (bill.company.trim().length >= 2 && /^\d{9}$/.test(bill.siren) && bill.address.trim().length >= 3 && /^\d{5}$/.test(bill.postalCode) && !!bill.city.trim());
   const infoFn = useServerFn(onlinePaymentInfo);
-  const [online, setOnline] = useState<{ stripe: string | null; paypal: boolean; lyra: boolean }>({ stripe: null, paypal: false, lyra: false });
+  const [online, setOnline] = useState<{ stripe: string | null; paypal: boolean; lyra: boolean; mollie: boolean }>({ stripe: null, paypal: false, lyra: false, mollie: false });
   const [payment, setPayment] = useState<{ id: string; clientSecret: string } | null>(null);
   const [promo, setPromo] = useState<{ d: AppliedDiscount | null; code?: string | undefined }>({ d: null });
   const onSiteOk = restaurant.config.payments?.on_site !== false;
@@ -66,7 +66,7 @@ function Checkout() {
   useEffect(() => {
     infoFn({ data: { slug: restaurant.slug } }).then((r) => {
       setOnline(r);
-      if (!onSiteOk) setPay(r.stripe ? "stripe" : r.paypal ? "paypal" : r.lyra ? "lyra" : "on_site");
+      if (!onSiteOk) setPay(r.stripe ? "stripe" : r.mollie ? "mollie" : r.paypal ? "paypal" : r.lyra ? "lyra" : "on_site");
     }).catch(() => {});
   }, [restaurant.slug, infoFn, onSiteOk]);
 
@@ -146,9 +146,10 @@ function Checkout() {
   const options = [
     ...(onSiteOk ? [{ v: "on_site" as const, Icon: Store, t: table ? "À table / au comptoir" : mode === "delivery" ? "À la livraison" : "Au retrait", s: "Espèces, CB ou tickets resto", ok: true }] : []),
     { v: "stripe" as const, Icon: CreditCard, t: "Carte bancaire", s: online.stripe ? "Carte, Apple Pay, Google Pay" : "Non proposé par ce restaurant", ok: !!online.stripe },
+    ...(online.mollie ? [{ v: "mollie" as const, Icon: CreditCard, t: "Carte · Bancontact · Apple Pay", s: "Page de paiement sécurisée Mollie", ok: true }] : []),
     ...(online.paypal ? [{ v: "paypal" as const, Icon: Wallet, t: "PayPal", s: "Compte PayPal ou carte via PayPal", ok: true }] : []),
     ...(online.lyra ? [{ v: "lyra" as const, Icon: Landmark, t: "Carte bancaire (banque)", s: "Page de paiement sécurisée Lyra / PayZen", ok: true }] : []),
-  ].filter((o) => o.ok || (!online.paypal && !online.lyra));
+  ].filter((o) => o.ok || (!online.paypal && !online.lyra && !online.mollie));
 
   if (!lines.length)
     return (
@@ -277,7 +278,7 @@ function Checkout() {
                 </button>
               ))}
             </div>
-            {(pay === "paypal" || pay === "lyra") && <p className="mt-2 text-xs text-muted-foreground">Vous serez redirigé vers la page de paiement sécurisée, puis ramené au suivi de votre commande.</p>}
+            {(pay === "paypal" || pay === "lyra" || pay === "mollie") && <p className="mt-2 text-xs text-muted-foreground">Vous serez redirigé vers la page de paiement sécurisée, puis ramené au suivi de votre commande.</p>}
           </section>
         </div>
 
