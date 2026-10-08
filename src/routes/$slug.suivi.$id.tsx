@@ -154,7 +154,18 @@ function InvoiceDownload({ orderId }: { orderId: string }) {
     window.history.replaceState(null, "", window.location.pathname);
     run();
   }, []);
-  return <Button variant="secondary" className="mt-4 min-h-12 w-full" onClick={run}>Télécharger ma facture (PDF / Factur-X)</Button>;
+  const getNotes = useServerFn(getCustomerCreditNotes);
+  const { data: notes } = useQuery({ queryKey: ["credit-notes", orderId], queryFn: () => getNotes({ data: { orderId } }) });
+  return (
+    <>
+      <Button variant="secondary" className="mt-4 min-h-12 w-full" onClick={run}>Télécharger ma facture (PDF / Factur-X)</Button>
+      {(notes ?? []).map((n) => (
+        <Button key={n.number} variant="outline" className="mt-2 min-h-12 w-full" onClick={async () => { const { downloadInvoice } = await import("@/lib/invoice"); await downloadInvoice(n); }}>
+          Télécharger l'avoir {n.number} ({(n.data.totalTTC).toFixed(2).replace(".", ",")} € remboursés)
+        </Button>
+      ))}
+    </>
+  );
 }
 
 function PushOptIn({ orderId }: { orderId: string }) {
