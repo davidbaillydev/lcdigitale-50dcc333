@@ -42,3 +42,5 @@ Verified on a temporary restaurant, now deactivated: upload and reload persisten
 - [ ] Exécuter room service/libre-service complets : attend restaurant de test avec modes activés et autorisation d'écriture (modes Wok & Sushi désactivés). Ne pas modifier la configuration de production pour les tests.
 
 - [x] Tailles/formats + groupes de suppléments (BDD, carte, site/borne/QR, KDS, tickets)
+
+- [x] Cuisine : défilement global bloqué, colonnes indépendantes et navigation horizontale étroite ; session connectée vérifiée à 320/390/1024/1280px sans modifier les commandes. Tests génériques de navigation en échec (montage document HTML), hors de cette refonte.
