@@ -29,6 +29,7 @@ export type Restaurant = {
     modes?: { pickup?: boolean; delivery?: boolean; dine_in?: boolean };
     payments?: { on_site?: boolean; counter?: boolean; card_terminal?: boolean };
     marketing?: import("./promo").Marketing;
+    serviceFee?: Partial<import("./service-fee").ServiceFeeConfig>;
     /** Menu QR par table (nombre de tables) et lien d'avis Google proposé après la commande */
     qr?: { tables?: number; reviewUrl?: string; room?: boolean; self?: boolean; tableValidation?: boolean };
     /** Moment de commande (ASAP / planifiée) et acceptation en cuisine */

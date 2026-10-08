@@ -28,10 +28,12 @@ export function initialSettings(r: Restaurant): Settings {
       modes: { pickup: c.modes?.pickup !== false, delivery: c.modes?.delivery !== false, dine_in: c.modes?.dine_in !== false },
       payments: { on_site: c.payments?.on_site !== false, counter: c.payments?.counter !== false, card_terminal: c.payments?.card_terminal !== false },
       printing: printingDefaults(c.printing),
+      serviceFee: serviceFeeDefaults(c.serviceFee),
     },
   };
 }
 
+import { serviceFeeDefaults } from "@/lib/service-fee";
 import { printingDefaults, printTickets, sampleOrder, ticketHtml } from "@/lib/ticket";
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return <section className="rounded-xl border border-border bg-card p-5"><h2 className="mb-4 text-3xl">{title}</h2>{children}</section>;
@@ -123,6 +125,24 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
           <Num id="lp" label="Préparation à emporter (min)" value={s.config.lead.pickup} onChange={(v) => cfg({ lead: { ...s.config.lead, pickup: v } })} />
           <Num id="ld" label="Délai de livraison (min)" value={s.config.lead.delivery} onChange={(v) => cfg({ lead: { ...s.config.lead, delivery: v } })} />
         </div>
+      </Section>
+
+      <Section title="Frais de service">
+        {(() => { const sf = serviceFeeDefaults(s.config.serviceFee); const set = (p: Partial<typeof sf>) => cfg({ serviceFee: { ...sf, ...p } }); return (<>
+        <Toggle label="Appliquer des frais de service" hint="Ajoutés automatiquement au panier, aux tickets et aux factures (TVA au taux par défaut de l'établissement)." checked={sf.enabled} onChange={(v) => set({ enabled: v })} />
+        {sf.enabled && <>
+          <div className="my-3 flex flex-wrap gap-2">
+            <Button type="button" variant={sf.kind === "fixed" ? "default" : "secondary"} onClick={() => set({ kind: "fixed" })}>Montant fixe (€)</Button>
+            <Button type="button" variant={sf.kind === "percent" ? "default" : "secondary"} onClick={() => set({ kind: "percent" })}>Pourcentage du sous-total (%)</Button>
+          </div>
+          <div className="max-w-xs"><label htmlFor="sfv" className="text-sm font-medium">{sf.kind === "fixed" ? "Montant TTC (€)" : "Pourcentage (%)"}</label>
+            <input id="sfv" type="number" min={0} max={100} step="0.01" inputMode="decimal" className="mt-1 h-12 w-full rounded-md border border-input bg-background px-3" value={sf.value} onChange={(e) => set({ value: Math.max(0, Math.min(100, Number(e.target.value) || 0)) })} /></div>
+          <p className="mt-3 text-sm font-semibold">Appliquer sur</p>
+          {([["delivery", "Livraison"], ["pickup", "À emporter"], ["dine_in", "Sur place (site / QR)"], ["kiosk", "Borne"]] as const).map(([k, l]) => (
+            <Toggle key={k} label={l} checked={sf.modes[k]} onChange={(v) => set({ modes: { ...sf.modes, [k]: v } })} />
+          ))}
+        </>}
+        </>); })()}
       </Section>
 
       {agency && <Section title="Impression des tickets">

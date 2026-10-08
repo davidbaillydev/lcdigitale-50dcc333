@@ -21,6 +21,10 @@ export const settingsSchema = z.object({
     timing: z.object({ asap: z.boolean(), scheduled: z.boolean(), prepMode: z.enum(["auto", "manual"]), defaultPrep: z.number().int().min(5).max(180) }),
     modes: z.object({ pickup: z.boolean(), delivery: z.boolean(), dine_in: z.boolean() }),
     payments: z.object({ on_site: z.boolean(), counter: z.boolean(), card_terminal: z.boolean() }),
+    serviceFee: z.object({
+      enabled: z.boolean(), kind: z.enum(["fixed", "percent"]), value: z.number().min(0).max(100),
+      modes: z.object({ delivery: z.boolean(), pickup: z.boolean(), dine_in: z.boolean(), kiosk: z.boolean() }),
+    }).optional(),
     printing: z.object({
       width: z.union([z.literal(58), z.literal(80)]), auto: z.boolean(),
       kitchen: z.object({ allergens: z.boolean().default(true), options: z.boolean(), notes: z.boolean(), customer: z.boolean(), contact: z.boolean(), prices: z.boolean(), paid: z.boolean().default(true), qc: z.boolean().default(false) }),

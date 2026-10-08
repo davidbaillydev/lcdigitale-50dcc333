@@ -10,7 +10,7 @@ export type TicketOrder = {
   order_number: number; customer_name?: string | null; phone?: string | null; mode: string;
   address?: string | null; city?: string | null; slot: string; created_at?: string;
   items: { name: string; qty: number; total?: number; details?: string[]; allergens?: string[]; size?: { name: string } | null; selected_options?: { name: string; price: number }[] }[];
-  notes?: string | null; total: number | string; delivery_fee?: number | string | null;
+  notes?: string | null; total: number | string; delivery_fee?: number | string | null; service_fee?: number | string | null;
   discount?: number | string | null; promo_code?: string | null;
   payment_method: string; payment_status?: string | null; source?: string | null; table_label?: string | null; room_label?: string | null;
 };
@@ -81,6 +81,7 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
     ${f.notes && o.notes ? `<div class="note">⚠ REMARQUE CLIENT : ${esc(o.notes)}</div>` : ""}
     <hr>
     ${f.prices && Number(o.delivery_fee) > 0 ? `<div class="row"><span>Livraison</span><span>${eur(o.delivery_fee)}</span></div>` : ""}
+    ${f.prices && Number(o.service_fee) > 0 ? `<div class="row"><span>Frais de service</span><span>${eur(o.service_fee)}</span></div>` : ""}
     ${f.prices && Number(o.discount) > 0 ? `<div class="row"><span>Remise${o.promo_code ? ` ${esc(o.promo_code)}` : ""}</span><span>-${eur(o.discount)}</span></div>` : ""}
     ${f.prices ? `<div class="row l"><span>TOTAL</span><span>${eur(o.total)}</span></div>` : ""}
     ${f.prices ? `<div class="row"><span>dont TVA (10 % incluse)</span><span>${eur(Number(o.total) - Number(o.total) / 1.1)}</span></div>` : ""}

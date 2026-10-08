@@ -285,6 +285,7 @@ export type Database = {
           refunded_amount: number
           restaurant_id: string
           room_label: string | null
+          service_fee: number
           slot: string
           source: string
           status: string
@@ -329,6 +330,7 @@ export type Database = {
           refunded_amount?: number
           restaurant_id: string
           room_label?: string | null
+          service_fee?: number
           slot: string
           source?: string
           status?: string
@@ -373,6 +375,7 @@ export type Database = {
           refunded_amount?: number
           restaurant_id?: string
           room_label?: string | null
+          service_fee?: number
           slot?: string
           source?: string
           status?: string

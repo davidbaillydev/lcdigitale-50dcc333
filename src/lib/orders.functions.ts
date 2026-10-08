@@ -3,6 +3,7 @@ import { z } from "zod";
 import { validateSelections, orderLine } from "./menu";
 import { loadOptionData, withOptions } from "./menu-options";
 import { getCatalog } from "./catalogs";
+import { computeServiceFee, type ServiceFeeChannel } from "./service-fee";
 import { RESTAURANT_COLUMNS, deliveryFee, isValidSlot, isOpenNow, asapSlot, timingOf, modeEnabled, paymentEnabled, type Restaurant } from "./shop";
 import { cgvVersion } from "./legal";
 
@@ -98,6 +99,7 @@ export const createOrder = createServerFn({ method: "POST" })
     }
     const { resolveDiscount } = await import("./promo.server");
     const promo = await resolveDiscount(supabaseAdmin, r, subtotal, { code: data.promo_code, email: data.email, phone: data.phone, channel: "web" });
+    const serviceFee = computeServiceFee(r.config.serviceFee, subtotal, data.mode as ServiceFeeChannel);
     if (promo.error) throw new Error(promo.error);
 
     const { data: row, error } = await supabaseAdmin
@@ -124,9 +126,10 @@ export const createOrder = createServerFn({ method: "POST" })
         billing: data.billing ? { ...data.billing, country: "FR" } : null,
         subtotal,
         delivery_fee: fee,
+        service_fee: serviceFee,
         discount: promo.discount,
         promo_code: promo.discount ? promo.code : null,
-        total: Math.round((subtotal - promo.discount + fee) * 100) / 100,
+        total: Math.round((subtotal - promo.discount + fee + serviceFee) * 100) / 100,
         payment_method: data.payment_method,
         cgv_accepted_at: new Date().toISOString(),
         cgv_version: cgvVersion(r.legal ?? {}),
@@ -170,7 +173,7 @@ export const getOrderStatus = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("orders")
-      .select("id, order_number, status, mode, slot, total, items, payment_method, payment_status, customer_name, discount, promo_code, delivery_fee, table_label, restaurants(slug, config)")
+      .select("id, order_number, status, mode, slot, total, items, payment_method, payment_status, customer_name, discount, promo_code, delivery_fee, service_fee, table_label, restaurants(slug, config)")
       .eq("id", data.id)
       .maybeSingle();
     if (!row) return row;
@@ -211,6 +214,7 @@ export const createKioskOrder = createServerFn({ method: "POST" })
     const subtotal = Math.round(items.reduce((s, i) => s + i.total, 0) * 100) / 100;
     const { resolveDiscount } = await import("./promo.server");
     const promo = await resolveDiscount(supabaseAdmin, r, subtotal, { code: data.promo_code, channel: "kiosk" });
+    const serviceFee = computeServiceFee(r.config.serviceFee, subtotal, "kiosk");
     if (promo.error) throw new Error(promo.error);
     const { data: row, error } = await supabaseAdmin
       .from("orders")
@@ -223,9 +227,10 @@ export const createKioskOrder = createServerFn({ method: "POST" })
         items,
         subtotal,
         delivery_fee: 0,
+        service_fee: serviceFee,
         discount: promo.discount,
         promo_code: promo.discount ? promo.code : null,
-        total: Math.round((subtotal - promo.discount) * 100) / 100,
+        total: Math.round((subtotal - promo.discount + serviceFee) * 100) / 100,
         payment_method: data.payment_method,
         source: "kiosk",
         status: r.config.autoAccept ? "accepted" : "new",
