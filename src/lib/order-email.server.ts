@@ -59,3 +59,30 @@ export async function sendOrderConfirmation(admin: Admin, orderId: string, origi
   }
   return { sent: true };
 }
+
+/** Email de confirmation de remboursement avec lien vers l'avoir (page de suivi). */
+export async function sendRefundEmail(admin: Admin, orderId: string, amount: number, creditNote: string, origin?: string | null) {
+  if (!process.env["BREVO_API_KEY"] || !process.env["LOVABLE_API_KEY"]) return { sent: false };
+  const { data: o } = await admin.from("orders").select("id, order_number, email, customer_name, restaurants(slug, name, email)").eq("id", orderId).maybeSingle();
+  if (!o?.email) return { sent: false };
+  const r = o.restaurants as unknown as { slug: string; name: string; email: string | null };
+  const base = /^https?:\/\/[^/]+$/.test(origin ?? "") ? origin! : FALLBACK_ORIGIN;
+  const track = `${base}/${r.slug}/suivi/${o.id}`;
+  const html = `<!doctype html><html><body style="font-family:Arial,sans-serif;color:#222"><div style="max-width:560px;margin:0 auto;padding:24px">
+<h1 style="font-size:20px">${esc(r.name)} — remboursement de votre commande n° ${o.order_number}</h1>
+<p>Bonjour ${esc(o.customer_name)},</p>
+<p>Nous avons remboursé <strong>${eur(amount)}</strong> sur le moyen de paiement utilisé lors de votre commande. Le crédit apparaît généralement sous 5 à 10 jours ouvrés selon votre banque.</p>
+<p>Votre avoir <strong>${esc(creditNote)}</strong> est téléchargeable ici : <a href="${track}">${track}</a></p>
+</div></body></html>`;
+  const res = await fetch(`${GATEWAY}/smtp/email`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env["LOVABLE_API_KEY"]}`, "X-Connection-Api-Key": process.env["BREVO_API_KEY"]! },
+    body: JSON.stringify({
+      sender: { email: "contact@lcdigitale.fr", name: r.name }, ...(r.email ? { replyTo: { email: r.email, name: r.name } } : {}),
+      to: [{ email: o.email, name: o.customer_name }], subject: `${r.name} — remboursement commande n° ${o.order_number}`, htmlContent: html,
+      headers: { "X-Mailin-Tag": "order-refund" },
+    }),
+  });
+  if (!res.ok) console.error(`Brevo refund [${res.status}]: ${await res.text()}`);
+  return { sent: res.ok };
+}

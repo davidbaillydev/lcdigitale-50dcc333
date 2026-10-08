@@ -61,7 +61,7 @@ export const refundOrder = createServerFn({ method: "POST" })
       const res = await fetch("https://api.stripe.com/v1/refunds", {
         method: "POST",
         headers: { Authorization: `Bearer ${s.secret}`, "Content-Type": "application/x-www-form-urlencoded", "Idempotency-Key": key },
-        body: new URLSearchParams({ payment_intent: o.payment_ref!, amount: String(cents), "metadata[order_id]": o.id, reason: data.reason === "customer_request" ? "requested_by_customer" : "" }.reason ? { payment_intent: o.payment_ref!, amount: String(cents), "metadata[order_id]": o.id, reason: "requested_by_customer" } : { payment_intent: o.payment_ref!, amount: String(cents), "metadata[order_id]": o.id }).toString(),
+        body: new URLSearchParams({ payment_intent: o.payment_ref!, amount: String(cents), "metadata[order_id]": o.id, ...(data.reason === "customer_request" ? { reason: "requested_by_customer" } : {}) }).toString(),
       });
       const body = await res.json().catch(() => null) as { id?: string; error?: { message?: string } } | null;
       if (!res.ok || !body?.id) { console.error("Stripe refund", res.status, body?.error?.message); throw new Error(`Stripe a refusé le remboursement : ${body?.error?.message ?? `erreur ${res.status}`}`); }
