@@ -12,6 +12,7 @@ import { notifyOrderStatus } from "@/lib/push.functions";
 import { DriverSelect, useDrivers } from "@/components/DriverSelect";
 import { downloadInvoice } from "@/lib/invoice";
 import { FileText } from "lucide-react";
+import { RefundBadge, RefundButton } from "@/components/RefundButton";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useStaff } from "@/hooks/use-staff";
@@ -345,6 +346,7 @@ function Kitchen() {
                       <Button size="sm" variant="secondary" className="min-h-12 min-w-0 flex-1" onClick={() => doPrint(o, ["receipt"])}><Printer /> Caisse</Button>
                       <InvoiceButton orderId={o.id} />
                     </div>
+                    <div className="mt-2 space-y-2"><RefundBadge o={o as never} /><RefundButton o={o as never} /></div>
                     {(printState[o.id] ?? logs[o.id]?.at(-1)?.status) === "failed" && <p role="alert" className="mt-2 rounded bg-destructive/20 p-2 text-sm">Impression échouée — vérifiez l'imprimante puis réimprimez.</p>}
                     {!!logs[o.id]?.length && (
                       <div className="mt-1">
