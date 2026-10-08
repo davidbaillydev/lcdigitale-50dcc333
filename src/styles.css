@@ -491,6 +491,24 @@ html:has(.admin-kitchen), body:has(.admin-kitchen) { height: 100%; overflow: hid
 .kds-column-scroll:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
 .kds-column-heading > span:first-child { min-width: 0; }
 .kds-column-heading svg { flex-shrink: 0; }
+.admin-workspace:has(.admin-kitchen) {
+  --kds-safe-top: env(safe-area-inset-top, 0px);
+  --kds-safe-right: env(safe-area-inset-right, 0px);
+  --kds-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --kds-safe-left: env(safe-area-inset-left, 0px);
+  padding-top: var(--kds-safe-top);
+  padding-right: var(--kds-safe-right);
+  padding-left: var(--kds-safe-left);
+}
+.admin-workspace:has(.admin-kitchen[data-service-mode="true"]) .admin-masthead,
+.admin-kitchen .kds-navigation[hidden] { display: none; }
+.admin-kitchen .kds-board { padding-bottom: calc(1rem + var(--kds-safe-bottom)); }
+.admin-kitchen .kds-column-scroll { scroll-padding-bottom: calc(1rem + var(--kds-safe-bottom)); }
+:root:has(.admin-kitchen) [role="dialog"] {
+  max-width: calc(100dvw - 2rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+  max-height: calc(100dvh - 2rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+}
 @media (max-width: 1023px) {
   .kds-board { grid-template-columns: repeat(3, minmax(18rem, 1fr)); scroll-snap-type: x proximity; }
   .kds-board > section { scroll-snap-align: start; }
