@@ -6,6 +6,8 @@ export type InvoiceData = {
   lines: { name: string; qty: number; unitTTC: number; totalTTC: number; vatRate?: number }[];
   vatRate: number; vatBreakdown?: { rate: number; ht: number; vat: number; ttc: number }[];
   totalHT: number; totalVAT: number; totalTTC: number; paid: boolean; paymentMethod: string; paymentLabel?: string;
+  /** Présent sur un avoir : facture d'origine, motif et prestataire du remboursement. */
+  creditNote?: { of: string; ofDate: string; reason: string; provider: string };
 };
 export type B2BBuyer = { company: string; siren: string; vatNumber?: string; address: string; postalCode: string; city: string; email?: string };
 export type Invoice = { number: string; issued_at: string; data: InvoiceData; buyer_b2b?: B2BBuyer | null; buyer_b2b_updated_at?: string | null };
@@ -25,7 +27,7 @@ export function facturxXml(inv: Invoice) {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <rsm:CrossIndustryInvoice xmlns:rsm="urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100" xmlns:ram="urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100" xmlns:udt="urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100">
 <rsm:ExchangedDocumentContext><ram:GuidelineSpecifiedDocumentContextParameter><ram:ID>urn:cen.eu:en16931:2017#compliant#urn:factur-x.eu:1p0:basic</ram:ID></ram:GuidelineSpecifiedDocumentContextParameter></rsm:ExchangedDocumentContext>
-<rsm:ExchangedDocument><ram:ID>${esc(inv.number)}</ram:ID><ram:TypeCode>380</ram:TypeCode><ram:IssueDateTime><udt:DateTimeString format="102">${d8(inv.issued_at)}</udt:DateTimeString></ram:IssueDateTime></rsm:ExchangedDocument>
+<rsm:ExchangedDocument><ram:ID>${esc(inv.number)}</ram:ID><ram:TypeCode>${inv.data.creditNote ? 381 : 380}</ram:TypeCode><ram:IssueDateTime><udt:DateTimeString format="102">${d8(inv.issued_at)}</udt:DateTimeString></ram:IssueDateTime></rsm:ExchangedDocument>
 <rsm:SupplyChainTradeTransaction>
 ${inv.data.lines.map((l, i) => { const r = lineRate(inv.data, l); const k = 1 + r / 100; return `<ram:IncludedSupplyChainTradeLineItem><ram:AssociatedDocumentLineDocument><ram:LineID>${i + 1}</ram:LineID></ram:AssociatedDocumentLineDocument><ram:SpecifiedTradeProduct><ram:Name>${esc(l.name)}</ram:Name></ram:SpecifiedTradeProduct><ram:SpecifiedLineTradeAgreement><ram:NetPriceProductTradePrice><ram:ChargeAmount>${n2(l.unitTTC / k)}</ram:ChargeAmount></ram:NetPriceProductTradePrice></ram:SpecifiedLineTradeAgreement><ram:SpecifiedLineTradeDelivery><ram:BilledQuantity unitCode="C62">${l.qty}</ram:BilledQuantity></ram:SpecifiedLineTradeDelivery><ram:SpecifiedLineTradeSettlement><ram:ApplicableTradeTax><ram:TypeCode>VAT</ram:TypeCode><ram:CategoryCode>S</ram:CategoryCode><ram:RateApplicablePercent>${r}</ram:RateApplicablePercent></ram:ApplicableTradeTax><ram:SpecifiedTradeSettlementLineMonetarySummation><ram:LineTotalAmount>${n2(l.totalTTC / k)}</ram:LineTotalAmount></ram:SpecifiedTradeSettlementLineMonetarySummation></ram:SpecifiedLineTradeSettlement></ram:IncludedSupplyChainTradeLineItem>`; }).join("\n")}
 <ram:ApplicableHeaderTradeAgreement>
@@ -37,7 +39,7 @@ ${inv.data.lines.map((l, i) => { const r = lineRate(inv.data, l); const k = 1 + 
 <ram:ApplicableHeaderTradeSettlement><ram:InvoiceCurrencyCode>EUR</ram:InvoiceCurrencyCode>
 ${breakdown(inv.data).map((b) => `<ram:ApplicableTradeTax><ram:CalculatedAmount>${n2(b.vat)}</ram:CalculatedAmount><ram:TypeCode>VAT</ram:TypeCode><ram:BasisAmount>${n2(b.ht)}</ram:BasisAmount><ram:CategoryCode>S</ram:CategoryCode><ram:RateApplicablePercent>${b.rate}</ram:RateApplicablePercent></ram:ApplicableTradeTax>`).join("")}
 <ram:SpecifiedTradeSettlementHeaderMonetarySummation><ram:LineTotalAmount>${n2(inv.data.totalHT)}</ram:LineTotalAmount><ram:TaxBasisTotalAmount>${n2(inv.data.totalHT)}</ram:TaxBasisTotalAmount><ram:TaxTotalAmount currencyID="EUR">${n2(inv.data.totalVAT)}</ram:TaxTotalAmount><ram:GrandTotalAmount>${n2(inv.data.totalTTC)}</ram:GrandTotalAmount><ram:DuePayableAmount>${n2(inv.data.paid ? 0 : inv.data.totalTTC)}</ram:DuePayableAmount></ram:SpecifiedTradeSettlementHeaderMonetarySummation>
-</ram:ApplicableHeaderTradeSettlement>
+${inv.data.creditNote ? `<ram:InvoiceReferencedDocument><ram:IssuerAssignedID>${esc(inv.data.creditNote.of)}</ram:IssuerAssignedID><ram:FormattedIssueDateTime><qdt:DateTimeString xmlns:qdt="urn:un:unece:uncefact:data:standard:QualifiedDataType:100" format="102">${d8(inv.data.creditNote.ofDate)}</qdt:DateTimeString></ram:FormattedIssueDateTime></ram:InvoiceReferencedDocument>` : ""}</ram:ApplicableHeaderTradeSettlement>
 </rsm:SupplyChainTradeTransaction>
 </rsm:CrossIndustryInvoice>`;
 }
@@ -60,7 +62,10 @@ export async function buildInvoicePdf(inv: Invoice): Promise<Uint8Array> {
   const { default: autoTable } = await import("jspdf-autotable");
   const s = inv.data.seller, b = effectiveBuyer(inv);
   const doc = new jsPDF();
-  doc.setFontSize(20); doc.text("FACTURE", 14, 20);
+  const cn = inv.data.creditNote;
+  const sg = cn ? -1 : 1; // l'avoir affiche des montants négatifs (le XML CII 381 garde des montants positifs, comme l'exige EN 16931)
+  doc.setFontSize(20); doc.text(cn ? "AVOIR" : "FACTURE", 14, 20);
+  if (cn) { doc.setFontSize(9); doc.text(`Sur facture n° ${cn.of} du ${new Date(cn.ofDate).toLocaleDateString("fr-FR")} — Motif : ${cn.reason}`, 14, 27); }
   doc.setFontSize(10);
   doc.text([`N° ${inv.number}`, `Date d'émission : ${new Date(inv.issued_at).toLocaleDateString("fr-FR")}`, `Date de prestation : ${new Date(inv.data.serviceDate ?? inv.data.orderDate).toLocaleDateString("fr-FR")}`, `Commande n° ${inv.data.orderNumber}`], 135, 16);
   if (inv.data.orderId) { doc.setFontSize(7); doc.text(`Réf. ${inv.data.orderId}`, 135, 37); doc.setFontSize(10); }
@@ -71,20 +76,20 @@ export async function buildInvoicePdf(inv: Invoice): Promise<Uint8Array> {
   autoTable(doc, {
     startY: 82,
     head: [["Désignation", "Qté", "PU HT", "TVA", "Total HT", "Total TTC"]],
-    body: inv.data.lines.map((l) => { const r = lineRate(inv.data, l); const k = 1 + r / 100; return [l.name, String(l.qty), eur(l.unitTTC / k), `${String(r).replace(".", ",")} %`, eur(l.totalTTC / k), eur(l.totalTTC)]; }),
+    body: inv.data.lines.map((l) => { const r = lineRate(inv.data, l); const k = 1 + r / 100; return [l.name, String(l.qty), eur(sg * l.unitTTC / k), `${String(r).replace(".", ",")} %`, eur(sg * l.totalTTC / k), eur(sg * l.totalTTC)]; }),
     styles: { fontSize: 8 }, headStyles: { fillColor: [0, 122, 245] }, columnStyles: { 0: { cellWidth: 70 } },
   });
   let y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
   const bd = breakdown(inv.data);
-  doc.text([`Total HT : ${eur(inv.data.totalHT)}`, ...bd.map((b) => `TVA ${String(b.rate).replace(".", ",")} % (base ${eur(b.ht)}) : ${eur(b.vat)}`), `Total TVA : ${eur(inv.data.totalVAT)}`], 120, y);
+  doc.text([`Total HT : ${eur(sg * inv.data.totalHT)}`, ...bd.map((b) => `TVA ${String(b.rate).replace(".", ",")} % (base ${eur(sg * b.ht)}) : ${eur(sg * b.vat)}`), `Total TVA : ${eur(sg * inv.data.totalVAT)}`], 120, y);
   y += 6 * (bd.length + 2);
-  doc.setFont("helvetica", "bold"); doc.text(`Total TTC : ${eur(inv.data.totalTTC)}`, 120, y); doc.setFont("helvetica", "normal");
+  doc.setFont("helvetica", "bold"); doc.text(`Total TTC : ${eur(sg * inv.data.totalTTC)}`, 120, y); doc.setFont("helvetica", "normal");
   y += 8;
-  doc.text(`Paiement : ${inv.data.paymentLabel ?? inv.data.paymentMethod} — ${inv.data.paid ? "Payée" : "À régler"}`, 14, y);
+  doc.text(cn ? `Remboursé au client via ${cn.provider} (moyen de paiement d'origine)` : `Paiement : ${inv.data.paymentLabel ?? inv.data.paymentMethod} — ${inv.data.paid ? "Payée" : "À régler"}`, 14, y);
   y += 10;
   doc.setFontSize(8);
   doc.text([
-    inv.data.paid ? "Facture acquittée." : "Paiement à réception, pas d'escompte pour paiement anticipé.",
+    cn ? "Avoir valant annulation partielle ou totale de la facture d'origine ; montant remboursé, aucune somme restant due." : inv.data.paid ? "Facture acquittée." : "Paiement à réception, pas d'escompte pour paiement anticipé.",
     "Pénalités de retard : 3 fois le taux d'intérêt légal. Indemnité forfaitaire pour frais de recouvrement (clients professionnels) : 40 € (art. L441-10 C. com.).",
     "Document généré au format Factur-X BASIC (EN 16931, XML CII embarqué, PDF/A-3). Conservez cette facture 10 ans (art. L123-22 C. com.).",
   ], 14, y, { maxWidth: 180 });
@@ -92,7 +97,7 @@ export async function buildInvoicePdf(inv: Invoice): Promise<Uint8Array> {
 
   const { PDFDocument, PDFName, AFRelationship } = await import("pdf-lib");
   const pdf = await PDFDocument.load(base);
-  const title = `Facture ${inv.number}`;
+  const title = `${cn ? "Avoir" : "Facture"} ${inv.number}`;
   pdf.setTitle(title); pdf.setAuthor(s.company); pdf.setProducer("LC Digitale"); pdf.setCreator("LC Digitale");
   await pdf.attach(new TextEncoder().encode(facturxXml(inv)), "factur-x.xml", { mimeType: "text/xml", description: "Factur-X invoice", afRelationship: AFRelationship.Data, creationDate: new Date(inv.issued_at), modificationDate: new Date(inv.issued_at) });
   const meta = pdf.context.stream(XMP(title), { Type: "Metadata", Subtype: "XML" });
