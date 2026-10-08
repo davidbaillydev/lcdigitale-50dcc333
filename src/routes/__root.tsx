@@ -58,7 +58,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { title: "LC Digitale — Commande en ligne pour restaurants" },
       { name: "description", content: "LC Digitale : la plateforme de commande en ligne des restaurants partenaires — click & collect, livraison et borne tactile." },
       { property: "og:type", content: "website" },

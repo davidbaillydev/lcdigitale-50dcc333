@@ -1,7 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, Bell, BellOff, Bike, Check, ChefHat, Lock, LogOut, Phone, Printer, ShoppingBag, Users, Volume2, VolumeX } from "lucide-react";
+import { ArrowLeft, ArrowRight, Bell, BellOff, Bike, Check, ChefHat, Lock, LogOut, Maximize, Minimize, PanelTopClose, PanelTopOpen, Phone, Printer, ShoppingBag, Users, Volume2, VolumeX } from "lucide-react";
+import { useKitchenFullscreen } from "@/hooks/use-kitchen-fullscreen";
 import { printTickets, printingDefaults, type PrintingConfig, type TicketKind } from "@/lib/ticket";
 import { hasKitchenPin } from "@/lib/kitchen-pin.functions";
 import { KitchenLock } from "@/components/KitchenLock";
@@ -102,6 +103,8 @@ function Kitchen() {
   const printRef = useRef({ auto: false, doPrint }); printRef.current = { auto: printing.auto, doPrint };
   const [sound, setSound] = useState(false);
   const [started, setStarted] = useState(false);
+  const [serviceMode, setServiceMode] = useState(false);
+  const { fullscreen, busy: fullscreenBusy, helpOpen, setHelpOpen, toggleFullscreen } = useKitchenFullscreen();
   const soundRef = useRef(false); soundRef.current = sound;
   const [acceptFor, setAcceptFor] = useState<Order | null>(null);
   const [customTime, setCustomTime] = useState("");
@@ -221,7 +224,16 @@ function Kitchen() {
 
   const done = orders.filter((o) => o.status === "done");
   return (
-    <div className="admin-kitchen flex h-full min-h-0 flex-col overflow-hidden">
+    <div data-service-mode={serviceMode} className="admin-kitchen flex h-full min-h-0 flex-col overflow-hidden">
+      <Dialog open={helpOpen} onOpenChange={setHelpOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Plein écran indisponible</DialogTitle>
+            <DialogDescription>Ce navigateur ne permet pas le plein écran ici. Sur iPad ou iPhone, ouvrez la Cuisine dans Safari puis utilisez Partager → Sur l’écran d’accueil pour l’ouvrir sans barre de navigateur. Dans l’aperçu, ouvrez l’application dans un onglet séparé.</DialogDescription>
+          </DialogHeader>
+          <Button onClick={() => setHelpOpen(false)}>Fermer</Button>
+        </DialogContent>
+      </Dialog>
       {!started && (
         <div role="dialog" aria-modal="true" aria-labelledby="kds-start" className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 p-6">
           <div className="max-w-md rounded-xl border border-border bg-card p-6 text-center">
@@ -260,12 +272,15 @@ function Kitchen() {
           {sound ? <Volume2 /> : <VolumeX />} <span className="hidden sm:inline">{sound ? "Son activé — couper" : "Son coupé — activer"}</span>
         </Button>
         <div className="col-span-2 flex shrink-0 items-center justify-end gap-2">
+        <Button variant={serviceMode ? "secondary" : "outline"} size="icon" aria-pressed={serviceMode} aria-label={serviceMode ? "Quitter le mode service" : "Activer le mode service"} title={serviceMode ? "Afficher la navigation" : "Mode service : replier la navigation"} onClick={() => setServiceMode((v) => !v)}>{serviceMode ? <PanelTopOpen /> : <PanelTopClose />}</Button>
+        <Button variant="outline" size="icon" disabled={fullscreenBusy} aria-label={fullscreen ? "Quitter le plein écran" : "Passer en plein écran"} title={fullscreen ? "Quitter le plein écran" : "Plein écran"} onClick={() => void toggleFullscreen()}>{fullscreen ? <Minimize /> : <Maximize />}</Button>
+        {serviceMode && rid && <StockDialog slug={slug} restaurantId={rid} />}
         {pinEnabled && <Button variant="secondary" onClick={() => setLock(true)}><Lock /> Verrouiller</Button>}
         <ThemeToggle />
         <Button variant="ghost" size="icon" className="text-foreground" onClick={() => supabase.auth.signOut()} aria-label="Déconnexion"><LogOut /></Button>
         </div>
         </div>
-        <nav aria-label="Gestion du restaurant" className="kds-navigation mt-3 flex items-center gap-2 overflow-x-auto border-t border-border pt-3">
+        <nav hidden={serviceMode} aria-label="Gestion du restaurant" className="kds-navigation mt-3 flex items-center gap-2 overflow-x-auto border-t border-border pt-3">
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/carte" params={{ slug }}>Carte</Link></Button>}
         <Button asChild variant="secondary"><Link to="/espace/$slug/reservations" params={{ slug }}>Réservations</Link></Button>
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/reglages" params={{ slug }}>Réglages</Link></Button>}
