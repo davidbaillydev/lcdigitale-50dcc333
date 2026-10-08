@@ -311,7 +311,7 @@ export const testPaypal = createServerFn({ method: "POST" })
   });
 
 // ───────────── Mollie (paiement hébergé + webhook) ─────────────
-type MollieCfg = { key: string; live: boolean; profileId?: string };
+type MollieCfg = { key: string; live: boolean; profileId?: string | undefined };
 export async function mollieForRestaurant(restaurantId: string, requireEnabled = true): Promise<MollieCfg | null> {
   const r = await getRow(restaurantId, "mollie");
   const c = r?.credentials ?? {};
