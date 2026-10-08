@@ -473,3 +473,35 @@
 @keyframes kds-incoming { 0%,100% { box-shadow: var(--admin-shadow), 0 0 0 0 color-mix(in oklab, var(--primary) 45%, transparent); } 50% { box-shadow: var(--admin-shadow), 0 0 0 8px color-mix(in oklab, var(--primary) 0%, transparent); background-color: color-mix(in oklab, var(--primary) 8%, var(--card)); } }
 .kds-incoming { animation: kds-incoming 2s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .kds-incoming { animation: none; } }
+
+/* Kitchen alone locks the document; each status list owns its scroll. */
+html:has(.admin-kitchen), body:has(.admin-kitchen) { height: 100%; overflow: hidden; }
+.admin-workspace:has(.admin-kitchen) { height: 100dvh; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.admin-workspace:has(.admin-kitchen) .admin-masthead { flex-shrink: 0; }
+.admin-workspace:has(.admin-kitchen) .admin-masthead > div { padding-block: 0.75rem; }
+.admin-workspace:has(.admin-kitchen) .admin-content { flex: 1; min-height: 0; overflow: hidden; }
+.admin-kitchen > .kds-header { flex-shrink: 0; max-height: 32dvh; overflow-y: auto; overscroll-behavior: contain; padding-block: 1rem; }
+.kds-identity { flex: 1; }
+.kds-identity > img, .kds-identity > a { flex-shrink: 0; }
+.kds-navigation > * { flex-shrink: 0; }
+.admin-kitchen .kds-service { flex-shrink: 0; padding-block: 0.75rem; }
+.kds-approvals { max-height: 22dvh; }
+.kds-board { grid-template-rows: minmax(0, 1fr); }
+.kds-column-scroll { scrollbar-gutter: stable; padding: 0.25rem 0.5rem 1rem 0.25rem; scroll-padding-block: 0.5rem; }
+.kds-column-scroll:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
+.kds-column-heading > span:first-child { min-width: 0; }
+.kds-column-heading svg { flex-shrink: 0; }
+@media (max-width: 1023px) {
+  .kds-board { grid-template-columns: repeat(3, minmax(18rem, 1fr)); scroll-snap-type: x proximity; }
+  .kds-board > section { scroll-snap-align: start; }
+}
+@media (max-width: 639px) {
+  .kds-board { grid-template-columns: repeat(3, minmax(0, 88%)); gap: 1rem; padding: 0.75rem; }
+  .admin-kitchen > .kds-header { padding: 0.75rem 1rem; }
+  .admin-kitchen .kds-header h1 { font-size: 1.25rem; }
+  .admin-kitchen .kds-header button[aria-pressed] { max-width: 9rem; font-size: 0.875rem; }
+  .admin-kitchen .kds-service { gap: 0.5rem; padding-inline: 1rem; }
+  .admin-kitchen .kds-service > p { font-size: 1.25rem; }
+  .admin-kitchen .kds-service > div { gap: 0.5rem 1rem; font-size: 0.75rem; }
+  .admin-kitchen .kds-service strong { font-size: 1rem; }
+}

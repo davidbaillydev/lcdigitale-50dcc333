@@ -31,4 +31,5 @@
 - Kitchen and courier PINs: hashed in service-role-only tables (`restaurant_kitchen_pins`, `restaurant_courier_pins`) with attempt lockout; courier sessions are HMAC tokens keyed on the PIN hash. Why: no extra accounts, PIN change revokes sessions.
 - Delivery geo zones (circle/polygon) live in restaurants.delivery.geoZones; createOrder recomputes eligibility/fees via src/lib/geo.ts. Why: browser prices never trusted.
 - E2E in e2e/ gates writes/staff via E2E_ALLOW_WRITES/E2E_STAFF_STATE; skip disabled modes. Store sessions only outside the repo. Why: no production writes or credential leaks by default.
-- invoice-platform defines B2B readiness/contracts; transmission stays disabled pending provider, buyer identity and normative validation. Why: PDFs are not fiscal network compliance.
+- Invoice transmission stays disabled pending provider and compliance validation; PDFs alone are not fiscal compliance.
+- Kitchen locks the viewport and scrolls status columns independently; narrow screens scroll columns horizontally to keep tickets readable.

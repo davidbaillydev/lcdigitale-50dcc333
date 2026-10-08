@@ -221,7 +221,7 @@ function Kitchen() {
 
   const done = orders.filter((o) => o.status === "done");
   return (
-    <div className="admin-kitchen flex min-h-screen flex-col">
+    <div className="admin-kitchen flex h-full min-h-0 flex-col overflow-hidden">
       {!started && (
         <div role="dialog" aria-modal="true" aria-labelledby="kds-start" className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 p-6">
           <div className="max-w-md rounded-xl border border-border bg-card p-6 text-center">
@@ -250,18 +250,22 @@ function Kitchen() {
         </DialogContent>
       </Dialog>
       <header className="kds-header border-b border-border">
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:flex-wrap">
+        <div className="kds-identity flex min-w-0 items-center gap-3">
         {restaurants.length > 1 && <Button asChild variant="ghost" size="icon" className="text-foreground" aria-label="Mes restaurants"><Link to="/espace"><ArrowLeft /></Link></Button>}
         <BrandLogo src={restaurant?.logo_url} name={restaurant?.name ?? ""} />
-        <div className="mr-auto min-w-0"><p className="text-sm text-muted-foreground">Écran cuisine</p><h1>{restaurant?.name}</h1></div>
+        <div className="mr-auto min-w-0"><p className="text-sm text-muted-foreground">Écran cuisine</p><h1 className="truncate">{restaurant?.name}</h1></div>
+        </div>
         <Button variant={sound ? "secondary" : "destructive"} size="lg" onClick={sound ? () => setSound(false) : enableSound} aria-pressed={sound} className="min-h-12 text-base">
           {sound ? <Volume2 /> : <VolumeX />} {sound ? "Son activé — couper" : "Son coupé — activer"}
         </Button>
+        <div className="col-span-2 flex shrink-0 items-center justify-end gap-2">
         {pinEnabled && <Button variant="secondary" onClick={() => setLock(true)}><Lock /> Verrouiller</Button>}
         <ThemeToggle />
         <Button variant="ghost" size="icon" className="text-foreground" onClick={() => supabase.auth.signOut()} aria-label="Déconnexion"><LogOut /></Button>
         </div>
-        <nav aria-label="Gestion du restaurant" className="kds-navigation mt-5 flex flex-wrap items-center gap-2 border-t border-border pt-4">
+        </div>
+        <nav aria-label="Gestion du restaurant" className="kds-navigation mt-3 flex items-center gap-2 overflow-x-auto border-t border-border pt-3">
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/carte" params={{ slug }}>Carte</Link></Button>}
         <Button asChild variant="secondary"><Link to="/espace/$slug/reservations" params={{ slug }}>Réservations</Link></Button>
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/reglages" params={{ slug }}>Réglages</Link></Button>}
@@ -280,7 +284,7 @@ function Kitchen() {
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm"><span><strong className="text-xl tabular-nums">{orders.filter((o) => COLS.some((c) => c.s === o.status)).length}</strong> en cours</span><span><strong className="text-xl tabular-nums">{done.length}</strong> terminée(s)</span><span>CA <strong className="text-xl tabular-nums">{euro(done.reduce((s, o) => s + Number(o.total), 0))}</strong></span></div>
       </div>
       {orders.some((o) => o.status === "pending_approval") && (
-        <section aria-label="Commandes libre-service à valider" className="border-b border-border bg-card px-4 py-4 lg:px-6">
+        <section aria-label="Commandes libre-service à valider" className="kds-approvals shrink-0 overflow-y-auto overscroll-contain border-b border-border bg-card px-4 py-4 lg:px-6">
           <h2 className="text-2xl">À valider par le service</h2>
           <ul className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {orders.filter((o) => o.status === "pending_approval").map((o) => (
@@ -297,15 +301,15 @@ function Kitchen() {
           </ul>
         </section>
       )}
-      <div className="kds-board grid flex-1 gap-5 p-4 lg:grid-cols-3 lg:p-6">
+      <div className="kds-board grid min-h-0 flex-1 gap-5 overflow-x-auto overflow-y-hidden p-4 lg:grid-cols-3 lg:p-6">
         {COLS.map((c) => {
           const list = orders.filter((o) => o.status === c.s);
           return (
-            <section key={c.s} data-kds-status={c.s} className="flex min-w-0 flex-col">
-              <h2 className="kds-column-heading mb-4 flex items-center justify-between gap-2">
+            <section key={c.s} data-kds-status={c.s} aria-label={c.label} className="flex min-h-0 min-w-0 flex-col overflow-hidden">
+              <h2 id={`kds-heading-${c.s}`} className="kds-column-heading mb-4 grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
                 <span className="flex items-center gap-2">{c.s === "new" ? <ShoppingBag aria-hidden="true" className="h-5 w-5" /> : c.s === "accepted" ? <ChefHat aria-hidden="true" className="h-5 w-5" /> : <Check aria-hidden="true" className="h-5 w-5" />}{c.label}</span><span className={cn("flex h-9 min-w-9 items-center justify-center rounded-md px-2 text-lg tabular-nums", c.s === "new" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground")}>{list.length}</span>
               </h2>
-              <div className="space-y-3">
+              <div role="region" aria-labelledby={`kds-heading-${c.s}`} tabIndex={0} className="kds-column-scroll min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain">
                 {list.map((o) => (
                    <article key={o.id} className={cn("kds-ticket rounded-lg border bg-card p-4", c.s === "new" ? "kds-incoming border-primary" : "border-border")}>
                     <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
