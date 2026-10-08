@@ -8,7 +8,7 @@ const PAY: Record<string, string> = { online: "Carte bancaire en ligne (Stripe/P
 export async function issueForOrder(admin: Admin, orderId: string) {
   const { data: existing } = await admin.from("restaurant_invoices").select("number, issued_at, data, buyer_b2b, buyer_b2b_updated_at").eq("order_id", orderId).maybeSingle();
   if (existing) return existing as unknown as import("./invoice").Invoice;
-  const { data: o } = await admin.from("orders").select("id, order_number, restaurant_id, customer_name, email, address, postal_code, city, table_label, room_label, items, delivery_fee, discount, promo_code, total, payment_method, payment_status, payment_ref, status, created_at, slot, billing").eq("id", orderId).maybeSingle();
+  const { data: o } = await admin.from("orders").select("id, order_number, restaurant_id, customer_name, email, address, postal_code, city, table_label, room_label, items, delivery_fee, service_fee, discount, promo_code, total, payment_method, payment_status, payment_ref, status, created_at, slot, billing").eq("id", orderId).maybeSingle();
   if (!o) throw new Error("Commande introuvable");
   if (o.payment_status !== "paid" && ["awaiting_payment", "cancelled", "pending_approval", "new"].includes(o.status)) throw new Error("Facture disponible une fois la commande confirmée.");
   const { data: r } = await admin.from("restaurants").select("name, address, city, phone, email, legal, logo_url").eq("id", o.restaurant_id).single();
@@ -20,6 +20,7 @@ export async function issueForOrder(admin: Admin, orderId: string) {
   const lines = [
     ...items.map((i) => ({ name: i.name + (i.size ? ` — ${i.size.name}` : "") + ([...(i.details ?? []), ...(i.selected_options ?? []).map((o) => `+ ${o.name}`)].length ? ` (${[...(i.details ?? []), ...(i.selected_options ?? []).map((o) => `+ ${o.name}`)].join(", ")})` : ""), qty: i.qty, unitTTC: Number(i.unit), totalTTC: Number(i.total), vatRate: i.vatRate ?? def })),
     ...(Number(o.delivery_fee) > 0 ? [{ name: "Frais de livraison", qty: 1, unitTTC: Number(o.delivery_fee), totalTTC: Number(o.delivery_fee), vatRate: def }] : []),
+    ...(Number(o.service_fee) > 0 ? [{ name: "Frais de service", qty: 1, unitTTC: Number(o.service_fee), totalTTC: Number(o.service_fee), vatRate: def }] : []),
     ...(Number(o.discount) > 0 ? [{ name: `Remise${o.promo_code ? ` ${o.promo_code}` : ""}`, qty: 1, unitTTC: -Number(o.discount), totalTTC: -Number(o.discount), vatRate: def }] : []),
   ];
   const by = new Map<number, number>();

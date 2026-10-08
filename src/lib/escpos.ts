@@ -70,6 +70,7 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
   if (f.notes && o.notes) { e.line(hr).bold(true); wrap(`! REMARQUE CLIENT : ${o.notes}`, cols).forEach((l) => e.line(l)); e.bold(false); }
   e.line(hr);
   if (f.prices && Number(o.delivery_fee) > 0) e.line(lr("Livraison", eur(o.delivery_fee), cols));
+  if (f.prices && Number(o.service_fee) > 0) e.line(lr("Frais de service", eur(o.service_fee), cols));
   if (f.prices && Number(o.discount) > 0) e.line(lr(`Remise${o.promo_code ? ` ${o.promo_code}` : ""}`, `-${eur(o.discount)}`, cols));
   if (f.prices) e.bold(true).size(1, 2).line(lr("TOTAL", eur(o.total), cols)).size(1, 1).bold(false);
   if (f.prices) e.line(lr("dont TVA (10 % incluse)", eur(Number(o.total) - Number(o.total) / 1.1), cols));

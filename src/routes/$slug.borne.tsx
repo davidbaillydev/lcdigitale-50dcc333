@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { computeServiceFee, serviceFeeLabel } from "@/lib/service-fee";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, ChevronLeft, CreditCard, Minus, Plus, ShoppingBag, Trash2, UtensilsCrossed, Banknote } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
@@ -49,7 +50,8 @@ function Kiosk() {
   const [result, setResult] = useState<{ n: number; total: number; pay: string } | null>(null);
   const [warn, setWarn] = useState(false);
   const [promo, setPromo] = useState<{ d: AppliedDiscount | null; code?: string | undefined }>({ d: null });
-  const toPay = Math.round((subtotal - (promo.d?.discount ?? 0)) * 100) / 100;
+  const serviceFee = computeServiceFee(restaurant.config.serviceFee, subtotal, "kiosk");
+  const toPay = Math.round((subtotal - (promo.d?.discount ?? 0) + serviceFee) * 100) / 100;
   const announce = announcementText(restaurant.config);
   const last = useRef(Date.now());
   const checkTerminal = useServerFn(kioskTerminalAvailable);
@@ -242,6 +244,7 @@ function Kiosk() {
             <PromoCodeField large slug={restaurant.slug} subtotal={subtotal} channel="kiosk" onChange={(d, code) => setPromo({ d, code })} />
           </div>
           {promo.d && <p className="text-2xl text-primary">{promo.d.label} : -{euro(promo.d.discount)}</p>}
+          {serviceFee > 0 && <p className="text-2xl">{serviceFeeLabel(restaurant.config.serviceFee)} : {euro(serviceFee)}</p>}
           <p className="text-3xl">Total : <span className="font-display text-primary">{euro(toPay)}</span></p>
           <div className="grid w-full max-w-4xl grid-cols-2 gap-6">
             {restaurant.config.payments?.counter !== false && <button disabled={busy} onClick={() => pay("counter")} className="flex flex-col items-center gap-4 rounded-2xl border-2 border-border bg-card p-10 active:border-primary disabled:opacity-50">

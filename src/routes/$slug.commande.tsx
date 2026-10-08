@@ -14,6 +14,7 @@ import { euro } from "@/lib/menu";
 import { useTable } from "@/lib/table";
 import { findZone, zoneFee, type GeoZone } from "@/lib/geo";
 import { geocodeAddress } from "@/lib/delivery.functions";
+import { computeServiceFee, serviceFeeLabel, type ServiceFeeChannel } from "@/lib/service-fee";
 import { asapSlot, availableSlots, deliveryFee, fmtTime, isOpenNow, modeEnabled, timingOf } from "@/lib/shop";
 import { createOrder } from "@/lib/orders.functions";
 import { onlinePaymentInfo } from "@/lib/payments.functions";
@@ -97,7 +98,8 @@ function Checkout() {
   };
   const fee = mode === "delivery" ? (geoZones.length ? (geo?.zone ? zoneFee(geo.zone, subtotal) : 0) : deliveryFee(restaurant, subtotal)) : 0;
   const discount = promo.d?.discount ?? 0;
-  const total = subtotal - discount + fee;
+  const serviceFee = computeServiceFee(restaurant.config.serviceFee, subtotal, mode as ServiceFeeChannel);
+  const total = Math.round((subtotal - discount + fee + serviceFee) * 100) / 100;
   const belowMin = mode === "delivery" && subtotal < (geoZones.length ? (geo?.zone?.minOrder ?? 0) : DELIVERY.minOrder);
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
 
@@ -289,6 +291,7 @@ function Checkout() {
           <div className="space-y-1 border-t border-border pt-3 text-sm">
             <div className="flex justify-between"><span>Sous-total</span><span>{euro(subtotal)}</span></div>
             {discount > 0 && <div className="flex justify-between text-primary"><span>{promo.d?.label}</span><span>-{euro(discount)}</span></div>}
+            {serviceFee > 0 && <div className="flex justify-between"><span>{serviceFeeLabel(restaurant.config.serviceFee)}</span><span>{euro(serviceFee)}</span></div>}
             {mode === "delivery" && <div className="flex justify-between"><span>Livraison</span><span>{fee ? euro(fee) : "Offerte"}</span></div>}
             <div className="flex justify-between pt-2 text-lg font-bold"><span>Total</span><span className="text-primary">{euro(total)}</span></div>
           </div>
