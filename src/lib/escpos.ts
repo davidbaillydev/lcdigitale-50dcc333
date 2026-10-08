@@ -1,6 +1,6 @@
 // Encodeur ESC/POS : transforme une commande en octets pour imprimante thermique.
 import { allergenLabel } from "./allergens";
-import { itemTitle, printingDefaults, type KitchenFields, type TicketKind, type TicketOrder, type TicketShop, type TicketWidth } from "./ticket";
+import { isPaid, itemTitle, printingDefaults, type KitchenFields, type TicketKind, type TicketOrder, type TicketShop, type TicketWidth } from "./ticket";
 
 const CP858: Record<string, number> = {
   "Ç": 0x80, "ü": 0x81, "é": 0x82, "â": 0x83, "ä": 0x84, "à": 0x85, "ç": 0x87, "ê": 0x88, "ë": 0x89, "è": 0x8a,
@@ -44,7 +44,7 @@ const lr = (l: string, r: string, cols: number) => { const sp = cols - l.length 
 export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidth, shop: TicketShop, fieldsIn?: Partial<KitchenFields>): Uint8Array {
   const cols = width === 80 ? 48 : 32;
   const f: KitchenFields = kind === "receipt"
-    ? { allergens: true, options: true, notes: true, customer: true, contact: true, prices: true }
+    ? { allergens: true, options: true, notes: true, customer: true, contact: true, prices: true, paid: true, qc: false }
     : { ...printingDefaults().kitchen, ...(fieldsIn ?? {}) };
   const e = new Enc().raw(0x1b, 0x40, 0x1b, 0x74, 19);
   const hr = "-".repeat(cols);
@@ -72,8 +72,11 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
   if (f.prices && Number(o.delivery_fee) > 0) e.line(lr("Livraison", eur(o.delivery_fee), cols));
   if (f.prices && Number(o.discount) > 0) e.line(lr(`Remise${o.promo_code ? ` ${o.promo_code}` : ""}`, `-${eur(o.discount)}`, cols));
   if (f.prices) e.bold(true).size(1, 2).line(lr("TOTAL", eur(o.total), cols)).size(1, 1).bold(false);
+  if (f.prices) e.line(lr("dont TVA (10 % incluse)", eur(Number(o.total) - Number(o.total) / 1.1), cols));
   e.line(payLabel(o.payment_method));
-  if (kind === "receipt") e.line(hr).align(1).line("Merci de votre commande !");
+  if (f.paid) { const p = isPaid(o); e.line(hr).align(1).bold(true).size(1, 2).line(`[${p ? "X" : " "}] PAYE    [${p ? " " : "X"}] NON PAYE`).size(1, 1).bold(false).align(0); }
+  if (f.qc && kind === "kitchen") { e.line(hr).bold(true).line("CONTROLE EMBALLAGE").bold(false).line("[ ] Articles conformes").line("[ ] Tous les articles").line("[ ] Couverts / sauces").line("").line("Visa : " + ".".repeat(Math.max(4, cols - 7))); }
+  if (kind === "receipt") e.line(hr).align(1).line("Ticket non fiscal - facture sur demande").line("Merci de votre commande !");
   e.align(1).line(new Date().toLocaleString("fr-FR"));
   e.raw(0x0a, 0x0a, 0x0a, 0x1d, 0x56, 0x42, 0x00); // avance + coupe
   return new Uint8Array(e.b);

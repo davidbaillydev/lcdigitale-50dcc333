@@ -12,24 +12,25 @@ export type TicketOrder = {
   items: { name: string; qty: number; total?: number; details?: string[]; allergens?: string[]; size?: { name: string } | null; selected_options?: { name: string; price: number }[] }[];
   notes?: string | null; total: number | string; delivery_fee?: number | string | null;
   discount?: number | string | null; promo_code?: string | null;
-  payment_method: string; source?: string | null; table_label?: string | null; room_label?: string | null;
+  payment_method: string; payment_status?: string | null; source?: string | null; table_label?: string | null; room_label?: string | null;
 };
 
 const esc = (s: unknown) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
 const eur = (n: unknown) => `${Number(n ?? 0).toFixed(2).replace(".", ",")} €`;
 const time = (d: string) => new Date(d).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 const modeLabel = (m: string) => (m === "delivery" ? "LIVRAISON" : m === "dine_in" ? "SUR PLACE" : "À EMPORTER");
+export const isPaid = (o: { payment_method: string; payment_status?: string | null }) => o.payment_status ? o.payment_status === "paid" : o.payment_method === "online";
 const payLabel = (p: string) =>
   p === "online" ? "Payé en ligne" : p === "card_terminal" ? "CB au comptoir" : p === "counter" ? "Espèces/TR au comptoir" : "À encaisser";
 
-export type KitchenFields = { allergens: boolean; options: boolean; notes: boolean; customer: boolean; contact: boolean; prices: boolean };
+export type KitchenFields = { allergens: boolean; options: boolean; notes: boolean; customer: boolean; contact: boolean; prices: boolean; paid: boolean; qc: boolean };
 export type PrintingConfig = { width: TicketWidth; auto: boolean; kitchen: KitchenFields };
 export type TicketShop = { name: string; address?: string | null; phone?: string | null };
 
 export function printingDefaults(p?: Partial<PrintingConfig> | null): PrintingConfig {
   return {
     width: p?.width === 58 ? 58 : 80, auto: p?.auto ?? false,
-    kitchen: { allergens: true, options: true, notes: true, customer: true, contact: false, prices: false, ...(p?.kitchen ?? {}) },
+    kitchen: { allergens: true, options: true, notes: true, customer: true, contact: false, prices: false, paid: true, qc: false, ...(p?.kitchen ?? {}) },
   };
 }
 
@@ -43,7 +44,7 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
   const shop = typeof shopIn === "string" ? { name: shopIn } : shopIn;
   const restaurant = shop.name;
   const f: KitchenFields = kind === "receipt"
-    ? { allergens: true, options: true, notes: true, customer: true, contact: true, prices: true }
+    ? { allergens: true, options: true, notes: true, customer: true, contact: true, prices: true, paid: true, qc: false }
     : { ...printingDefaults().kitchen, ...(fieldsIn ?? {}) };
   const big = width === 80 ? 15 : 12;
   const items = o.items.map((it) => `
@@ -62,13 +63,17 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
     hr { border: 0; border-top: 1px dashed #000; margin: 6px 0; }
     .alg { padding-left: 10px; font-size: ${big - 2}px; font-weight: bold; }
     .note { border: 2px solid #000; padding: 4px; margin-top: 6px; font-weight: bold; }
+    .box { border: 2px solid #000; padding: 6px; margin-top: 6px; display: flex; justify-content: space-around; font-weight: bold; }
+    .ck { display: inline-block; width: 1em; height: 1em; border: 2px solid #000; vertical-align: -2px; margin-right: 4px; text-align: center; line-height: .9em; }
+    .band { background: #000; color: #fff; padding: 3px 6px; font-weight: bold; text-align: center; margin-top: 4px; }
+    .sig { margin-top: 14px; border-bottom: 1px dotted #000; height: 1.4em; }
   </style></head><body>
     <div class="c l">${esc(restaurant)}</div>
     ${f.contact && (shop.address || shop.phone) ? `<div class="c">${esc(shop.address)}${shop.address && shop.phone ? "<br>" : ""}${esc(shop.phone)}</div>` : ""}
     <div class="c">${kind === "kitchen" ? "TICKET CUISINE" : "TICKET CLIENT"}</div>
     <hr><div class="c xl">N° ${o.order_number}</div>
     <div class="c l">${modeLabel(o.mode)}${o.source === "kiosk" ? " · BORNE" : ""}${o.table_label ? ` · TABLE ${esc(o.table_label)}` : ""}${o.room_label ? ` · CHAMBRE ${esc(o.room_label)}` : ""}</div>
-    <div class="c">Pour ${time(o.slot)}${o.created_at ? ` · reçue ${time(o.created_at)}` : ""}</div>
+    <div class="band">Pour ${time(o.slot)}${o.created_at ? ` · reçue ${time(o.created_at)}` : ""}</div>
     ${f.customer && o.customer_name ? `<div class="c">${esc(o.customer_name)}${o.phone && o.phone !== "-" ? ` · ${esc(o.phone)}` : ""}</div>` : ""}
     ${o.mode === "delivery" && o.address ? `<div class="c">${esc(o.address)}, ${esc(o.city)}</div>` : ""}
     <hr>${items}
@@ -78,8 +83,11 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
     ${f.prices && Number(o.delivery_fee) > 0 ? `<div class="row"><span>Livraison</span><span>${eur(o.delivery_fee)}</span></div>` : ""}
     ${f.prices && Number(o.discount) > 0 ? `<div class="row"><span>Remise${o.promo_code ? ` ${esc(o.promo_code)}` : ""}</span><span>-${eur(o.discount)}</span></div>` : ""}
     ${f.prices ? `<div class="row l"><span>TOTAL</span><span>${eur(o.total)}</span></div>` : ""}
+    ${f.prices ? `<div class="row"><span>dont TVA (10 % incluse)</span><span>${eur(Number(o.total) - Number(o.total) / 1.1)}</span></div>` : ""}
     <div>${payLabel(o.payment_method)}</div>
-    ${kind === "receipt" ? `<hr><div class="c">Merci de votre commande !</div>` : ""}
+    ${f.paid ? `<div class="box"><span><span class="ck">${isPaid(o) ? "✓" : ""}</span>Payé</span><span><span class="ck">${isPaid(o) ? "" : "✓"}</span>Non payé</span></div>` : ""}
+    ${f.qc && kind === "kitchen" ? `<hr><div class="l">Contrôle emballage</div><div><span class="ck"></span>Articles conformes</div><div><span class="ck"></span>Tous les articles</div><div><span class="ck"></span>Couverts / sauces</div><div>Visa :</div><div class="sig"></div>` : ""}
+    ${kind === "receipt" ? `<hr><div class="c">Ticket non fiscal — facture disponible sur demande</div><div class="c">Merci de votre commande !</div>` : ""}
     <div class="c" style="margin-top:6px">${new Date().toLocaleString("fr-FR")}</div>
   </body></html>`;
 }
