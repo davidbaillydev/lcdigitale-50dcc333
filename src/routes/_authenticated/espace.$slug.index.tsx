@@ -1,8 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, Bell, BellOff, Bike, Check, ChefHat, Lock, LogOut, Maximize, Minimize, PanelTopClose, PanelTopOpen, Phone, Printer, ShoppingBag, Users, Volume2, VolumeX } from "lucide-react";
+import { ArrowLeft, ArrowRight, Bell, BellOff, Bike, Check, ChefHat, Lock, LogOut, Maximize, Minimize, MoonStar, PanelTopClose, PanelTopOpen, Phone, Printer, ShoppingBag, Sun, Users, Volume2, VolumeX } from "lucide-react";
 import { useKitchenFullscreen } from "@/hooks/use-kitchen-fullscreen";
+import { useWakeLock } from "@/hooks/use-wake-lock";
 import { printTickets, printingDefaults, type PrintingConfig, type TicketKind } from "@/lib/ticket";
 import { hasKitchenPin } from "@/lib/kitchen-pin.functions";
 import { KitchenLock } from "@/components/KitchenLock";
@@ -105,6 +106,7 @@ function Kitchen() {
   const [started, setStarted] = useState(false);
   const [serviceMode, setServiceMode] = useState(false);
   const { fullscreen, busy: fullscreenBusy, helpOpen, setHelpOpen, toggleFullscreen } = useKitchenFullscreen();
+  const wake = useWakeLock();
   const soundRef = useRef(false); soundRef.current = sound;
   const [acceptFor, setAcceptFor] = useState<Order | null>(null);
   const [customTime, setCustomTime] = useState("");
@@ -274,6 +276,11 @@ function Kitchen() {
         <div className="col-span-2 flex shrink-0 items-center justify-end gap-2">
         <Button variant={serviceMode ? "secondary" : "outline"} size="icon" aria-pressed={serviceMode} aria-label={serviceMode ? "Quitter le mode service" : "Activer le mode service"} title={serviceMode ? "Afficher la navigation" : "Mode service : replier la navigation"} onClick={() => setServiceMode((v) => !v)}>{serviceMode ? <PanelTopOpen /> : <PanelTopClose />}</Button>
         <Button variant="outline" size="icon" disabled={fullscreenBusy} aria-label={fullscreen ? "Quitter le plein écran" : "Passer en plein écran"} title={fullscreen ? "Quitter le plein écran" : "Plein écran"} onClick={() => void toggleFullscreen()}>{fullscreen ? <Minimize /> : <Maximize />}</Button>
+        <Button variant={wake.active ? "default" : wake.wanted ? "destructive" : "outline"} aria-pressed={wake.wanted} disabled={!wake.supported}
+          title={!wake.supported ? "Maintien de l'écran non pris en charge par ce navigateur" : wake.active ? "Écran maintenu allumé — cliquer pour désactiver" : wake.wanted ? "Maintien demandé mais inactif — touchez l'écran" : "Empêcher la mise en veille"}
+          aria-label={wake.active ? "Écran maintenu allumé, désactiver" : "Empêcher la mise en veille"} onClick={wake.toggle}>
+          {wake.active ? <Sun className="animate-pulse" /> : <MoonStar />}<span className="hidden md:inline">{wake.active ? "Écran actif" : wake.wanted ? "Veille non bloquée" : "Anti-veille"}</span>
+        </Button>
         {serviceMode && rid && <StockDialog slug={slug} restaurantId={rid} />}
         {pinEnabled && <Button variant="secondary" onClick={() => setLock(true)}><Lock /> Verrouiller</Button>}
         <ThemeToggle />
