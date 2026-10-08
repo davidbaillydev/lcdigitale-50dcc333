@@ -496,10 +496,11 @@ html:has(.admin-kitchen), body:has(.admin-kitchen) { height: 100%; overflow: hid
   .kds-board > section { scroll-snap-align: start; }
 }
 @media (max-width: 639px) {
-  .kds-board { grid-template-columns: repeat(3, minmax(0, 88%)); gap: 1rem; padding: 0.75rem; }
+  .kds-board { grid-template-columns: repeat(3, 88%); gap: 1rem; padding: 0.75rem; }
   .admin-kitchen > .kds-header { padding: 0.75rem 1rem; }
   .admin-kitchen .kds-header h1 { font-size: 1.25rem; }
-  .admin-kitchen .kds-header button[aria-pressed] { max-width: 9rem; font-size: 0.875rem; }
+  .admin-kitchen .kds-header button[aria-pressed] { width: 3rem; height: 3rem; overflow: hidden; font-size: 0; gap: 0; padding: 0.75rem; }
+  .admin-kitchen .kds-header button[aria-pressed] svg { flex-shrink: 0; }
   .admin-kitchen .kds-service { gap: 0.5rem; padding-inline: 1rem; }
   .admin-kitchen .kds-service > p { font-size: 1.25rem; }
   .admin-kitchen .kds-service > div { gap: 0.5rem 1rem; font-size: 0.75rem; }
