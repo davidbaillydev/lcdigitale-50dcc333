@@ -256,8 +256,8 @@ function Kitchen() {
         <BrandLogo src={restaurant?.logo_url} name={restaurant?.name ?? ""} />
         <div className="mr-auto min-w-0"><p className="text-sm text-muted-foreground">Écran cuisine</p><h1 className="truncate">{restaurant?.name}</h1></div>
         </div>
-        <Button variant={sound ? "secondary" : "destructive"} size="lg" onClick={sound ? () => setSound(false) : enableSound} aria-pressed={sound} className="min-h-12 text-base">
-          {sound ? <Volume2 /> : <VolumeX />} {sound ? "Son activé — couper" : "Son coupé — activer"}
+        <Button variant={sound ? "secondary" : "destructive"} size="lg" onClick={sound ? () => setSound(false) : enableSound} aria-pressed={sound} aria-label={sound ? "Son activé — couper" : "Son coupé — activer"} title={sound ? "Couper le son" : "Activer le son"} className="min-h-12 text-base">
+          {sound ? <Volume2 /> : <VolumeX />} <span className="hidden sm:inline">{sound ? "Son activé — couper" : "Son coupé — activer"}</span>
         </Button>
         <div className="col-span-2 flex shrink-0 items-center justify-end gap-2">
         {pinEnabled && <Button variant="secondary" onClick={() => setLock(true)}><Lock /> Verrouiller</Button>}

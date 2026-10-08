@@ -43,4 +43,4 @@ Verified on a temporary restaurant, now deactivated: upload and reload persisten
 
 - [x] Tailles/formats + groupes de suppléments (BDD, carte, site/borne/QR, KDS, tickets)
 
-- [ ] Cuisine : défilement global bloqué et colonnes indépendantes ; vérifier sans modifier les commandes.
+- [x] Cuisine : défilement global bloqué, colonnes indépendantes et navigation horizontale étroite ; session connectée vérifiée à 320/390/1024/1280px sans modifier les commandes. Tests génériques de navigation en échec (montage document HTML), hors de cette refonte.
