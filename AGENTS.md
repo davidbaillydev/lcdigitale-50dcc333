@@ -32,4 +32,4 @@
 - Delivery geo zones (circle/polygon) live in restaurants.delivery.geoZones; createOrder recomputes eligibility/fees via src/lib/geo.ts. Why: browser prices never trusted.
 - E2E in e2e/ gates writes/staff via E2E_ALLOW_WRITES/E2E_STAFF_STATE; skip disabled modes. Store sessions only outside the repo. Why: no production writes or credential leaks by default.
 - Invoice transmission stays disabled pending provider and compliance validation; PDFs alone are not fiscal compliance.
-- Kitchen keeps column scrolling, service navigation collapse, document fullscreen for dialogs and safe-area insets to protect touch actions.
+- Kitchen uses column scrolling, collapsible navigation, document fullscreen for dialogs and safe-area insets to protect touch actions.
