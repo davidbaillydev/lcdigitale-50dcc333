@@ -1,6 +1,6 @@
 // Encodeur ESC/POS : transforme une commande en octets pour imprimante thermique.
 import { allergenLabel } from "./allergens";
-import { isPaid, itemTitle, printingDefaults, type KitchenFields, type TicketKind, type TicketOrder, type TicketShop, type TicketWidth } from "./ticket";
+import { isPaid, isPreorder, itemTitle, printingDefaults, type KitchenFields, type TicketKind, type TicketOrder, type TicketShop, type TicketWidth } from "./ticket";
 
 const CP858: Record<string, number> = {
   "Ç": 0x80, "ü": 0x81, "é": 0x82, "â": 0x83, "ä": 0x84, "à": 0x85, "ç": 0x87, "ê": 0x88, "ë": 0x89, "è": 0x8a,
@@ -50,7 +50,7 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
   const hr = "-".repeat(cols);
   e.align(1).bold(true).size(1, 2).line(shop.name).size(1, 1).bold(false);
   if (f.contact) { if (shop.address) e.line(shop.address); if (shop.phone) e.line(shop.phone); }
-  e.line(kind === "kitchen" ? "TICKET CUISINE" : "TICKET CLIENT").line(hr);
+  (isPreorder(kind, o) ? e.bold(true).line("BON DE PRE-COMMANDE").line("A REGLER EN CAISSE").bold(false) : e.line(kind === "kitchen" ? "TICKET CUISINE" : "TICKET CLIENT")).line(hr);
   e.bold(true).size(2, 2).line(`N° ${o.order_number}`).size(1, 2).line(modeLabel(o.mode) + (o.source === "kiosk" ? " - BORNE" : o.source === "phone" ? " - TEL IA" : "")).size(1, 1).bold(false);
   e.line(`Pour ${time(o.slot)}${o.created_at ? ` - reçue ${time(o.created_at)}` : ""}`);
   if (f.customer && o.customer_name) e.line(`${o.customer_name}${o.phone && o.phone !== "-" ? ` - ${o.phone}` : ""}`);
@@ -75,9 +75,10 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
   if (f.prices) e.bold(true).size(1, 2).line(lr("TOTAL", eur(o.total), cols)).size(1, 1).bold(false);
   if (f.prices) e.line(lr("dont TVA (10 % incluse)", eur(Number(o.total) - Number(o.total) / 1.1), cols));
   e.line(payLabel(o.payment_method));
-  if (f.paid) { const p = isPaid(o); e.line(hr).align(1).bold(true).size(1, 2).line(`[${p ? "X" : " "}] PAYE    [${p ? " " : "X"}] NON PAYE`).size(1, 1).bold(false).align(0); }
+  if (f.paid && !isPreorder(kind, o)) { const p = isPaid(o); e.line(hr).align(1).bold(true).size(1, 2).line(`[${p ? "X" : " "}] PAYE    [${p ? " " : "X"}] NON PAYE`).size(1, 1).bold(false).align(0); }
   if (f.qc && kind === "kitchen") { e.line(hr).bold(true).line("CONTROLE EMBALLAGE").bold(false).line("[ ] Articles conformes").line("[ ] Tous les articles").line("[ ] Couverts / sauces").line("").line("Visa : " + ".".repeat(Math.max(4, cols - 7))); }
-  if (kind === "receipt") e.line(hr).align(1).line("Ticket non fiscal - facture sur demande").line("Merci de votre commande !");
+  if (isPreorder(kind, o)) { e.line(hr).align(1).bold(true); wrap("Document non fiscal - A regler obligatoirement a la caisse du restaurant avant delivrance de la commande", cols).forEach((l) => e.line(l)); e.bold(false).line("Merci de votre commande !"); }
+  else if (kind === "receipt") e.line(hr).align(1).line("PAYE - ticket non fiscal").line("Facture sur demande").line("Merci de votre commande !");
   e.align(1).line(new Date().toLocaleString("fr-FR"));
   e.raw(0x0a, 0x0a, 0x0a, 0x1d, 0x56, 0x42, 0x00); // avance + coupe
   return new Uint8Array(e.b);
