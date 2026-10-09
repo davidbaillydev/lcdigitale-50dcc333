@@ -103,3 +103,17 @@ export const saveLegal = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const saveRestaurantFeatures = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    id: z.string().uuid(),
+    features: z.object({ borne: z.boolean(), kds: z.boolean(), livraison: z.boolean(), reservation: z.boolean(), qrcode: z.boolean(), facturx: z.boolean(), pos_sync: z.boolean(), borne_cash_payment: z.boolean() }).strict(),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAgency(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("restaurants").update({ enabled_features: data.features }).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

@@ -52,8 +52,8 @@ function Picker() {
       <div className="workspace-inner workspace-selection">
       <div className="flex flex-wrap items-center gap-2 border-b border-border pb-5">
         <h2 className="mr-auto text-2xl">Mes établissements</h2>
-        {restaurants.some((r) => r.role !== "kitchen") && <Button asChild variant="secondary"><Link to="/espace/tableau-de-bord">Tableau de bord</Link></Button>}
-        {restaurants.some((r) => r.role !== "kitchen") && <Button asChild variant="secondary"><Link to="/espace/factures">Factures</Link></Button>}
+        {restaurants.some((r) => r.role !== "kitchen" && (r.role === "agency" || r.features.facturx)) && <Button asChild variant="secondary"><Link to="/espace/tableau-de-bord">Tableau de bord</Link></Button>}
+        {restaurants.some((r) => r.role !== "kitchen" && (r.role === "agency" || r.features.facturx)) && <Button asChild variant="secondary"><Link to="/espace/factures">Factures</Link></Button>}
         {isAgency && <Button asChild variant="secondary"><Link to="/admin">Console agence</Link></Button>}
         <ThemeToggle />
         <Button variant="ghost" size="icon" className="text-foreground" onClick={() => supabase.auth.signOut()} aria-label="Déconnexion"><LogOut /></Button>

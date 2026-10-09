@@ -1,3 +1,5 @@
+import { FeatureOff } from "@/components/FeatureGate";
+import { featuresOf } from "@/lib/features";
 import { createFileRoute } from "@tanstack/react-router";
 import { computeServiceFee, serviceFeeLabel } from "@/lib/service-fee";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -29,7 +31,7 @@ export const Route = createFileRoute("/$slug/borne")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: Kiosk,
+  component: PublicGate,
 });
 
 const IDLE_MS = 60_000;
@@ -247,7 +249,7 @@ function Kiosk() {
           {serviceFee > 0 && <p className="text-2xl">{serviceFeeLabel(restaurant.config.serviceFee)} : {euro(serviceFee)}</p>}
           <p className="text-3xl">Total : <span className="font-display text-primary">{euro(toPay)}</span></p>
           <div className="grid w-full max-w-4xl grid-cols-2 gap-6">
-            {restaurant.config.payments?.counter !== false && <button disabled={busy} onClick={() => pay("counter")} className="flex flex-col items-center gap-4 rounded-2xl border-2 border-border bg-card p-10 active:border-primary disabled:opacity-50">
+            {restaurant.config.payments?.counter !== false && featuresOf(restaurant.enabled_features).borne_cash_payment && <button disabled={busy} onClick={() => pay("counter")} className="flex flex-col items-center gap-4 rounded-2xl border-2 border-border bg-card p-10 active:border-primary disabled:opacity-50">
               <Banknote className="h-20 w-20 text-primary" />
               <span className="font-display text-4xl">Payer au comptoir</span>
               <span className="text-lg text-muted-foreground">Espèces · Tickets resto</span>
@@ -392,4 +394,9 @@ function KioskItem({ item, image, onClose, onAdd }: { item: MenuItem; image: str
       </div>
     </div>
   );
+}
+
+function PublicGate() {
+  const { restaurant } = useCart();
+  return featuresOf(restaurant.enabled_features).borne ? <Kiosk /> : <FeatureOff feature="borne" public />;
 }

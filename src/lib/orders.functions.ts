@@ -1,3 +1,4 @@
+import { featuresOf } from "./features";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { validateSelections, orderLine } from "./menu";
@@ -45,6 +46,9 @@ export const createOrder = createServerFn({ method: "POST" })
     const catalog = withOptions(getCatalog(r), await loadOptionData(supabaseAdmin, r.id));
 
     const dineIn = data.mode === "dine_in";
+    { const ft = featuresOf(r.enabled_features);
+      if (dineIn && !ft.qrcode) throw new Error("La commande à table n'est pas proposée.");
+      if (data.mode === "delivery" && !ft.livraison) throw new Error("La livraison n'est pas proposée par ce restaurant."); }
     if (dineIn) {
       const n = Number(data.table);
       if (data.room) { if (!r.config.qr?.room) throw new Error("Le room service n'est pas proposé."); }
@@ -198,6 +202,9 @@ export const createKioskOrder = createServerFn({ method: "POST" })
     const { data: rRow } = await supabaseAdmin.from("restaurants").select(RESTAURANT_COLUMNS).eq("slug", data.restaurant).eq("active", true).maybeSingle();
     const r = rRow as unknown as Restaurant | null;
     if (!r) throw new Error("Restaurant introuvable");
+    { const ft = featuresOf(r.enabled_features);
+      if (!ft.borne) throw new Error("La borne n'est pas activée pour ce restaurant.");
+      if (data.payment_method === "counter" && !ft.borne_cash_payment) throw new Error("Le paiement au comptoir n'est pas accepté sur la borne."); }
     if (!modeEnabled(r, data.mode)) throw new Error("Ce mode n'est pas proposé.");
     if (!paymentEnabled(r, data.payment_method)) throw new Error("Ce mode de paiement n'est pas accepté.");
     const catalog = withOptions(getCatalog(r), await loadOptionData(supabaseAdmin, r.id));

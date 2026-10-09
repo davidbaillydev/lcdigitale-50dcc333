@@ -1,3 +1,4 @@
+import { FeatureGate } from "@/components/FeatureGate";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -27,7 +28,7 @@ export const Route = createFileRoute("/_authenticated/espace/$slug/reservations"
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: Page,
+  component: Gated,
 });
 
 const LABEL: Record<string, string> = { pending_card: "Carte en attente", confirmed: "Confirmée", seated: "Arrivé", no_show: "No-show", cancelled: "Annulée" };
@@ -129,4 +130,9 @@ function Settings({ slug, restaurantId }: { slug: string; restaurantId: string }
       <Button className="min-h-11" disabled={save.isPending} onClick={() => save.mutate()}>Enregistrer</Button>
     </section>
   );
+}
+
+function Gated() {
+  const { slug } = Route.useParams();
+  return <FeatureGate slug={slug} feature="reservation"><Page /></FeatureGate>;
 }

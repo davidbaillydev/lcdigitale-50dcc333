@@ -43,6 +43,13 @@
       "when": 1791491583159,
       "tag": "0005_orders_service_fee",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791544120365,
+      "tag": "0006_restaurant_enabled_features",
+      "breakpoints": true
     }
   ]
 }

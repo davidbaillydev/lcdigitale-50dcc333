@@ -1,3 +1,5 @@
+import { FeatureOff } from "@/components/FeatureGate";
+import { useStaff } from "@/hooks/use-staff";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -49,7 +51,9 @@ function Invoices() {
   const [editing, setEditing] = useState<Row | null>(null);
   const [blocked, setBlocked] = useState<{ row: Row; errors: { msg: string; fix: "invoice" | "pdp" }[] } | null>(null);
   const fetchPdp = useServerFn(getPdpStatuses);
-  const { data = [], isLoading } = useQuery({
+  const staff = useStaff();
+  const allowed = staff.isAgency ? null : new Set(staff.restaurants.filter((r) => r.features.facturx && r.role !== "kitchen").map((r) => r.id));
+  const { data: raw = [], isLoading } = useQuery({
     queryKey: ["invoices", from, to],
     staleTime: 60_000,
     queryFn: async () => {
@@ -59,6 +63,7 @@ function Invoices() {
       return data as unknown as Row[];
     },
   });
+  const data = useMemo(() => (allowed ? raw.filter((r) => allowed.has(r.restaurant_id)) : raw), [raw, allowed && [...allowed].join()]);
   const names = useMemo(() => [...new Map(data.map((r) => [r.restaurant_id, r.restaurants?.name ?? ""])).entries()], [data]);
   const ids = names.map(([id]) => id);
   const { data: pdp = [] } = useQuery({ queryKey: ["pdp", ids], enabled: ids.length > 0, queryFn: () => fetchPdp({ data: { restaurantIds: ids } }) });
@@ -85,6 +90,7 @@ function Invoices() {
   });
   const total = list.reduce((s, r) => s + Number((r.data as InvoiceData).totalTTC), 0);
 
+  if (!staff.loading && allowed && allowed.size === 0) return <FeatureOff feature="facturx" />;
   return (
     <div className="mx-auto max-w-6xl space-y-5 p-6">
       <Crumbs page="Factures" />

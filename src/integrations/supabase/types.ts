@@ -1129,6 +1129,7 @@ export type Database = {
           created_at: string
           delivery: Json
           email: string | null
+          enabled_features: Json
           id: string
           is_vapi_web_enabled: boolean
           legal: Json
@@ -1153,6 +1154,7 @@ export type Database = {
           created_at?: string
           delivery?: Json
           email?: string | null
+          enabled_features?: Json
           id?: string
           is_vapi_web_enabled?: boolean
           legal?: Json
@@ -1177,6 +1179,7 @@ export type Database = {
           created_at?: string
           delivery?: Json
           email?: string | null
+          enabled_features?: Json
           id?: string
           is_vapi_web_enabled?: boolean
           legal?: Json

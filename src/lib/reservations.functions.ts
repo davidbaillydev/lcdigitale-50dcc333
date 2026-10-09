@@ -1,3 +1,4 @@
+import { featuresOf } from "./features";
 // Réservations avec empreinte bancaire Stripe (SetupIntent) : aucun débit à la réservation,
 // débit off-session du montant no-show uniquement sur action de l'équipe.
 import { createServerFn } from "@tanstack/react-start";
@@ -24,8 +25,9 @@ export const reservationInfo = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ slug: z.string().max(40) }).parse(d))
   .handler(async ({ data }) => {
     const db = await admin();
-    const { data: r } = await db.from("restaurants").select("id, config").eq("slug", data.slug).eq("active", true).maybeSingle();
+    const { data: r } = await db.from("restaurants").select("id, config, enabled_features").eq("slug", data.slug).eq("active", true).maybeSingle();
     if (!r) return null;
+    if (!featuresOf(r.enabled_features).reservation) return { ...settingsOf(r.config), enabled: false, featureOff: true, cardRequired: false, publishableKey: null };
     const s = settingsOf(r.config);
     const stripe = s.noShowFee > 0 ? await stripeForRestaurant(r.id) : null;
     return { ...s, cardRequired: s.noShowFee > 0 && !!stripe, publishableKey: stripe?.publishable ?? null };
@@ -43,8 +45,9 @@ export const createReservation = createServerFn({ method: "POST" })
   }).parse(d))
   .handler(async ({ data }) => {
     const db = await admin();
-    const { data: r } = await db.from("restaurants").select("id, name, config").eq("slug", data.slug).eq("active", true).maybeSingle();
+    const { data: r } = await db.from("restaurants").select("id, name, config, enabled_features").eq("slug", data.slug).eq("active", true).maybeSingle();
     if (!r) throw new Error("Restaurant introuvable");
+    if (!featuresOf(r.enabled_features).reservation) throw new Error("Ce restaurant ne prend pas de réservations en ligne.");
     const s = settingsOf(r.config);
     if (!s.enabled) throw new Error("Ce restaurant ne prend pas de réservations en ligne.");
     if (data.party_size > s.maxParty) throw new Error(`Au-delà de ${s.maxParty} personnes, appelez le restaurant.`);

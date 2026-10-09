@@ -1,3 +1,5 @@
+import { useRestaurantFeatures } from "@/hooks/use-restaurant-features";
+import { FeatureGate } from "@/components/FeatureGate";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -40,7 +42,7 @@ export const Route = createFileRoute("/_authenticated/espace/$slug/")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: Kitchen,
+  component: Gated,
 });
 
 type Order = {
@@ -82,6 +84,7 @@ function Kitchen() {
   const isStaff = !!restaurant;
   const isAdmin = restaurant?.role === "agency" || restaurant?.role === "manager";
   const rid = restaurant?.id;
+  const feat = useRestaurantFeatures(rid).features;
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const printing = printingDefaults((restaurant?.config as { printing?: Partial<PrintingConfig> } | null)?.printing);
@@ -289,10 +292,10 @@ function Kitchen() {
         </div>
         <nav hidden={serviceMode} aria-label="Gestion du restaurant" className="kds-navigation mt-3 flex items-center gap-2 overflow-x-auto border-t border-border pt-3">
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/carte" params={{ slug }}>Carte</Link></Button>}
-        <Button asChild variant="secondary"><Link to="/espace/$slug/reservations" params={{ slug }}>Réservations</Link></Button>
+        {feat.reservation && <Button asChild variant="secondary"><Link to="/espace/$slug/reservations" params={{ slug }}>Réservations</Link></Button>}
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/reglages" params={{ slug }}>Réglages</Link></Button>}
-        {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/qr" params={{ slug }}>QR tables & avis</Link></Button>}
-        {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/livraison" params={{ slug }}>Livraison & livreurs</Link></Button>}
+        {isAdmin && feat.qrcode && <Button asChild variant="secondary"><Link to="/espace/$slug/qr" params={{ slug }}>QR tables & avis</Link></Button>}
+        {isAdmin && feat.livraison && <Button asChild variant="secondary"><Link to="/espace/$slug/livraison" params={{ slug }}>Livraison & livreurs</Link></Button>}
         {restaurant?.role === "agency" && <Button asChild variant="secondary"><Link to="/espace/$slug/equipe" params={{ slug }}><Users /> Équipe</Link></Button>}
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/clients" params={{ slug }}>Clients</Link></Button>}
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/tableau-de-bord">Tableau de bord</Link></Button>}
@@ -415,4 +418,9 @@ function InvoiceButton({ orderId }: { orderId: string }) {
       finally { setBusy(false); }
     }}><FileText /> Facture</Button>
   );
+}
+
+function Gated() {
+  const { slug } = Route.useParams();
+  return <FeatureGate slug={slug} feature="kds"><Kitchen /></FeatureGate>;
 }
