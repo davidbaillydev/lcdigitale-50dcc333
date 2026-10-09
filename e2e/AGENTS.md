@@ -1,0 +1,1 @@
+- E2E in e2e/ gates writes/staff via E2E_ALLOW_WRITES/E2E_STAFF_STATE; skip disabled modes. Store sessions only outside the repo. Why: no production writes or credential leaks by default.
