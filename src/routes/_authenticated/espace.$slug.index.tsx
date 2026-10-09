@@ -17,6 +17,8 @@ import { DriverSelect, useDrivers } from "@/components/DriverSelect";
 import { downloadInvoice } from "@/lib/invoice";
 import { FileText } from "lucide-react";
 import { RefundBadge, RefundButton } from "@/components/RefundButton";
+import { PosSyncStatus } from "@/components/PosSyncStatus";
+import { retryPosSync } from "@/lib/pos.functions";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useStaff } from "@/hooks/use-staff";
@@ -85,6 +87,7 @@ function Kitchen() {
   const isAdmin = restaurant?.role === "agency" || restaurant?.role === "manager";
   const rid = restaurant?.id;
   const feat = useRestaurantFeatures(rid).features;
+  const posSync = useServerFn(retryPosSync);
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const printing = printingDefaults((restaurant?.config as { printing?: Partial<PrintingConfig> } | null)?.printing);
@@ -231,6 +234,8 @@ function Kitchen() {
     const { error } = await supabase.from("orders").update({ status, ...(slot ? { slot } : {}), updated_at: new Date().toISOString() }).eq("id", o.id);
     if (error) { toast.error("Mise à jour impossible"); load(); return; }
     notify({ data: { orderId: o.id, origin: window.location.origin } }).catch(() => {});
+    // Commande validée en cuisine (ex. QR libre-service) : envoi à la caisse si pas encore fait
+    if (feat.pos_sync && (status === "accepted" || status === "new") && !(o as { pos_status?: string | null }).pos_status) posSync({ data: { orderId: o.id } }).then(() => load()).catch(() => load());
   };
 
   if (loading) return <p className="p-10 text-center text-muted-foreground">Chargement…</p>;
@@ -392,7 +397,7 @@ function Kitchen() {
                       <Button size="sm" variant="secondary" className="min-h-12 min-w-0 flex-1" onClick={() => doPrint(o, ["receipt"])}><Printer /> Caisse</Button>
                       <InvoiceButton orderId={o.id} />
                     </div>
-                    <div className="mt-2 space-y-2"><RefundBadge o={o as never} /><RefundButton o={o as never} /></div>
+                    <div className="mt-2 space-y-2"><RefundBadge o={o as never} /><RefundButton o={o as never} />{feat.pos_sync && <PosSyncStatus o={o as never} onDone={load} />}</div>
                     {(printState[o.id] ?? logs[o.id]?.at(-1)?.status) === "failed" && <p role="alert" className="mt-2 rounded bg-destructive/20 p-2 text-sm">Impression échouée — vérifiez l'imprimante puis réimprimez.</p>}
                     {!!logs[o.id]?.length && (
                       <div className="mt-1">

@@ -29,5 +29,6 @@
 - Kitchen and courier PINs: hashed in service-role-only tables (`restaurant_kitchen_pins`, `restaurant_courier_pins`) with attempt lockout; courier sessions are HMAC tokens keyed on the PIN hash. Why: no extra accounts, PIN change revokes sessions.
 - Delivery geo zones (circle/polygon) live in restaurants.delivery.geoZones; createOrder recomputes eligibility/fees via src/lib/geo.ts. Why: browser prices never trusted.
 - Invoice transmission stays disabled pending provider and compliance validation; PDFs alone are not fiscal compliance.
-- Kitchen uses column scrolling, collapsible navigation, document fullscreen for dialogs and safe-area insets to protect touch actions.
-- Restaurant modules live in restaurants.enabled_features (missing key = enabled), written only by the agency server function; public/order/reservation server functions re-check them. Why: subscription gating must not rely on hidden UI.
+- Kitchen: column scrolling, collapsible nav, fullscreen dialogs, safe-area insets.
+- Restaurant modules live in restaurants.enabled_features (missing key = enabled), agency-written, re-checked by server functions. Why: subscription gating must not rely on hidden UI.
+- POS sync: tokens in service-role-only `restaurant_pos_connectors` (agency, masked); `pos.server.ts` syncs validated orders and logs pos_* on orders. Why: one engine, no token exposure.

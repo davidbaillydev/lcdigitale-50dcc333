@@ -10,6 +10,8 @@ import { RestaurantSettingsForm } from "@/components/RestaurantSettingsForm";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/lib/theme";
 import { useStaff } from "@/hooks/use-staff";
+import { useRestaurantFeatures } from "@/hooks/use-restaurant-features";
+import { PosConnectorPanel } from "@/components/PosConnectorPanel";
 
 export const Route = createFileRoute("/_authenticated/espace/$slug/reglages")({
   head: () => ({
@@ -30,6 +32,7 @@ function Page() {
   const { isAgency } = useStaff();
   const load = useServerFn(loadRestaurantAdmin);
   const { data, error, refetch } = useQuery({ queryKey: ["restaurant-admin", slug], queryFn: () => load({ data: { slug } }), retry: false });
+  const { features } = useRestaurantFeatures(data?.id);
   return (
     <div className="mx-auto max-w-3xl space-y-5 p-6">
       <div className="flex items-center justify-between"><Crumbs slug={slug} page="Réglages" /><ThemeToggle /></div>
@@ -37,6 +40,7 @@ function Page() {
       {error && <p className="text-destructive">{(error as Error).message}</p>}
       {data && <RestaurantSettingsForm restaurant={data} onSaved={() => refetch()} agency={isAgency} />}
       {data && isAgency && <PaymentProvidersPanel restaurantId={data.id} />}
+      {data && isAgency && features.pos_sync && <PosConnectorPanel restaurantId={data.id} />}
       {data && <VapiWebPanel key={data.id} restaurant={data} onSaved={() => refetch()} />}
       {data && <MarketingPanel restaurantId={data.id} marketing={data.config.marketing} onSaved={() => refetch()} />}
       {data && !isAgency && <p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">Paiements en ligne, impression des tickets, logo et bannière sont gérés par votre agence LC Digitale. Contactez-la pour toute modification.</p>}

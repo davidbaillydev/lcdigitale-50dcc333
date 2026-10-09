@@ -278,6 +278,10 @@ export type Database = {
           payment_ref: string | null
           payment_status: string
           phone: string
+          pos_error: string | null
+          pos_ref: string | null
+          pos_status: string | null
+          pos_synced_at: string | null
           postal_code: string | null
           promo_code: string | null
           qr_mode: string | null
@@ -323,6 +327,10 @@ export type Database = {
           payment_ref?: string | null
           payment_status?: string
           phone: string
+          pos_error?: string | null
+          pos_ref?: string | null
+          pos_status?: string | null
+          pos_synced_at?: string | null
           postal_code?: string | null
           promo_code?: string | null
           qr_mode?: string | null
@@ -368,6 +376,10 @@ export type Database = {
           payment_ref?: string | null
           payment_status?: string
           phone?: string
+          pos_error?: string | null
+          pos_ref?: string | null
+          pos_status?: string | null
+          pos_synced_at?: string | null
           postal_code?: string | null
           promo_code?: string | null
           qr_mode?: string | null
@@ -971,6 +983,41 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "restaurant_pdp_configs_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: true
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurant_pos_connectors: {
+        Row: {
+          credentials: Json
+          provider: string
+          restaurant_id: string
+          settings: Json
+          silent_sync: boolean
+          updated_at: string
+        }
+        Insert: {
+          credentials?: Json
+          provider?: string
+          restaurant_id: string
+          settings?: Json
+          silent_sync?: boolean
+          updated_at?: string
+        }
+        Update: {
+          credentials?: Json
+          provider?: string
+          restaurant_id?: string
+          settings?: Json
+          silent_sync?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_pos_connectors_restaurant_id_fkey"
             columns: ["restaurant_id"]
             isOneToOne: true
             referencedRelation: "restaurants"

@@ -579,6 +579,8 @@ async function markPaid(o: { id: string; restaurant_id: string; status: string }
   // Email de confirmation Brevo (envoyé une seule fois, seulement si la commande est acceptée)
   const { sendOrderConfirmation } = await import("./order-email.server");
   await sendOrderConfirmation(db, o.id).catch((e) => console.error(e));
+  const { syncOrderToPos } = await import("./pos.server");
+  await syncOrderToPos(o.id);
 }
 
 const LYRA_OK = ["AUTHORISED", "CAPTURED", "ACCEPTED", "AUTHORISED_TO_VALIDATE"];

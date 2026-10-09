@@ -149,6 +149,7 @@ export const createOrder = createServerFn({ method: "POST" })
       const { data: pc } = await supabaseAdmin.from("restaurant_promo_codes").select("id, uses").eq("restaurant_id", r.id).eq("code", promo.code).maybeSingle();
       if (pc) await supabaseAdmin.from("restaurant_promo_codes").update({ uses: pc.uses + 1 }).eq("id", pc.id);
     }
+    if (!provider) { const { syncOrderToPos } = await import("./pos.server"); await syncOrderToPos(row.id); }
     if (!provider && data.email) {
       const { sendOrderConfirmation } = await import("./order-email.server");
       await sendOrderConfirmation(supabaseAdmin, row.id, data.origin).catch((e) => console.error(e));
@@ -252,5 +253,6 @@ export const createKioskOrder = createServerFn({ method: "POST" })
       const { data: pc } = await supabaseAdmin.from("restaurant_promo_codes").select("id, uses").eq("restaurant_id", r.id).eq("code", promo.code).maybeSingle();
       if (pc) await supabaseAdmin.from("restaurant_promo_codes").update({ uses: pc.uses + 1 }).eq("id", pc.id);
     }
+    { const { syncOrderToPos } = await import("./pos.server"); await syncOrderToPos(row.id); }
     return row;
   });
