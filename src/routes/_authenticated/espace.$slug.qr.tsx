@@ -1,3 +1,4 @@
+import { FeatureGate } from "@/components/FeatureGate";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -42,7 +43,7 @@ export const Route = createFileRoute("/_authenticated/espace/$slug/qr")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: Page,
+  component: Gated,
 });
 
 function Page() {
@@ -153,4 +154,9 @@ function Page() {
       )}
     </div>
   );
+}
+
+function Gated() {
+  const { slug } = Route.useParams();
+  return <FeatureGate slug={slug} feature="qrcode"><Page /></FeatureGate>;
 }
