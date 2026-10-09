@@ -1,7 +1,7 @@
 // Moteur de synchronisation caisse (POS). Serveur uniquement : lit les identifiants
 // depuis restaurant_pos_connectors (rôle service) et journalise le résultat sur la commande.
 export type PosProvider = "none" | "hubrise" | "hiboutik" | "webhook";
-export type PosRow = { restaurant_id: string; provider: PosProvider; credentials: Record<string, string>; settings: Record<string, string>; silent_sync: boolean };
+export type PosRow = { restaurant_id: string; provider: PosProvider; credentials: Partial<Record<"accessToken" | "apiKey" | "secret", string>>; settings: Partial<Record<"locationId" | "accountId" | "catalogId" | "account" | "login" | "storeId" | "vendorId" | "url", string>>; silent_sync: boolean };
 
 async function db() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

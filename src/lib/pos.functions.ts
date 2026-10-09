@@ -19,8 +19,8 @@ export const getPosConfig = createServerFn({ method: "POST" })
     const { getPosRow } = await import("./pos.server");
     const p = await getPosRow(data.restaurantId);
     return {
-      provider: p?.provider ?? "none", silent_sync: p?.silent_sync ?? true, settings: p?.settings ?? {},
-      masked: Object.fromEntries(SECRET_FIELDS.map((k) => [k, mask(p?.credentials?.[k])])) as Record<string, string>,
+      provider: p?.provider ?? "none", silent_sync: p?.silent_sync ?? true, settings: (p?.settings ?? {}) as Record<string, string>,
+      masked: Object.fromEntries(SECRET_FIELDS.map((k) => [k, mask((p?.credentials as Record<string, string> | undefined)?.[k])])) as Record<string, string>,
     };
   });
 
@@ -37,9 +37,9 @@ export const savePosConfig = createServerFn({ method: "POST" })
     await assertAgency(context.supabase, context.userId);
     const { getPosRow } = await import("./pos.server");
     const prev = await getPosRow(data.restaurantId);
-    const credentials: Record<string, string> = { ...(prev?.credentials ?? {}) };
+    const credentials: Record<string, string> = { ...((prev?.credentials ?? {}) as Record<string, string>) };
     for (const k of SECRET_FIELDS) { const v = data.credentials[k]?.trim(); if (v) credentials[k] = v; }
-    if (data.provider === "webhook" && data.settings.url && !/^https:\/\//.test(data.settings.url)) throw new Error("L'URL doit commencer par https://");
+    if (data.provider === "webhook" && data.settings["url"] && !/^https:\/\//.test(data.settings["url"])) throw new Error("L'URL doit commencer par https://");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabaseAdmin as any).from("restaurant_pos_connectors").upsert({
