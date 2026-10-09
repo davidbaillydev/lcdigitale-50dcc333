@@ -69,7 +69,7 @@ async function sendWebhook(p: PosRow, payload: unknown): Promise<number> {
 
 type Line = { id?: string; name: string; qty: number; unit: number; total: number; size?: string; details?: string; vatRate?: number; selected_options?: { name?: string; group?: string; price?: number }[] };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Order = Record<string, any>;
+type Order = any;
 
 const isPaid = (o: Order) => o.payment_status === "paid";
 
