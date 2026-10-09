@@ -33,3 +33,4 @@
 - E2E in e2e/ gates writes/staff via E2E_ALLOW_WRITES/E2E_STAFF_STATE; skip disabled modes. Store sessions only outside the repo. Why: no production writes or credential leaks by default.
 - Invoice transmission stays disabled pending provider and compliance validation; PDFs alone are not fiscal compliance.
 - Kitchen uses column scrolling, collapsible navigation, document fullscreen for dialogs and safe-area insets to protect touch actions.
+- Restaurant modules live in restaurants.enabled_features (missing key = enabled), written only by the agency server function; public/order/reservation server functions re-check them. Why: subscription gating must not rely on hidden UI.
