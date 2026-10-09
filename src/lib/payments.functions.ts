@@ -195,6 +195,19 @@ async function mollieDelete(key: string, path: string) {
   await fetch(`https://api.mollie.com/v2${path}`, { method: "DELETE", headers: { Authorization: `Bearer ${key}` } }).catch(() => null);
 }
 
+/** TPE Cloud choisi pour la borne (null = automatique). */
+export const getKioskTerminal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ restaurantId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertManager(context.supabase, context.userId, data.restaurantId);
+    const db = await admin();
+    const { data: r } = await db.from("restaurants").select("config").eq("id", data.restaurantId).single();
+    const t = (r?.config as { terminal?: TerminalKind } | null)?.terminal;
+    const ready = await terminalForRestaurant(data.restaurantId);
+    return { terminal: t && TERMINALS.includes(t) ? t : null, active: ready?.kind ?? null };
+  });
+
 /** Choix du TPE Cloud de la borne (agence). */
 export const setKioskTerminal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

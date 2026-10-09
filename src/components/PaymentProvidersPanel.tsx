@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { listPaymentProviders, pairSumupReader, savePaymentProvider, testLyra, testMollie, testPaypal, testStripe, testSumup, type Provider } from "@/lib/payments.functions";
+import { getKioskTerminal, setKioskTerminal, testKioskTerminal, listPaymentProviders, pairSumupReader, savePaymentProvider, testLyra, testMollie, testPaypal, testStripe, testSumup, type Provider } from "@/lib/payments.functions";
 
 const MODES: Partial<Record<Provider, { options: [string, string][]; hint?: string }>> = {
   stripe: { options: [["test", "Test (aucun vrai paiement)"], ["live", "Réel (live)"]], hint: "Apple Pay et Google Pay s'affichent automatiquement s'ils sont activés dans votre compte Stripe." },
@@ -28,6 +28,7 @@ const META: Record<Provider, { name: string; desc: string; fields: { key: string
     fields: [
       { key: "publishableKey", label: "Clé publiable", secret: false, placeholder: "pk_test_..." },
       { key: "secretKey", label: "Clé secrète", secret: true, placeholder: "sk_test_..." },
+      { key: "readerId", label: "Lecteur Stripe Terminal de la borne (optionnel)", secret: true, placeholder: "tmr_..." },
     ],
   },
   paypal: {
@@ -43,6 +44,7 @@ const META: Record<Provider, { name: string; desc: string; fields: { key: string
       { key: "apiKeyTest", label: "Clé API Test", secret: true, placeholder: "test_..." },
       { key: "apiKeyLive", label: "Clé API Live", secret: true, placeholder: "live_..." },
       { key: "profileId", label: "Identifiant de profil (optionnel)", secret: false, placeholder: "pfl_..." },
+      { key: "terminalId", label: "Terminal Mollie POS de la borne (optionnel)", secret: true, placeholder: "term_..." },
     ],
   },
   lyra: {
@@ -63,6 +65,7 @@ export function PaymentProvidersPanel({ restaurantId }: { restaurantId: string }
       <h2 className="mb-1 text-3xl">Prestataires de paiement</h2>
       <p className="mb-4 text-sm text-muted-foreground">Les clés sont gardées sur le serveur et ne sont jamais réaffichées en entier.</p>
       <div className="space-y-4">
+        <TerminalChoice restaurantId={restaurantId} />
         {(data ?? []).map((p) => <ProviderCard key={p.provider} restaurantId={restaurantId} p={p} onChange={() => refetch()} />)}
       </div>
     </section>
@@ -80,6 +83,7 @@ function ProviderCard({ restaurantId, p, onChange }: { restaurantId: string; p: 
   const testL = useServerFn(testLyra);
   const pair = useServerFn(pairSumupReader);
   const testM = useServerFn(testMollie);
+  const testT = useServerFn(testKioskTerminal);
   const [methods, setMethods] = useState<{ id: string; name: string }[]>([]);
   const [show, setShow] = useState<Record<string, boolean>>({});
   const [enabled, setEnabled] = useState(p.enabled);
@@ -164,6 +168,12 @@ function ProviderCard({ restaurantId, p, onChange }: { restaurantId: string; p: 
                 setResult({ ok: true, msg: `Connexion réussie · mode ${r.live ? "Production" : "Test"} · ${r.methods.length} moyen(s) de paiement actif(s)` });
               })}>Tester la connexion</Button>
             )}
+            {(p.provider === "stripe" || p.provider === "mollie" || p.provider === "sumup") && (
+              <Button variant="outline" disabled={busy} onClick={() => run(async () => {
+                const r = await testT({ data: { restaurantId, kind: p.provider as "stripe" | "mollie" | "sumup" } });
+                setResult({ ok: r.online, msg: r.online ? `Lecteur « ${r.label} » disponible (${r.status})` : `Lecteur « ${r.label} » injoignable (${r.status}) : allumez-le et vérifiez sa connexion.` });
+              })}>Vérifier le lecteur de la borne</Button>
+            )}
             {p.provider === "sumup" && (
               <Button variant="secondary" disabled={busy} onClick={() => run(async () => {
                 const r = await test({ data: { restaurantId } });
@@ -199,6 +209,30 @@ function ProviderCard({ restaurantId, p, onChange }: { restaurantId: string; p: 
           {result && <p role={result.ok ? "status" : "alert"} className={result.ok ? "rounded bg-primary/15 p-2 text-sm" : "rounded bg-destructive/20 p-2 text-sm"}>{result.msg}</p>}
         </div>
       )}
+    </div>
+  );
+}
+
+const TERMINAL_LABELS = { stripe: "Stripe Terminal", mollie: "Mollie POS", sumup: "SumUp Solo" } as const;
+/** Choix du TPE Cloud utilisé par la borne pour le paiement par carte. */
+function TerminalChoice({ restaurantId }: { restaurantId: string }) {
+  const get = useServerFn(getKioskTerminal);
+  const set = useServerFn(setKioskTerminal);
+  const { data, refetch } = useQuery({ queryKey: ["kiosk-terminal", restaurantId], queryFn: () => get({ data: { restaurantId } }) });
+  const choose = async (t: "stripe" | "mollie" | "sumup" | null) => {
+    try { await set({ data: { restaurantId, terminal: t } }); toast.success("TPE de la borne enregistré"); void refetch(); } catch (e) { toast.error((e as Error).message); }
+  };
+  return (
+    <div className="rounded-lg border border-border p-4">
+      <p className="text-xl font-semibold">TPE Cloud de la borne</p>
+      <p className="text-sm text-muted-foreground">Lecteur qui reçoit le montant quand le client choisit « Carte » sur la borne. Renseignez son identifiant dans la carte du prestataire ci-dessous.</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Button variant={data && !data.terminal ? "default" : "secondary"} onClick={() => void choose(null)}>Automatique</Button>
+        {(["stripe", "mollie", "sumup"] as const).map((k) => (
+          <Button key={k} variant={data?.terminal === k ? "default" : "secondary"} onClick={() => void choose(k)}>{TERMINAL_LABELS[k]}</Button>
+        ))}
+      </div>
+      <p className="mt-2 text-sm">{data?.active ? `Lecteur prêt : ${TERMINAL_LABELS[data.active]}` : "Aucun lecteur prêt : la carte se paiera au comptoir."}</p>
     </div>
   );
 }

@@ -157,6 +157,7 @@ function Kitchen() {
   }, [rid]);
 
   const ordersRef = useRef<Order[]>([]);
+  const deferred = useRef(new Set<string>());
   ordersRef.current = orders;
   const drivers = useDrivers(rid);
   useEffect(() => {
@@ -167,10 +168,26 @@ function Kitchen() {
       .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `restaurant_id=eq.${rid}` }, (p) => {
         const n = p.new as Order;
         const becamePaid = p.eventType === "UPDATE" && n.status !== "awaiting_payment" && n.payment_method === "online" && n.payment_status === "paid" && !ordersRef.current.some((x) => x.id === n.id);
+        // Borne + TPE : le ticket attend l'issue du paiement (Payé, ou bon de pré-commande si échec)
+        const kioskCard = n.source === "kiosk" && n.payment_method === "card_terminal";
+        if (p.eventType === "UPDATE" && kioskCard && deferred.current.has(n.id) && (n.payment_status === "paid" || n.payment_status === "failed")) {
+          deferred.current.delete(n.id);
+          if (printRef.current.auto) void printRef.current.doPrint(n, ["kitchen", "receipt"], true);
+        }
+        if (p.eventType === "INSERT" && kioskCard && n.payment_status !== "paid") {
+          deferred.current.add(n.id);
+          setTimeout(() => {
+            if (!deferred.current.has(n.id)) return;
+            const cur = ordersRef.current.find((x) => x.id === n.id) as (Order & { payment_ref?: string | null }) | undefined;
+            if (cur?.payment_ref) return; // paiement TPE en cours
+            deferred.current.delete(n.id);
+            if (printRef.current.auto) void printRef.current.doPrint(cur ?? n, ["kitchen", "receipt"], true);
+          }, 8000);
+        }
         if ((p.eventType === "INSERT" && n.status !== "awaiting_payment") || becamePaid) {
           toast.success(n.status === "pending_approval" ? `Nouvelle commande ${n.table_label ? `Table ${n.table_label}` : n.room_label ? `Chambre ${n.room_label}` : "libre-service"} · à valider` : `Nouvelle commande n° ${n.order_number}`, n.status === "pending_approval" ? { duration: 15000 } : undefined);
           if (audio.current && soundRef.current) beep(audio.current);
-          if (printRef.current.auto && n.status !== "pending_approval") void printRef.current.doPrint(p.new as Order, ["kitchen", "receipt"], true);
+          if (printRef.current.auto && n.status !== "pending_approval" && !deferred.current.has(n.id)) void printRef.current.doPrint(p.new as Order, ["kitchen", "receipt"], true);
         }
         load();
       })
