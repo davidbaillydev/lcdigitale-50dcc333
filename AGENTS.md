@@ -31,4 +31,4 @@
 - Invoice transmission stays disabled pending provider and compliance validation; PDFs alone are not fiscal compliance.
 - Kitchen uses column scrolling, collapsible navigation, document fullscreen for dialogs and safe-area insets to protect touch actions.
 - Restaurant modules live in restaurants.enabled_features (missing key = enabled), written only by the agency server function; public/order/reservation server functions re-check them. Why: subscription gating must not rely on hidden UI.
-- POS sync: connectors in service-role-only `restaurant_pos_connectors` (agency-managed, secrets masked); `pos.server.ts` syncOrderToPos runs server-side when an order is validated (creation, payment confirmation, KDS acceptance) and logs pos_status/pos_ref/pos_error on orders; staff retry via retryPosSync (RLS-checked). Why: one engine for HubRise/Hiboutik/webhook, never exposes tokens.
+- POS sync: tokens in service-role-only `restaurant_pos_connectors` (agency, masked); `pos.server.ts` syncs validated orders and logs pos_* on orders. Why: one engine, no token exposure.
