@@ -18,6 +18,7 @@ export type Restaurant = {
   is_vapi_web_enabled?: boolean;
   brand: { primary?: string; accent?: string; bannerPath?: string };
   legal?: import("./legal").LegalInfo;
+  enabled_features?: Partial<import("./features").Features>;
   /** 0 = dimanche. Plages en minutes depuis minuit (heure de Paris) */
   opening: Record<string, [number, number][]>;
   delivery: DeliveryConfig;
@@ -46,7 +47,7 @@ export function timingOf(r: Pick<Restaurant, "config">) {
   return { asap, scheduled, prepMode: t.prepMode === "manual" ? "manual" as const : "auto" as const, defaultPrep: t.defaultPrep ?? 20 };
 }
 
-export const RESTAURANT_COLUMNS = "id, slug, name, city, address, phone, email, menu_key, logo_url, brand, menu, opening, delivery, config, legal, vapi_assistant_id, vapi_public_key, vapi_phone_number, is_vapi_web_enabled";
+export const RESTAURANT_COLUMNS = "id, slug, name, city, address, phone, email, menu_key, logo_url, brand, menu, opening, delivery, config, legal, enabled_features, vapi_assistant_id, vapi_public_key, vapi_phone_number, is_vapi_web_enabled";
 
 export function deliveryFee(r: Restaurant, subtotal: number) {
   return subtotal >= r.delivery.freeFrom ? 0 : r.delivery.fee;
