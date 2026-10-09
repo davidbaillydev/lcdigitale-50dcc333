@@ -46,3 +46,4 @@ Verified on a temporary restaurant, now deactivated: upload and reload persisten
 - [x] Cuisine : défilement global bloqué, colonnes indépendantes et navigation horizontale étroite ; session connectée vérifiée à 320/390/1024/1280px sans modifier les commandes. Tests génériques de navigation en échec (montage document HTML), hors de cette refonte.
 - [x] Cuisine : mode service et plein écran entrée/sortie vérifiés connecté, 320/390/1024px, alternative navigateur vérifiée ; safe areas simulées (34px bas), aucun changement de commande. Matériel iOS/Android non testé.
 - Modules par restaurant (feature flags) : fait
+- TPE Cloud borne + mentions non fiscales : fait (non testé sur lecteur réel)

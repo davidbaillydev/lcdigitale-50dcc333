@@ -266,9 +266,9 @@ function Kiosk() {
       )}
 
       {step === "terminal" && pending && (
-        <div className="flex flex-1 flex-col items-center justify-center gap-8 p-10 text-center">
+        <div role="dialog" aria-modal="true" aria-live="polite" className="flex flex-1 flex-col items-center justify-center gap-8 p-10 text-center">
           <CreditCard className={cardState === "pending" ? "h-28 w-28 animate-pulse text-primary" : "h-28 w-28 text-destructive"} />
-          <p className="font-display text-6xl">{cardState === "pending" ? "Présentez votre carte sur le terminal" : "Paiement refusé ou annulé"}</p>
+          <p className="font-display text-6xl">{cardState === "pending" ? "Veuillez suivre les instructions sur le lecteur de carte" : "Paiement refusé ou annulé"}</p>
           <p className="text-4xl">{euro(pending.total)}</p>
           {cardState === "pending" ? (
             <button onClick={async () => { try { await cancelCard({ data: { orderId: pending.id } }); } catch { /* ignore */ } setCardState("failed"); }}
