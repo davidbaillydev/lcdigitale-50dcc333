@@ -1,3 +1,5 @@
+import { FeatureOff } from "@/components/FeatureGate";
+import { featuresOf } from "@/lib/features";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -26,7 +28,7 @@ export const Route = createFileRoute("/$slug/reserver")({
       { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: Page,
+  component: PublicGate,
 });
 
 const fmt = (iso: string) => new Date(iso).toLocaleString("fr-FR", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
@@ -107,4 +109,9 @@ function Page() {
       </main>
     </div>
   );
+}
+
+function PublicGate() {
+  const { restaurant } = useCart();
+  return featuresOf(restaurant.enabled_features).reservation ? <Page /> : <FeatureOff feature="reservation" public />;
 }
