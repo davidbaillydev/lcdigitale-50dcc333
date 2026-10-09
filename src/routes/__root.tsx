@@ -55,7 +55,11 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
+  head: ({ matches }) => {
+    const path = (matches?.[matches.length - 1]?.pathname ?? "/").replace(/\/+$/, "") || "/";
+    const app = /^\/[a-z0-9-]+\/borne$/.test(path) || /^\/espace\/[a-z0-9-]+$/.test(path) || path === "/livreur";
+    const manifest = app ? `/api/public/manifest?start=${encodeURIComponent(path)}` : "/manifest.webmanifest";
+    return {
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
@@ -65,12 +69,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:site_name", content: "LC Digitale" },
       { name: "theme-color", content: "#141210" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "mobile-web-app-capable", content: "yes" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
-      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "manifest", href: manifest },
       { rel: "apple-touch-icon", href: "/icon-192.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
