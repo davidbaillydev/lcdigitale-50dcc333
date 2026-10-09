@@ -11,7 +11,8 @@ export function useRestaurantFeatures(restaurantId: string | undefined) {
     supabase.from("restaurants").select("enabled_features").eq("id", restaurantId).maybeSingle().then(({ data }) => {
       if (alive) setState({ loading: false, features: featuresOf(data?.enabled_features) });
     });
-    const ch = supabase.channel(`features-${restaurantId}`)
+    // Nom unique : le hook peut être monté plusieurs fois sur la même page (gate + écran).
+    const ch = supabase.channel(`features-${restaurantId}-${crypto.randomUUID()}`)
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "restaurants", filter: `id=eq.${restaurantId}` },
         (p) => setState({ loading: false, features: featuresOf((p.new as { enabled_features?: unknown }).enabled_features) }))
       .subscribe();
