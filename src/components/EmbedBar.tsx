@@ -15,9 +15,9 @@ export function EmbedBar({ hideCart }: { hideCart?: boolean }) {
         {!hideCart && <CartSheet />}
         <button
           type="button"
-          aria-label="Fermer"
+          aria-label="Fermer la commande en ligne"
           onClick={() => postToParent({ type: "lc:close" })}
-          className="flex h-9 w-9 items-center justify-center rounded-full border border-border transition hover:border-primary hover:text-primary"
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-border transition hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none hover:text-primary"
         >
           <X className="h-4 w-4" />
         </button>
