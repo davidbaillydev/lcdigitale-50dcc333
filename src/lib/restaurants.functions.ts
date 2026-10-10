@@ -25,6 +25,14 @@ export const listRestaurants = createServerFn({ method: "GET" }).handler(async (
   return (data ?? []) as unknown as Restaurant[];
 });
 
+/** Statut de réception des commandes, relu sans cache à chaque chargement. */
+export const getOrderingStatus = createServerFn({ method: "GET" })
+  .inputValidator((d: unknown) => z.object({ slug: z.string().max(40) }).parse(d))
+  .handler(async ({ data }) => {
+    const { data: row } = await publicClient().from("restaurants").select("config").eq("slug", data.slug).eq("active", true).maybeSingle();
+    return { paused: !row || (row.config as { ordersPaused?: boolean } | null)?.ordersPaused === true };
+  });
+
 export const getRestaurant = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ slug: z.string().max(40) }).parse(d))
   .handler(async ({ data }) => {

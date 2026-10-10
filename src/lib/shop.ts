@@ -26,6 +26,8 @@ export type Restaurant = {
     slotMinutes?: number; lead?: { pickup: number; delivery: number }; hoursLabel?: string; tagline?: string;
     /** Commandes acceptées automatiquement (sinon validation manuelle en cuisine) */
     autoAccept?: boolean;
+    /** Réception des commandes suspendue (site, borne, QR, téléphone) */
+    ordersPaused?: boolean;
     printing?: Partial<import("./ticket").PrintingConfig>;
     modes?: { pickup?: boolean; delivery?: boolean; dine_in?: boolean };
     payments?: { on_site?: boolean; counter?: boolean; card_terminal?: boolean };
@@ -49,6 +51,9 @@ export function timingOf(r: Pick<Restaurant, "config">) {
 }
 
 export const RESTAURANT_COLUMNS = "id, slug, name, city, address, phone, email, menu_key, logo_url, brand, menu, opening, delivery, config, legal, enabled_features, vapi_assistant_id, vapi_public_key, vapi_phone_number, is_vapi_web_enabled";
+
+export const ORDERS_PAUSED_MSG = "Le restaurant ne prend pas de commandes pour le moment";
+export function ordersPaused(r: Pick<Restaurant, "config">) { return r.config?.ordersPaused === true; }
 
 export function deliveryFee(r: Restaurant, subtotal: number) {
   return subtotal >= r.delivery.freeFrom ? 0 : r.delivery.fee;
