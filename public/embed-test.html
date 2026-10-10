@@ -2,11 +2,25 @@
 <html lang="fr">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Test bouton LC Digitale</title><meta name="robots" content="noindex"></head>
 <body style="font-family:system-ui;padding:24px;min-height:150vh">
-  <h1>Démo du bouton de commande</h1>
-  <p>Bouton intégré ci-dessous, bouton flottant en bas à droite.</p>
+  <h1>Aperçu du bouton de commande</h1>
+  <p>Cette page simule le site du restaurant.</p>
   <div id="zone"></div>
-  <p><button type="button" onclick="LCDigitale.open('woknsushi')">Ouvrir via LCDigitale.open()</button></p>
-  <script src="/embed.js" data-restaurant="woknsushi" data-label="Commander" data-color="#e11d48" data-position="right" data-mode="floating" async></script>
-  <script src="/embed.js" data-restaurant="woknsushi" data-label="Commander (inline)" data-color="#facc15" data-mode="inline" data-target="#zone" async></script>
+  <script>
+  (function () {
+    var q = new URLSearchParams(location.search);
+    var slug = (q.get("r") || "woknsushi").replace(/[^a-z0-9-]/gi, "");
+    var color = /^#[0-9a-f]{6}$/i.test(q.get("color") || "") ? q.get("color") : "#e11d48";
+    var mode = q.get("mode") === "inline" ? "inline" : "floating";
+    var s = document.createElement("script");
+    s.src = "/embed.js"; s.async = true;
+    s.setAttribute("data-restaurant", slug);
+    s.setAttribute("data-label", (q.get("label") || "Commander en ligne").slice(0, 30));
+    s.setAttribute("data-color", color);
+    s.setAttribute("data-position", q.get("position") === "left" ? "left" : "right");
+    s.setAttribute("data-mode", mode);
+    if (mode === "inline") s.setAttribute("data-target", "#zone");
+    document.body.appendChild(s);
+  })();
+  </script>
 </body>
 </html>

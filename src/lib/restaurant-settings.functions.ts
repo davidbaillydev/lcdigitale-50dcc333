@@ -80,7 +80,14 @@ export const saveQrSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({
     restaurantId: z.string().uuid(),
-    tables: z.number().int().min(0).max(300),
+    tables: z.number().int().min(0).max(300).optional(),
+    embed: z.object({
+      label: z.string().trim().min(1).max(30),
+      color: z.string().regex(/^#[0-9a-f]{6}$/i),
+      position: z.enum(["right", "left"]),
+      mode: z.enum(["floating", "inline"]),
+      domains: z.array(z.string().trim().max(200).regex(/^https:\/\/[a-z0-9.-]+(:\d+)?\/?$/i)).max(20),
+    }).optional(),
     room: z.boolean().optional(),
     self: z.boolean().optional(),
     tableValidation: z.boolean().optional(),
@@ -90,7 +97,10 @@ export const saveQrSettings = createServerFn({ method: "POST" })
     await assertManager(context.supabase, context.userId, data.restaurantId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: cur } = await supabaseAdmin.from("restaurants").select("config").eq("id", data.restaurantId).single();
-    const config = { ...((cur?.config as Record<string, unknown>) ?? {}), qr: { tables: data.tables, room: !!data.room, self: !!data.self, tableValidation: !!data.tableValidation, ...(data.reviewUrl ? { reviewUrl: data.reviewUrl } : {}) } };
+    const prev = (cur?.config as Record<string, unknown>) ?? {};
+    const config = data.tables === undefined
+      ? { ...prev, ...(data.embed ? { embed: data.embed } : {}) }
+      : { ...prev, ...(data.embed ? { embed: data.embed } : {}), qr: { tables: data.tables, room: !!data.room, self: !!data.self, tableValidation: !!data.tableValidation, ...(data.reviewUrl ? { reviewUrl: data.reviewUrl } : {}) } };
     const { error } = await supabaseAdmin.from("restaurants").update({ config: config as never }).eq("id", data.restaurantId);
     if (error) throw new Error(error.message);
     return { ok: true };
