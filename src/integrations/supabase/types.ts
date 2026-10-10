@@ -292,6 +292,7 @@ export type Database = {
           service_fee: number
           slot: string
           source: string
+          source_ref: string | null
           status: string
           subtotal: number
           table_label: string | null
@@ -341,6 +342,7 @@ export type Database = {
           service_fee?: number
           slot: string
           source?: string
+          source_ref?: string | null
           status?: string
           subtotal: number
           table_label?: string | null
@@ -390,6 +392,7 @@ export type Database = {
           service_fee?: number
           slot?: string
           source?: string
+          source_ref?: string | null
           status?: string
           subtotal?: number
           table_label?: string | null
