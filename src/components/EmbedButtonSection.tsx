@@ -46,8 +46,8 @@ export function EmbedButtonSection({ restaurant: r, onSaved }: { restaurant: R; 
   const fb = `${origin}/${r.slug}?src=facebook`;
 
   const submit = async () => {
-    if (!okColor) return toast.error("Couleur invalide (format #rrggbb)");
-    if (badDomain) return toast.error(`Domaine invalide : ${badDomain} (https:// obligatoire)`);
+    if (!okColor) { toast.error("Couleur invalide (format #rrggbb)"); return; }
+    if (badDomain) { toast.error(`Domaine invalide : ${badDomain} (https:// obligatoire)`); return; }
     setBusy(true);
     try { await save({ data: { restaurantId: r.id, embed: { label: lbl.slice(0, 30), color: color.toLowerCase(), position, mode, domains: list } } }); onSaved(); toast.success("Bouton enregistré"); }
     catch (e) { toast.error((e as Error).message); }
