@@ -1,3 +1,4 @@
+import { safeSession } from "@/lib/safe-storage";
 import { useEffect, useRef, useState } from "react";
 
 /** Vrai quand la page est affichée dans une iframe (window.top peut lever une erreur cross-origin). */
@@ -41,11 +42,11 @@ export function useEmbedMode(slug: string, enabled = true): boolean {
   useEffect(() => {
     if (!enabled) return;
     const p = new URLSearchParams(window.location.search);
-    if (p.get("embed") === "1") sessionStorage.setItem(`embed-${slug}`, "1");
-    if (p.get("src") === "embed") sessionStorage.setItem(`src-${slug}`, "embed");
+    if (p.get("embed") === "1") safeSession.set(`embed-${slug}`, "1");
+    if (p.get("src") === "embed") safeSession.set(`src-${slug}`, "embed");
     const ref = p.get("ref");
-    if (ref && /^[a-z0-9.-]{1,253}$/i.test(ref)) sessionStorage.setItem(`ref-${slug}`, ref.toLowerCase());
-    if (sessionStorage.getItem(`embed-${slug}`) === "1" && isEmbedded()) setOn(true);
+    if (ref && /^[a-z0-9.-]{1,253}$/i.test(ref)) safeSession.set(`ref-${slug}`, ref.toLowerCase());
+    if (safeSession.get(`embed-${slug}`) === "1" && isEmbedded()) setOn(true);
   }, [slug, enabled]);
   return on;
 }
@@ -99,7 +100,7 @@ export function useEmbedCartCount(embed: boolean, count: number): void {
 /** Site parent (https, même hôte que le `ref` transmis par embed.js) pour le bouton « Retour sur le site ». */
 export function embedReturnTo(slug: string): { returnTo: string; ref: string } | null {
   try {
-    const ref = sessionStorage.getItem(`ref-${slug}`);
+    const ref = safeSession.get(`ref-${slug}`);
     if (!ref || !document.referrer) return null;
     const u = new URL(document.referrer);
     if (u.protocol !== "https:" || u.hostname.toLowerCase() !== ref) return null;

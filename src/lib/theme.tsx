@@ -1,5 +1,6 @@
 // Bascule clair/sombre, partagée par le site, la borne et la cuisine.
 // Le choix est mémorisé dans le navigateur (localStorage "theme").
+import { safeLocal } from "@/lib/safe-storage";
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -16,11 +17,11 @@ function apply(theme: Theme) {
 export function useTheme() {
   const [theme, setTheme] = useState<Theme>("dark");
   useEffect(() => {
-    const saved = localStorage.getItem(KEY);
+    const saved = safeLocal.get(KEY);
     const initial: Theme = saved === "light" ? "light" : "dark";
     setTheme(initial);
     apply(initial);
-    const sync = () => setTheme(localStorage.getItem(KEY) === "light" ? "light" : "dark");
+    const sync = () => setTheme(safeLocal.get(KEY) === "light" ? "light" : "dark");
     window.addEventListener("lc-theme-change", sync);
     window.addEventListener("storage", sync);
     return () => { window.removeEventListener("lc-theme-change", sync); window.removeEventListener("storage", sync); };
@@ -28,7 +29,7 @@ export function useTheme() {
   const toggle = () => {
     const next: Theme = theme === "dark" ? "light" : "dark";
     setTheme(next);
-    localStorage.setItem(KEY, next);
+    safeLocal.set(KEY, next);
     apply(next);
     window.dispatchEvent(new Event("lc-theme-change"));
   };
