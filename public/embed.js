@@ -100,18 +100,26 @@ var color=(s.getAttribute("data-color")||"").toLowerCase();
 if (!/^#[0-9a-f]{6}$/.test(color)) color=DEF_COLOR;
 var label=s.getAttribute("data-label")||DEF_LABEL;
 var inline=s.getAttribute("data-mode")==="inline";
+if (inline) inlineMode=true;
 var left=s.getAttribute("data-position")==="left";
 var host=document.createElement("div");
 if (!inline) host.style.cssText="position:fixed;bottom:20px;"+(left ? "left" : "right")+":20px;z-index:2147483000";
 var root=host.attachShadow({ mode: "open" });
 var st=document.createElement("style");
-st.textContent="button{all:initial;box-sizing:border-box;cursor:pointer;font:600 16px/1.2 system-ui,sans-serif;" +
+st.textContent="button{all:initial;box-sizing:border-box;cursor:pointer;font:600 16px/1.2 system-ui,sans-serif;position:relative;" +
 "padding:14px 22px;border-radius:999px;background:"+color+";color:"+contrast(color)+";box-shadow:0 6px 20px rgba(0,0,0,.25);transition:transform .15s}" +
-"button:hover{transform:translateY(-2px)}button:focus-visible{outline:3px solid "+color+";outline-offset:3px}";
+"button:hover{transform:translateY(-2px)}button:focus-visible{outline:3px solid "+color+";outline-offset:3px}" +
+".n{position:absolute;top:-6px;right:-6px;min-width:22px;height:22px;padding:0 5px;border-radius:11px;background:#111;color:#fff;" +
+"font:700 12px/22px system-ui,sans-serif;display:none;place-items:center;text-align:center;box-sizing:border-box}";
 var b=document.createElement("button");
 b.type="button";
 b.setAttribute("aria-haspopup", "dialog");
 b.textContent=label;
+var n=document.createElement("span");
+n.className="n";
+n.setAttribute("aria-hidden", "true");
+b.appendChild(n);
+if (!badge) badge=n;
 b.addEventListener("click", function () { open(slug, b); });
 root.appendChild(st); root.appendChild(b);
 var tgt=s.getAttribute("data-target"), el=null;
