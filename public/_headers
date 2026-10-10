@@ -1,0 +1,4 @@
+/embed.js
+  Cache-Control: public, max-age=3600
+  Access-Control-Allow-Origin: *
+  Content-Type: application/javascript; charset=utf-8
