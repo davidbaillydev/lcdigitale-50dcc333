@@ -22,7 +22,7 @@ import { StripePayment } from "@/components/StripePayment";
 import { cn } from "@/lib/utils";
 import { PromoCodeField, type AppliedDiscount } from "@/components/PromoCodeField";
 import { EmbedBar } from "@/components/EmbedBar";
-import { useEmbedMode } from "@/lib/embed";
+import { useEmbedMode, isEmbedded, embedReturnTo, openTop, pendingOrderKey } from "@/lib/embed";
 import { featuresOf } from "@/lib/features";
 
 export const Route = createFileRoute("/$slug/commande")({
@@ -63,7 +63,7 @@ function Checkout() {
   const proOk = !pro || (bill.company.trim().length >= 2 && /^\d{9}$/.test(bill.siren) && bill.address.trim().length >= 3 && /^\d{5}$/.test(bill.postalCode) && !!bill.city.trim());
   const infoFn = useServerFn(onlinePaymentInfo);
   const [online, setOnline] = useState<{ stripe: string | null; paypal: boolean; lyra: boolean; mollie: boolean }>({ stripe: null, paypal: false, lyra: false, mollie: false });
-  const [payment, setPayment] = useState<{ id: string; clientSecret: string } | null>(null);
+  const [payment, setPayment] = useState<{ id: string; clientSecret: string; back?: string | undefined } | null>(null);
   const [promo, setPromo] = useState<{ d: AppliedDiscount | null; code?: string | undefined }>({ d: null });
   const onSiteOk = restaurant.config.payments?.on_site !== false;
   const embed = useEmbedMode(restaurant.slug, featuresOf(restaurant.enabled_features).embed);
@@ -115,6 +115,8 @@ function Checkout() {
 
   const submit = async () => {
     setBusy(true);
+    const embedded = isEmbedded();
+    const back = embedded ? embedReturnTo(restaurant.slug) : null;
     let leaving = false;
     try {
       const res = await submitFn({
@@ -123,12 +125,19 @@ function Checkout() {
           payment_method: pay === "on_site" ? "on_site" : "online", cgv: true as const,
           ...(pro ? { billing: bill } : {}),
           origin: window.location.origin,
+          ...(embedded && back ? back : {}),
           ...(pay !== "on_site" ? { provider: pay } : {}),
           lines: lines.map((l) => ({ itemId: l.itemId, qty: l.qty, sel: l.sel })),
         },
       });
-      if (res.clientSecret) { setPayment({ id: res.id, clientSecret: res.clientSecret }); return; }
-      if (res.redirectUrl) { leaving = true; window.location.assign(res.redirectUrl); return; }
+      if (embedded && (res.clientSecret || res.redirectUrl || res.form)) { try { sessionStorage.setItem(pendingOrderKey(restaurant.slug), res.id); } catch { /* */ } }
+      if (res.clientSecret) { setPayment({ id: res.id, clientSecret: res.clientSecret, back: back?.returnTo }); return; }
+      if (res.redirectUrl) {
+        leaving = true;
+        if (!embedded) { window.location.assign(res.redirectUrl); return; }
+        if (!openTop(res.redirectUrl)) { leaving = false; toast.info("La page de paiement s'est ouverte dans un nouvel onglet"); }
+        return;
+      }
       if (res.form) {
         // Formulaire signé envoyé à la page de paiement sécurisée Lyra / PayZen
         leaving = true;
@@ -137,7 +146,9 @@ function Checkout() {
         for (const [k, v] of Object.entries(res.form.fields)) {
           const i = document.createElement("input"); i.type = "hidden"; i.name = k; i.value = v; form.appendChild(i);
         }
-        document.body.appendChild(form); form.submit();
+        if (embedded) form.target = "_top";
+        document.body.appendChild(form);
+        try { form.submit(); } catch { form.target = "_blank"; form.submit(); toast.info("La page de paiement s'est ouverte dans un nouvel onglet"); }
         return;
       }
       clear();
@@ -303,13 +314,14 @@ function Checkout() {
           {payment && online.stripe ? (
             <div className="mt-4">
               <StripePayment publishableKey={online.stripe} clientSecret={payment.clientSecret} label={`Payer ${euro(total)}`}
-                returnUrl={`${window.location.origin}/${restaurant.slug}/suivi/${payment.id}`} onCancel={() => setPayment(null)} />
+                returnUrl={`${window.location.origin}/${restaurant.slug}/suivi/${payment.id}${payment.back ? `?back=${encodeURIComponent(payment.back)}` : ""}`} onCancel={() => setPayment(null)} />
             </div>
           ) : (<>
             <label className="mt-4 flex min-h-11 items-start gap-3 text-sm">
               <input type="checkbox" className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--primary)]" checked={cgv} onChange={(e) => setCgv(e.target.checked)} />
               <span>J'accepte les <Link to="/$slug/cgv" params={{ slug: restaurant.slug }} target="_blank" className="underline">conditions générales de vente</Link> et la <Link to="/$slug/confidentialite" params={{ slug: restaurant.slug }} target="_blank" className="underline">politique de confidentialité</Link>.</span>
             </label>
+            {embed && pay !== "on_site" && <p className="mt-3 rounded-lg bg-muted p-2 text-xs text-muted-foreground">Vous allez être redirigé vers la page de paiement sécurisée.</p>}
             <Button size="lg" className="mt-4 w-full font-semibold" disabled={!canSubmit || !proOk || !cgv || busy || (pay === "on_site" && !onSiteOk)} onClick={submit}>
               {busy ? "Envoi…" : pay === "on_site" ? `Valider la commande · ${euro(total)}` : pay === "paypal" ? `Payer avec PayPal · ${euro(total)}` : `Continuer vers le paiement · ${euro(total)}`}
             </Button>

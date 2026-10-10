@@ -43,6 +43,8 @@ export function useEmbedMode(slug: string, enabled = true): boolean {
     const p = new URLSearchParams(window.location.search);
     if (p.get("embed") === "1") sessionStorage.setItem(`embed-${slug}`, "1");
     if (p.get("src") === "embed") sessionStorage.setItem(`src-${slug}`, "embed");
+    const ref = p.get("ref");
+    if (ref && /^[a-z0-9.-]{1,253}$/i.test(ref)) sessionStorage.setItem(`ref-${slug}`, ref.toLowerCase());
     if (sessionStorage.getItem(`embed-${slug}`) === "1" && isEmbedded()) setOn(true);
   }, [slug, enabled]);
   return on;
@@ -93,3 +95,27 @@ export function useEmbedCartCount(embed: boolean, count: number): void {
     postToParent({ type: "lc:cart", count });
   }, [embed, count]);
 }
+
+/** Site parent (https, même hôte que le `ref` transmis par embed.js) pour le bouton « Retour sur le site ». */
+export function embedReturnTo(slug: string): { returnTo: string; ref: string } | null {
+  try {
+    const ref = sessionStorage.getItem(`ref-${slug}`);
+    if (!ref || !document.referrer) return null;
+    const u = new URL(document.referrer);
+    if (u.protocol !== "https:" || u.hostname.toLowerCase() !== ref) return null;
+    const returnTo = u.origin + u.pathname;
+    return returnTo.length <= 300 ? { returnTo, ref } : null;
+  } catch { return null; }
+}
+
+/** Ouvre une page de paiement hors de l'iframe (_top), repli nouvel onglet. Renvoie false si repli. */
+export function openTop(url: string): boolean {
+  try {
+    const w = window.open(url, "_top");
+    if (w) return true;
+  } catch { /* navigation du parent bloquée */ }
+  window.open(url, "_blank", "noopener");
+  return false;
+}
+
+export const pendingOrderKey = (slug: string) => `lc-pending-order-${slug}`;

@@ -25,9 +25,10 @@ function Form({ returnUrl, label, onCancel, setup }: { returnUrl: string; label:
     if (!stripe || !elements) return;
     setBusy(true); setErr("");
     const { error } = setup
-      ? await stripe.confirmSetup({ elements, confirmParams: { return_url: returnUrl } })
-      : await stripe.confirmPayment({ elements, confirmParams: { return_url: returnUrl } });
-    // On n'arrive ici qu'en cas d'erreur (sinon Stripe redirige vers la page de suivi)
+      ? await stripe.confirmSetup({ elements, confirmParams: { return_url: returnUrl }, redirect: "if_required" })
+      : await stripe.confirmPayment({ elements, confirmParams: { return_url: returnUrl }, redirect: "if_required" });
+    // Carte : 3DS dans la modale Stripe, sans quitter la page ; succès → page de suivi
+    if (!error) { window.location.assign(returnUrl); return; }
     setErr(error?.message ?? "Le paiement n'a pas abouti.");
     setBusy(false);
   };

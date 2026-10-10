@@ -46,6 +46,12 @@ function Tracking() {
   const confirm = useServerFn(confirmOnlinePayment);
   const { clear } = useCart();
   const cleared = useRef(false);
+  // ?back= : lien simple vers le site du restaurant (https uniquement, jamais de redirection automatique)
+  const [back, setBack] = useState<string | null>(null);
+  useEffect(() => {
+    const b = new URLSearchParams(window.location.search).get("back");
+    try { if (b && b.length <= 300 && new URL(b).protocol === "https:") setBack(new URL(b).href); } catch { /* ignoré */ }
+  }, []);
   const { data, isLoading } = useQuery({
     queryKey: ["order", id],
     queryFn: async () => {
@@ -148,7 +154,9 @@ function Tracking() {
           <li className="flex justify-between py-3 font-bold"><span>Total</span><span className="text-primary">{euro(Number(data.total))}</span></li>
         </ul>
         <div className="mt-6 flex flex-wrap gap-2">
-          <Button asChild variant="secondary"><Link to="/$slug" params={{ slug }}>Retour à la carte</Link></Button>
+          {back
+            ? <Button asChild variant="secondary"><a href={back} rel="noopener noreferrer">Retour sur le site du restaurant</a></Button>
+            : <Button asChild variant="secondary"><Link to="/$slug" params={{ slug }}>Retour à la carte</Link></Button>}
           <Button variant="outline" onClick={() => printTickets(data as unknown as TicketOrder, ["receipt"], "")}><Printer /> Imprimer le ticket</Button>
         </div>
       </div>
