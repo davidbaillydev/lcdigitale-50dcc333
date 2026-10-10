@@ -108,7 +108,7 @@ export const saveRestaurantFeatures = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({
     id: z.string().uuid(),
-    features: z.object({ borne: z.boolean(), kds: z.boolean(), livraison: z.boolean(), reservation: z.boolean(), qrcode: z.boolean(), facturx: z.boolean(), pos_sync: z.boolean(), borne_cash_payment: z.boolean() }).strict(),
+    features: z.object({ borne: z.boolean(), kds: z.boolean(), livraison: z.boolean(), reservation: z.boolean(), qrcode: z.boolean(), facturx: z.boolean(), pos_sync: z.boolean(), borne_cash_payment: z.boolean(), embed: z.boolean() }).strict(),
   }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAgency(context.supabase, context.userId);

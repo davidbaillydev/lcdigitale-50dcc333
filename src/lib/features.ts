@@ -8,6 +8,7 @@ export const FEATURES = [
   ["facturx", "Facturation B2B & Factur-X", "Espace Factures, exports et raccordement PDP."],
   ["pos_sync", "Intégration API caisse", "Synchronisation avec le logiciel de caisse."],
   ["borne_cash_payment", "Espèces sur la borne", "Autoriser le paiement au comptoir depuis la borne."],
+  ["embed", "Bouton pour site web", "Bouton de commande à intégrer sur le site ou la page Facebook du restaurant."],
 ] as const;
 
 export type FeatureKey = (typeof FEATURES)[number][0];
