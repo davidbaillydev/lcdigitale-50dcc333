@@ -1,3 +1,4 @@
+import { safeSession } from "@/lib/safe-storage";
 import { createFileRoute, Link, notFound, Outlet, useRouterState } from "@tanstack/react-router";
 import { CookieConsent } from "@/components/CookieConsent";
 import { getRestaurant } from "@/lib/restaurants.functions";
@@ -69,12 +70,12 @@ function EmbedCartReset({ slug }: { slug: string }) {
   const { clear } = useCart();
   useEffect(() => {
     let id: string | null = null;
-    try { id = sessionStorage.getItem(pendingOrderKey(slug)); } catch { return; }
+    try { id = safeSession.get(pendingOrderKey(slug)); } catch { return; }
     if (!id) return;
     getOrderStatus({ data: { id } }).then((o) => {
-      if (!o) { sessionStorage.removeItem(pendingOrderKey(slug)); return; }
-      if (o.payment_status === "paid") { clear(); sessionStorage.removeItem(pendingOrderKey(slug)); }
-      else if (o.status === "cancelled") sessionStorage.removeItem(pendingOrderKey(slug));
+      if (!o) { safeSession.remove(pendingOrderKey(slug)); return; }
+      if (o.payment_status === "paid") { clear(); safeSession.remove(pendingOrderKey(slug)); }
+      else if (o.status === "cancelled") safeSession.remove(pendingOrderKey(slug));
     }).catch(() => {});
   }, [slug, clear]);
   return null;
