@@ -1,7 +1,7 @@
 /* LC Digitale — bouton de commande intégrable. Sans dépendance. */
 (function () {
   "use strict";
-  if (window.LCDigitale && window.LCDigitale._v) return;
+  if (window.LCDigitale && window.LCDigitale._scan) return window.LCDigitale._scan();
   var DEF_COLOR = "#e11d48", DEF_LABEL = "Commander en ligne";
   var cur = document.currentScript;
   var scripts = cur && cur.getAttribute("data-restaurant") ? [cur] :
@@ -115,8 +115,8 @@
     else document.body.appendChild(host);
   }
 
-  function init() { scripts.forEach(mount); }
+  function init() { Array.prototype.slice.call(document.querySelectorAll('script[src*="/embed.js"][data-restaurant]')).concat(scripts).forEach(mount); }
   if (document.body) init(); else document.addEventListener("DOMContentLoaded", init);
 
-  window.LCDigitale = { _v: 1, open: function (slug) { open(slug); }, close: close };
+  window.LCDigitale = { _scan: function () { document.body ? init() : 0; }, open: function (slug) { open(slug); }, close: close };
 })();
