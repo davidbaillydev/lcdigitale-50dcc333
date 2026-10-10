@@ -3,6 +3,8 @@ import { CookieConsent } from "@/components/CookieConsent";
 import { getRestaurant } from "@/lib/restaurants.functions";
 import { CartProvider } from "@/lib/cart";
 import { BrandTheme } from "@/lib/brand";
+import { featuresOf } from "@/lib/features";
+import { useEmbedMode } from "@/lib/embed";
 
 // Carte, horaires et mentions légales : mis en cache 15 min côté navigateur
 const restaurantQuery = (slug: string) => ({
@@ -44,11 +46,14 @@ function Layout() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   if (!restaurant) return null;
   const staffScreen = /\/(borne|cuisine)(\/|$)/.test(path);
+  const embed = useEmbedMode(restaurant.slug, featuresOf(restaurant.enabled_features).embed) && !staffScreen;
   return (
     <BrandTheme brand={restaurant.brand}>
       <CartProvider restaurant={restaurant}>
-        <Outlet />
-        {!staffScreen && <CookieConsent slug={restaurant.slug} voice={!!restaurant.is_vapi_web_enabled} />}
+        <div {...(embed ? { "data-embed": "1" } : {})} className={embed ? "embed-compact" : undefined}>
+          <Outlet />
+          {!staffScreen && <CookieConsent slug={restaurant.slug} voice={!!restaurant.is_vapi_web_enabled} compact={embed} />}
+        </div>
       </CartProvider>
     </BrandTheme>
   );

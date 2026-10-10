@@ -21,6 +21,9 @@ import { onlinePaymentInfo } from "@/lib/payments.functions";
 import { StripePayment } from "@/components/StripePayment";
 import { cn } from "@/lib/utils";
 import { PromoCodeField, type AppliedDiscount } from "@/components/PromoCodeField";
+import { EmbedBar } from "@/components/EmbedBar";
+import { useEmbedMode } from "@/lib/embed";
+import { featuresOf } from "@/lib/features";
 
 export const Route = createFileRoute("/$slug/commande")({
   head: () => ({
@@ -63,6 +66,7 @@ function Checkout() {
   const [payment, setPayment] = useState<{ id: string; clientSecret: string } | null>(null);
   const [promo, setPromo] = useState<{ d: AppliedDiscount | null; code?: string | undefined }>({ d: null });
   const onSiteOk = restaurant.config.payments?.on_site !== false;
+  const embed = useEmbedMode(restaurant.slug, featuresOf(restaurant.enabled_features).embed);
 
   useEffect(() => {
     infoFn({ data: { slug: restaurant.slug } }).then((r) => {
@@ -155,7 +159,7 @@ function Checkout() {
 
   if (!lines.length)
     return (
-      <div className="min-h-screen"><SiteHeader hideCart />
+      <div className="min-h-screen">{embed ? <EmbedBar hideCart /> : <SiteHeader hideCart />}
         <div className="mx-auto max-w-md px-4 py-20 text-center">
           <p className="text-muted-foreground">Votre panier est vide.</p>
           <Button asChild className="mt-4"><Link to="/$slug" params={{ slug: restaurant.slug }}>Voir la carte</Link></Button>
@@ -164,9 +168,9 @@ function Checkout() {
     );
 
   return (
-    <div className="min-h-screen pb-16">
-      <SiteHeader hideCart />
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-8 lg:grid-cols-[1fr_380px]">
+    <div className={`min-h-screen ${embed ? "pb-6" : "pb-16"}`}>
+      {embed ? <EmbedBar hideCart /> : <SiteHeader hideCart />}
+      <div className={`mx-auto grid max-w-6xl gap-8 px-4 ${embed ? "py-4" : "py-8"} lg:grid-cols-[1fr_380px]`}>
         <div className="space-y-8">
           {table ? <section className="rounded-xl border border-primary bg-primary/10 p-4"><h2 className="text-3xl">{onsiteTitle}</h2><p className="text-sm text-muted-foreground">{onsiteText}</p></section> : <>
           <section>

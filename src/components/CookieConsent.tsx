@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { CONSENT_EVENT, readConsent, writeConsent } from "@/lib/consent";
 
-export function CookieConsent({ slug, voice }: { slug: string; voice: boolean }) {
+export function CookieConsent({ slug, voice, compact }: { slug: string; voice: boolean; compact?: boolean }) {
   const [open, setOpen] = useState(false);
   const [custom, setCustom] = useState(false);
   const [aud, setAud] = useState(false);
@@ -19,8 +19,8 @@ export function CookieConsent({ slug, voice }: { slug: string; voice: boolean })
   if (!open) return null;
   const done = (audience: boolean, v: boolean) => { writeConsent({ audience, voice: v }); setOpen(false); };
   return (
-    <div role="dialog" aria-label="Choix des cookies" className="fixed inset-x-0 bottom-0 z-50 p-3 sm:bottom-4 sm:left-4 sm:right-auto sm:max-w-md">
-      <div className="space-y-3 rounded-2xl border border-border bg-card p-4 text-card-foreground shadow-lg">
+    <div role="dialog" aria-label="Choix des cookies" className={compact ? "fixed inset-x-0 bottom-0 z-50 p-2" : "fixed inset-x-0 bottom-0 z-50 p-3 sm:bottom-4 sm:left-4 sm:right-auto sm:max-w-md"}>
+      <div className={`rounded-2xl border border-border bg-card text-card-foreground shadow-lg ${compact ? "space-y-2 p-3 text-sm" : "space-y-3 p-4"}`}>
         <p className="font-semibold">Vos choix de cookies</p>
         <p className="text-sm text-muted-foreground">
           Nous utilisons des traceurs indispensables au panier et au paiement. Avec votre accord, nous en utilisons d'autres pour mesurer l'audience{voice ? " et charger l'assistant vocal Kaito" : ""}.{" "}

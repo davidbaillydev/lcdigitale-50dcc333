@@ -16,6 +16,9 @@ import { AllergenBadges, AllergenPicker } from "@/components/Allergens";
 import { safeFor } from "@/lib/allergens";
 import { useTable } from "@/lib/table";
 import { catLabel, itemText, LANG_LABELS, UI, useMenuLang, type Lang } from "@/lib/i18n";
+import { EmbedBar } from "@/components/EmbedBar";
+import { useEmbedMode } from "@/lib/embed";
+import { featuresOf } from "@/lib/features";
 
 export const Route = createFileRoute("/$slug/")({
   loader: ({ params }) => getRestaurant({ data: { slug: params.slug } }),
@@ -41,10 +44,11 @@ function MenuPage() {
   const [lang, setLang] = useMenuLang();
   const ui = UI[lang];
   const table = useTable(restaurant.slug, restaurant.config.qr?.tables ?? 0);
+  const embed = useEmbedMode(restaurant.slug, featuresOf(restaurant.enabled_features).embed);
 
   return (
-    <div className="min-h-screen pb-24">
-      <SiteHeader hideCart={view} />
+    <div className={`min-h-screen ${embed ? "pb-6" : "pb-24"}`}>
+      {embed ? <EmbedBar hideCart={view} /> : <SiteHeader hideCart={view} />}
       {table && <p className="bg-primary px-4 py-2 text-center font-semibold text-primary-foreground" role="status">Table {table} · commandez ici, nous vous servons à table</p>}
       {!table && qr.room && <p className="bg-primary px-4 py-2 text-center font-semibold text-primary-foreground" role="status">Room service · Chambre {qr.room}</p>}
       {!table && qr.self && <p className="bg-primary px-4 py-2 text-center font-semibold text-primary-foreground" role="status">Libre-service · votre commande sera validée par notre équipe</p>}
@@ -52,7 +56,7 @@ function MenuPage() {
       <section className="relative overflow-hidden">
         <RestaurantBanner restaurant={restaurant} />
         <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent" />
-        <div className="relative mx-auto max-w-6xl px-4 py-16 sm:py-24">
+        <div className={`relative mx-auto max-w-6xl px-4 ${embed ? "py-8" : "py-16 sm:py-24"}`}>
           <p className="mb-2 inline-block -rotate-1 brush px-4 py-1 font-display text-xl">{restaurant.city}</p>
           <h1 className="max-w-xl break-words text-6xl leading-none sm:text-8xl">{restaurant.name}</h1>
           {restaurant.config.tagline && <p className="mt-3 max-w-md">{restaurant.config.tagline}</p>}
@@ -119,6 +123,7 @@ function MenuPage() {
           </section>
         ))}
         <footer className="space-y-2 border-t border-border pt-6 text-sm text-muted-foreground">
+          {!embed && <>
           <p className="flex items-center gap-2">
             <MapPin className="h-4 w-4 shrink-0" /> {restaurant.name}
             {restaurant.address ? ` · ${restaurant.address}` : ""} · {restaurant.city}
@@ -136,6 +141,7 @@ function MenuPage() {
             <p><Link to="/$slug/reserver" params={{ slug: restaurant.slug }} search={{ r: undefined }} className="font-semibold text-primary underline">Réserver une table</Link></p>
           )}
           <p><Link to="/connexion" className="underline">Espace restaurant</Link></p>
+          </>}
           <LegalFooter slug={restaurant.slug} />
         </footer>
       </main>
