@@ -6,6 +6,7 @@ import { useSoldOut } from "./stock";
 import { withOptions } from "./menu-options";
 import { useOptionData } from "./menu-options-live";
 import { useQrMode, type QrMode } from "./table";
+import { isEmbedded, postToParent } from "./embed";
 
 export type CartLine = { key: string; itemId: string; qty: number; sel: Selections; note?: string };
 type Ctx = {
@@ -45,6 +46,11 @@ export function CartProvider({ restaurant, children }: { restaurant: Restaurant;
   useEffect(() => {
     if (ready) localStorage.setItem(KEY, JSON.stringify(lines));
   }, [lines, KEY, ready]);
+  // Badge du bouton parent en mode intégré (aucune donnée personnelle)
+  const count = lines.reduce((s, l) => s + l.qty, 0);
+  useEffect(() => {
+    if (ready && isEmbedded()) postToParent({ type: "lc:cart", count });
+  }, [count, ready]);
 
   const value = useMemo<Ctx>(() => {
     const subtotal = lines.reduce((s, l) => {
