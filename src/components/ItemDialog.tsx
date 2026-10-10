@@ -8,9 +8,11 @@ import { activeGroups, euro, groupCost, unitPrice, validateSelections, type Menu
 import { useCart } from "@/lib/cart";
 import { itemImage } from "@/lib/menu-images";
 import { AllergenInfo } from "@/components/Allergens";
+import { useOrdersPaused } from "@/hooks/use-orders-paused";
 
 export function ItemDialog({ item, onClose }: { item: MenuItem | null; onClose: () => void }) {
-  const { add, catalog } = useCart();
+  const { add, catalog, restaurant } = useCart();
+  const paused = useOrdersPaused(restaurant);
   const [sel, setSel] = useState<Selections>({});
   const [qty, setQty] = useState(1);
   const [step, setStep] = useState(0);
@@ -122,7 +124,7 @@ export function ItemDialog({ item, onClose }: { item: MenuItem | null; onClose: 
           <div className="flex gap-2">
             {stepped && step > 0 && <Button variant="ghost" onClick={() => setStep(step - 1)}>Retour</Button>}
             {isLast ? (
-              <Button onClick={submit} className="font-semibold">Ajouter · {euro(price * qty)}</Button>
+              <Button onClick={submit} disabled={paused} className="font-semibold">Ajouter · {euro(price * qty)}</Button>
             ) : (
               <Button disabled={!groups[step] || !stepOk(groups[step]!)} onClick={() => setStep(step + 1)}>Suivant · {euro(price)}</Button>
             )}

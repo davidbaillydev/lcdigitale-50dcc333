@@ -24,6 +24,7 @@ export function initialSettings(r: Restaurant): Settings {
     config: {
       slotMinutes: c.slotMinutes ?? 20, lead: c.lead ?? { pickup: 20, delivery: 40 }, hoursLabel: c.hoursLabel ?? "", tagline: c.tagline,
       autoAccept: c.autoAccept ?? false,
+      ordersPaused: c.ordersPaused === true,
       timing: timingOf(r),
       modes: { pickup: c.modes?.pickup !== false, delivery: c.modes?.delivery !== false, dine_in: c.modes?.dine_in !== false },
       payments: { on_site: c.payments?.on_site !== false, counter: c.payments?.counter !== false, card_terminal: c.payments?.card_terminal !== false },
@@ -102,6 +103,7 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
       </Section>
 
       <Section title="Commandes & acceptation">
+        <Toggle label="Recevoir les commandes" hint="Désactivé : le menu reste consultable, mais aucune commande n'est acceptée (site, borne, QR, téléphone)." checked={!s.config.ordersPaused} onChange={(v) => cfg({ ordersPaused: !v })} />
         <Toggle label="À emporter (site)" checked={s.config.modes.pickup} onChange={(v) => cfg({ modes: { ...s.config.modes, pickup: v } })} />
         <Toggle label="Livraison (site)" checked={s.config.modes.delivery} onChange={(v) => cfg({ modes: { ...s.config.modes, delivery: v } })} />
         <Toggle label="Sur place (borne)" checked={s.config.modes.dine_in} onChange={(v) => cfg({ modes: { ...s.config.modes, dine_in: v } })} />

@@ -18,6 +18,7 @@ export const settingsSchema = z.object({
     hoursLabel: z.string().max(120).optional(),
     tagline: z.string().max(200).optional(),
     autoAccept: z.boolean(),
+    ordersPaused: z.boolean().optional(),
     timing: z.object({ asap: z.boolean(), scheduled: z.boolean(), prepMode: z.enum(["auto", "manual"]), defaultPrep: z.number().int().min(5).max(180) }),
     modes: z.object({ pickup: z.boolean(), delivery: z.boolean(), dine_in: z.boolean() }),
     payments: z.object({ on_site: z.boolean(), counter: z.boolean(), card_terminal: z.boolean() }),

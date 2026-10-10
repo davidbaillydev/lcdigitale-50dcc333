@@ -81,6 +81,7 @@ export const Route = createFileRoute("/api/public/vapi/$restaurantId")({
               }));
             } else if (name === "create_order") {
               const a = orderArgs.parse(raw);
+              if (r.config?.ordersPaused === true) throw new Error("Le restaurant ne prend pas de commandes pour le moment");
               if (!modeEnabled(r, a.mode)) throw new Error(a.mode === "delivery" ? "La livraison n'est pas proposée." : "La vente à emporter n'est pas proposée.");
               const lead = r.config?.lead?.[a.mode] ?? 30;
               const slot = a.slot ?? new Date(Date.now() + lead * 60_000).toISOString();

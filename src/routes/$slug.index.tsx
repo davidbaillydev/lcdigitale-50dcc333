@@ -17,6 +17,7 @@ import { safeFor } from "@/lib/allergens";
 import { useTable } from "@/lib/table";
 import { catLabel, itemText, LANG_LABELS, UI, useMenuLang, type Lang } from "@/lib/i18n";
 import { EmbedBar } from "@/components/EmbedBar";
+import { useOrdersPaused } from "@/hooks/use-orders-paused";
 import { useEmbedMode } from "@/lib/embed";
 import { featuresOf } from "@/lib/features";
 
@@ -45,10 +46,12 @@ function MenuPage() {
   const ui = UI[lang];
   const table = useTable(restaurant.slug, restaurant.config.qr?.tables ?? 0);
   const embed = useEmbedMode(restaurant.slug, featuresOf(restaurant.enabled_features).embed);
+  const paused = useOrdersPaused(restaurant);
 
   return (
     <div className={`min-h-screen ${embed ? "pb-6" : "pb-24"}`}>
       {embed ? <EmbedBar hideCart={view} /> : <SiteHeader hideCart={view} />}
+      {paused && <p className="bg-destructive px-4 py-2 text-center font-semibold text-destructive-foreground" role="alert">Commandes momentanément indisponibles · le menu reste consultable</p>}
       {table && <p className="bg-primary px-4 py-2 text-center font-semibold text-primary-foreground" role="status">Table {table} · commandez ici, nous vous servons à table</p>}
       {!table && qr.room && <p className="bg-primary px-4 py-2 text-center font-semibold text-primary-foreground" role="status">Room service · Chambre {qr.room}</p>}
       {!table && qr.self && <p className="bg-primary px-4 py-2 text-center font-semibold text-primary-foreground" role="status">Libre-service · votre commande sera validée par notre équipe</p>}
@@ -105,7 +108,7 @@ function MenuPage() {
             {c.note && <p className="mt-3 text-sm text-muted-foreground">{c.note}</p>}
             <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {c.items.map((i) => (
-                <button key={i.id} onClick={() => !view && setOpen(i)} disabled={view}
+                <button key={i.id} onClick={() => !view && !paused && setOpen(i)} disabled={view || paused}
                   className={`group flex flex-col overflow-hidden rounded-xl border bg-card p-4 text-left transition hover:-translate-y-0.5 hover:border-primary ${i.builder ? "border-primary/60 sm:col-span-2 lg:col-span-1" : "border-border"}`}>
                   {i.image && <img src={i.image} alt={i.name} loading="lazy" className="-mx-4 -mt-4 mb-3 aspect-[16/10] w-[calc(100%+2rem)] max-w-none object-cover transition group-hover:scale-[1.02]" />}
                   <div className="flex items-start justify-between gap-3">
