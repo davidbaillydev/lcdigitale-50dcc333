@@ -23,7 +23,7 @@ import { StripePayment } from "@/components/StripePayment";
 import { cn } from "@/lib/utils";
 import { PromoCodeField, type AppliedDiscount } from "@/components/PromoCodeField";
 import { EmbedBar } from "@/components/EmbedBar";
-import { useEmbedMode, isEmbedded, embedReturnTo, openTop, pendingOrderKey } from "@/lib/embed";
+import { useEmbedMode, orderSource, isEmbedded, embedReturnTo, openTop, pendingOrderKey } from "@/lib/embed";
 import { featuresOf } from "@/lib/features";
 
 export const Route = createFileRoute("/$slug/commande")({
@@ -126,6 +126,7 @@ function Checkout() {
           payment_method: pay === "on_site" ? "on_site" : "online", cgv: true as const,
           ...(pro ? { billing: bill } : {}),
           origin: window.location.origin,
+          ...orderSource(restaurant.slug),
           ...(embedded && back ? back : {}),
           ...(pay !== "on_site" ? { provider: pay } : {}),
           lines: lines.map((l) => ({ itemId: l.itemId, qty: l.qty, sel: l.sel })),

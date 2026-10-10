@@ -24,6 +24,8 @@ export const Route = createFileRoute("/_authenticated/espace/tableau-de-bord")({
   component: Dashboard,
 });
 
+const SOURCE: Record<string, string> = { web: "Site web", embed: "Bouton site du restaurant", facebook: "Facebook", link: "Lien partagé", qr: "QR code table", kiosk: "Borne", phone: "Téléphone IA" };
+
 type Order = { id: string; order_number: number; restaurant_id: string; created_at: string; status: string; mode: string; source: string; payment_method: string; payment_ref: string | null; subtotal: number; discount: number; delivery_fee: number; total: number; customer_name: string; items: { name: string; qty: number; total: number }[] };
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
@@ -82,7 +84,7 @@ function Dashboard() {
     return {
       ok, all: list, ca, n: ok.length, avg: ok.length ? ca / ok.length : 0, discount: sum(ok, (o) => o.discount), fees: sum(ok, (o) => o.delivery_fee),
       cancelled: list.length - ok.length,
-      byMode: group((o) => MODE[o.mode] ?? o.mode), bySource: group((o) => (o.source === "kiosk" ? "Borne" : o.source === "phone" ? "Téléphone IA" : "Site web")), byPay: group((o) => PAY[o.payment_method] ?? o.payment_method),
+      byMode: group((o) => MODE[o.mode] ?? o.mode), bySource: group((o) => SOURCE[o.source] ?? "Site web"), byPay: group((o) => PAY[o.payment_method] ?? o.payment_method),
       byRestaurant: group((o) => managed.find((r) => r.id === o.restaurant_id)?.name ?? "—"),
       top: [...items.entries()].sort((a, b) => b[1].qty - a[1].qty).slice(0, 15), days: [...days.entries()].sort(),
     };
@@ -95,7 +97,7 @@ function Dashboard() {
   const fname = `ventes-${rid === "all" ? "reseau" : managed.find((r) => r.id === rid)?.slug}-${from}_${to}`;
   const g2rows = (g: [string, { n: number; ca: number }][], col: string) => g.map(([k, v]) => ({ [col]: k, Commandes: v.n, "CA (€)": Math.round(v.ca * 100) / 100 }));
   const summary = [{ Indicateur: "Chiffre d'affaires TTC (€)", Valeur: s.ca }, { Indicateur: "Commandes", Valeur: s.n }, { Indicateur: "Panier moyen (€)", Valeur: Math.round(s.avg * 100) / 100 }, { Indicateur: "Remises (€)", Valeur: s.discount }, { Indicateur: "Frais de livraison (€)", Valeur: s.fees }, { Indicateur: "Commandes annulées", Valeur: s.cancelled }];
-  const orderRows = () => s.all.map((o) => ({ "N°": o.order_number, Date: new Date(o.created_at).toLocaleString("fr-FR"), Restaurant: managed.find((r) => r.id === o.restaurant_id)?.name ?? "", Client: o.customer_name, Mode: MODE[o.mode] ?? o.mode, Canal: o.source === "kiosk" ? "Borne" : o.source === "phone" ? "Téléphone IA" : "Site", Paiement: PAY[o.payment_method] ?? o.payment_method, Statut: STATUS[o.status] ?? o.status, "Sous-total": Number(o.subtotal), Remise: Number(o.discount), Livraison: Number(o.delivery_fee), Total: Number(o.total) }));
+  const orderRows = () => s.all.map((o) => ({ "N°": o.order_number, Date: new Date(o.created_at).toLocaleString("fr-FR"), Restaurant: managed.find((r) => r.id === o.restaurant_id)?.name ?? "", Client: o.customer_name, Mode: MODE[o.mode] ?? o.mode, Canal: SOURCE[o.source] ?? "Site web", Paiement: PAY[o.payment_method] ?? o.payment_method, Statut: STATUS[o.status] ?? o.status, "Sous-total": Number(o.subtotal), Remise: Number(o.discount), Livraison: Number(o.delivery_fee), Total: Number(o.total) }));
   const topRows = s.top.map(([k, v]) => ({ Plat: k, Quantité: v.qty, "CA (€)": Math.round(v.ca * 100) / 100 }));
   const max = Math.max(1, ...s.days.map(([, v]) => v.ca));
 

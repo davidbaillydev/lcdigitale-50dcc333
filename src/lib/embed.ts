@@ -40,10 +40,14 @@ export function postToParent(msg: Record<string, unknown>): void {
 export function useEmbedMode(slug: string, enabled = true): boolean {
   const [on, setOn] = useState(false);
   useEffect(() => {
+    // Canal d'origine mémorisé même hors iframe (?src=facebook / ?src=link)
+    const s0 = new URLSearchParams(window.location.search).get("src");
+    if (s0 === "facebook" || s0 === "link") safeSession.set(`src-${slug}`, s0);
     if (!enabled) return;
     const p = new URLSearchParams(window.location.search);
     if (p.get("embed") === "1") safeSession.set(`embed-${slug}`, "1");
-    if (p.get("src") === "embed") safeSession.set(`src-${slug}`, "embed");
+    const src = p.get("src");
+    if (src === "embed" || src === "facebook" || src === "link") safeSession.set(`src-${slug}`, src);
     const ref = p.get("ref");
     if (ref && /^[a-z0-9.-]{1,253}$/i.test(ref)) safeSession.set(`ref-${slug}`, ref.toLowerCase());
     if (safeSession.get(`embed-${slug}`) === "1" && isEmbedded()) setOn(true);
@@ -120,3 +124,10 @@ export function openTop(url: string): boolean {
 }
 
 export const pendingOrderKey = (slug: string) => `lc-pending-order-${slug}`;
+
+/** Canal d'origine mémorisé pour la session (statistiques), et hostname du site parent si intégré. */
+export function orderSource(slug: string): { source?: "embed" | "facebook" | "link"; ref?: string } {
+  const s = safeSession.get(`src-${slug}`);
+  if (s === "embed") { const ref = safeSession.get(`ref-${slug}`); return ref ? { source: s, ref } : { source: s }; }
+  return s === "facebook" || s === "link" ? { source: s } : {};
+}

@@ -30,6 +30,7 @@ const orderSchema = z.object({
   cgv: z.literal(true, { message: "Merci d'accepter les conditions générales de vente." }),
   provider: z.enum(["stripe", "paypal", "lyra", "mollie"]).optional(),
   origin: z.string().url().max(200).regex(/^https?:\/\/[^/]+$/).optional(),
+  source: z.enum(["web", "embed", "facebook", "link", "qr"]).optional(),
   returnTo: z.string().max(300).regex(/^https:\/\/[^\s]+$/).optional(),
   ref: z.string().max(253).regex(/^[a-z0-9.-]+$/i).optional(),
   lines: z
@@ -147,6 +148,8 @@ export const createOrder = createServerFn({ method: "POST" })
         promo_code: promo.discount ? promo.code : null,
         total: Math.round((subtotal - promo.discount + fee + serviceFee) * 100) / 100,
         payment_method: data.payment_method,
+        source: dineIn && (data.table || data.room || data.qr) ? "qr" : (data.source ?? "web"),
+        source_ref: data.source === "embed" && data.ref ? data.ref.toLowerCase().slice(0, 253) : null,
         cgv_accepted_at: new Date().toISOString(),
         cgv_version: cgvVersion(r.legal ?? {}),
         status: provider ? "awaiting_payment" : dineIn && ((data.qr === "self" && !data.table && !data.room) || (!!data.table && !!r.config.qr?.tableValidation)) ? "pending_approval" : r.config.autoAccept ? "accepted" : "new",
