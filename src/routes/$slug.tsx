@@ -7,7 +7,7 @@ import { useEffect } from "react";
 import { getOrderStatus } from "@/lib/orders.functions";
 import { BrandTheme } from "@/lib/brand";
 import { featuresOf } from "@/lib/features";
-import { useEmbedMode, useEmbedReady, useEmbedResize, pendingOrderKey } from "@/lib/embed";
+import { useEmbedMode, useEmbedReady, useEmbedResize, useEmbedEscape, pendingOrderKey } from "@/lib/embed";
 
 // Carte, horaires et mentions légales : mis en cache 15 min côté navigateur
 const restaurantQuery = (slug: string) => ({
@@ -50,7 +50,8 @@ function Layout() {
   if (!restaurant) return null;
   const staffScreen = /\/(borne|cuisine)(\/|$)/.test(path);
   const embed = useEmbedMode(restaurant.slug, featuresOf(restaurant.enabled_features).embed) && !staffScreen;
-  useEmbedReady(restaurant.slug, embed);
+  useEmbedReady(restaurant.slug, embed, restaurant.name);
+  useEmbedEscape(embed);
   useEmbedResize(embed);
   return (
     <BrandTheme brand={restaurant.brand}>
