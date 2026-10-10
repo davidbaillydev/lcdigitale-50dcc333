@@ -5,7 +5,7 @@ import { validateSelections, orderLine } from "./menu";
 import { loadOptionData, withOptions } from "./menu-options";
 import { getCatalog } from "./catalogs";
 import { computeServiceFee, type ServiceFeeChannel } from "./service-fee";
-import { RESTAURANT_COLUMNS, deliveryFee, isValidSlot, isOpenNow, asapSlot, timingOf, modeEnabled, paymentEnabled, type Restaurant } from "./shop";
+import { ORDERS_PAUSED_MSG, ordersPaused, RESTAURANT_COLUMNS, deliveryFee, isValidSlot, isOpenNow, asapSlot, timingOf, modeEnabled, paymentEnabled, type Restaurant } from "./shop";
 import { cgvVersion } from "./legal";
 
 const orderSchema = z.object({
@@ -56,6 +56,7 @@ export const createOrder = createServerFn({ method: "POST" })
     const { data: rRow } = await supabaseAdmin.from("restaurants").select(RESTAURANT_COLUMNS).eq("slug", data.restaurant).eq("active", true).maybeSingle();
     const r = rRow as unknown as Restaurant | null;
     if (!r) throw new Error("Restaurant introuvable");
+    if (ordersPaused(r)) throw new Error(ORDERS_PAUSED_MSG);
     const catalog = withOptions(getCatalog(r), await loadOptionData(supabaseAdmin, r.id));
 
     const dineIn = data.mode === "dine_in";
@@ -218,6 +219,7 @@ export const createKioskOrder = createServerFn({ method: "POST" })
     const { data: rRow } = await supabaseAdmin.from("restaurants").select(RESTAURANT_COLUMNS).eq("slug", data.restaurant).eq("active", true).maybeSingle();
     const r = rRow as unknown as Restaurant | null;
     if (!r) throw new Error("Restaurant introuvable");
+    if (ordersPaused(r)) throw new Error(ORDERS_PAUSED_MSG);
     { const ft = featuresOf(r.enabled_features);
       if (!ft.borne) throw new Error("La borne n'est pas activée pour ce restaurant.");
       if (data.payment_method === "counter" && !ft.borne_cash_payment) throw new Error("Le paiement au comptoir n'est pas accepté sur la borne."); }
