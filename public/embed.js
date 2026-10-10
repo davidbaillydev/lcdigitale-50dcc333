@@ -73,11 +73,24 @@ ov.host.style.display="none";
 document.body.style.overflow=prevOverflow;
 if (lastBtn&&lastBtn.focus) lastBtn.focus();
 }
+var badge=null, inlineMode=false;
+function setBadge(n) {
+if (!badge) return;
+badge.textContent=n>0 ? String(n) : "";
+badge.style.display=n>0 ? "grid" : "none";
+}
 window.addEventListener("message", function (e) {
 if (e.origin!==ORIGIN||!frame||e.source!==frame.contentWindow) return;
 var d=e.data;
-if (!d||typeof d.type!=="string"||d.type.indexOf("lc:")!==0) return;
+if (!d||d.v!==1||typeof d.type!=="string"||d.type.indexOf("lc:")!==0) return;
 if (d.type==="lc:close") close();
+else if (d.type==="lc:ready") { loaded=true; clearTimeout(timer); }
+else if (d.type==="lc:resize"&&inlineMode&&typeof d.height==="number") frame.style.height=Math.min(Math.max(d.height,200),4000)+"px";
+else if (d.type==="lc:cart"&&typeof d.count==="number") setBadge(d.count);
+else if (d.type==="lc:order-completed") {
+setBadge(0);
+window.dispatchEvent(new CustomEvent("lcdigitale:order", { detail: { orderNumber: d.orderNumber, total: d.total } }));
+}
 });
 function mount(s) {
 var slug=s.getAttribute("data-restaurant");
