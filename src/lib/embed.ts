@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /** Vrai quand la page est affichée dans une iframe (window.top peut lever une erreur cross-origin). */
 export function isEmbedded(): boolean {
@@ -10,11 +10,23 @@ export function isEmbedded(): boolean {
   }
 }
 
-/** Envoie un message au site parent (bouton intégré, hauteur, fermeture…). */
-export function postToParent(msg: unknown): void {
+/** Origine du site parent, déduite du referrer (inconnue sinon → "*"). */
+function parentOrigin(): string {
+  try {
+    return document.referrer ? new URL(document.referrer).origin : "*";
+  } catch {
+    return "*";
+  }
+}
+
+/**
+ * Envoie un message au site parent (protocole `lc:*`, v:1).
+ * Jamais de donnée personnelle dans les messages (ni nom, ni téléphone, ni email, ni adresse).
+ */
+export function postToParent(msg: Record<string, unknown>): void {
   if (!isEmbedded()) return;
   try {
-    window.parent.postMessage(msg, "*");
+    window.parent.postMessage({ v: 1, ...msg }, parentOrigin());
   } catch {
     /* parent injoignable */
   }
@@ -34,4 +46,50 @@ export function useEmbedMode(slug: string, enabled = true): boolean {
     if (sessionStorage.getItem(`embed-${slug}`) === "1" && isEmbedded()) setOn(true);
   }, [slug, enabled]);
   return on;
+}
+
+/** Signale au parent que la carte est prête (montage de la page restaurant en mode embed). */
+export function useEmbedReady(slug: string, embed: boolean): void {
+  const sent = useRef(false);
+  useEffect(() => {
+    if (!embed || sent.current) return;
+    sent.current = true;
+    postToParent({ type: "lc:ready", slug });
+  }, [embed, slug]);
+}
+
+/** Signale la hauteur du contenu au parent (mode inline), limité à 1 envoi / 200 ms. */
+export function useEmbedResize(embed: boolean): void {
+  useEffect(() => {
+    if (!embed || typeof ResizeObserver === "undefined") return;
+    let last = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const send = () => {
+      last = Date.now();
+      postToParent({ type: "lc:resize", height: document.body.scrollHeight });
+    };
+    const ro = new ResizeObserver(() => {
+      const wait = 200 - (Date.now() - last);
+      if (wait <= 0) send();
+      else {
+        clearTimeout(timer);
+        timer = setTimeout(send, wait);
+      }
+    });
+    ro.observe(document.body);
+    return () => {
+      clearTimeout(timer);
+      ro.disconnect();
+    };
+  }, [embed]);
+}
+
+/** Signale le nombre d'articles du panier au parent (badge du bouton). */
+export function useEmbedCartCount(embed: boolean, count: number): void {
+  const prev = useRef<number | null>(null);
+  useEffect(() => {
+    if (!embed || prev.current === count) return;
+    prev.current = count;
+    postToParent({ type: "lc:cart", count });
+  }, [embed, count]);
 }
