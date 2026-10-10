@@ -528,7 +528,7 @@ export async function startOnlinePayment(provider: "paypal" | "lyra" | "mollie",
     const res = await paypalCall(p, "/v2/checkout/orders", {
       intent: "CAPTURE",
       purchase_units: [{ custom_id: o.id, description: `${restaurantName} — commande n° ${o.order_number}`.slice(0, 127), amount: { currency_code: "EUR", value: (amount / 100).toFixed(2) } }],
-      application_context: { brand_name: restaurantName.slice(0, 127), user_action: "PAY_NOW", shipping_preference: "NO_SHIPPING", locale: "fr-FR", return_url: returnBase, cancel_url: `${returnBase}?annule=1` },
+      application_context: { brand_name: restaurantName.slice(0, 127), user_action: "PAY_NOW", shipping_preference: "NO_SHIPPING", locale: "fr-FR", return_url: returnBase, cancel_url: `${returnBase}${returnBase.includes("?") ? "&" : "?"}annule=1` },
     }) as { id: string; links?: { rel: string; href: string }[] };
     const url = res.links?.find((l) => l.rel === "approve" || l.rel === "payer-action")?.href;
     if (!url) throw new Error("PayPal : lien de paiement manquant");
@@ -543,7 +543,7 @@ export async function startOnlinePayment(provider: "paypal" | "lyra" | "mollie",
     const res = await mollieCall(m.key, "/payments", {
       amount: { currency: "EUR", value: (amount / 100).toFixed(2) },
       description: `${restaurantName} — commande n° ${o.order_number}`.slice(0, 255),
-      redirectUrl: `${returnBase}?origin=mollie`, cancelUrl: `${returnBase}?origin=mollie&annule=1`,
+      redirectUrl: `${returnBase}${returnBase.includes("?") ? "&" : "?"}origin=mollie`, cancelUrl: `${returnBase}${returnBase.includes("?") ? "&" : "?"}origin=mollie&annule=1`,
       ...(publicHook ? { webhookUrl: `${origin}/api/public/mollie-webhook` } : {}),
       locale: "fr_FR", metadata: { order_id: o.id },
       ...(m.profileId ? { profileId: m.profileId } : {}),

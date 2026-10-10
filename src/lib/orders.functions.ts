@@ -30,11 +30,23 @@ const orderSchema = z.object({
   cgv: z.literal(true, { message: "Merci d'accepter les conditions générales de vente." }),
   provider: z.enum(["stripe", "paypal", "lyra", "mollie"]).optional(),
   origin: z.string().url().max(200).regex(/^https?:\/\/[^/]+$/).optional(),
+  returnTo: z.string().max(300).regex(/^https:\/\/[^\s]+$/).optional(),
+  ref: z.string().max(253).regex(/^[a-z0-9.-]+$/i).optional(),
   lines: z
     .array(z.object({ itemId: z.string().max(80), qty: z.number().int().min(1).max(50), sel: z.record(z.string(), z.array(z.string().max(60)).max(12)) }))
     .min(1)
     .max(60),
 });
+
+/** `?back=` validé : URL https du site parent, même hôte que le ref transmis par embed.js. */
+function backParam(returnTo?: string, ref?: string): string {
+  if (!returnTo || !ref) return "";
+  try {
+    const u = new URL(returnTo);
+    if (u.protocol !== "https:" || u.hostname.toLowerCase() !== ref.toLowerCase() || u.username || u.password) return "";
+    return `?back=${encodeURIComponent(u.href)}`;
+  } catch { return ""; }
+}
 
 export const createOrder = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => orderSchema.parse(d))
@@ -156,7 +168,7 @@ export const createOrder = createServerFn({ method: "POST" })
     }
     const base = { id: row.id, order_number: row.order_number, clientSecret: null as string | null, redirectUrl: null as string | null, form: null as { action: string; fields: Record<string, string> } | null };
     if (provider === "paypal" || provider === "lyra" || provider === "mollie") {
-      const res = await startOnlinePayment(provider, { id: row.id, order_number: row.order_number, total: Number(row.total), restaurant_id: r.id, email: data.email || null }, r.name, `${data.origin}/${r.slug}/suivi/${row.id}`);
+      const res = await startOnlinePayment(provider, { id: row.id, order_number: row.order_number, total: Number(row.total), restaurant_id: r.id, email: data.email || null }, r.name, `${data.origin}/${r.slug}/suivi/${row.id}${backParam(data.returnTo, data.ref)}`);
       return { ...base, redirectUrl: "redirectUrl" in res ? res.redirectUrl : null, form: "form" in res ? res.form : null };
     }
     if (!stripe) return base;
