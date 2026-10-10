@@ -13,6 +13,7 @@ import { getPushEndpoint, needsInstallForPush, pushSupported } from "@/lib/push"
 import { toast } from "sonner";
 import { confirmOnlinePayment } from "@/lib/payments.functions";
 import { useCart } from "@/lib/cart";
+import { postToParent } from "@/lib/embed";
 import { useEffect, useRef, useState } from "react";
 import { euro } from "@/lib/menu";
 import { fmtTime } from "@/lib/shop";
@@ -65,6 +66,18 @@ function Tracking() {
   useEffect(() => {
     if (!cleared.current && data && data.payment_method === "online" && data.payment_status === "paid") { cleared.current = true; clear(); }
   }, [data, clear]);
+  // Mode intégré : signale au site parent que la commande est confirmée (une seule fois par commande)
+  useEffect(() => {
+    if (!data || data.status === "awaiting_payment" || data.status === "cancelled") return;
+    const confirmed = data.payment_method === "on_site" || data.payment_status === "paid";
+    if (!confirmed) return;
+    const key = `lc-order-sent-${data.id}`;
+    try {
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, "1");
+    } catch { /* stockage indisponible */ }
+    postToParent({ type: "lc:order-completed", orderNumber: data.order_number, total: Number(data.total) });
+  }, [data]);
 
   if (isLoading) return <div className="min-h-screen"><SiteHeader /><p className="p-10 text-center text-muted-foreground">Chargement…</p></div>;
   if (!data) return <div className="min-h-screen"><SiteHeader /><p className="p-10 text-center">Commande introuvable.</p></div>;

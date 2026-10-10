@@ -59,7 +59,8 @@ function withSecurityHeaders(response: Response, request: Request): Response {
   const pathname = new URL(request.url).pathname;
   if (isEmbeddablePath(pathname)) {
     headers.delete("X-Frame-Options");
-    headers.set("Content-Security-Policy", "frame-ancestors https:");
+    // En production : uniquement des sites en HTTPS. En local (démo embed-test.html) : http autorisé.
+    headers.set("Content-Security-Policy", `frame-ancestors https:${import.meta.env.DEV ? " http:" : ""}`);
   } else {
     headers.set("X-Frame-Options", "DENY");
     headers.set("Content-Security-Policy", "frame-ancestors 'none'");
