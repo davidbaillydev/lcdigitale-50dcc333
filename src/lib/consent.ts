@@ -1,3 +1,4 @@
+import { safeLocal } from "@/lib/safe-storage";
 import { useEffect, useState } from "react";
 
 export type Consent = { audience: boolean; voice: boolean; at: number };
@@ -7,12 +8,12 @@ const MAX_AGE = 1000 * 60 * 60 * 24 * 182;
 
 export function readConsent(): Consent | null {
   try {
-    const c = JSON.parse(localStorage.getItem(KEY) ?? "null") as Consent | null;
+    const c = JSON.parse(safeLocal.get(KEY) ?? "null") as Consent | null;
     return c && Date.now() - c.at < MAX_AGE ? c : null;
   } catch { return null; }
 }
 export function writeConsent(c: Omit<Consent, "at">) {
-  localStorage.setItem(KEY, JSON.stringify({ ...c, at: Date.now() }));
+  safeLocal.set(KEY, JSON.stringify({ ...c, at: Date.now() }));
   window.dispatchEvent(new CustomEvent(EVT, { detail: "saved" }));
 }
 export function openCookieSettings() { window.dispatchEvent(new CustomEvent(EVT, { detail: "open" })); }

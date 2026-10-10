@@ -1,3 +1,4 @@
+import { safeLocal } from "@/lib/safe-storage";
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { unitPrice, type Selections } from "./menu";
 import { getCatalog, type Catalog } from "./catalogs";
@@ -38,13 +39,13 @@ export function CartProvider({ restaurant, children }: { restaurant: Restaurant;
   const [ready, setReady] = useState(false);
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(KEY);
+      const raw = safeLocal.get(KEY);
       setLines(raw ? (JSON.parse(raw) as CartLine[]).filter((l) => catalog.itemsById[l.itemId]) : []);
     } catch {}
     setReady(true);
   }, [KEY, catalog]);
   useEffect(() => {
-    if (ready) localStorage.setItem(KEY, JSON.stringify(lines));
+    if (ready) safeLocal.set(KEY, JSON.stringify(lines));
   }, [lines, KEY, ready]);
   // Badge du bouton parent en mode intégré (aucune donnée personnelle)
   const count = lines.reduce((s, l) => s + l.qty, 0);

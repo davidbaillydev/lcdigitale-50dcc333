@@ -1,3 +1,4 @@
+import { safeSession } from "@/lib/safe-storage";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -130,7 +131,7 @@ function Checkout() {
           lines: lines.map((l) => ({ itemId: l.itemId, qty: l.qty, sel: l.sel })),
         },
       });
-      if (embedded && (res.clientSecret || res.redirectUrl || res.form)) { try { sessionStorage.setItem(pendingOrderKey(restaurant.slug), res.id); } catch { /* */ } }
+      if (embedded && (res.clientSecret || res.redirectUrl || res.form)) { try { safeSession.set(pendingOrderKey(restaurant.slug), res.id); } catch { /* */ } }
       if (res.clientSecret) { setPayment({ id: res.id, clientSecret: res.clientSecret, back: back?.returnTo }); return; }
       if (res.redirectUrl) {
         leaving = true;

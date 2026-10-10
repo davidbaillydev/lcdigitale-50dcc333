@@ -1,3 +1,4 @@
+import { safeSession, safeLocal } from "@/lib/safe-storage";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -79,8 +80,8 @@ function Tracking() {
     if (!confirmed) return;
     const key = `lc-order-sent-${data.id}`;
     try {
-      if (sessionStorage.getItem(key)) return;
-      sessionStorage.setItem(key, "1");
+      if (safeSession.get(key)) return;
+      safeSession.set(key, "1");
     } catch { /* stockage indisponible */ }
     postToParent({ type: "lc:order-completed", orderNumber: data.order_number, total: Number(data.total) });
   }, [data]);
@@ -194,7 +195,7 @@ function InvoiceDownload({ orderId }: { orderId: string }) {
 function PushOptIn({ orderId }: { orderId: string }) {
   const sub = useServerFn(subscribeOrderPush);
   const [state, setState] = useState<"idle" | "busy" | "on" | "off">("idle");
-  useEffect(() => { if (!pushSupported()) setState("off"); else if (Notification.permission === "granted" && localStorage.getItem(`push-${orderId}`)) setState("on"); }, [orderId]);
+  useEffect(() => { if (!pushSupported()) setState("off"); else if (Notification.permission === "granted" && safeLocal.get(`push-${orderId}`)) setState("on"); }, [orderId]);
   if (state === "off") return needsInstallForPush() ? <p className="mt-4 text-sm text-muted-foreground">Pour être prévenu sur iPhone, ajoutez ce site à l'écran d'accueil (Partager → « Sur l'écran d'accueil »).</p> : null;
   if (state === "on") return <p className="mt-4 text-sm text-muted-foreground">Notifications activées : vous serez prévenu à chaque étape.</p>;
   return (
@@ -204,7 +205,7 @@ function PushOptIn({ orderId }: { orderId: string }) {
         const ep = await getPushEndpoint();
         if (!ep) { toast.error("Notifications refusées par l'appareil."); setState("idle"); return; }
         await sub({ data: { orderId, endpoint: ep } });
-        localStorage.setItem(`push-${orderId}`, "1"); setState("on"); toast.success("Notifications activées");
+        safeLocal.set(`push-${orderId}`, "1"); setState("on"); toast.success("Notifications activées");
       } catch (e) { toast.error(e instanceof Error ? e.message : "Activation impossible"); setState("idle"); }
     }}>Me prévenir quand ma commande avance</Button>
   );
