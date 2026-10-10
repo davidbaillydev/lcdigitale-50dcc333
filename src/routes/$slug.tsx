@@ -1,10 +1,12 @@
 import { createFileRoute, Link, notFound, Outlet, useRouterState } from "@tanstack/react-router";
 import { CookieConsent } from "@/components/CookieConsent";
 import { getRestaurant } from "@/lib/restaurants.functions";
-import { CartProvider } from "@/lib/cart";
+import { CartProvider, useCart } from "@/lib/cart";
+import { useEffect } from "react";
+import { getOrderStatus } from "@/lib/orders.functions";
 import { BrandTheme } from "@/lib/brand";
 import { featuresOf } from "@/lib/features";
-import { useEmbedMode, useEmbedReady, useEmbedResize } from "@/lib/embed";
+import { useEmbedMode, useEmbedReady, useEmbedResize, pendingOrderKey } from "@/lib/embed";
 
 // Carte, horaires et mentions légales : mis en cache 15 min côté navigateur
 const restaurantQuery = (slug: string) => ({
@@ -53,10 +55,27 @@ function Layout() {
     <BrandTheme brand={restaurant.brand}>
       <CartProvider restaurant={restaurant}>
         <div {...(embed ? { "data-embed": "1" } : {})} className={embed ? "embed-compact" : undefined}>
+          {embed && <EmbedCartReset slug={restaurant.slug} />}
           <Outlet />
           {!staffScreen && <CookieConsent slug={restaurant.slug} voice={!!restaurant.is_vapi_web_enabled} compact={embed} />}
         </div>
       </CartProvider>
     </BrandTheme>
   );
+}
+
+/** Iframe : si la dernière commande partie au paiement est payée, vider le panier (stockage partitionné). */
+function EmbedCartReset({ slug }: { slug: string }) {
+  const { clear } = useCart();
+  useEffect(() => {
+    let id: string | null = null;
+    try { id = sessionStorage.getItem(pendingOrderKey(slug)); } catch { return; }
+    if (!id) return;
+    getOrderStatus({ data: { id } }).then((o) => {
+      if (!o) { sessionStorage.removeItem(pendingOrderKey(slug)); return; }
+      if (o.payment_status === "paid") { clear(); sessionStorage.removeItem(pendingOrderKey(slug)); }
+      else if (o.status === "cancelled") sessionStorage.removeItem(pendingOrderKey(slug));
+    }).catch(() => {});
+  }, [slug, clear]);
+  return null;
 }
