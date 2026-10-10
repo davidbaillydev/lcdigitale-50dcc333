@@ -332,21 +332,28 @@ export const cancelKioskPayment = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { db, o } = await kioskOrder(data.orderId);
     if (o.payment_status === "paid") return { status: "paid" as const };
+    // Jamais d'annulation sur le terminal sans paiement en attente propre à cette commande
+    if (o.payment_status !== "pending" || !o.payment_ref) return { status: "failed" as const };
     const t = await terminalForRestaurant(o.restaurant_id);
     try {
-      if (t?.kind === "stripe") {
-        await stripeCall(`/terminal/readers/${encodeURIComponent(t.reader)}/cancel_action`, t.secret, {});
-        if (o.payment_ref?.startsWith("stripe_term:")) await stripeCall(`/payment_intents/${o.payment_ref.slice(12)}/cancel`, t.secret, {});
-      } else if (t?.kind === "mollie" && o.payment_ref?.startsWith("mollie_term:")) {
+      if (t?.kind === "stripe" && o.payment_ref.startsWith("stripe_term:")) {
+        const pi = o.payment_ref.slice(12);
+        const reader = await stripeCall(`/terminal/readers/${encodeURIComponent(t.reader)}`, t.secret) as { action?: { process_payment_intent?: { payment_intent?: string | { id?: string } } } | null };
+        const cur = reader.action?.process_payment_intent?.payment_intent;
+        const curId = typeof cur === "string" ? cur : cur?.id;
+        if (curId === pi) await stripeCall(`/terminal/readers/${encodeURIComponent(t.reader)}/cancel_action`, t.secret, {}).catch(() => null);
+        await stripeCall(`/payment_intents/${encodeURIComponent(pi)}/cancel`, t.secret, {});
+      } else if (t?.kind === "mollie" && o.payment_ref.startsWith("mollie_term:")) {
         await mollieDelete(t.key, `/payments/${o.payment_ref.slice(12)}${t.profileId && !t.live ? "?testmode=true" : ""}`);
       } else if (t?.kind === "sumup") {
-        await sumup(`/v0.1/merchants/${t.merchant}/readers/${t.reader}/terminate`, t.apiKey, { method: "POST" });
+        const tx = await sumup(`/v2.1/merchants/${t.merchant}/transactions?client_transaction_id=${encodeURIComponent(o.payment_ref)}`, t.apiKey) as { status?: string };
+        if (tx?.status === "PENDING") await sumup(`/v0.1/merchants/${t.merchant}/readers/${t.reader}/terminate`, t.apiKey, { method: "POST" });
       }
     } catch { /* déjà terminé */ }
     // Un paiement validé juste avant l'annulation reste payé
     const { data: cur } = await db.from("orders").select("payment_status").eq("id", o.id).single();
     if (cur?.payment_status === "paid") return { status: "paid" as const };
-    await db.from("orders").update({ payment_status: "failed" }).eq("id", o.id);
+    await db.from("orders").update({ payment_status: "failed" }).eq("id", o.id).eq("payment_status", "pending");
     return { status: "failed" as const };
   });
 

@@ -45,6 +45,7 @@ export async function downloadPDF(name: string, title: string, subtitle: string,
 
 /** Lit un fichier CSV/Excel en lignes { entête: valeur } */
 export async function readSheet(file: File): Promise<Record<string, string>[]> {
+  if (file.size > 5 * 1024 * 1024) throw new Error("Fichier trop volumineux (5 Mo max)");
   const XLSX = await import("xlsx");
   const wb = XLSX.read(await file.arrayBuffer(), { type: "array" });
   const ws = wb.Sheets[wb.SheetNames[0]!]!;
