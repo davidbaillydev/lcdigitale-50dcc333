@@ -56,12 +56,12 @@ export function useEmbedMode(slug: string, enabled = true): boolean {
 }
 
 /** Signale au parent que la carte est prête (montage de la page restaurant en mode embed). */
-export function useEmbedReady(slug: string, embed: boolean): void {
+export function useEmbedReady(slug: string, embed: boolean, name?: string): void {
   const sent = useRef(false);
   useEffect(() => {
     if (!embed || sent.current) return;
     sent.current = true;
-    postToParent({ type: "lc:ready", slug });
+    postToParent({ type: "lc:ready", slug, ...(name ? { name } : {}) });
   }, [embed, slug]);
 }
 
@@ -130,4 +130,17 @@ export function orderSource(slug: string): { source?: "embed" | "facebook" | "li
   const s = safeSession.get(`src-${slug}`);
   if (s === "embed") { const ref = safeSession.get(`ref-${slug}`); return ref ? { source: s, ref } : { source: s }; }
   return s === "facebook" || s === "link" ? { source: s } : {};
+}
+
+/** Échap dans l'iframe ferme la fenêtre du site parent (sauf si une boîte de dialogue interne est ouverte). */
+export function useEmbedEscape(embed: boolean): void {
+  useEffect(() => {
+    if (!embed) return;
+    const h = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.defaultPrevented || document.querySelector('[role="dialog"][data-state="open"]')) return;
+      postToParent({ type: "lc:close" });
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [embed]);
 }
