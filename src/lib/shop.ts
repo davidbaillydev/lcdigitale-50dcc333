@@ -32,6 +32,7 @@ export type Restaurant = {
     marketing?: import("./promo").Marketing;
     serviceFee?: Partial<import("./service-fee").ServiceFeeConfig>;
     /** Menu QR par table (nombre de tables) et lien d'avis Google proposé après la commande */
+    embed?: { label: string; color: string; position: "right" | "left"; mode: "floating" | "inline"; domains: string[] };
     qr?: { tables?: number; reviewUrl?: string; room?: boolean; self?: boolean; tableValidation?: boolean };
     /** Moment de commande (ASAP / planifiée) et acceptation en cuisine */
     timing?: TimingConfig;

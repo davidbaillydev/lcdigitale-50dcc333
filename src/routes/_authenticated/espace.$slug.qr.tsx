@@ -1,4 +1,5 @@
 import { FeatureGate } from "@/components/FeatureGate";
+import { EmbedButtonSection } from "@/components/EmbedButtonSection";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -139,6 +140,7 @@ function Page() {
         <Button onClick={submit} disabled={busy}><Save /> {busy ? "Enregistrement…" : "Enregistrer"}</Button>
         {codes.length > 0 && <Button variant="secondary" onClick={() => window.print()}><Printer /> Imprimer / exporter en PDF</Button>}
       </div>
+      {r && <FeatureGate slug={slug} feature="embed"><EmbedButtonSection restaurant={r} onSaved={() => refetch()} /></FeatureGate>}
       {codes.length > 0 && (
         <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 print:mt-0 print:grid-cols-3">
           {codes.map((c) => (
