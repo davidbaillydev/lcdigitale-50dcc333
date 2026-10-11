@@ -38,6 +38,7 @@ return{host:host,root:root,box:box,x:x};
 function open(slug,btn,name){
 slug=String(slug||scripts[0].getAttribute("data-restaurant")||"");
 if(!SLUG_RE.test(slug))return;
+if(statusCache[slug]===false)return;
 lastBtn=btn||document.activeElement;
 if(navigator.cookieEnabled===false)return fallback(slug);
 if(!ov)ov=buildOverlay();
