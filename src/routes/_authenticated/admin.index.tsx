@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ThemeToggle } from "@/lib/theme";
+import { OrdersPausedToggle } from "@/components/OrdersPausedToggle";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   head: () => ({
@@ -104,6 +105,9 @@ function Console() {
                   }} aria-label={`Activer ${r.name}`} />
                   {r.active ? "En ligne" : "Hors ligne"}
                 </label>
+              </div>
+              <div className="mt-4 border-t border-border pt-4">
+                <OrdersPausedToggle restaurant={{ id: r.id, config: r.config }} className="w-full" />
               </div>
               <div className="admin-card-actions mt-5 grid grid-cols-2 gap-2 border-t border-border pt-4 sm:flex sm:flex-wrap">
                 <Button size="sm" variant="secondary" asChild><a href={`/${r.slug}`} target="_blank" rel="noreferrer"><ExternalLink /> Site</a></Button>
