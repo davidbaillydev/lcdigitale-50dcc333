@@ -124,7 +124,7 @@ export function ItemDialog({ item, onClose }: { item: MenuItem | null; onClose: 
           <div className="flex gap-2">
             {stepped && step > 0 && <Button variant="ghost" onClick={() => setStep(step - 1)}>Retour</Button>}
             {isLast ? (
-              <Button onClick={submit} disabled={paused} className="font-semibold">{paused ? "Commandes suspendues" : `Ajouter · ${euro(price * qty)}`}</Button>
+              <Button onClick={submit} disabled={paused} className="font-semibold">{paused ? "Le restaurant ne prend pas de commandes pour le moment" : `Ajouter · ${euro(price * qty)}`}</Button>
             ) : (
               <Button disabled={!groups[step] || !stepOk(groups[step]!)} onClick={() => setStep(step + 1)}>Suivant · {euro(price)}</Button>
             )}

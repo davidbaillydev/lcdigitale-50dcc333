@@ -13,7 +13,7 @@ export function todayHours(r: Pick<Restaurant, "opening" | "config">) {
 
 /** Bandeaux de fermeture : suspension manuelle, horaires, modes désactivés. */
 export function OrderingBanners({ state, kiosk = false }: { state: { restaurant: Restaurant; paused: boolean; onlineOff: boolean; showClosed: boolean }; kiosk?: boolean }) {
-  if (state.paused) return <p role="alert" className="bg-destructive px-4 py-3 text-center font-semibold text-destructive-foreground">🔴 Commandes momentanément indisponibles · Le menu reste consultable</p>;
+  if (state.paused) return <p role="alert" className="bg-destructive px-4 py-3 text-center font-semibold text-destructive-foreground">🔴 Les commandes en ligne sont momentanément fermées · Le menu reste consultable</p>;
   if (kiosk) return null;
   if (state.onlineOff) return <p role="alert" className="bg-destructive px-4 py-3 text-center font-semibold text-destructive-foreground">Commandes en ligne désactivées pour le moment</p>;
   if (state.showClosed) return <p role="status" className="bg-secondary px-4 py-3 text-center font-semibold text-secondary-foreground">Actuellement fermé · Horaires : {todayHours(state.restaurant)}</p>;
