@@ -7,7 +7,7 @@ import { useEffect } from "react";
 import { getOrderStatus } from "@/lib/orders.functions";
 import { BrandTheme } from "@/lib/brand";
 import { featuresOf } from "@/lib/features";
-import { useEmbedMode, useEmbedReady, useEmbedResize, useEmbedEscape, pendingOrderKey } from "@/lib/embed";
+import { useEmbedMode, useEmbedReady, useEmbedResize, useEmbedEscape, pendingOrderKey, postToParent } from "@/lib/embed";
 
 // Carte, horaires et mentions légales : mis en cache 15 min côté navigateur
 const restaurantQuery = (slug: string) => ({
