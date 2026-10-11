@@ -23,7 +23,8 @@ import { StripePayment } from "@/components/StripePayment";
 import { cn } from "@/lib/utils";
 import { PromoCodeField, type AppliedDiscount } from "@/components/PromoCodeField";
 import { EmbedBar } from "@/components/EmbedBar";
-import { useOrdersPaused } from "@/hooks/use-orders-paused";
+import { useOrderingState } from "@/hooks/use-orders-paused";
+import { OrderingBanners } from "@/components/OrderingBanners";
 import { useEmbedMode, orderSource, isEmbedded, embedReturnTo, openTop, pendingOrderKey } from "@/lib/embed";
 import { featuresOf } from "@/lib/features";
 
@@ -45,7 +46,7 @@ function Checkout() {
   const DELIVERY = restaurant.delivery;
   const navigate = useNavigate();
   const submitFn = useServerFn(createOrder);
-  const paused = useOrdersPaused(restaurant);
+  const ordering = useOrderingState(restaurant);
   const [mode, setMode] = useState<"pickup" | "delivery">(modeEnabled(restaurant, "pickup") ? "pickup" : "delivery");
   const tableNo = useTable(restaurant.slug, restaurant.config.qr?.tables ?? 0);
   const table = tableNo ?? qr.room ?? (qr.self ? "self" : null);
