@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { getKioskTerminal, setKioskTerminal, testKioskTerminal, listPaymentProviders, pairSumupReader, savePaymentProvider, testLyra, testMollie, testPaypal, testStripe, testSumup, type Provider } from "@/lib/payments.functions";
+import { getKioskTerminal, startMollieConnect, disconnectMollie, setKioskTerminal, testKioskTerminal, listPaymentProviders, pairSumupReader, savePaymentProvider, testLyra, testMollie, testPaypal, testStripe, testSumup, type Provider } from "@/lib/payments.functions";
 
 const MODES: Partial<Record<Provider, { options: [string, string][]; hint?: string }>> = {
   stripe: { options: [["test", "Test (aucun vrai paiement)"], ["live", "Réel (live)"]], hint: "Apple Pay et Google Pay s'affichent automatiquement s'ils sont activés dans votre compte Stripe." },
@@ -203,6 +203,7 @@ function ProviderCard({ restaurantId, p, onChange }: { restaurantId: string; p: 
               </div>
             </div>
           )}
+          {p.provider === "mollie" && <MollieConnect restaurantId={restaurantId} p={p} onChange={onChange} />}
           {p.provider === "mollie" && methods.length > 0 && (
             <div className="flex flex-wrap gap-1">{methods.map((x) => <span key={x.id} className="rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary">{x.name}</span>)}</div>
           )}
@@ -233,6 +234,48 @@ function TerminalChoice({ restaurantId }: { restaurantId: string }) {
         ))}
       </div>
       <p className="mt-2 text-sm">{data?.active ? `Lecteur prêt : ${TERMINAL_LABELS[data.active]}` : "Aucun lecteur prêt : la carte se paiera au comptoir."}</p>
+    </div>
+  );
+}
+
+/** Mollie Connect : connexion OAuth du compte du restaurant (commission plateforme 7 %). */
+function MollieConnect({ restaurantId, p, onChange }: { restaurantId: string; p: P; onChange: () => void }) {
+  const start = useServerFn(startMollieConnect);
+  const disc = useServerFn(disconnectMollie);
+  const [busy, setBusy] = useState(false);
+  const connected = !!p.settings["oauthConnectedAt"];
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("mollie");
+    if (!q) return;
+    if (q === "connecte") toast.success("Compte Mollie connecté"); else if (q === "refuse") toast.error("Connexion Mollie annulée"); else toast.error("La connexion Mollie a échoué, réessayez.");
+    const u = new URL(window.location.href); u.searchParams.delete("mollie"); window.history.replaceState(null, "", u.toString());
+  }, []);
+  const go = async () => {
+    setBusy(true);
+    try { const r = await start({ data: { restaurantId, origin: window.location.origin } }); window.location.href = r.url; }
+    catch (e) { toast.error((e as Error).message); setBusy(false); }
+  };
+  const off = async () => {
+    if (!confirm("Déconnecter le compte Mollie de ce restaurant ?")) return;
+    setBusy(true);
+    try { await disc({ data: { restaurantId } }); toast.success("Compte Mollie déconnecté"); onChange(); }
+    catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
+  };
+  return (
+    <div className="rounded-md bg-muted/50 p-3">
+      <p className="text-sm font-semibold">Mollie Connect</p>
+      {connected ? (
+        <>
+          <p className="text-sm">Compte connecté : {p.settings["oauthOrg"] || "—"}{p.settings["oauthProfile"] ? ` · profil « ${p.settings["oauthProfile"]} »` : ""} · mode {p.credentials["mode"] === "live" ? "Production" : "Test"}</p>
+          <p className="text-xs text-muted-foreground">Une commission plateforme de 7 % est prélevée sur chaque paiement en ligne.</p>
+          <Button className="mt-2" size="sm" variant="outline" disabled={busy} onClick={off}>Déconnecter</Button>
+        </>
+      ) : (
+        <>
+          <p className="text-sm text-muted-foreground">Reliez le compte Mollie du restaurant sans copier de clé API. Une commission de 7 % s'applique aux paiements en ligne.</p>
+          <Button className="mt-2" size="sm" disabled={busy} onClick={go}>Connecter mon compte Mollie</Button>
+        </>
+      )}
     </div>
   );
 }

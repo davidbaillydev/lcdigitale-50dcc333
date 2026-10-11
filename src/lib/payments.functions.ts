@@ -107,7 +107,7 @@ export const savePaymentProvider = createServerFn({ method: "POST" })
       if (credentials["apiKeyTest"] && !/^test_[A-Za-z0-9]{20,}$/.test(credentials["apiKeyTest"])) throw new Error("La clé de test Mollie doit commencer par test_.");
       if (credentials["apiKeyLive"] && !/^live_[A-Za-z0-9]{20,}$/.test(credentials["apiKeyLive"])) throw new Error("La clé de production Mollie doit commencer par live_.");
       if (credentials["profileId"] && !/^pfl_[A-Za-z0-9]+$/.test(credentials["profileId"])) throw new Error("L'identifiant de profil Mollie commence par pfl_.");
-      if (data.enabled && !credentials[credentials["mode"] === "live" ? "apiKeyLive" : "apiKeyTest"]) throw new Error(`Renseignez la clé Mollie ${credentials["mode"] === "live" ? "de production" : "de test"}.`);
+      if (data.enabled && !credentials["oauthRefreshToken"] && !credentials[credentials["mode"] === "live" ? "apiKeyLive" : "apiKeyTest"]) throw new Error(`Renseignez la clé Mollie ${credentials["mode"] === "live" ? "de production" : "de test"}.`);
     }
     const db = await admin();
     const { error } = await db.from("restaurant_payment_providers").upsert({
@@ -440,20 +440,64 @@ export const testPaypal = createServerFn({ method: "POST" })
   });
 
 // ───────────── Mollie (paiement hébergé + webhook) ─────────────
-type MollieCfg = { key: string; live: boolean; profileId?: string | undefined };
+type MollieCfg = { key: string; live: boolean; profileId?: string | undefined; oauth: boolean };
+// Jetons OAuth en mode test : Mollie exige testmode=true sur chaque appel (corps ou paramètre).
+const mollieOauthTestTokens = new Set<string>();
+export const MOLLIE_PLATFORM_FEE_RATE = 0.07;
+
+async function mollieTokenRequest(params: Record<string, string>) {
+  const id = process.env["MOLLIE_CLIENT_ID"], secret = process.env["MOLLIE_CLIENT_SECRET"];
+  if (!id || !secret) throw new Error("Mollie Connect n'est pas configuré sur la plateforme.");
+  const res = await fetch("https://api.mollie.com/oauth2/tokens", {
+    method: "POST",
+    headers: { Authorization: `Basic ${btoa(`${id}:${secret}`)}`, "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams(params).toString(),
+  });
+  const body = await res.json().catch(() => null) as { access_token?: string; refresh_token?: string; expires_in?: number; error_description?: string; detail?: string } | null;
+  if (!res.ok || !body?.access_token) {
+    console.error("Mollie OAuth", res.status, JSON.stringify(body).slice(0, 300));
+    throw new Error(`Mollie : ${body?.error_description ?? body?.detail ?? `erreur ${res.status}`}`);
+  }
+  return body as { access_token: string; refresh_token?: string; expires_in: number };
+}
+export async function exchangeMollieCode(code: string, redirectUri: string) {
+  return mollieTokenRequest({ grant_type: "authorization_code", code, redirect_uri: redirectUri });
+}
+
 export async function mollieForRestaurant(restaurantId: string, requireEnabled = true): Promise<MollieCfg | null> {
   const r = await getRow(restaurantId, "mollie");
   const c = r?.credentials ?? {};
   const live = c["mode"] === "live";
+  if (requireEnabled && !r?.enabled) return null;
+  if (c["oauthRefreshToken"]) {
+    let access = c["oauthAccessToken"] ?? "";
+    // Renouvellement automatique 2 min avant l'expiration
+    if (!access || Number(c["oauthExpiresAt"] ?? 0) < Date.now() + 120_000) {
+      const t = await mollieTokenRequest({ grant_type: "refresh_token", refresh_token: c["oauthRefreshToken"] });
+      access = t.access_token;
+      const credentials = { ...c, oauthAccessToken: access, oauthExpiresAt: String(Date.now() + t.expires_in * 1000), ...(t.refresh_token ? { oauthRefreshToken: t.refresh_token } : {}) };
+      const db = await admin();
+      await db.from("restaurant_payment_providers").update({ credentials }).eq("restaurant_id", restaurantId).eq("provider", "mollie");
+    }
+    if (!live) mollieOauthTestTokens.add(access);
+    return { key: access, live, profileId: c["profileId"] || undefined, oauth: true };
+  }
   const key = live ? c["apiKeyLive"] : c["apiKeyTest"];
-  if ((requireEnabled && !r?.enabled) || !key) return null;
-  return { key, live, profileId: c["profileId"] || undefined };
+  if (!key) return null;
+  return { key, live, profileId: c["profileId"] || undefined, oauth: false };
 }
 export async function mollieCall(key: string, path: string, json?: unknown, idempotencyKey?: string) {
-  const res = await fetch(`https://api.mollie.com/v2${path}`, {
+  const test = mollieOauthTestTokens.has(key);
+  let url = `https://api.mollie.com/v2${path}`;
+  let payload = json;
+  if (test) {
+    if (json === undefined) url += `${url.includes("?") ? "&" : "?"}testmode=true`;
+    else payload = { ...(json as Record<string, unknown>), testmode: true };
+  }
+  const res = await fetch(url, {
     method: json === undefined ? "GET" : "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}) },
-    body: json === undefined ? null : JSON.stringify(json),
+    body: payload === undefined ? null : JSON.stringify(payload),
   });
   const body = await res.json().catch(() => null) as Record<string, unknown> | null;
   if (!res.ok) {
@@ -462,6 +506,85 @@ export async function mollieCall(key: string, path: string, json?: unknown, idem
   }
   return body ?? {};
 }
+
+// ───────────── Mollie Connect (OAuth) ─────────────
+async function signState(payload: string) {
+  const { createHmac } = await import("crypto");
+  return createHmac("sha256", process.env["MOLLIE_CLIENT_SECRET"] ?? "").update(payload).digest("base64url");
+}
+export async function verifyMollieState(state: string): Promise<{ r: string; u: string; o: string } | null> {
+  const [b64, sig] = state.split(".");
+  if (!b64 || !sig || !process.env["MOLLIE_CLIENT_SECRET"]) return null;
+  const { timingSafeEqual } = await import("crypto");
+  const a = Buffer.from(await signState(b64)), b = Buffer.from(sig);
+  if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
+  try {
+    const p = JSON.parse(Buffer.from(b64, "base64url").toString("utf8")) as { r: string; u: string; o: string; e: number };
+    return p.e > Date.now() ? p : null;
+  } catch { return null; }
+}
+export function mollieRedirectUri(origin: string) {
+  return /localhost|127\.0\.0\.1/.test(origin) ? `${origin}/api/public/mollie-oauth-callback` : "https://restaurant.lcdigitale.fr/api/public/mollie-oauth-callback";
+}
+
+/** Génère l'URL d'autorisation Mollie Connect (state signé, valable 15 min). */
+export const startMollieConnect = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ restaurantId: z.string().uuid(), origin: z.string().url().max(200) }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertManager(context.supabase, context.userId, data.restaurantId);
+    const clientId = process.env["MOLLIE_CLIENT_ID"];
+    if (!clientId || !process.env["MOLLIE_CLIENT_SECRET"]) throw new Error("Mollie Connect n'est pas configuré sur la plateforme.");
+    const origin = new URL(data.origin).origin;
+    const b64 = Buffer.from(JSON.stringify({ r: data.restaurantId, u: context.userId, o: origin, e: Date.now() + 15 * 60_000, n: crypto.randomUUID() })).toString("base64url");
+    const state = `${b64}.${await signState(b64)}`;
+    const scope = "payments.write payments.read refunds.write refunds.read profiles.read organizations.read";
+    const q = new URLSearchParams({ client_id: clientId, redirect_uri: mollieRedirectUri(origin), response_type: "code", scope, state, approval_prompt: "auto" });
+    return { url: `https://my.mollie.com/oauth2/authorize?${q.toString()}` };
+  });
+
+/** Enregistre les jetons + profil après le callback (appelé par la route publique). */
+export async function saveMollieOauth(restaurantId: string, t: { access_token: string; refresh_token?: string; expires_in: number }) {
+  if (!t.refresh_token) throw new Error("Mollie n'a pas fourni de jeton de renouvellement.");
+  const prof = await mollieCall(t.access_token, "/profiles?limit=1") as { _embedded?: { profiles?: { id: string; name: string; mode?: string }[] } };
+  const profile = prof._embedded?.profiles?.[0];
+  const org = await mollieCall(t.access_token, "/organizations/me").catch(() => ({})) as { name?: string };
+  const prev = await getRow(restaurantId, "mollie");
+  const credentials = {
+    ...(prev?.credentials ?? {}), mode: prev?.credentials["mode"] === "live" ? "live" : "test",
+    oauthAccessToken: t.access_token, oauthRefreshToken: t.refresh_token, oauthExpiresAt: String(Date.now() + t.expires_in * 1000),
+    ...(profile ? { profileId: profile.id } : {}),
+  };
+  const settings = { ...(prev?.settings ?? {}), oauthOrg: org.name ?? "", oauthProfile: profile?.name ?? "", oauthConnectedAt: new Date().toISOString() };
+  const db = await admin();
+  const { error } = await db.from("restaurant_payment_providers").upsert({ restaurant_id: restaurantId, provider: "mollie", enabled: true, credentials, settings });
+  if (error) throw new Error("Enregistrement impossible");
+}
+
+/** Déconnecte Mollie Connect (révocation + suppression des jetons). */
+export const disconnectMollie = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ restaurantId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertManager(context.supabase, context.userId, data.restaurantId);
+    const r = await getRow(data.restaurantId, "mollie");
+    if (!r) return { ok: true };
+    const { oauthAccessToken, oauthRefreshToken, oauthExpiresAt, ...rest } = r.credentials;
+    void oauthAccessToken; void oauthExpiresAt;
+    if (oauthRefreshToken && process.env["MOLLIE_CLIENT_ID"]) {
+      await fetch("https://api.mollie.com/oauth2/tokens", {
+        method: "DELETE",
+        headers: { Authorization: `Basic ${btoa(`${process.env["MOLLIE_CLIENT_ID"]}:${process.env["MOLLIE_CLIENT_SECRET"]}`)}`, "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ token_type_hint: "refresh_token", token: oauthRefreshToken }).toString(),
+      }).catch(() => null);
+    }
+    const { oauthOrg, oauthProfile, oauthConnectedAt, ...settings } = r.settings;
+    void oauthOrg; void oauthProfile; void oauthConnectedAt;
+    const hasKey = !!rest[rest["mode"] === "live" ? "apiKeyLive" : "apiKeyTest"];
+    const db = await admin();
+    await db.from("restaurant_payment_providers").update({ credentials: rest, settings, enabled: r.enabled && hasKey }).eq("restaurant_id", data.restaurantId).eq("provider", "mollie");
+    return { ok: true };
+  });
 
 /** Vérifie la clé Mollie active et liste les moyens de paiement activés sur le compte. */
 export const testMollie = createServerFn({ method: "POST" })
@@ -562,6 +685,8 @@ export async function startOnlinePayment(provider: "paypal" | "lyra" | "mollie",
       ...(publicHook ? { webhookUrl: `${origin}/api/public/mollie-webhook` } : {}),
       locale: "fr_FR", metadata: { order_id: o.id },
       ...(m.profileId ? { profileId: m.profileId } : {}),
+      // Commission plateforme (uniquement pour les comptes reliés via Mollie Connect)
+      ...(m.oauth ? { applicationFee: { amount: { currency: "EUR", value: (Math.round(amount * MOLLIE_PLATFORM_FEE_RATE) / 100).toFixed(2) }, description: "Commission plateforme LCDIGITALE" } } : {}),
     }, `pay_${o.id}`) as { id: string; _links?: { checkout?: { href?: string } } };
     const url = res._links?.checkout?.href;
     if (!url) throw new Error("Mollie : lien de paiement manquant");

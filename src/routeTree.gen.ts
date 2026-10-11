@@ -42,6 +42,7 @@ import { Route as AuthenticatedEspaceFacturesRouteImport } from './routes/_authe
 import { Route as AuthenticatedEspaceTableauDeBordRouteImport } from './routes/_authenticated/espace.tableau-de-bord'
 import { Route as ApiPublicLyraIpnRouteImport } from './routes/api/public/lyra-ipn'
 import { Route as ApiPublicManifestRouteImport } from './routes/api/public/manifest'
+import { Route as ApiPublicMollieOauthCallbackRouteImport } from './routes/api/public/mollie-oauth-callback'
 import { Route as ApiPublicMollieWebhookRouteImport } from './routes/api/public/mollie-webhook'
 import { Route as AuthenticatedEspaceSlugIndexRouteImport } from './routes/_authenticated/espace.$slug.index'
 import { Route as AuthenticatedEspaceSlugCarteRouteImport } from './routes/_authenticated/espace.$slug.carte'
@@ -226,6 +227,12 @@ const ApiPublicManifestRoute = ApiPublicManifestRouteImport.update({
   path: '/api/public/manifest',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicMollieOauthCallbackRoute =
+  ApiPublicMollieOauthCallbackRouteImport.update({
+    id: '/api/public/mollie-oauth-callback',
+    path: '/api/public/mollie-oauth-callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicMollieWebhookRoute = ApiPublicMollieWebhookRouteImport.update({
   id: '/api/public/mollie-webhook',
   path: '/api/public/mollie-webhook',
@@ -340,6 +347,7 @@ export interface FileRoutesByFullPath {
   '/espace/tableau-de-bord': typeof AuthenticatedEspaceTableauDeBordRoute
   '/api/public/lyra-ipn': typeof ApiPublicLyraIpnRoute
   '/api/public/manifest': typeof ApiPublicManifestRoute
+  '/api/public/mollie-oauth-callback': typeof ApiPublicMollieOauthCallbackRoute
   '/api/public/mollie-webhook': typeof ApiPublicMollieWebhookRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/espace/': typeof AuthenticatedEspaceIndexRoute
@@ -386,6 +394,7 @@ export interface FileRoutesByTo {
   '/espace/tableau-de-bord': typeof AuthenticatedEspaceTableauDeBordRoute
   '/api/public/lyra-ipn': typeof ApiPublicLyraIpnRoute
   '/api/public/manifest': typeof ApiPublicManifestRoute
+  '/api/public/mollie-oauth-callback': typeof ApiPublicMollieOauthCallbackRoute
   '/api/public/mollie-webhook': typeof ApiPublicMollieWebhookRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/espace': typeof AuthenticatedEspaceIndexRoute
@@ -436,6 +445,7 @@ export interface FileRoutesById {
   '/_authenticated/espace/tableau-de-bord': typeof AuthenticatedEspaceTableauDeBordRoute
   '/api/public/lyra-ipn': typeof ApiPublicLyraIpnRoute
   '/api/public/manifest': typeof ApiPublicManifestRoute
+  '/api/public/mollie-oauth-callback': typeof ApiPublicMollieOauthCallbackRoute
   '/api/public/mollie-webhook': typeof ApiPublicMollieWebhookRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/espace/': typeof AuthenticatedEspaceIndexRoute
@@ -486,6 +496,7 @@ export interface FileRouteTypes {
     | '/espace/tableau-de-bord'
     | '/api/public/lyra-ipn'
     | '/api/public/manifest'
+    | '/api/public/mollie-oauth-callback'
     | '/api/public/mollie-webhook'
     | '/admin/'
     | '/espace/'
@@ -532,6 +543,7 @@ export interface FileRouteTypes {
     | '/espace/tableau-de-bord'
     | '/api/public/lyra-ipn'
     | '/api/public/manifest'
+    | '/api/public/mollie-oauth-callback'
     | '/api/public/mollie-webhook'
     | '/admin'
     | '/espace'
@@ -581,6 +593,7 @@ export interface FileRouteTypes {
     | '/_authenticated/espace/tableau-de-bord'
     | '/api/public/lyra-ipn'
     | '/api/public/manifest'
+    | '/api/public/mollie-oauth-callback'
     | '/api/public/mollie-webhook'
     | '/_authenticated/admin/'
     | '/_authenticated/espace/'
@@ -615,6 +628,7 @@ export interface RootRouteChildren {
   CuisineIndexRoute: typeof CuisineIndexRoute
   ApiPublicLyraIpnRoute: typeof ApiPublicLyraIpnRoute
   ApiPublicManifestRoute: typeof ApiPublicManifestRoute
+  ApiPublicMollieOauthCallbackRoute: typeof ApiPublicMollieOauthCallbackRoute
   ApiPublicMollieWebhookRoute: typeof ApiPublicMollieWebhookRoute
   ApiPublicEmbedStatusSlugRoute: typeof ApiPublicEmbedStatusSlugRoute
   ApiPublicPushMessageRoute: typeof ApiPublicPushMessageRoute
@@ -856,6 +870,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicManifestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/mollie-oauth-callback': {
+      id: '/api/public/mollie-oauth-callback'
+      path: '/api/public/mollie-oauth-callback'
+      fullPath: '/api/public/mollie-oauth-callback'
+      preLoaderRoute: typeof ApiPublicMollieOauthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/mollie-webhook': {
       id: '/api/public/mollie-webhook'
       path: '/api/public/mollie-webhook'
@@ -1052,6 +1073,7 @@ const rootRouteChildren: RootRouteChildren = {
   CuisineIndexRoute: CuisineIndexRoute,
   ApiPublicLyraIpnRoute: ApiPublicLyraIpnRoute,
   ApiPublicManifestRoute: ApiPublicManifestRoute,
+  ApiPublicMollieOauthCallbackRoute: ApiPublicMollieOauthCallbackRoute,
   ApiPublicMollieWebhookRoute: ApiPublicMollieWebhookRoute,
   ApiPublicEmbedStatusSlugRoute: ApiPublicEmbedStatusSlugRoute,
   ApiPublicPushMessageRoute: ApiPublicPushMessageRoute,
