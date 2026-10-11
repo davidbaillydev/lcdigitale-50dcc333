@@ -5,7 +5,7 @@ import { availableSlots, isOpenNow, modeEnabled, ordersPaused, timingOf, type Re
 type Live = Pick<Restaurant, "config" | "opening">;
 
 /** Réglages de commande du restaurant, relus au chargement puis poussés en direct (Realtime). */
-export function useLiveRestaurant<R extends Pick<Restaurant, "id" | "config" | "opening">>(restaurant: R): R {
+export function useLiveRestaurant<R extends Pick<Restaurant, "id" | "config"> & { opening?: Restaurant["opening"] }>(restaurant: R): R {
   const [live, setLive] = useState<Live | null>(null);
   const id = restaurant.id;
   useEffect(() => {
@@ -18,7 +18,7 @@ export function useLiveRestaurant<R extends Pick<Restaurant, "id" | "config" | "
       .channel(`restaurant-live-${id}-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "restaurants", filter: `id=eq.${id}` }, (p) => {
         const n = p.new as Partial<Live>;
-        if (n.config) setLive({ config: n.config, opening: n.opening ?? restaurant.opening } as Live);
+        if (n.config) setLive({ config: n.config, opening: n.opening ?? restaurant.opening ?? {} } as Live);
       })
       .subscribe();
     return () => { alive = false; supabase.removeChannel(channel); };
@@ -27,7 +27,7 @@ export function useLiveRestaurant<R extends Pick<Restaurant, "id" | "config" | "
   return live ? { ...restaurant, config: live.config, opening: live.opening } : restaurant;
 }
 
-export function useOrdersPaused(restaurant: Pick<Restaurant, "id" | "config" | "opening">) {
+export function useOrdersPaused(restaurant: Pick<Restaurant, "id" | "config"> & { opening?: Restaurant["opening"] }) {
   return ordersPaused(useLiveRestaurant(restaurant));
 }
 

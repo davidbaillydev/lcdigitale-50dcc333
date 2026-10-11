@@ -7,7 +7,7 @@ import type { Restaurant } from "@/lib/shop";
 import { Button } from "@/components/ui/button";
 
 /** Interrupteur 1-clic de la prise de commandes, enregistré immédiatement et synchronisé en direct. */
-export function OrdersPausedToggle({ restaurant, className = "" }: { restaurant: Pick<Restaurant, "id" | "config" | "opening">; className?: string }) {
+export function OrdersPausedToggle({ restaurant, className = "" }: { restaurant: Pick<Restaurant, "id" | "config"> & { opening?: Restaurant["opening"] }; className?: string }) {
   const paused = useOrdersPaused(restaurant);
   const [optimistic, setOptimistic] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
