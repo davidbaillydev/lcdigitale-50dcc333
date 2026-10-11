@@ -8,6 +8,11 @@ if(!scripts.length)return;
 var ORIGIN=new URL(scripts[0].src).origin;
 var SLUG_RE=/^[a-z0-9][a-z0-9-]{0,62}$/i;
 var ov=null,frame=null,frameSlug=null,lastBtn=null,timer=null,prevOverflow="",loaded=false,badge=null,inlineMode=false;
+var statusCache={};
+function fetchStatus(slug,cb){
+if(statusCache[slug]!=null)return cb(statusCache[slug]);
+fetch(ORIGIN+"/api/public/embed-status/"+encodeURIComponent(slug)).then(function(r){return r.json()}).then(function(d){var on=!!d.enabled;statusCache[slug]=on;cb(on)}).catch(function(){cb(true)});
+}
 function lum(h){return[1,3,5].reduce(function(a,i,k){var c=parseInt(h.substr(i,2),16)/255;c=c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4);return a+c*[.2126,.7152,.0722][k]},0)}
 function contrast(h){var L=lum(h);return(L+.05)/.05>=1.05/(L+.05)?"#000":"#fff"}
 function fallback(slug){window.open(ORIGIN+"/"+encodeURIComponent(slug)+"?src=embed","_blank","noreferrer")}
@@ -33,6 +38,7 @@ return{host:host,root:root,box:box,x:x};
 function open(slug,btn,name){
 slug=String(slug||scripts[0].getAttribute("data-restaurant")||"");
 if(!SLUG_RE.test(slug))return;
+if(statusCache[slug]===false)return;
 lastBtn=btn||document.activeElement;
 if(navigator.cookieEnabled===false)return fallback(slug);
 if(!ov)ov=buildOverlay();
@@ -84,6 +90,9 @@ function mount(s){
 var slug=s.getAttribute("data-restaurant");
 if(!slug||!SLUG_RE.test(slug)||s.__lcMounted)return;
 s.__lcMounted=true;
+fetchStatus(slug,function(on){if(on)mountButton(s,slug)});
+}
+function mountButton(s,slug){
 var color=(s.getAttribute("data-color")||"").toLowerCase();
 if(!/^#[0-9a-f]{6}$/.test(color))color=DEF_COLOR;
 var label=(s.getAttribute("data-label")||DEF_LABEL).slice(0,30),name=(s.getAttribute("data-name")||"").slice(0,80);

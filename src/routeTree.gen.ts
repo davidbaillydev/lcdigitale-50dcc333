@@ -51,6 +51,7 @@ import { Route as AuthenticatedEspaceSlugLivraisonRouteImport } from './routes/_
 import { Route as AuthenticatedEspaceSlugQrRouteImport } from './routes/_authenticated/espace.$slug.qr'
 import { Route as AuthenticatedEspaceSlugReglagesRouteImport } from './routes/_authenticated/espace.$slug.reglages'
 import { Route as AuthenticatedEspaceSlugReservationsRouteImport } from './routes/_authenticated/espace.$slug.reservations'
+import { Route as ApiPublicEmbedStatusSlugRouteImport } from './routes/api/public/embed-status/$slug'
 import { Route as ApiPublicPushMessageRouteImport } from './routes/api/public/push/message'
 import { Route as ApiPublicRestaurantBannerIdRouteImport } from './routes/api/public/restaurant-banner/$id'
 import { Route as ApiPublicVapiRestaurantIdRouteImport } from './routes/api/public/vapi.$restaurantId'
@@ -278,6 +279,12 @@ const AuthenticatedEspaceSlugReservationsRoute =
     path: '/espace/$slug/reservations',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicEmbedStatusSlugRoute =
+  ApiPublicEmbedStatusSlugRouteImport.update({
+    id: '/api/public/embed-status/$slug',
+    path: '/api/public/embed-status/$slug',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicPushMessageRoute = ApiPublicPushMessageRouteImport.update({
   id: '/api/public/push/message',
   path: '/api/public/push/message',
@@ -343,6 +350,7 @@ export interface FileRoutesByFullPath {
   '/espace/$slug/qr': typeof AuthenticatedEspaceSlugQrRoute
   '/espace/$slug/reglages': typeof AuthenticatedEspaceSlugReglagesRoute
   '/espace/$slug/reservations': typeof AuthenticatedEspaceSlugReservationsRoute
+  '/api/public/embed-status/$slug': typeof ApiPublicEmbedStatusSlugRoute
   '/api/public/push/message': typeof ApiPublicPushMessageRoute
   '/api/public/restaurant-banner/$id': typeof ApiPublicRestaurantBannerIdRoute
   '/api/public/vapi/$restaurantId': typeof ApiPublicVapiRestaurantIdRoute
@@ -388,6 +396,7 @@ export interface FileRoutesByTo {
   '/espace/$slug/qr': typeof AuthenticatedEspaceSlugQrRoute
   '/espace/$slug/reglages': typeof AuthenticatedEspaceSlugReglagesRoute
   '/espace/$slug/reservations': typeof AuthenticatedEspaceSlugReservationsRoute
+  '/api/public/embed-status/$slug': typeof ApiPublicEmbedStatusSlugRoute
   '/api/public/push/message': typeof ApiPublicPushMessageRoute
   '/api/public/restaurant-banner/$id': typeof ApiPublicRestaurantBannerIdRoute
   '/api/public/vapi/$restaurantId': typeof ApiPublicVapiRestaurantIdRoute
@@ -437,6 +446,7 @@ export interface FileRoutesById {
   '/_authenticated/espace/$slug/qr': typeof AuthenticatedEspaceSlugQrRoute
   '/_authenticated/espace/$slug/reglages': typeof AuthenticatedEspaceSlugReglagesRoute
   '/_authenticated/espace/$slug/reservations': typeof AuthenticatedEspaceSlugReservationsRoute
+  '/api/public/embed-status/$slug': typeof ApiPublicEmbedStatusSlugRoute
   '/api/public/push/message': typeof ApiPublicPushMessageRoute
   '/api/public/restaurant-banner/$id': typeof ApiPublicRestaurantBannerIdRoute
   '/api/public/vapi/$restaurantId': typeof ApiPublicVapiRestaurantIdRoute
@@ -486,6 +496,7 @@ export interface FileRouteTypes {
     | '/espace/$slug/qr'
     | '/espace/$slug/reglages'
     | '/espace/$slug/reservations'
+    | '/api/public/embed-status/$slug'
     | '/api/public/push/message'
     | '/api/public/restaurant-banner/$id'
     | '/api/public/vapi/$restaurantId'
@@ -531,6 +542,7 @@ export interface FileRouteTypes {
     | '/espace/$slug/qr'
     | '/espace/$slug/reglages'
     | '/espace/$slug/reservations'
+    | '/api/public/embed-status/$slug'
     | '/api/public/push/message'
     | '/api/public/restaurant-banner/$id'
     | '/api/public/vapi/$restaurantId'
@@ -579,6 +591,7 @@ export interface FileRouteTypes {
     | '/_authenticated/espace/$slug/qr'
     | '/_authenticated/espace/$slug/reglages'
     | '/_authenticated/espace/$slug/reservations'
+    | '/api/public/embed-status/$slug'
     | '/api/public/push/message'
     | '/api/public/restaurant-banner/$id'
     | '/api/public/vapi/$restaurantId'
@@ -603,6 +616,7 @@ export interface RootRouteChildren {
   ApiPublicLyraIpnRoute: typeof ApiPublicLyraIpnRoute
   ApiPublicManifestRoute: typeof ApiPublicManifestRoute
   ApiPublicMollieWebhookRoute: typeof ApiPublicMollieWebhookRoute
+  ApiPublicEmbedStatusSlugRoute: typeof ApiPublicEmbedStatusSlugRoute
   ApiPublicPushMessageRoute: typeof ApiPublicPushMessageRoute
   ApiPublicRestaurantBannerIdRoute: typeof ApiPublicRestaurantBannerIdRoute
   ApiPublicVapiRestaurantIdRoute: typeof ApiPublicVapiRestaurantIdRoute
@@ -905,6 +919,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEspaceSlugReservationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/embed-status/$slug': {
+      id: '/api/public/embed-status/$slug'
+      path: '/api/public/embed-status/$slug'
+      fullPath: '/api/public/embed-status/$slug'
+      preLoaderRoute: typeof ApiPublicEmbedStatusSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/push/message': {
       id: '/api/public/push/message'
       path: '/api/public/push/message'
@@ -1032,6 +1053,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicLyraIpnRoute: ApiPublicLyraIpnRoute,
   ApiPublicManifestRoute: ApiPublicManifestRoute,
   ApiPublicMollieWebhookRoute: ApiPublicMollieWebhookRoute,
+  ApiPublicEmbedStatusSlugRoute: ApiPublicEmbedStatusSlugRoute,
   ApiPublicPushMessageRoute: ApiPublicPushMessageRoute,
   ApiPublicRestaurantBannerIdRoute: ApiPublicRestaurantBannerIdRoute,
   ApiPublicVapiRestaurantIdRoute: ApiPublicVapiRestaurantIdRoute,

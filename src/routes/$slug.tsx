@@ -7,7 +7,7 @@ import { useEffect } from "react";
 import { getOrderStatus } from "@/lib/orders.functions";
 import { BrandTheme } from "@/lib/brand";
 import { featuresOf } from "@/lib/features";
-import { useEmbedMode, useEmbedReady, useEmbedResize, useEmbedEscape, pendingOrderKey } from "@/lib/embed";
+import { useEmbedMode, useEmbedReady, useEmbedResize, useEmbedEscape, pendingOrderKey, postToParent } from "@/lib/embed";
 
 // Carte, horaires et mentions légales : mis en cache 15 min côté navigateur
 const restaurantQuery = (slug: string) => ({
@@ -47,12 +47,16 @@ export const Route = createFileRoute("/$slug")({
 function Layout() {
   const { restaurant } = Route.useLoaderData();
   const path = useRouterState({ select: (s) => s.location.pathname });
-  if (!restaurant) return null;
+  const embedFeatureOn = restaurant ? featuresOf(restaurant.enabled_features).embed : true;
+  // Détecte une ouverture en iframe même quand le module est désactivé (écran d'indisponibilité).
   const staffScreen = /\/(borne|cuisine)(\/|$)/.test(path);
-  const embed = useEmbedMode(restaurant.slug, featuresOf(restaurant.enabled_features).embed) && !staffScreen;
-  useEmbedReady(restaurant.slug, embed, restaurant.name);
+  const embedRequested = useEmbedMode(restaurant?.slug ?? "", true);
+  const embed = useEmbedMode(restaurant?.slug ?? "", embedFeatureOn) && !staffScreen;
+  useEmbedReady(restaurant?.slug ?? "", embed, restaurant?.name);
   useEmbedEscape(embed);
   useEmbedResize(embed);
+  if (!restaurant) return null;
+  if (!staffScreen && embedRequested && !embedFeatureOn) return <EmbedUnavailable restaurant={restaurant} />;
   return (
     <BrandTheme brand={restaurant.brand}>
       <CartProvider restaurant={restaurant}>
@@ -62,6 +66,24 @@ function Layout() {
           {!staffScreen && <CookieConsent slug={restaurant.slug} voice={!!restaurant.is_vapi_web_enabled} compact={embed} />}
         </div>
       </CartProvider>
+    </BrandTheme>
+  );
+}
+
+/** Iframe ouverte alors que le module « Bouton pour site web » est désactivé : écran d'indisponibilité. */
+function EmbedUnavailable({ restaurant }: { restaurant: { slug: string; name: string; brand: unknown } }) {
+  useEffect(() => {
+    // Signale au parent que l'iframe est chargée (évite le repli nouvel onglet après 8 s).
+    postToParent({ type: "lc:ready", slug: restaurant.slug, name: restaurant.name });
+  }, [restaurant.slug, restaurant.name]);
+  return (
+    <BrandTheme brand={restaurant.brand as never}>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 p-8 text-center">
+        <p className="font-display text-2xl">Commande en ligne indisponible</p>
+        <p className="max-w-sm text-sm text-muted-foreground">
+          Ce restaurant n'accepte pas de commandes via ce bouton pour le moment. Merci de réessayer plus tard.
+        </p>
+      </div>
     </BrandTheme>
   );
 }
