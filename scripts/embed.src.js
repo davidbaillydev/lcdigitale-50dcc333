@@ -90,6 +90,9 @@ function mount(s){
 var slug=s.getAttribute("data-restaurant");
 if(!slug||!SLUG_RE.test(slug)||s.__lcMounted)return;
 s.__lcMounted=true;
+fetchStatus(slug,function(on){if(on)mountButton(s,slug)});
+}
+function mountButton(s,slug){
 var color=(s.getAttribute("data-color")||"").toLowerCase();
 if(!/^#[0-9a-f]{6}$/.test(color))color=DEF_COLOR;
 var label=(s.getAttribute("data-label")||DEF_LABEL).slice(0,30),name=(s.getAttribute("data-name")||"").slice(0,80);
