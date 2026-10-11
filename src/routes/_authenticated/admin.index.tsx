@@ -1,11 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useState } from "react";
-import { ChefHat, ExternalLink, LogOut, Pencil, Plus, Settings, Tablet, Users } from "lucide-react";
+import { ArrowDown, ArrowUp, ChefHat, GripVertical, ExternalLink, LogOut, Pencil, Plus, Settings, Tablet, Users } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useStaff } from "@/hooks/use-staff";
-import { listAgencyRestaurants, saveRestaurant, setRestaurantActive, type AgencyRestaurant } from "@/lib/agency.functions";
+import { listAgencyRestaurants, reorderRestaurants, saveRestaurant, setRestaurantActive, type AgencyRestaurant } from "@/lib/agency.functions";
 import { MENU_KEYS, MENU_LABELS } from "@/lib/catalogs";
 import { inviteMember } from "@/lib/staff.functions";
 import { brandVars, BrandLogo, fileToLogo } from "@/lib/brand";
@@ -43,6 +43,19 @@ function Console() {
   const [rows, setRows] = useState<AgencyRestaurant[] | null>(null);
   const [form, setForm] = useState<Form | null>(null);
   const [q, setQ] = useState("");
+  const reorder = useServerFn(reorderRestaurants);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const move = async (from: string, to: string | number) => {
+    if (!rows) return;
+    const list = [...rows];
+    const i = list.findIndex((x) => x.id === from);
+    const j = typeof to === "number" ? i + to : list.findIndex((x) => x.id === to);
+    if (i < 0 || j < 0 || j >= list.length || i === j) return;
+    const [it] = list.splice(i, 1); list.splice(j, 0, it!);
+    setRows(list);
+    try { await reorder({ data: { ids: list.map((x) => x.id) } }); }
+    catch (e) { toast.error((e as Error).message); load(); }
+  };
 
   const load = useCallback(() => list().then(setRows).catch((e) => toast.error(e.message)), [list]);
   useEffect(() => { if (isAgency) load(); }, [isAgency, load]);
@@ -86,7 +99,14 @@ function Console() {
       {!rows ? <p className="mt-10 text-center text-muted-foreground">Chargement du réseau…</p> : (
         <div className="mt-8 grid gap-6 md:grid-cols-2">
           {rows.filter((r) => `${r.name} ${r.city ?? ""} ${r.slug}`.toLowerCase().includes(q.toLowerCase())).map((r) => (
-            <article key={r.id} className="admin-restaurant-card rounded-lg border border-border bg-card p-4 sm:p-6">
+            <article key={r.id} draggable={!q} onDragStart={(e) => { setDragId(r.id); e.dataTransfer.effectAllowed = "move"; }} onDragEnd={() => setDragId(null)}
+              onDragOver={(e) => { if (dragId) e.preventDefault(); }} onDrop={(e) => { e.preventDefault(); if (dragId) move(dragId, r.id); setDragId(null); }}
+              className={`admin-restaurant-card rounded-lg border border-border bg-card p-4 sm:p-6 ${dragId === r.id ? "opacity-50" : ""}`}>
+              {!q && <div className="mb-3 flex items-center justify-end gap-1 text-muted-foreground">
+                <GripVertical className="mr-auto hidden cursor-grab md:block" aria-hidden />
+                <Button size="icon" variant="ghost" onClick={() => move(r.id, -1)} disabled={rows[0]?.id === r.id} aria-label={`Monter ${r.name}`}><ArrowUp /></Button>
+                <Button size="icon" variant="ghost" onClick={() => move(r.id, 1)} disabled={rows[rows.length - 1]?.id === r.id} aria-label={`Descendre ${r.name}`}><ArrowDown /></Button>
+              </div>}
               <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 lg:flex lg:flex-wrap lg:gap-4">
                 {r.logo_url ? <BrandLogo src={r.logo_url} name={r.name} className="h-14 w-14 shrink-0 rounded-lg object-contain" />
                   : <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-primary font-display text-3xl text-primary-foreground">{r.name[0]}</div>}
