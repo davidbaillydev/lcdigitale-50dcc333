@@ -36,7 +36,8 @@ test.describe("QR codes", () => {
     await addSimpleDish(page);
     await page.goto(`/${SLUG}/commande`);
     await expect(page.getByText("vérifiée par notre équipe")).toBeVisible();
-    await page.getByLabel("Nom *").fill("Test E2E");
+    await page.getByLabel("Prénom *").fill("Test");
+    await page.getByLabel("Nom *", { exact: true }).fill("E2E");
     await page.getByLabel("Téléphone *").fill("0600000000");
     await page.getByRole("checkbox").last().check();
     await page.getByRole("button", { name: /Commander|Valider/ }).last().click();
