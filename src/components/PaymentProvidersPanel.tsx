@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { getKioskTerminal, startMollieConnect, disconnectMollie, setKioskTerminal, testKioskTerminal, listPaymentProviders, pairSumupReader, savePaymentProvider, testLyra, testMollie, testPaypal, testStripe, testSumup, type Provider } from "@/lib/payments.functions";
+import { getKioskTerminal, listMolliePayments, startMollieConnect, disconnectMollie, setKioskTerminal, testKioskTerminal, listPaymentProviders, pairSumupReader, savePaymentProvider, testLyra, testMollie, testPaypal, testStripe, testSumup, type Provider } from "@/lib/payments.functions";
 
 const MODES: Partial<Record<Provider, { options: [string, string][]; hint?: string }>> = {
   stripe: { options: [["test", "Test (aucun vrai paiement)"], ["live", "Réel (live)"]], hint: "Apple Pay et Google Pay s'affichent automatiquement s'ils sont activés dans votre compte Stripe." },
@@ -204,6 +204,7 @@ function ProviderCard({ restaurantId, p, onChange }: { restaurantId: string; p: 
             </div>
           )}
           {p.provider === "mollie" && <MollieConnect restaurantId={restaurantId} p={p} onChange={onChange} />}
+          {p.provider === "mollie" && <MolliePayments restaurantId={restaurantId} />}
           {p.provider === "mollie" && methods.length > 0 && (
             <div className="flex flex-wrap gap-1">{methods.map((x) => <span key={x.id} className="rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary">{x.name}</span>)}</div>
           )}
@@ -276,6 +277,42 @@ function MollieConnect({ restaurantId, p, onChange }: { restaurantId: string; p:
           <Button className="mt-2" size="sm" disabled={busy} onClick={go}>Connecter mon compte Mollie</Button>
         </>
       )}
+    </div>
+  );
+}
+
+const eur = (n: number) => n.toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
+const PAY_STATUS: Record<string, string> = { paid: "Payé", pending: "En attente", failed: "Échoué", expired: "Expiré", refunded: "Remboursé", partially_refunded: "Remb. partiel" };
+/** Suivi des paiements Mollie : montant, commission 7 % et résultat des remboursements. */
+function MolliePayments({ restaurantId }: { restaurantId: string }) {
+  const list = useServerFn(listMolliePayments);
+  const [open, setOpen] = useState(false);
+  const { data, isLoading } = useQuery({ queryKey: ["mollie-payments", restaurantId], queryFn: () => list({ data: { restaurantId } }), enabled: open });
+  const rows = data ?? [];
+  const paid = rows.filter((r) => r.status !== "pending" && r.status !== "failed" && r.status !== "expired");
+  return (
+    <div className="rounded-md border border-border p-3">
+      <Button size="sm" variant="secondary" onClick={() => setOpen(!open)}>{open ? "Masquer le suivi des paiements" : "Suivi des paiements Mollie"}</Button>
+      {open && (isLoading ? <p className="mt-2 text-sm">Chargement…</p> : rows.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">Aucun paiement Mollie pour l'instant.</p> : (
+        <div className="mt-3 space-y-2">
+          <p className="text-sm">Encaissé : <b>{eur(paid.reduce((a, r) => a + r.total, 0))}</b> · Commission 7 % : <b>{eur(paid.reduce((a, r) => a + r.fee, 0))}</b> · Remboursé : <b>{eur(rows.reduce((a, r) => a + r.refunded, 0))}</b></p>
+          <div className="max-h-80 overflow-auto">
+            <table className="w-full text-sm">
+              <thead><tr className="text-left text-muted-foreground"><th className="p-1">Commande</th><th className="p-1">Date</th><th className="p-1">Montant</th><th className="p-1">Commission</th><th className="p-1">Statut</th><th className="p-1">Remboursement</th></tr></thead>
+              <tbody>{rows.map((r) => (
+                <tr key={r.id} className="border-t border-border align-top">
+                  <td className="p-1">n° {r.number}</td>
+                  <td className="p-1">{new Date(r.date).toLocaleDateString("fr-FR")}</td>
+                  <td className="p-1">{eur(r.total)}</td>
+                  <td className="p-1">{r.fee > 0 ? eur(r.fee) : "—"}</td>
+                  <td className="p-1">{PAY_STATUS[r.status] ?? r.status}</td>
+                  <td className="p-1">{r.refunds.length === 0 ? "—" : r.refunds.map((x) => <div key={x.creditNote}>{eur(x.amount)} · {x.creditNote}{x.ref ? ` · ${x.ref}` : ""}</div>)}</td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

@@ -444,6 +444,8 @@ type MollieCfg = { key: string; live: boolean; profileId?: string | undefined; o
 // Jetons OAuth en mode test : Mollie exige testmode=true sur chaque appel (corps ou paramètre).
 const mollieOauthTestTokens = new Set<string>();
 export const MOLLIE_PLATFORM_FEE_RATE = 0.07;
+/** Commission plateforme en euros (arrondie au centime) pour un montant en centimes. */
+export const mollieApplicationFee = (amountCents: number) => Math.round(amountCents * MOLLIE_PLATFORM_FEE_RATE) / 100;
 
 async function mollieTokenRequest(params: Record<string, string>) {
   const id = process.env["MOLLIE_CLIENT_ID"], secret = process.env["MOLLIE_CLIENT_SECRET"];
@@ -686,11 +688,11 @@ export async function startOnlinePayment(provider: "paypal" | "lyra" | "mollie",
       locale: "fr_FR", metadata: { order_id: o.id },
       ...(m.profileId ? { profileId: m.profileId } : {}),
       // Commission plateforme (uniquement pour les comptes reliés via Mollie Connect)
-      ...(m.oauth ? { applicationFee: { amount: { currency: "EUR", value: (Math.round(amount * MOLLIE_PLATFORM_FEE_RATE) / 100).toFixed(2) }, description: "Commission plateforme LCDIGITALE" } } : {}),
+      ...(m.oauth ? { applicationFee: { amount: { currency: "EUR", value: mollieApplicationFee(amount).toFixed(2) }, description: "Commission plateforme LCDIGITALE" } } : {}),
     }, `pay_${o.id}`) as { id: string; _links?: { checkout?: { href?: string } } };
     const url = res._links?.checkout?.href;
     if (!url) throw new Error("Mollie : lien de paiement manquant");
-    await db.from("orders").update({ payment_ref: `mollie:${res.id}` }).eq("id", o.id);
+    await db.from("orders").update({ payment_ref: `mollie:${res.id}`, platform_fee: m.oauth ? mollieApplicationFee(amount) : 0 }).eq("id", o.id);
     return { redirectUrl: url };
   }
   const l = await lyraForRestaurant(o.restaurant_id);
@@ -808,4 +810,25 @@ export const confirmOnlinePayment = createServerFn({ method: "POST" })
     if (pi.status === "succeeded") { await markPaid(o); return { status: "paid" as const }; }
     if (pi.status === "canceled" || pi.status === "requires_payment_method") return { status: pi.status === "canceled" ? "failed" as const : "retry" as const };
     return { status: "pending" as const };
+  });
+
+/** Suivi des paiements Mollie : montant, commission plateforme et remboursements (agence). */
+export const listMolliePayments = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ restaurantId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertManager(context.supabase, context.userId, data.restaurantId);
+    const db = await admin();
+    const { data: orders } = await db.from("orders")
+      .select("id, order_number, created_at, total, platform_fee, payment_status, refund_status, refunded_amount, payment_ref")
+      .eq("restaurant_id", data.restaurantId).like("payment_ref", "mollie:%").order("created_at", { ascending: false }).limit(200);
+    const ids = ((orders ?? []) as { id: string }[]).map((o) => o.id);
+    const { data: refunds } = ids.length ? await db.from("order_refunds").select("order_id, amount, credit_note_number, provider_refund_id, created_at").in("order_id", ids) : { data: [] };
+    return ((orders ?? []) as Record<string, unknown>[]).map((o) => ({
+      id: o["id"] as string, number: o["order_number"] as number, date: o["created_at"] as string,
+      total: Number(o["total"]), fee: Number(o["platform_fee"] ?? 0), status: o["payment_status"] as string,
+      refundStatus: (o["refund_status"] as string | null) ?? null, refunded: Number(o["refunded_amount"] ?? 0),
+      refunds: ((refunds ?? []) as { order_id: string; amount: number; credit_note_number: string; provider_refund_id: string | null; created_at: string }[])
+        .filter((r) => r.order_id === o["id"]).map((r) => ({ amount: Number(r.amount), creditNote: r.credit_note_number, ref: r.provider_refund_id, date: r.created_at })),
+    }));
   });
