@@ -21,7 +21,7 @@ export function useStaff() {
       ]);
       const isAgency = (roles ?? []).some((r) => r.role === "admin");
       const ids = (members ?? []).map((m) => m.restaurant_id);
-      let q = supabase.from("restaurants").select("id, slug, name, city, address, phone, logo_url, brand, config, enabled_features").order("name");
+      let q = supabase.from("restaurants").select("id, slug, name, city, address, phone, logo_url, brand, config, enabled_features").order("sort_order").order("name");
       if (!isAgency) q = q.in("id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]);
       const { data: rs } = await q;
       const restaurants = (rs ?? []).map((r) => {

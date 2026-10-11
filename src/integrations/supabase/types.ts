@@ -269,8 +269,10 @@ export type Database = {
           discount: number
           driver_id: string | null
           email: string | null
+          first_name: string | null
           id: string
           items: Json
+          last_name: string | null
           mode: string
           notes: string | null
           order_number: number
@@ -285,8 +287,10 @@ export type Database = {
           postal_code: string | null
           promo_code: string | null
           qr_mode: string | null
+          received_email_at: string | null
           refund_status: string
           refunded_amount: number
+          restaurant_email_at: string | null
           restaurant_id: string
           room_label: string | null
           service_fee: number
@@ -319,8 +323,10 @@ export type Database = {
           discount?: number
           driver_id?: string | null
           email?: string | null
+          first_name?: string | null
           id?: string
           items: Json
+          last_name?: string | null
           mode: string
           notes?: string | null
           order_number?: number
@@ -335,8 +341,10 @@ export type Database = {
           postal_code?: string | null
           promo_code?: string | null
           qr_mode?: string | null
+          received_email_at?: string | null
           refund_status?: string
           refunded_amount?: number
+          restaurant_email_at?: string | null
           restaurant_id: string
           room_label?: string | null
           service_fee?: number
@@ -369,8 +377,10 @@ export type Database = {
           discount?: number
           driver_id?: string | null
           email?: string | null
+          first_name?: string | null
           id?: string
           items?: Json
+          last_name?: string | null
           mode?: string
           notes?: string | null
           order_number?: number
@@ -385,8 +395,10 @@ export type Database = {
           postal_code?: string | null
           promo_code?: string | null
           qr_mode?: string | null
+          received_email_at?: string | null
           refund_status?: string
           refunded_amount?: number
+          restaurant_email_at?: string | null
           restaurant_id?: string
           room_label?: string | null
           service_fee?: number
@@ -714,7 +726,9 @@ export type Database = {
           consent_source: string | null
           created_at: string
           email: string | null
+          first_name: string | null
           id: string
+          last_name: string | null
           marketing_consent: boolean
           name: string | null
           notes: string | null
@@ -728,7 +742,9 @@ export type Database = {
           consent_source?: string | null
           created_at?: string
           email?: string | null
+          first_name?: string | null
           id?: string
+          last_name?: string | null
           marketing_consent?: boolean
           name?: string | null
           notes?: string | null
@@ -742,7 +758,9 @@ export type Database = {
           consent_source?: string | null
           created_at?: string
           email?: string | null
+          first_name?: string | null
           id?: string
+          last_name?: string | null
           marketing_consent?: boolean
           name?: string | null
           notes?: string | null
@@ -1190,6 +1208,7 @@ export type Database = {
           opening: Json
           phone: string | null
           slug: string
+          sort_order: number
           updated_at: string
           vapi_assistant_id: string | null
           vapi_phone_number: string | null
@@ -1215,6 +1234,7 @@ export type Database = {
           opening?: Json
           phone?: string | null
           slug: string
+          sort_order?: number
           updated_at?: string
           vapi_assistant_id?: string | null
           vapi_phone_number?: string | null
@@ -1240,6 +1260,7 @@ export type Database = {
           opening?: Json
           phone?: string | null
           slug?: string
+          sort_order?: number
           updated_at?: string
           vapi_assistant_id?: string | null
           vapi_phone_number?: string | null

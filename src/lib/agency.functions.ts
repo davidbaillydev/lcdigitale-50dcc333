@@ -19,7 +19,7 @@ export const listAgencyRestaurants = createServerFn({ method: "GET" })
     await assertAgency(context.supabase, context.userId);
     const since = new Date(); since.setHours(0, 0, 0, 0);
     const [{ data: rs }, { data: orders }] = await Promise.all([
-      context.supabase.from("restaurants").select("id, slug, name, city, address, phone, email, menu_key, logo_url, brand, active, config").order("name"),
+      context.supabase.from("restaurants").select("id, slug, name, city, address, phone, email, menu_key, logo_url, brand, active, config").order("sort_order").order("name"),
       context.supabase.from("orders").select("restaurant_id").gte("created_at", since.toISOString()),
     ]);
     const count: Record<string, number> = {};
@@ -115,5 +115,18 @@ export const saveRestaurantFeatures = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("restaurants").update({ enabled_features: data.features }).eq("id", data.id);
     if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Ordre d'affichage des restaurants (agence uniquement). */
+export const reorderRestaurants = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ ids: z.array(z.string().uuid()).min(1).max(500) }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAgency(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const results = await Promise.all(data.ids.map((id, i) => supabaseAdmin.from("restaurants").update({ sort_order: i + 1 }).eq("id", id)));
+    const failed = results.find((r) => r.error);
+    if (failed?.error) throw new Error(failed.error.message);
     return { ok: true };
   });

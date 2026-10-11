@@ -16,7 +16,8 @@ const orderSchema = z.object({
   qr: z.literal("self").optional(),
   slot: z.string().max(40),
   asap: z.boolean().optional(),
-  customer_name: z.string().trim().min(2).max(80),
+  first_name: z.string().trim().min(1, "Prénom obligatoire").max(60),
+  last_name: z.string().trim().min(1, "Nom obligatoire").max(60),
   phone: z.string().trim().regex(/^[0-9 +().-]{8,20}$/),
   email: z.string().trim().email().max(255).optional().or(z.literal("")),
   address: z.string().trim().max(200).optional(),
@@ -127,7 +128,9 @@ export const createOrder = createServerFn({ method: "POST" })
       .from("orders")
       .insert({
         restaurant_id: r.id,
-        customer_name: data.customer_name,
+        customer_name: `${data.first_name} ${data.last_name}`,
+        first_name: data.first_name,
+        last_name: data.last_name,
         phone: data.phone,
         email: data.email || null,
         mode: data.mode,
@@ -169,9 +172,9 @@ export const createOrder = createServerFn({ method: "POST" })
       if (pc) await supabaseAdmin.from("restaurant_promo_codes").update({ uses: pc.uses + 1 }).eq("id", pc.id);
     }
     if (!provider) { const { syncOrderToPos } = await import("./pos.server"); await syncOrderToPos(row.id); }
-    if (!provider && data.email) {
-      const { sendOrderConfirmation } = await import("./order-email.server");
-      await sendOrderConfirmation(supabaseAdmin, row.id, data.origin).catch((e) => console.error(e));
+    if (!provider) {
+      const { notifyNewOrder } = await import("./order-email.server");
+      await notifyNewOrder(supabaseAdmin, row.id, data.origin).catch((e) => console.error(e));
     }
     const base = { id: row.id, order_number: row.order_number, clientSecret: null as string | null, redirectUrl: null as string | null, form: null as { action: string; fields: Record<string, string> } | null };
     if (provider === "paypal" || provider === "lyra" || provider === "mollie") {
@@ -274,5 +277,6 @@ export const createKioskOrder = createServerFn({ method: "POST" })
       if (pc) await supabaseAdmin.from("restaurant_promo_codes").update({ uses: pc.uses + 1 }).eq("id", pc.id);
     }
     { const { syncOrderToPos } = await import("./pos.server"); await syncOrderToPos(row.id); }
+    if (data.payment_method === "counter") { const { sendRestaurantNewOrder } = await import("./order-email.server"); await sendRestaurantNewOrder(supabaseAdmin, row.id).catch((e) => console.error(e)); }
     return row;
   });

@@ -113,8 +113,9 @@ export const Route = createFileRoute("/api/public/vapi/$restaurantId")({
                 address: a.mode === "delivery" ? a.address ?? null : null, postal_code: a.mode === "delivery" ? a.postal_code ?? null : null, city,
                 slot, items, notes: a.notes || null, subtotal, delivery_fee: fee, discount: 0, total,
                 payment_method: "on_site", source: "phone", status: r.config?.autoAccept ? "accepted" : "new",
-              }).select("order_number").single();
+              }).select("id, order_number").single();
               if (error) { console.error(error); throw new Error("Impossible d'enregistrer la commande."); }
+              { const { sendRestaurantNewOrder } = await import("@/lib/order-email.server"); await sendRestaurantNewOrder(supabaseAdmin, row.id).catch((e) => console.error(e)); }
               if (callId) {
                 await supabaseAdmin.from("restaurant_voice_calls").upsert({
                   restaurant_id: r.id, call_id: callId, caller, order_number: row.order_number, status: "commande", updated_at: new Date().toISOString(),

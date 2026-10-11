@@ -32,7 +32,7 @@ function Page() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["agency-customers"],
     queryFn: async () => {
-      const { data: rs, error: e1 } = await supabase.from("restaurants").select("id, slug, name").order("name");
+      const { data: rs, error: e1 } = await supabase.from("restaurants").select("id, slug, name").order("sort_order").order("name");
       if (e1) throw e1;
       const rows: Row[] = [];
       for (let i = 0; ; i += 1000) {
