@@ -328,7 +328,7 @@ function Checkout() {
               <input type="checkbox" className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--primary)]" checked={cgv} onChange={(e) => setCgv(e.target.checked)} />
               <span>J'accepte les <Link to="/$slug/cgv" params={{ slug: restaurant.slug }} target="_blank" className="underline">conditions générales de vente</Link> et la <Link to="/$slug/confidentialite" params={{ slug: restaurant.slug }} target="_blank" className="underline">politique de confidentialité</Link>.</span>
             </label>
-            {paused && <p role="alert" className="mt-3 rounded-lg bg-destructive/10 p-2 text-sm font-semibold text-destructive">{ordering.paused ? "Commandes momentanément indisponibles" : ordering.onlineOff ? "Commandes en ligne désactivées pour le moment" : "Restaurant actuellement fermé"}</p>}
+            {paused && <p role="alert" className="mt-3 rounded-lg bg-destructive/10 p-2 text-sm font-semibold text-destructive">{ordering.paused ? "Le restaurant ne prend pas de commandes pour le moment" : ordering.onlineOff ? "Commandes en ligne désactivées pour le moment" : "Restaurant actuellement fermé"}</p>}
             {embed && pay !== "on_site" && <p className="mt-3 rounded-lg bg-muted p-2 text-xs text-muted-foreground">Vous allez être redirigé vers la page de paiement sécurisée.</p>}
             <Button size="lg" className="mt-4 w-full font-semibold" disabled={paused || !canSubmit || !proOk || !cgv || busy || (pay === "on_site" && !onSiteOk)} onClick={submit}>
               {busy ? "Envoi…" : pay === "on_site" ? `Valider la commande · ${euro(total)}` : pay === "paypal" ? `Payer avec PayPal · ${euro(total)}` : `Continuer vers le paiement · ${euro(total)}`}
