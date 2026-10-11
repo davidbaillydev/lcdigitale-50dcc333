@@ -107,7 +107,7 @@ export const savePaymentProvider = createServerFn({ method: "POST" })
       if (credentials["apiKeyTest"] && !/^test_[A-Za-z0-9]{20,}$/.test(credentials["apiKeyTest"])) throw new Error("La clé de test Mollie doit commencer par test_.");
       if (credentials["apiKeyLive"] && !/^live_[A-Za-z0-9]{20,}$/.test(credentials["apiKeyLive"])) throw new Error("La clé de production Mollie doit commencer par live_.");
       if (credentials["profileId"] && !/^pfl_[A-Za-z0-9]+$/.test(credentials["profileId"])) throw new Error("L'identifiant de profil Mollie commence par pfl_.");
-      if (data.enabled && !credentials[credentials["mode"] === "live" ? "apiKeyLive" : "apiKeyTest"]) throw new Error(`Renseignez la clé Mollie ${credentials["mode"] === "live" ? "de production" : "de test"}.`);
+      if (data.enabled && !credentials["oauthRefreshToken"] && !credentials[credentials["mode"] === "live" ? "apiKeyLive" : "apiKeyTest"]) throw new Error(`Renseignez la clé Mollie ${credentials["mode"] === "live" ? "de production" : "de test"}.`);
     }
     const db = await admin();
     const { error } = await db.from("restaurant_payment_providers").upsert({
@@ -685,6 +685,8 @@ export async function startOnlinePayment(provider: "paypal" | "lyra" | "mollie",
       ...(publicHook ? { webhookUrl: `${origin}/api/public/mollie-webhook` } : {}),
       locale: "fr_FR", metadata: { order_id: o.id },
       ...(m.profileId ? { profileId: m.profileId } : {}),
+      // Commission plateforme (uniquement pour les comptes reliés via Mollie Connect)
+      ...(m.oauth ? { applicationFee: { amount: { currency: "EUR", value: (Math.round(amount * MOLLIE_PLATFORM_FEE_RATE) / 100).toFixed(2) }, description: "Commission plateforme LCDIGITALE" } } : {}),
     }, `pay_${o.id}`) as { id: string; _links?: { checkout?: { href?: string } } };
     const url = res._links?.checkout?.href;
     if (!url) throw new Error("Mollie : lien de paiement manquant");
