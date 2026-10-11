@@ -71,7 +71,7 @@ export const saveRestaurantSettings = createServerFn({ method: "POST" })
     const { data: isAgency } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
     const printing = (cur?.config as { printing?: unknown } | null)?.printing;
     if (!isAgency && printing) s.config.printing = printing as typeof s.config.printing;
-    const { error } = await supabaseAdmin.from("restaurants").update({ opening: s.opening, delivery: { ...s.delivery, ...(geoZones ? { geoZones } : {}), ...(origin ? { origin } : {}) } as never, config: { ...s.config, ...(marketing ? { marketing } : {}), ...(qr ? { qr } : {}), ...(reservations ? { reservations } : {}) } as never }).eq("id", data.restaurantId);
+    const { error } = await supabaseAdmin.from("restaurants").update({ opening: s.opening, delivery: { ...s.delivery, ...(geoZones ? { geoZones } : {}), ...(origin ? { origin } : {}) } as never, config: { ...s.config, ordersPaused: (cur?.config as { ordersPaused?: boolean } | null)?.ordersPaused === true, ...(marketing ? { marketing } : {}), ...(qr ? { qr } : {}), ...(reservations ? { reservations } : {}) } as never }).eq("id", data.restaurantId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

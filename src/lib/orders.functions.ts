@@ -68,7 +68,9 @@ export const createOrder = createServerFn({ method: "POST" })
       if (data.room) { if (!r.config.qr?.room) throw new Error("Le room service n'est pas proposé."); }
       else if (data.qr === "self" && !data.table) { if (!r.config.qr?.self) throw new Error("Le libre-service n'est pas proposé."); }
       else if (!data.table || !(n >= 1 && n <= (r.config.qr?.tables ?? 0))) throw new Error("Table inconnue : scannez à nouveau le QR code de votre table.");
-    } else if (data.asap) {
+    } else if (!modeEnabled(r, "pickup") && !modeEnabled(r, "delivery")) throw new Error("Commandes en ligne désactivées pour le moment.");
+    else if (!modeEnabled(r, data.mode as "pickup" | "delivery")) throw new Error("Ce mode de commande n'est pas proposé.");
+    else if (data.asap) {
       if (!timingOf(r).asap) throw new Error("Les commandes « Dès que possible » ne sont pas proposées.");
       if (!isOpenNow(r, data.mode as "pickup" | "delivery")) throw new Error("Le restaurant est fermé pour le moment : choisissez un horaire.");
       data.slot = asapSlot(r, data.mode as "pickup" | "delivery");
