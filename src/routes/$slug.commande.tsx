@@ -50,6 +50,7 @@ function Checkout() {
   const [mode, setMode] = useState<"pickup" | "delivery">(modeEnabled(restaurant, "pickup") ? "pickup" : "delivery");
   const tableNo = useTable(restaurant.slug, restaurant.config.qr?.tables ?? 0);
   const table = tableNo ?? qr.room ?? (qr.self ? "self" : null);
+  const paused = ordering.paused || (!table && (ordering.onlineOff || ordering.closed));
   const onsiteTitle = qr.room ? `Room service · Chambre ${qr.room}` : qr.self && !tableNo ? "Libre-service" : `Sur place · Table ${tableNo}`;
   const onsiteText = qr.room ? "Votre commande est préparée puis livrée dans votre chambre." : qr.self || restaurant.config.qr?.tableValidation ? "Votre commande sera vérifiée par notre équipe avant d'être envoyée en cuisine." : "Votre commande part directement en cuisine et vous est servie à table.";
   const [slots, setSlots] = useState<string[]>([]);
@@ -326,7 +327,7 @@ function Checkout() {
               <input type="checkbox" className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--primary)]" checked={cgv} onChange={(e) => setCgv(e.target.checked)} />
               <span>J'accepte les <Link to="/$slug/cgv" params={{ slug: restaurant.slug }} target="_blank" className="underline">conditions générales de vente</Link> et la <Link to="/$slug/confidentialite" params={{ slug: restaurant.slug }} target="_blank" className="underline">politique de confidentialité</Link>.</span>
             </label>
-            {paused && <p role="alert" className="mt-3 rounded-lg bg-destructive/10 p-2 text-sm font-semibold text-destructive">Commandes momentanément indisponibles</p>}
+            {paused && <p role="alert" className="mt-3 rounded-lg bg-destructive/10 p-2 text-sm font-semibold text-destructive">{ordering.paused ? "Commandes momentanément indisponibles" : ordering.onlineOff ? "Commandes en ligne désactivées pour le moment" : "Restaurant actuellement fermé"}</p>}
             {embed && pay !== "on_site" && <p className="mt-3 rounded-lg bg-muted p-2 text-xs text-muted-foreground">Vous allez être redirigé vers la page de paiement sécurisée.</p>}
             <Button size="lg" className="mt-4 w-full font-semibold" disabled={paused || !canSubmit || !proOk || !cgv || busy || (pay === "on_site" && !onSiteOk)} onClick={submit}>
               {busy ? "Envoi…" : pay === "on_site" ? `Valider la commande · ${euro(total)}` : pay === "paypal" ? `Payer avec PayPal · ${euro(total)}` : `Continuer vers le paiement · ${euro(total)}`}
