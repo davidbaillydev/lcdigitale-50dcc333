@@ -49,13 +49,13 @@ function Layout() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const embedFeatureOn = restaurant ? featuresOf(restaurant.enabled_features).embed : true;
   // Détecte une ouverture en iframe même quand le module est désactivé (écran d'indisponibilité).
+  const staffScreen = /\/(borne|cuisine)(\/|$)/.test(path);
   const embedRequested = useEmbedMode(restaurant?.slug ?? "", true);
   const embed = useEmbedMode(restaurant?.slug ?? "", embedFeatureOn) && !staffScreen;
   useEmbedReady(restaurant?.slug ?? "", embed, restaurant?.name);
   useEmbedEscape(embed);
   useEmbedResize(embed);
   if (!restaurant) return null;
-  const staffScreen = /\/(borne|cuisine)(\/|$)/.test(path);
   if (!staffScreen && embedRequested && !embedFeatureOn) return <EmbedUnavailable restaurant={restaurant} />;
   return (
     <BrandTheme brand={restaurant.brand}>

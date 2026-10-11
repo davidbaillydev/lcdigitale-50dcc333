@@ -14,7 +14,7 @@ export const Route = createFileRoute("/api/public/embed-status/$slug")({
         const { data } = await supabaseAdmin.from("restaurants").select("enabled_features").eq("slug", slug).maybeSingle();
         const ef = (data?.enabled_features ?? null) as Record<string, unknown> | null;
         // Clé absente = module actif (comportement par défaut)
-        const enabled = !!data && ef?.embed !== false;
+        const enabled = !!data && ef?.["embed"] !== false;
         return Response.json({ enabled }, {
           headers: {
             "Cache-Control": "public, max-age=60",
