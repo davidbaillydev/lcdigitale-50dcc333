@@ -11,10 +11,11 @@ export const Route = createFileRoute("/api/public/embed-status/$slug")({
         const slug = params.slug ?? "";
         if (!/^[a-z0-9][a-z0-9-]{0,62}$/i.test(slug)) return new Response("Bad request", { status: 400 });
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { data } = await supabaseAdmin.from("restaurants").select("enabled_features").eq("slug", slug).maybeSingle();
+        const { data } = await supabaseAdmin.from("restaurants").select("enabled_features,config").eq("slug", slug).maybeSingle();
         const ef = (data?.enabled_features ?? null) as Record<string, unknown> | null;
-        // Clé absente = module actif (comportement par défaut)
-        const enabled = !!data && ef?.["embed"] !== false;
+        const cfg = (data?.config ?? null) as Record<string, unknown> | null;
+        // Clé absente = module actif (comportement par défaut) ; prise de commandes suspendue = bouton masqué
+        const enabled = !!data && ef?.["embed"] !== false && cfg?.["ordersPaused"] !== true;
         return Response.json({ enabled }, {
           headers: {
             "Cache-Control": "public, max-age=60",
