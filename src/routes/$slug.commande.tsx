@@ -58,7 +58,7 @@ function Checkout() {
   const timing = timingOf(restaurant);
   const [openNow, setOpenNow] = useState(false);
   const [when, setWhen] = useState<"asap" | "later">(timing.asap ? "asap" : "later");
-  const [f, setF] = useState({ customer_name: "", phone: "", email: "", address: "", postal_code: "", notes: "" });
+  const [f, setF] = useState({ first_name: "", last_name: "", phone: "", email: "", address: "", postal_code: "", notes: "" });
   const [pay, setPay] = useState<"on_site" | "stripe" | "paypal" | "lyra" | "mollie">("on_site");
   const [busy, setBusy] = useState(false);
   const [cgv, setCgv] = useState(false);
@@ -113,7 +113,7 @@ function Checkout() {
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
 
   const canSubmit = useMemo(
-    () => table ? lines.length && f.customer_name.trim().length > 1 && f.phone.trim().length >= 8 : lines.length && (asap || (timing.scheduled && slot)) && f.customer_name.trim().length > 1 && f.phone.trim().length >= 8 && !belowMin &&
+    () => table ? lines.length && !!f.first_name.trim() && !!f.last_name.trim() && f.phone.trim().length >= 8 : lines.length && (asap || (timing.scheduled && slot)) && !!f.first_name.trim() && !!f.last_name.trim() && f.phone.trim().length >= 8 && !belowMin &&
       (mode === "pickup" || (f.address.trim().length > 4 && (geoZones.length ? !!geo?.zone : f.postal_code))),
     [lines, slot, f, belowMin, mode, table, asap, timing.scheduled, geo, geoZones.length],
   );
@@ -241,8 +241,9 @@ function Checkout() {
           <section className="space-y-3">
             <h2 className="text-3xl">{table ? "Vos coordonnées" : "3. Vos coordonnées"}</h2>
             <div className="grid gap-3 sm:grid-cols-2">
-              <div><Label htmlFor="n">Nom *</Label><Input id="n" maxLength={80} value={f.customer_name} onChange={set("customer_name")} /></div>
-              <div><Label htmlFor="p">Téléphone *</Label><Input id="p" type="tel" maxLength={20} value={f.phone} onChange={set("phone")} /></div>
+              <div><Label htmlFor="fn">Prénom *</Label><Input id="fn" autoComplete="given-name" maxLength={60} value={f.first_name} onChange={set("first_name")} /></div>
+              <div><Label htmlFor="n">Nom *</Label><Input id="n" autoComplete="family-name" maxLength={60} value={f.last_name} onChange={set("last_name")} /></div>
+              <div className="sm:col-span-2"><Label htmlFor="p">Téléphone *</Label><Input id="p" type="tel" maxLength={20} value={f.phone} onChange={set("phone")} /></div>
               <div className="sm:col-span-2"><Label htmlFor="e">Email (pour la confirmation)</Label><Input id="e" type="email" maxLength={255} value={f.email} onChange={set("email")} /></div>
               {mode === "delivery" && !table && (
                 <>
