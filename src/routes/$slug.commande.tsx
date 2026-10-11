@@ -187,6 +187,7 @@ function Checkout() {
   return (
     <div className={`min-h-screen ${embed ? "pb-6" : "pb-16"}`}>
       {embed ? <EmbedBar hideCart /> : <SiteHeader hideCart />}
+      {!table && <OrderingBanners state={ordering} />}
       <div className={`mx-auto grid max-w-6xl gap-8 px-4 ${embed ? "py-4" : "py-8"} lg:grid-cols-[1fr_380px]`}>
         <div className="space-y-8">
           {table ? <section className="rounded-xl border border-primary bg-primary/10 p-4"><h2 className="text-3xl">{onsiteTitle}</h2><p className="text-sm text-muted-foreground">{onsiteText}</p></section> : <>
