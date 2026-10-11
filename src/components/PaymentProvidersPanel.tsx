@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -244,6 +244,12 @@ function MollieConnect({ restaurantId, p, onChange }: { restaurantId: string; p:
   const disc = useServerFn(disconnectMollie);
   const [busy, setBusy] = useState(false);
   const connected = !!p.settings["oauthConnectedAt"];
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("mollie");
+    if (!q) return;
+    if (q === "connecte") toast.success("Compte Mollie connecté"); else if (q === "refuse") toast.error("Connexion Mollie annulée"); else toast.error("La connexion Mollie a échoué, réessayez.");
+    const u = new URL(window.location.href); u.searchParams.delete("mollie"); window.history.replaceState(null, "", u.toString());
+  }, []);
   const go = async () => {
     setBusy(true);
     try { const r = await start({ data: { restaurantId, origin: window.location.origin } }); window.location.href = r.url; }
