@@ -32,3 +32,4 @@
 - Kitchen: column scrolling, collapsible nav, fullscreen dialogs, safe-area insets.
 - Restaurant modules live in restaurants.enabled_features (missing key = enabled), agency-written, re-checked by server functions. Why: subscription gating must not rely on hidden UI.
 - POS sync: tokens in service-role-only `restaurant_pos_connectors` (agency, masked); `pos.server.ts` syncs validated orders and logs pos_* on orders. Why: one engine, no token exposure.
+- Order emails (received/confirmed to customer, new-order to restaurant) live in src/lib/order-email.server.ts via Brevo; each is claimed once through its orders.*_email_at column and gated server-side by restaurants.config.notifications. Why: no duplicates, toggles cannot be bypassed, email failures never block orders.
