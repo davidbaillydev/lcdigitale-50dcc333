@@ -32,7 +32,7 @@ export const Route = createFileRoute("/_authenticated/admin/")({
 });
 
 type Form = Omit<AgencyRestaurant, "id" | "orders_today"> & { id?: string };
-const EMPTY: Form = { name: "", slug: "", city: "", address: "", phone: "", email: "", menu_key: MENU_KEYS[0] ?? "", logo_url: null, brand: { primary: "#d4a017", accent: "#c8102e" }, active: true };
+const EMPTY: Form = { name: "", slug: "", city: "", address: "", phone: "", email: "", menu_key: MENU_KEYS[0] ?? "", logo_url: null, brand: { primary: "#d4a017", accent: "#c8102e" }, active: true, config: {} };
 const slugify = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
 
 function Console() {
