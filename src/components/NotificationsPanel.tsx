@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 
 type N = { received?: boolean; confirmed?: boolean; restaurant?: boolean; email?: string };
 
-export function NotificationsPanel({ restaurantId, notifications, defaultEmail, onSaved }: { restaurantId: string; notifications?: N; defaultEmail: string | null; onSaved?: () => void }) {
+export function NotificationsPanel({ restaurantId, notifications, defaultEmail, onSaved }: { restaurantId: string; notifications?: N | undefined; defaultEmail: string | null; onSaved?: () => void }) {
   const save = useServerFn(saveNotifications);
   const [n, setN] = useState({
     received: notifications?.received !== false, confirmed: notifications?.confirmed !== false, restaurant: notifications?.restaurant !== false,

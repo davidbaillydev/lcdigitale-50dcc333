@@ -8,7 +8,7 @@ const eur = (n: number) => `${Number(n).toFixed(2).replace(".", ",")} €`;
 const baseOf = (origin?: string | null) => (/^https?:\/\/[^/]+$/.test(origin ?? "") ? origin! : FALLBACK_ORIGIN);
 const MODE: Record<string, string> = { delivery: "Livraison", dine_in: "Sur place", pickup: "À emporter" };
 
-export type NotificationSettings = { received: boolean; confirmed: boolean; restaurant: boolean; email?: string };
+export type NotificationSettings = { received: boolean; confirmed: boolean; restaurant: boolean; email?: string | undefined };
 /** Interrupteurs de notification (absents = actifs). */
 export function notificationsOf(config: unknown): NotificationSettings {
   const n = ((config as { notifications?: Partial<NotificationSettings> } | null)?.notifications) ?? {};
