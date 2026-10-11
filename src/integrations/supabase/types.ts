@@ -280,6 +280,7 @@ export type Database = {
           payment_ref: string | null
           payment_status: string
           phone: string
+          platform_fee: number
           pos_error: string | null
           pos_ref: string | null
           pos_status: string | null
@@ -334,6 +335,7 @@ export type Database = {
           payment_ref?: string | null
           payment_status?: string
           phone: string
+          platform_fee?: number
           pos_error?: string | null
           pos_ref?: string | null
           pos_status?: string | null
@@ -388,6 +390,7 @@ export type Database = {
           payment_ref?: string | null
           payment_status?: string
           phone?: string
+          platform_fee?: number
           pos_error?: string | null
           pos_ref?: string | null
           pos_status?: string | null
