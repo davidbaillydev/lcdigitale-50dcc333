@@ -16,6 +16,7 @@ import { ThemeToggle } from "@/lib/theme";
 import { Textarea } from "@/components/ui/textarea";
 import { useServerFn } from "@tanstack/react-start";
 import { sendCampaign } from "@/lib/campaign.functions";
+import { customerActivity } from "@/lib/customers.functions";
 
 export const Route = createFileRoute("/_authenticated/espace/$slug/clients")({
   head: () => ({
@@ -104,6 +105,11 @@ function Page() {
     return (c: Customer): Stats => (c.email && m.get(`e:${c.email}`)) || (c.phone && m.get(`p:${c.phone}`)) || { orders: 0, spent: 0, last: null };
   }, [data]);
 
+  const activityFn = useServerFn(customerActivity);
+  const { data: activity } = useQuery({ queryKey: ["customer-activity", rid, data?.customers.length], enabled: !!rid && !!canManage && !!data, queryFn: () => activityFn({ data: { restaurantId: rid! } }) });
+  const [buyersOnly, setBuyersOnly] = useState(true);
+  const [sortDir, setSortDir] = useState<"desc" | "asc" | null>("desc");
+
   // Ciblage
   const [q, setQ] = useState("");
   const [consentOnly, setConsentOnly] = useState(false);
@@ -114,12 +120,17 @@ function Page() {
   const rows = useMemo(() => (data?.customers ?? []).filter((c) => {
     const s = stats(c);
     if (q && !`${c.name ?? ""} ${c.email ?? ""} ${c.phone ?? ""}`.toLowerCase().includes(q.toLowerCase())) return false;
+    if (buyersOnly && !(activity?.[c.id] || s.orders > 0)) return false;
     if (consentOnly && !c.marketing_consent) return false;
     if (needEmail && !c.email) return false;
     if (s.orders < minOrders || s.spent < minSpent) return false;
     if (inactive > 0 && s.last && Date.now() - new Date(s.last).getTime() < inactive * 864e5) return false;
     return true;
-  }), [data, stats, q, consentOnly, minOrders, minSpent, inactive, needEmail]);
+  }).sort((a, b) => {
+    if (!sortDir) return 0;
+    const x = activity?.[a.id]?.lastAt ?? "", y = activity?.[b.id]?.lastAt ?? "";
+    return sortDir === "desc" ? y.localeCompare(x) : x.localeCompare(y);
+  }), [data, stats, q, consentOnly, minOrders, minSpent, inactive, needEmail, buyersOnly, activity, sortDir]);
 
   const exportRows = (list: Customer[]) => list.map((c) => { const s = stats(c); return { Nom: c.name ?? "", Email: c.email ?? "", Téléphone: c.phone ?? "", "Consentement marketing": c.marketing_consent ? "Oui" : "Non", "Date consentement": c.consent_at ? new Date(c.consent_at).toLocaleDateString("fr-FR") : "", Origine: SRC[c.source] ?? c.source, Commandes: s.orders, "Total dépensé (€)": Math.round(s.spent * 100) / 100, "Dernière commande": s.last ? new Date(s.last).toLocaleDateString("fr-FR") : "" }; });
 
@@ -171,6 +182,7 @@ function Page() {
           <label className="text-sm">Sans commande depuis (jours, 0 = ignorer)<Input type="number" min={0} value={inactive} onChange={(e) => setInactive(Number(e.target.value))} /></label>
         </div>
         <div className="flex flex-wrap items-center gap-4 text-sm">
+          <label className="flex items-center gap-2"><Switch checked={buyersOnly} onCheckedChange={setBuyersOnly} /> Clients ayant commandé</label>
           <label className="flex items-center gap-2"><Switch checked={consentOnly} onCheckedChange={setConsentOnly} /> Consentement marketing uniquement</label>
           <label className="flex items-center gap-2"><Switch checked={needEmail} onCheckedChange={setNeedEmail} /> Avec email</label>
           <span className="ml-auto font-semibold">{rows.length} client(s) sur {data?.customers.length ?? 0}</span>
@@ -191,7 +203,7 @@ function Page() {
 
       <div className={`admin-customers overflow-x-auto rounded-lg border border-border ${isFetching ? "opacity-60" : ""}`}>
         <table aria-label="Fichier clients" className="admin-customer-table w-full text-sm">
-          <thead className="bg-muted text-left"><tr><th className="p-2">Client</th><th>Contact</th><th>Origine</th><th className="text-right">Cmd</th><th className="text-right">Dépensé</th><th>Dernière</th><th>Consentement</th><th /></tr></thead>
+          <thead className="bg-muted text-left"><tr><th className="p-2">Client</th><th>Contact</th><th>Origine</th><th className="text-right">Cmd</th><th className="text-right">Dépensé</th><th><button type="button" className="font-semibold underline-offset-2 hover:underline" onClick={() => setSortDir(sortDir === "desc" ? "asc" : "desc")} aria-label="Trier par dernière activité">Dernière activité {sortDir === "desc" ? "↓" : "↑"}</button></th><th>Consentement</th><th /></tr></thead>
           <tbody>
             {rows.slice(0, 500).map((c) => { const s = stats(c); return (
               <tr key={c.id} className="border-t border-border">
@@ -199,7 +211,7 @@ function Page() {
                 <td data-label="Contact"><div className="min-w-0 break-words"><div>{c.email ?? ""}</div><div className="text-muted-foreground">{c.phone ?? ""}</div></div></td>
                 <td data-label="Origine">{SRC[c.source] ?? c.source}</td>
                 <td data-label="Commandes" className="text-right">{s.orders}</td><td data-label="Dépensé" className="text-right tabular-nums">{eur(s.spent)}</td>
-                <td data-label="Dernière commande">{s.last ? new Date(s.last).toLocaleDateString("fr-FR") : "—"}</td>
+                <td data-label="Dernière activité">{activity?.[c.id] ? <a className="text-primary underline-offset-2 hover:underline" href={`/${slug}/suivi/${activity[c.id]!.orderId}`} target="_blank" rel="noreferrer">{activity[c.id]!.label}</a> : "—"}</td>
                 <td data-label="Consentement"><label className="flex flex-wrap items-center gap-2"><Switch checked={c.marketing_consent} onCheckedChange={(v) => setConsent(c, v)} aria-label="Consentement marketing" />
                   {c.consent_at && <span className="text-xs text-muted-foreground" title={c.consent_source ?? ""}>{new Date(c.consent_at).toLocaleDateString("fr-FR")}</span>}</label></td>
                 <td data-label="Actions"><Button size="icon" variant="ghost" onClick={() => erase(c)} aria-label="Supprimer la fiche"><Trash2 /></Button></td>
