@@ -8,6 +8,11 @@ if(!scripts.length)return;
 var ORIGIN=new URL(scripts[0].src).origin;
 var SLUG_RE=/^[a-z0-9][a-z0-9-]{0,62}$/i;
 var ov=null,frame=null,frameSlug=null,lastBtn=null,timer=null,prevOverflow="",loaded=false,badge=null,inlineMode=false;
+var statusCache={};
+function fetchStatus(slug,cb){
+if(statusCache[slug]!=null)return cb(statusCache[slug]);
+fetch(ORIGIN+"/api/public/embed-status/"+encodeURIComponent(slug)).then(function(r){return r.json()}).then(function(d){var on=!!d.enabled;statusCache[slug]=on;cb(on)}).catch(function(){cb(true)});
+}
 function lum(h){return[1,3,5].reduce(function(a,i,k){var c=parseInt(h.substr(i,2),16)/255;c=c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4);return a+c*[.2126,.7152,.0722][k]},0)}
 function contrast(h){var L=lum(h);return(L+.05)/.05>=1.05/(L+.05)?"#000":"#fff"}
 function fallback(slug){window.open(ORIGIN+"/"+encodeURIComponent(slug)+"?src=embed","_blank","noreferrer")}
