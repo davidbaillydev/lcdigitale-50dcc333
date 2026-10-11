@@ -32,6 +32,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { BrandLogo } from "@/lib/brand";
 import { ThemeToggle } from "@/lib/theme";
+import { OrdersPausedToggle } from "@/components/OrdersPausedToggle";
 
 export const Route = createFileRoute("/_authenticated/espace/$slug/")({
   head: () => ({
@@ -298,6 +299,7 @@ function Kitchen() {
         <Button variant={sound ? "secondary" : "destructive"} size="lg" onClick={sound ? () => setSound(false) : enableSound} aria-pressed={sound} aria-label={sound ? "Son activé — couper" : "Son coupé — activer"} title={sound ? "Couper le son" : "Activer le son"} className="min-h-12 text-base">
           {sound ? <Volume2 /> : <VolumeX />} <span className="hidden sm:inline">{sound ? "Son activé — couper" : "Son coupé — activer"}</span>
         </Button>
+        {restaurant && <OrdersPausedToggle restaurant={{ id: restaurant.id, config: (restaurant.config ?? {}) as Restaurant["config"] }} className="col-span-2 sm:col-span-1" />}
         <div className="col-span-2 flex shrink-0 items-center justify-end gap-2">
         <Button variant={serviceMode ? "secondary" : "outline"} size="icon" aria-pressed={serviceMode} aria-label={serviceMode ? "Quitter le mode service" : "Activer le mode service"} title={serviceMode ? "Afficher la navigation" : "Mode service : replier la navigation"} onClick={() => setServiceMode((v) => !v)}>{serviceMode ? <PanelTopOpen /> : <PanelTopClose />}</Button>
         <Button variant="outline" size="icon" disabled={fullscreenBusy} aria-label={fullscreen ? "Quitter le plein écran" : "Passer en plein écran"} title={fullscreen ? "Quitter le plein écran" : "Plein écran"} onClick={() => void toggleFullscreen()}>{fullscreen ? <Minimize /> : <Maximize />}</Button>

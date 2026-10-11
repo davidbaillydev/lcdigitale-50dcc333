@@ -17,7 +17,8 @@ import { safeFor } from "@/lib/allergens";
 import { useTable } from "@/lib/table";
 import { catLabel, itemText, LANG_LABELS, UI, useMenuLang, type Lang } from "@/lib/i18n";
 import { EmbedBar } from "@/components/EmbedBar";
-import { useOrdersPaused } from "@/hooks/use-orders-paused";
+import { useOrderingState } from "@/hooks/use-orders-paused";
+import { OrderingBanners } from "@/components/OrderingBanners";
 import { useEmbedMode } from "@/lib/embed";
 import { featuresOf } from "@/lib/features";
 
@@ -46,12 +47,14 @@ function MenuPage() {
   const ui = UI[lang];
   const table = useTable(restaurant.slug, restaurant.config.qr?.tables ?? 0);
   const embed = useEmbedMode(restaurant.slug, featuresOf(restaurant.enabled_features).embed);
-  const paused = useOrdersPaused(restaurant);
+  const ordering = useOrderingState(restaurant);
+  const atTable = !!(table || qr.room || qr.self);
+  const paused = ordering.paused || (!atTable && (ordering.onlineOff || ordering.closed));
 
   return (
     <div className={`min-h-screen ${embed ? "pb-6" : "pb-24"}`}>
       {embed ? <EmbedBar hideCart={view} /> : <SiteHeader hideCart={view} />}
-      {paused && <p className="bg-destructive px-4 py-2 text-center font-semibold text-destructive-foreground" role="alert">Commandes momentanément indisponibles · le menu reste consultable</p>}
+      {!view && <OrderingBanners state={atTable ? { ...ordering, onlineOff: false, showClosed: false } : ordering} />}
       {table && <p className="bg-primary px-4 py-2 text-center font-semibold text-primary-foreground" role="status">Table {table} · commandez ici, nous vous servons à table</p>}
       {!table && qr.room && <p className="bg-primary px-4 py-2 text-center font-semibold text-primary-foreground" role="status">Room service · Chambre {qr.room}</p>}
       {!table && qr.self && <p className="bg-primary px-4 py-2 text-center font-semibold text-primary-foreground" role="status">Libre-service · votre commande sera validée par notre équipe</p>}

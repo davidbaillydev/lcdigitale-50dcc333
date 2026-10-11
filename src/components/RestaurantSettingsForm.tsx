@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { RestaurantBannerUpload } from "@/components/RestaurantBannerUpload";
 import { PrinterSetup } from "@/components/PrinterSetup";
+import { OrdersPausedToggle } from "@/components/OrdersPausedToggle";
 
 const DAYS = [["1", "Lundi"], ["2", "Mardi"], ["3", "Mercredi"], ["4", "Jeudi"], ["5", "Vendredi"], ["6", "Samedi"], ["0", "Dimanche"]] as const;
 const toHHMM = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
@@ -103,7 +104,10 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
       </Section>
 
       <Section title="Commandes & acceptation">
-        <Toggle label="Recevoir les commandes" hint="Désactivé : le menu reste consultable, mais aucune commande n'est acceptée (site, borne, QR, téléphone)." checked={!s.config.ordersPaused} onChange={(v) => cfg({ ordersPaused: !v })} />
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-3">
+          <span><span className="block font-medium">Prise de commandes</span><span className="block text-sm text-muted-foreground">Enregistré immédiatement. Suspendue : le menu reste consultable, aucune commande acceptée (site, borne, QR, téléphone).</span></span>
+          <OrdersPausedToggle restaurant={restaurant} />
+        </div>
         <Toggle label="À emporter (site)" checked={s.config.modes.pickup} onChange={(v) => cfg({ modes: { ...s.config.modes, pickup: v } })} />
         <Toggle label="Livraison (site)" checked={s.config.modes.delivery} onChange={(v) => cfg({ modes: { ...s.config.modes, delivery: v } })} />
         <Toggle label="Sur place (borne)" checked={s.config.modes.dine_in} onChange={(v) => cfg({ modes: { ...s.config.modes, dine_in: v } })} />

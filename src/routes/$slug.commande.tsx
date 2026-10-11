@@ -23,7 +23,8 @@ import { StripePayment } from "@/components/StripePayment";
 import { cn } from "@/lib/utils";
 import { PromoCodeField, type AppliedDiscount } from "@/components/PromoCodeField";
 import { EmbedBar } from "@/components/EmbedBar";
-import { useOrdersPaused } from "@/hooks/use-orders-paused";
+import { useOrderingState } from "@/hooks/use-orders-paused";
+import { OrderingBanners } from "@/components/OrderingBanners";
 import { useEmbedMode, orderSource, isEmbedded, embedReturnTo, openTop, pendingOrderKey } from "@/lib/embed";
 import { featuresOf } from "@/lib/features";
 
@@ -45,10 +46,11 @@ function Checkout() {
   const DELIVERY = restaurant.delivery;
   const navigate = useNavigate();
   const submitFn = useServerFn(createOrder);
-  const paused = useOrdersPaused(restaurant);
+  const ordering = useOrderingState(restaurant);
   const [mode, setMode] = useState<"pickup" | "delivery">(modeEnabled(restaurant, "pickup") ? "pickup" : "delivery");
   const tableNo = useTable(restaurant.slug, restaurant.config.qr?.tables ?? 0);
   const table = tableNo ?? qr.room ?? (qr.self ? "self" : null);
+  const paused = ordering.paused || (!table && (ordering.onlineOff || ordering.closed));
   const onsiteTitle = qr.room ? `Room service · Chambre ${qr.room}` : qr.self && !tableNo ? "Libre-service" : `Sur place · Table ${tableNo}`;
   const onsiteText = qr.room ? "Votre commande est préparée puis livrée dans votre chambre." : qr.self || restaurant.config.qr?.tableValidation ? "Votre commande sera vérifiée par notre équipe avant d'être envoyée en cuisine." : "Votre commande part directement en cuisine et vous est servie à table.";
   const [slots, setSlots] = useState<string[]>([]);
@@ -185,6 +187,7 @@ function Checkout() {
   return (
     <div className={`min-h-screen ${embed ? "pb-6" : "pb-16"}`}>
       {embed ? <EmbedBar hideCart /> : <SiteHeader hideCart />}
+      {!table && <OrderingBanners state={ordering} />}
       <div className={`mx-auto grid max-w-6xl gap-8 px-4 ${embed ? "py-4" : "py-8"} lg:grid-cols-[1fr_380px]`}>
         <div className="space-y-8">
           {table ? <section className="rounded-xl border border-primary bg-primary/10 p-4"><h2 className="text-3xl">{onsiteTitle}</h2><p className="text-sm text-muted-foreground">{onsiteText}</p></section> : <>
@@ -325,7 +328,7 @@ function Checkout() {
               <input type="checkbox" className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--primary)]" checked={cgv} onChange={(e) => setCgv(e.target.checked)} />
               <span>J'accepte les <Link to="/$slug/cgv" params={{ slug: restaurant.slug }} target="_blank" className="underline">conditions générales de vente</Link> et la <Link to="/$slug/confidentialite" params={{ slug: restaurant.slug }} target="_blank" className="underline">politique de confidentialité</Link>.</span>
             </label>
-            {paused && <p role="alert" className="mt-3 rounded-lg bg-destructive/10 p-2 text-sm font-semibold text-destructive">Commandes momentanément indisponibles</p>}
+            {paused && <p role="alert" className="mt-3 rounded-lg bg-destructive/10 p-2 text-sm font-semibold text-destructive">{ordering.paused ? "Commandes momentanément indisponibles" : ordering.onlineOff ? "Commandes en ligne désactivées pour le moment" : "Restaurant actuellement fermé"}</p>}
             {embed && pay !== "on_site" && <p className="mt-3 rounded-lg bg-muted p-2 text-xs text-muted-foreground">Vous allez être redirigé vers la page de paiement sécurisée.</p>}
             <Button size="lg" className="mt-4 w-full font-semibold" disabled={paused || !canSubmit || !proOk || !cgv || busy || (pay === "on_site" && !onSiteOk)} onClick={submit}>
               {busy ? "Envoi…" : pay === "on_site" ? `Valider la commande · ${euro(total)}` : pay === "paypal" ? `Payer avec PayPal · ${euro(total)}` : `Continuer vers le paiement · ${euro(total)}`}
