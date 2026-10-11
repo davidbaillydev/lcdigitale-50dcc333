@@ -267,6 +267,7 @@ export const startKioskCardPayment = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { db, o } = await kioskOrder(data.orderId);
     if (o.payment_status === "paid") return { status: "paid" as const };
+    await assertOrdersOpen(o.restaurant_id);
     const t = await terminalForRestaurant(o.restaurant_id);
     if (!t) throw new Error("Terminal de paiement non configuré");
     const cents = Math.round(Number(o.total) * 100);
@@ -525,8 +526,15 @@ export const testLyra = createServerFn({ method: "POST" })
     return { mode: l.mode, gateway: l.gateway };
   });
 
+async function assertOrdersOpen(restaurantId: string) {
+  const db = await admin();
+  const { data } = await db.from("restaurants").select("config").eq("id", restaurantId).maybeSingle();
+  if (!data || (data.config as { ordersPaused?: boolean } | null)?.ordersPaused === true) throw new Error("Le restaurant ne prend pas de commandes pour le moment");
+}
+
 /** Prépare le paiement en ligne choisi pour une commande déjà enregistrée (appelé par createOrder). */
 export async function startOnlinePayment(provider: "paypal" | "lyra" | "mollie", o: { id: string; order_number: number; total: number; restaurant_id: string; email?: string | null }, restaurantName: string, returnBase: string) {
+  await assertOrdersOpen(o.restaurant_id);
   const db = await admin();
   const amount = Math.round(Number(o.total) * 100);
   if (provider === "paypal") {
