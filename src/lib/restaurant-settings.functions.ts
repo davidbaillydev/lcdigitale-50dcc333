@@ -106,3 +106,19 @@ export const saveQrSettings = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/** Bascule instantanée de la prise de commandes (équipe du restaurant ou agence). */
+export const toggleOrdersPaused = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ restaurantId: z.string().uuid(), paused: z.boolean() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: ok } = await context.supabase.rpc("can_access_restaurant", { _user_id: context.userId, _restaurant_id: data.restaurantId });
+    if (!ok) throw new Error("Accès refusé");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: cur, error: e1 } = await supabaseAdmin.from("restaurants").select("config").eq("id", data.restaurantId).single();
+    if (e1 || !cur) throw new Error("Restaurant introuvable");
+    const config = { ...((cur.config as Record<string, unknown>) ?? {}), ordersPaused: data.paused };
+    const { error } = await supabaseAdmin.from("restaurants").update({ config: config as never }).eq("id", data.restaurantId);
+    if (error) throw new Error(error.message);
+    return { paused: data.paused };
+  });
