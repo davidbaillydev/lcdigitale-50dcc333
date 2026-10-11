@@ -62,7 +62,8 @@ export const createOrder = createServerFn({ method: "POST" })
     const dineIn = data.mode === "dine_in";
     { const ft = featuresOf(r.enabled_features);
       if (dineIn && !ft.qrcode) throw new Error("La commande à table n'est pas proposée.");
-      if (data.mode === "delivery" && !ft.livraison) throw new Error("La livraison n'est pas proposée par ce restaurant."); }
+      if (data.mode === "delivery" && !ft.livraison) throw new Error("La livraison n'est pas proposée par ce restaurant.");
+      if (data.source === "embed" && !ft.embed) throw new Error("Le bouton de commande intégré n'est pas activé pour ce restaurant."); }
     if (dineIn) {
       const n = Number(data.table);
       if (data.room) { if (!r.config.qr?.room) throw new Error("Le room service n'est pas proposé."); }
