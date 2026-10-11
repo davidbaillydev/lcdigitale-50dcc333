@@ -47,12 +47,16 @@ export const Route = createFileRoute("/$slug")({
 function Layout() {
   const { restaurant } = Route.useLoaderData();
   const path = useRouterState({ select: (s) => s.location.pathname });
-  if (!restaurant) return null;
-  const staffScreen = /\/(borne|cuisine)(\/|$)/.test(path);
-  const embed = useEmbedMode(restaurant.slug, featuresOf(restaurant.enabled_features).embed) && !staffScreen;
-  useEmbedReady(restaurant.slug, embed, restaurant.name);
+  const embedFeatureOn = restaurant ? featuresOf(restaurant.enabled_features).embed : true;
+  // Détecte une ouverture en iframe même quand le module est désactivé (écran d'indisponibilité).
+  const embedRequested = useEmbedMode(restaurant?.slug ?? "", true);
+  const embed = useEmbedMode(restaurant?.slug ?? "", embedFeatureOn) && !staffScreen;
+  useEmbedReady(restaurant?.slug ?? "", embed, restaurant?.name);
   useEmbedEscape(embed);
   useEmbedResize(embed);
+  if (!restaurant) return null;
+  const staffScreen = /\/(borne|cuisine)(\/|$)/.test(path);
+  if (!staffScreen && embedRequested && !embedFeatureOn) return <EmbedUnavailable restaurant={restaurant} />;
   return (
     <BrandTheme brand={restaurant.brand}>
       <CartProvider restaurant={restaurant}>
