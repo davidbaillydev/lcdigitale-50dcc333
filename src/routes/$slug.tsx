@@ -70,6 +70,24 @@ function Layout() {
   );
 }
 
+/** Iframe ouverte alors que le module « Bouton pour site web » est désactivé : écran d'indisponibilité. */
+function EmbedUnavailable({ restaurant }: { restaurant: { slug: string; name: string; brand: unknown } }) {
+  useEffect(() => {
+    // Signale au parent que l'iframe est chargée (évite le repli nouvel onglet après 8 s).
+    postToParent({ type: "lc:ready", slug: restaurant.slug, name: restaurant.name });
+  }, [restaurant.slug, restaurant.name]);
+  return (
+    <BrandTheme brand={restaurant.brand as never}>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 p-8 text-center">
+        <p className="font-display text-2xl">Commande en ligne indisponible</p>
+        <p className="max-w-sm text-sm text-muted-foreground">
+          Ce restaurant n'accepte pas de commandes via ce bouton pour le moment. Merci de réessayer plus tard.
+        </p>
+      </div>
+    </BrandTheme>
+  );
+}
+
 /** Iframe : si la dernière commande partie au paiement est payée, vider le panier (stockage partitionné). */
 function EmbedCartReset({ slug }: { slug: string }) {
   const { clear } = useCart();
