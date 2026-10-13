@@ -45,7 +45,7 @@ function Tracking() {
   const { id, slug } = Route.useParams();
   const fn = useServerFn(getOrderStatus);
   const confirm = useServerFn(confirmOnlinePayment);
-  const { clear } = useCart();
+  const { clear, track } = useCart();
   const cleared = useRef(false);
   // ?back= : lien simple vers le site du restaurant (https uniquement, jamais de redirection automatique)
   const [back, setBack] = useState<string | null>(null);
@@ -71,7 +71,7 @@ function Tracking() {
     refetchInterval: (q) => (q.state.data?.status === "awaiting_payment" ? 3000 : 15000),
   });
   useEffect(() => {
-    if (!cleared.current && data && data.payment_method === "online" && data.payment_status === "paid") { cleared.current = true; clear(); }
+    if (!cleared.current && data && data.payment_method === "online" && data.payment_status === "paid") { cleared.current = true; if (safeSession.get(`lc-cart-session-${slug}`)) track("completed", "Paiement en ligne confirmé", id); clear(); }
   }, [data, clear]);
   // Mode intégré : signale au site parent que la commande est confirmée (une seule fois par commande)
   useEffect(() => {
