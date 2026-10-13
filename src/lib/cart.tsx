@@ -8,6 +8,8 @@ import { withOptions } from "./menu-options";
 import { useOptionData } from "./menu-options-live";
 import { useQrMode, type QrMode } from "./table";
 import { isEmbedded, postToParent } from "./embed";
+import { useCartAnalytics } from "./cart-analytics";
+import type { CartStep } from "./analytics.functions";
 
 export type CartLine = { key: string; itemId: string; qty: number; sel: Selections; note?: string };
 type Ctx = {
@@ -20,6 +22,8 @@ type Ctx = {
   clear: () => void;
   count: number;
   subtotal: number;
+  track: (step: CartStep, page: string, orderId?: string) => void;
+  resetSession: () => void;
 };
 const CartCtx = createContext<Ctx | null>(null);
 
@@ -53,11 +57,14 @@ export function CartProvider({ restaurant, children }: { restaurant: Restaurant;
     if (ready && isEmbedded()) postToParent({ type: "lc:cart", count });
   }, [count, ready]);
 
+  const rawSubtotal = useMemo(() => lines.reduce((s, l) => {
+    const it = catalog.itemsById[l.itemId];
+    return it ? s + unitPrice(it, l.sel) * l.qty : s;
+  }, 0), [lines, catalog]);
+  const { track, resetSession } = useCartAnalytics({ restaurantId: restaurant.id, slug: restaurant.slug, lines, catalog, total: Math.round(rawSubtotal * 100) / 100, qrActive: !!(qr.room || qr.self || qr.view) });
+
   const value = useMemo<Ctx>(() => {
-    const subtotal = lines.reduce((s, l) => {
-      const it = catalog.itemsById[l.itemId];
-      return it ? s + unitPrice(it, l.sel) * l.qty : s;
-    }, 0);
+    const subtotal = rawSubtotal;
     return {
       restaurant,
       catalog,
@@ -75,8 +82,10 @@ export function CartProvider({ restaurant, children }: { restaurant: Restaurant;
       setQty: (key, qty) =>
         setLines((prev) => (qty <= 0 ? prev.filter((l) => l.key !== key) : prev.map((l) => (l.key === key ? { ...l, qty } : l)))),
       clear: () => setLines([]),
+      track,
+      resetSession,
     };
-  }, [lines, restaurant, catalog, qr]);
+  }, [lines, restaurant, catalog, qr, rawSubtotal, track, resetSession]);
   return <CartCtx.Provider value={value}>{children}</CartCtx.Provider>;
 }
 
