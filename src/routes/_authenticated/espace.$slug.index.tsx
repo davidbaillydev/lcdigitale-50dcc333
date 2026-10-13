@@ -322,6 +322,7 @@ function Kitchen() {
         {isAdmin && feat.livraison && <Button asChild variant="secondary"><Link to="/espace/$slug/livraison" params={{ slug }}>Livraison & livreurs</Link></Button>}
         {restaurant?.role === "agency" && <Button asChild variant="secondary"><Link to="/espace/$slug/equipe" params={{ slug }}><Users /> Équipe</Link></Button>}
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/clients" params={{ slug }}>Clients</Link></Button>}
+        {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/statistiques" params={{ slug }}>Conversion & abandons</Link></Button>}
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/tableau-de-bord">Tableau de bord</Link></Button>}
         {rid && <StockDialog slug={slug} restaurantId={rid} />}
         <PrinterSetup compact width={printing.width} shop={{ name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null }} />
