@@ -42,10 +42,10 @@ type Mode = "dine_in" | "pickup";
 
 function Kiosk() {
   const { restaurant, catalog, lines, add, setQty, clear, count, subtotal, track, resetSession } = useCart();
-  useEffect(() => { if (step === "cart") track("checkout_started", "Panier borne"); else if (step === "pay") track("checkout_started", "Choix du paiement borne"); else if (step === "welcome") resetSession(); }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
   const kioskPaused = useOrdersPaused(restaurant);
   const send = useServerFn(createKioskOrder);
   const [step, setStep] = useState<Step>("welcome");
+  useEffect(() => { if (step === "cart") track("checkout_started", "Panier borne"); else if (step === "pay") track("checkout_started", "Choix du paiement borne"); else if (step === "welcome") resetSession(); }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
   const [mode, setMode] = useState<Mode>("dine_in");
   const [cat, setCat] = useState(catalog.categories[0]?.id ?? "");
   const [excluded, setExcluded] = useState<string[]>([]);
