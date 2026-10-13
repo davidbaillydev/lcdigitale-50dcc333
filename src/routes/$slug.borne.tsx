@@ -41,10 +41,11 @@ type Step = "welcome" | "menu" | "cart" | "pay" | "terminal" | "done";
 type Mode = "dine_in" | "pickup";
 
 function Kiosk() {
-  const { restaurant, catalog, lines, add, setQty, clear, count, subtotal } = useCart();
+  const { restaurant, catalog, lines, add, setQty, clear, count, subtotal, track, resetSession } = useCart();
   const kioskPaused = useOrdersPaused(restaurant);
   const send = useServerFn(createKioskOrder);
   const [step, setStep] = useState<Step>("welcome");
+  useEffect(() => { if (step === "cart") track("checkout_started", "Panier borne"); else if (step === "pay") track("checkout_started", "Choix du paiement borne"); else if (step === "welcome") resetSession(); }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
   const [mode, setMode] = useState<Mode>("dine_in");
   const [cat, setCat] = useState(catalog.categories[0]?.id ?? "");
   const [excluded, setExcluded] = useState<string[]>([]);
@@ -73,7 +74,7 @@ function Kiosk() {
       last.current = Date.now();
       try {
         const r = await pollCard({ data: { orderId: pending.id } });
-        if (r.status === "paid") { setResult({ n: pending.n, total: pending.total, pay: "card_paid" }); setPending(null); setStep("done"); }
+        if (r.status === "paid") { track("completed", "Paiement TPE validé", pending.id); setResult({ n: pending.n, total: pending.total, pay: "card_paid" }); setPending(null); setStep("done"); }
         else if (r.status === "failed") setCardState("failed");
       } catch { /* réessai au prochain tour */ }
     }, 2000);
@@ -106,6 +107,7 @@ function Kiosk() {
     setBusy(true); setError(null);
     try {
       const row = await send({ data: { restaurant: restaurant.slug, mode, payment_method, ...(promo.code ? { promo_code: promo.code } : {}), lines: lines.map((l) => ({ itemId: l.itemId, qty: l.qty, sel: l.sel })) } });
+      if (payment_method === "card_terminal" && terminal) track("payment_pending", "Paiement TPE"); else track("completed", "Commande comptoir validée", row.id);
       clear(); last.current = Date.now();
       if (payment_method === "card_terminal" && terminal) {
         try {
@@ -114,6 +116,7 @@ function Kiosk() {
           return;
         } catch { /* terminal indisponible : paiement par carte au comptoir */ }
       }
+      if (payment_method === "card_terminal" && terminal) track("completed", "Carte au comptoir", row.id);
       setResult({ n: row.order_number, total: Number(row.total), pay: payment_method });
       setStep("done");
     } catch (e) {

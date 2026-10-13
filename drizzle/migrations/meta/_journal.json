@@ -99,6 +99,13 @@
       "when": 1791743827798,
       "tag": "0013_orders_platform_fee",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1791923837933,
+      "tag": "0014_cart_sessions",
+      "breakpoints": true
     }
   ]
 }

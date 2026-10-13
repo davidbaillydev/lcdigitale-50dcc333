@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      cart_sessions: {
+        Row: {
+          cart_items: Json
+          cart_total: number
+          channel: string
+          created_at: string
+          current_step: string
+          exit_page: string | null
+          last_active_at: string
+          max_step: number
+          order_id: string | null
+          restaurant_id: string
+          session_id: string
+          traffic_source: string | null
+        }
+        Insert: {
+          cart_items?: Json
+          cart_total?: number
+          channel?: string
+          created_at?: string
+          current_step?: string
+          exit_page?: string | null
+          last_active_at?: string
+          max_step?: number
+          order_id?: string | null
+          restaurant_id: string
+          session_id: string
+          traffic_source?: string | null
+        }
+        Update: {
+          cart_items?: Json
+          cart_total?: number
+          channel?: string
+          created_at?: string
+          current_step?: string
+          exit_page?: string | null
+          last_active_at?: string
+          max_step?: number
+          order_id?: string | null
+          restaurant_id?: string
+          session_id?: string
+          traffic_source?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cart_sessions_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       menu_stock: {
         Row: {
           item_id: string
