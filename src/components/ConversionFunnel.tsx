@@ -17,7 +17,7 @@ const CHANNEL: Record<string, string> = { web: "Site", borne: "Borne", qr_code: 
 type Item = { id: string; name: string; qty: number; price: number };
 
 /** Tunnel de conversion & paniers abandonnés (lecture protégée par les droits du restaurant). */
-export function ConversionFunnel({ restaurantIds, names }: { restaurantIds: string[]; names?: Record<string, string> }) {
+export function ConversionFunnel({ restaurantIds, names }: { restaurantIds: string[]; names?: Record<string, string> | undefined }) {
   const [days, setDays] = useState(30);
   const [channel, setChannel] = useState<string>("all");
   const q = useQuery({

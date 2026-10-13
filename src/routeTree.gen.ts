@@ -37,6 +37,7 @@ import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminSlugRouteImport } from './routes/_authenticated/admin.$slug'
 import { Route as AuthenticatedAdminClientsRouteImport } from './routes/_authenticated/admin.clients'
 import { Route as AuthenticatedAdminQrcodesRouteImport } from './routes/_authenticated/admin.qrcodes'
+import { Route as AuthenticatedAdminStatistiquesRouteImport } from './routes/_authenticated/admin.statistiques'
 import { Route as AuthenticatedEspaceIndexRouteImport } from './routes/_authenticated/espace.index'
 import { Route as AuthenticatedEspaceFacturesRouteImport } from './routes/_authenticated/espace.factures'
 import { Route as AuthenticatedEspaceTableauDeBordRouteImport } from './routes/_authenticated/espace.tableau-de-bord'
@@ -52,6 +53,7 @@ import { Route as AuthenticatedEspaceSlugLivraisonRouteImport } from './routes/_
 import { Route as AuthenticatedEspaceSlugQrRouteImport } from './routes/_authenticated/espace.$slug.qr'
 import { Route as AuthenticatedEspaceSlugReglagesRouteImport } from './routes/_authenticated/espace.$slug.reglages'
 import { Route as AuthenticatedEspaceSlugReservationsRouteImport } from './routes/_authenticated/espace.$slug.reservations'
+import { Route as AuthenticatedEspaceSlugStatistiquesRouteImport } from './routes/_authenticated/espace.$slug.statistiques'
 import { Route as ApiPublicEmbedStatusSlugRouteImport } from './routes/api/public/embed-status/$slug'
 import { Route as ApiPublicPushMessageRouteImport } from './routes/api/public/push/message'
 import { Route as ApiPublicRestaurantBannerIdRouteImport } from './routes/api/public/restaurant-banner/$id'
@@ -199,6 +201,12 @@ const AuthenticatedAdminQrcodesRoute =
     path: '/qrcodes',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminStatistiquesRoute =
+  AuthenticatedAdminStatistiquesRouteImport.update({
+    id: '/statistiques',
+    path: '/statistiques',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedEspaceIndexRoute =
   AuthenticatedEspaceIndexRouteImport.update({
     id: '/espace/',
@@ -286,6 +294,12 @@ const AuthenticatedEspaceSlugReservationsRoute =
     path: '/espace/$slug/reservations',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedEspaceSlugStatistiquesRoute =
+  AuthenticatedEspaceSlugStatistiquesRouteImport.update({
+    id: '/espace/$slug/statistiques',
+    path: '/espace/$slug/statistiques',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const ApiPublicEmbedStatusSlugRoute =
   ApiPublicEmbedStatusSlugRouteImport.update({
     id: '/api/public/embed-status/$slug',
@@ -343,6 +357,7 @@ export interface FileRoutesByFullPath {
   '/admin/$slug': typeof AuthenticatedAdminSlugRoute
   '/admin/clients': typeof AuthenticatedAdminClientsRoute
   '/admin/qrcodes': typeof AuthenticatedAdminQrcodesRoute
+  '/admin/statistiques': typeof AuthenticatedAdminStatistiquesRoute
   '/espace/factures': typeof AuthenticatedEspaceFacturesRoute
   '/espace/tableau-de-bord': typeof AuthenticatedEspaceTableauDeBordRoute
   '/api/public/lyra-ipn': typeof ApiPublicLyraIpnRoute
@@ -358,6 +373,7 @@ export interface FileRoutesByFullPath {
   '/espace/$slug/qr': typeof AuthenticatedEspaceSlugQrRoute
   '/espace/$slug/reglages': typeof AuthenticatedEspaceSlugReglagesRoute
   '/espace/$slug/reservations': typeof AuthenticatedEspaceSlugReservationsRoute
+  '/espace/$slug/statistiques': typeof AuthenticatedEspaceSlugStatistiquesRoute
   '/api/public/embed-status/$slug': typeof ApiPublicEmbedStatusSlugRoute
   '/api/public/push/message': typeof ApiPublicPushMessageRoute
   '/api/public/restaurant-banner/$id': typeof ApiPublicRestaurantBannerIdRoute
@@ -390,6 +406,7 @@ export interface FileRoutesByTo {
   '/admin/$slug': typeof AuthenticatedAdminSlugRoute
   '/admin/clients': typeof AuthenticatedAdminClientsRoute
   '/admin/qrcodes': typeof AuthenticatedAdminQrcodesRoute
+  '/admin/statistiques': typeof AuthenticatedAdminStatistiquesRoute
   '/espace/factures': typeof AuthenticatedEspaceFacturesRoute
   '/espace/tableau-de-bord': typeof AuthenticatedEspaceTableauDeBordRoute
   '/api/public/lyra-ipn': typeof ApiPublicLyraIpnRoute
@@ -405,6 +422,7 @@ export interface FileRoutesByTo {
   '/espace/$slug/qr': typeof AuthenticatedEspaceSlugQrRoute
   '/espace/$slug/reglages': typeof AuthenticatedEspaceSlugReglagesRoute
   '/espace/$slug/reservations': typeof AuthenticatedEspaceSlugReservationsRoute
+  '/espace/$slug/statistiques': typeof AuthenticatedEspaceSlugStatistiquesRoute
   '/api/public/embed-status/$slug': typeof ApiPublicEmbedStatusSlugRoute
   '/api/public/push/message': typeof ApiPublicPushMessageRoute
   '/api/public/restaurant-banner/$id': typeof ApiPublicRestaurantBannerIdRoute
@@ -441,6 +459,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/$slug': typeof AuthenticatedAdminSlugRoute
   '/_authenticated/admin/clients': typeof AuthenticatedAdminClientsRoute
   '/_authenticated/admin/qrcodes': typeof AuthenticatedAdminQrcodesRoute
+  '/_authenticated/admin/statistiques': typeof AuthenticatedAdminStatistiquesRoute
   '/_authenticated/espace/factures': typeof AuthenticatedEspaceFacturesRoute
   '/_authenticated/espace/tableau-de-bord': typeof AuthenticatedEspaceTableauDeBordRoute
   '/api/public/lyra-ipn': typeof ApiPublicLyraIpnRoute
@@ -456,6 +475,7 @@ export interface FileRoutesById {
   '/_authenticated/espace/$slug/qr': typeof AuthenticatedEspaceSlugQrRoute
   '/_authenticated/espace/$slug/reglages': typeof AuthenticatedEspaceSlugReglagesRoute
   '/_authenticated/espace/$slug/reservations': typeof AuthenticatedEspaceSlugReservationsRoute
+  '/_authenticated/espace/$slug/statistiques': typeof AuthenticatedEspaceSlugStatistiquesRoute
   '/api/public/embed-status/$slug': typeof ApiPublicEmbedStatusSlugRoute
   '/api/public/push/message': typeof ApiPublicPushMessageRoute
   '/api/public/restaurant-banner/$id': typeof ApiPublicRestaurantBannerIdRoute
@@ -492,6 +512,7 @@ export interface FileRouteTypes {
     | '/admin/$slug'
     | '/admin/clients'
     | '/admin/qrcodes'
+    | '/admin/statistiques'
     | '/espace/factures'
     | '/espace/tableau-de-bord'
     | '/api/public/lyra-ipn'
@@ -507,6 +528,7 @@ export interface FileRouteTypes {
     | '/espace/$slug/qr'
     | '/espace/$slug/reglages'
     | '/espace/$slug/reservations'
+    | '/espace/$slug/statistiques'
     | '/api/public/embed-status/$slug'
     | '/api/public/push/message'
     | '/api/public/restaurant-banner/$id'
@@ -539,6 +561,7 @@ export interface FileRouteTypes {
     | '/admin/$slug'
     | '/admin/clients'
     | '/admin/qrcodes'
+    | '/admin/statistiques'
     | '/espace/factures'
     | '/espace/tableau-de-bord'
     | '/api/public/lyra-ipn'
@@ -554,6 +577,7 @@ export interface FileRouteTypes {
     | '/espace/$slug/qr'
     | '/espace/$slug/reglages'
     | '/espace/$slug/reservations'
+    | '/espace/$slug/statistiques'
     | '/api/public/embed-status/$slug'
     | '/api/public/push/message'
     | '/api/public/restaurant-banner/$id'
@@ -589,6 +613,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/$slug'
     | '/_authenticated/admin/clients'
     | '/_authenticated/admin/qrcodes'
+    | '/_authenticated/admin/statistiques'
     | '/_authenticated/espace/factures'
     | '/_authenticated/espace/tableau-de-bord'
     | '/api/public/lyra-ipn'
@@ -604,6 +629,7 @@ export interface FileRouteTypes {
     | '/_authenticated/espace/$slug/qr'
     | '/_authenticated/espace/$slug/reglages'
     | '/_authenticated/espace/$slug/reservations'
+    | '/_authenticated/espace/$slug/statistiques'
     | '/api/public/embed-status/$slug'
     | '/api/public/push/message'
     | '/api/public/restaurant-banner/$id'
@@ -835,6 +861,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminQrcodesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/statistiques': {
+      id: '/_authenticated/admin/statistiques'
+      path: '/statistiques'
+      fullPath: '/admin/statistiques'
+      preLoaderRoute: typeof AuthenticatedAdminStatistiquesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/espace/': {
       id: '/_authenticated/espace/'
       path: '/espace'
@@ -940,6 +973,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEspaceSlugReservationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/espace/$slug/statistiques': {
+      id: '/_authenticated/espace/$slug/statistiques'
+      path: '/espace/$slug/statistiques'
+      fullPath: '/espace/$slug/statistiques'
+      preLoaderRoute: typeof AuthenticatedEspaceSlugStatistiquesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/public/embed-status/$slug': {
       id: '/api/public/embed-status/$slug'
       path: '/api/public/embed-status/$slug'
@@ -982,6 +1022,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminSlugRoute: typeof AuthenticatedAdminSlugRoute
   AuthenticatedAdminClientsRoute: typeof AuthenticatedAdminClientsRoute
   AuthenticatedAdminQrcodesRoute: typeof AuthenticatedAdminQrcodesRoute
+  AuthenticatedAdminStatistiquesRoute: typeof AuthenticatedAdminStatistiquesRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
@@ -989,6 +1030,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminSlugRoute: AuthenticatedAdminSlugRoute,
   AuthenticatedAdminClientsRoute: AuthenticatedAdminClientsRoute,
   AuthenticatedAdminQrcodesRoute: AuthenticatedAdminQrcodesRoute,
+  AuthenticatedAdminStatistiquesRoute: AuthenticatedAdminStatistiquesRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
 
@@ -1007,6 +1049,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEspaceSlugQrRoute: typeof AuthenticatedEspaceSlugQrRoute
   AuthenticatedEspaceSlugReglagesRoute: typeof AuthenticatedEspaceSlugReglagesRoute
   AuthenticatedEspaceSlugReservationsRoute: typeof AuthenticatedEspaceSlugReservationsRoute
+  AuthenticatedEspaceSlugStatistiquesRoute: typeof AuthenticatedEspaceSlugStatistiquesRoute
   AuthenticatedEspaceSlugIndexRoute: typeof AuthenticatedEspaceSlugIndexRoute
 }
 
@@ -1023,6 +1066,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEspaceSlugReglagesRoute: AuthenticatedEspaceSlugReglagesRoute,
   AuthenticatedEspaceSlugReservationsRoute:
     AuthenticatedEspaceSlugReservationsRoute,
+  AuthenticatedEspaceSlugStatistiquesRoute:
+    AuthenticatedEspaceSlugStatistiquesRoute,
   AuthenticatedEspaceSlugIndexRoute: AuthenticatedEspaceSlugIndexRoute,
 }
 
