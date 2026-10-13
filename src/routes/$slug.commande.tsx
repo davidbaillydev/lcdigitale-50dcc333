@@ -42,7 +42,8 @@ export const Route = createFileRoute("/$slug/commande")({
 });
 
 function Checkout() {
-  const { lines, subtotal, clear, restaurant, qr } = useCart();
+  const { lines, subtotal, clear, restaurant, qr, track } = useCart();
+  useEffect(() => { if (lines.length) track("checkout_started", "Coordonnées & mode de retrait"); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const DELIVERY = restaurant.delivery;
   const navigate = useNavigate();
   const submitFn = useServerFn(createOrder);
@@ -123,6 +124,7 @@ function Checkout() {
     const embedded = isEmbedded();
     const back = embedded ? embedReturnTo(restaurant.slug) : null;
     let leaving = false;
+    track(pay === "on_site" ? "checkout_started" : "payment_pending", pay === "on_site" ? "Validation (paiement sur place)" : `Paiement en ligne (${pay})`);
     try {
       const res = await submitFn({
         data: {
@@ -157,6 +159,7 @@ function Checkout() {
         try { form.submit(); } catch { form.target = "_blank"; form.submit(); toast.info("La page de paiement s'est ouverte dans un nouvel onglet"); }
         return;
       }
+      track("completed", "Commande validée", res.id);
       clear();
       navigate({ to: "/$slug/suivi/$id", params: { slug: restaurant.slug, id: res.id } });
     } catch (e) {
