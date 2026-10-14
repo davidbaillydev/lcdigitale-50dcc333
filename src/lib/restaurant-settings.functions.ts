@@ -141,3 +141,22 @@ export const saveNotifications = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/** Ventes suggestives : mode automatique ou sélection manuelle (gérant ou agence). */
+export const saveUpsell = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    restaurantId: z.string().uuid(),
+    upsell: z.object({ mode: z.enum(["auto", "manual"]), itemIds: z.array(z.string().min(1).max(100)).max(12), categoryIds: z.array(z.string().min(1).max(100)).max(12) }),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: ok } = await context.supabase.rpc("is_restaurant_manager", { _user_id: context.userId, _restaurant_id: data.restaurantId });
+    if (!ok) throw new Error("Accès refusé");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: cur, error: e1 } = await supabaseAdmin.from("restaurants").select("config").eq("id", data.restaurantId).single();
+    if (e1 || !cur) throw new Error("Restaurant introuvable");
+    const config = { ...((cur.config as Record<string, unknown>) ?? {}), upsell: data.upsell };
+    const { error } = await supabaseAdmin.from("restaurants").update({ config: config as never }).eq("id", data.restaurantId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
