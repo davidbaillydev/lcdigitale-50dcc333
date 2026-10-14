@@ -20,6 +20,7 @@ import { ThemeToggle } from "@/lib/theme";
 import { RestaurantBanner } from "@/components/RestaurantBanner";
 import { PromoCodeField, type AppliedDiscount } from "@/components/PromoCodeField";
 import { announcementText } from "@/lib/promo";
+import { isSimple, useSuggestions } from "@/components/CartSuggestions";
 
 export const Route = createFileRoute("/$slug/borne")({
   head: () => ({
@@ -42,6 +43,7 @@ type Mode = "dine_in" | "pickup";
 
 function Kiosk() {
   const { restaurant, catalog, lines, add, setQty, clear, count, subtotal, track, resetSession } = useCart();
+  const suggestions = useSuggestions(4);
   const kioskPaused = useOrdersPaused(restaurant);
   const send = useServerFn(createKioskOrder);
   const [step, setStep] = useState<Step>("welcome");
@@ -239,6 +241,20 @@ function Kiosk() {
               );
             })}
           </div>
+          {!kioskPaused && suggestions.length > 0 && lines.length > 0 && (
+            <div className="mt-4">
+              <p className="mb-2 text-xl font-semibold text-muted-foreground">Pour accompagner votre commande</p>
+              <div className="flex gap-3 overflow-x-auto pb-1">
+                {suggestions.map((s) => (
+                  <button key={s.id} onClick={() => (isSimple(s) ? add(s.id, {}) : setItem(s))}
+                    className="flex w-56 shrink-0 flex-col justify-between gap-3 rounded-2xl border border-border bg-card p-4 text-left active:border-primary">
+                    <span className="line-clamp-2 text-xl font-semibold">{s.name}</span>
+                    <span className="flex items-center gap-2 text-lg font-semibold text-primary"><Plus className="h-6 w-6" />{isSimple(s) ? euro(s.price) : `Choisir · ${euro(fromPrice(s) ?? s.price)}`}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <button disabled={!count} onClick={() => setStep("pay")}
             className="mt-6 rounded-2xl bg-accent py-8 font-display text-5xl text-accent-foreground disabled:opacity-40">
             Payer · {euro(subtotal)}
