@@ -5,7 +5,7 @@ import { validateSelections, orderLine } from "./menu";
 import { loadOptionData, withOptions } from "./menu-options";
 import { getCatalog } from "./catalogs";
 import { computeServiceFee, type ServiceFeeChannel } from "./service-fee";
-import { ORDERS_PAUSED_MSG, ordersPaused, RESTAURANT_COLUMNS, deliveryFee, isValidSlot, isOpenNow, asapSlot, timingOf, modeEnabled, paymentEnabled, type Restaurant } from "./shop";
+import { ORDERS_PAUSED_MSG, ordersPaused, RESTAURANT_COLUMNS, deliveryFee, isValidSlot, isOpenNow, asapSlot, timingOf, modeEnabled, paymentEnabled, availableSlots, DELIVERY_FULL_MSG, type Restaurant } from "./shop";
 import { cgvVersion } from "./legal";
 
 const orderSchema = z.object({
@@ -78,6 +78,16 @@ export const createOrder = createServerFn({ method: "POST" })
       data.slot = asapSlot(r, data.mode as "pickup" | "delivery");
     } else if (!timingOf(r).scheduled) throw new Error("Les commandes planifiées ne sont pas proposées.");
     else if (!isValidSlot(r, data.mode as "pickup" | "delivery", data.slot)) throw new Error("Ce créneau n'est plus disponible, merci d'en choisir un autre.");
+    if (data.mode === "delivery") {
+      const { deliveryLoad, isFull } = await import("./delivery-capacity.server");
+      const load = await deliveryLoad(supabaseAdmin, r);
+      if (isFull(load, data.slot)) {
+        // ASAP saturé : on bascule sur le premier créneau suivant disponible.
+        const next = data.asap ? availableSlots(r, "delivery").find((s) => new Date(s) > new Date(data.slot) && !isFull(load, s)) : undefined;
+        if (!next) throw new Error(DELIVERY_FULL_MSG);
+        data.slot = next; data.asap = false;
+      }
+    }
     const { stripeForRestaurant, stripeCall, startOnlinePayment } = await import("./payments.functions");
     const provider = data.payment_method === "online" ? (data.provider ?? "stripe") : null;
     const stripe = provider === "stripe" ? await stripeForRestaurant(r.id) : null;
