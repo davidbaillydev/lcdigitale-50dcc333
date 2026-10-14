@@ -30,7 +30,7 @@ export type Restaurant = {
     ordersPaused?: boolean;
     printing?: Partial<import("./ticket").PrintingConfig>;
     modes?: { pickup?: boolean; delivery?: boolean; dine_in?: boolean };
-    payments?: { on_site?: boolean; counter?: boolean; card_terminal?: boolean };
+    payments?: { on_site?: boolean; counter?: boolean; card_terminal?: boolean; qr?: boolean };
     /** Voie B (BOI-TVA-DECLA-30-10-30 § 37 ex. 4) : borne 100 % carte bancaire, aucun encaissement espèces. */
     kiosk?: { cardOnly?: boolean };
     marketing?: import("./promo").Marketing;
