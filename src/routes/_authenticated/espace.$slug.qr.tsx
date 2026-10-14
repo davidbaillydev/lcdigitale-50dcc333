@@ -1,3 +1,4 @@
+import { RestaurantGuard, RestaurantNav } from "@/components/RestaurantGuard";
 import { FeatureGate } from "@/components/FeatureGate";
 import { EmbedButtonSection } from "@/components/EmbedButtonSection";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -44,7 +45,7 @@ export const Route = createFileRoute("/_authenticated/espace/$slug/qr")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: Gated,
+  component: () => <RestaurantGuard level="manager"><Gated /></RestaurantGuard>,
 });
 
 function Page() {
@@ -101,6 +102,7 @@ function Page() {
   return (
     <div className="mx-auto max-w-5xl p-6 pb-20">
       <div className="flex items-center justify-between gap-3 print:hidden"><Crumbs slug={slug} page="QR tables & avis" /><ThemeToggle /></div>
+      <RestaurantNav slug={slug} className="print:hidden" />
       <h1 className="mt-4 text-5xl print:hidden">QR codes · {r?.name}</h1>
       <div className="mt-6 grid gap-4 print:hidden md:grid-cols-2">
         <section className="rounded-xl border border-border bg-card p-4">

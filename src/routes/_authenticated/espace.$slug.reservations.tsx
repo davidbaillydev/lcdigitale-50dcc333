@@ -1,3 +1,4 @@
+import { RestaurantGuard, RestaurantNav } from "@/components/RestaurantGuard";
 import { FeatureGate } from "@/components/FeatureGate";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -28,7 +29,7 @@ export const Route = createFileRoute("/_authenticated/espace/$slug/reservations"
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: Gated,
+  component: () => <RestaurantGuard level="kitchen"><Gated /></RestaurantGuard>,
 });
 
 const LABEL: Record<string, string> = { pending_card: "Carte en attente", confirmed: "Confirmée", seated: "Arrivé", no_show: "No-show", cancelled: "Annulée" };
@@ -76,6 +77,7 @@ function Page() {
   return (
     <div className="mx-auto max-w-4xl space-y-5 p-6">
       <div className="flex items-center justify-between"><Crumbs slug={slug} page="Réservations" /><ThemeToggle /></div>
+      <RestaurantNav slug={slug} className="print:hidden" />
       <h1 className="text-5xl">Réservations</h1>
       {rid && (r?.role === "manager" || r?.role === "agency") && <Settings slug={slug} restaurantId={rid} />}
       {list.isLoading || !rid ? <div className="space-y-2"><Skeleton className="h-16" /><Skeleton className="h-16" /></div> : (

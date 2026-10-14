@@ -1,3 +1,4 @@
+import { ManagerOnlyGuard } from "@/components/RestaurantGuard";
 import { FeatureOff } from "@/components/FeatureGate";
 import { useStaff } from "@/hooks/use-staff";
 import { createFileRoute } from "@tanstack/react-router";
@@ -36,7 +37,7 @@ export const Route = createFileRoute("/_authenticated/espace/factures")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: Invoices,
+  component: () => <ManagerOnlyGuard><Invoices /></ManagerOnlyGuard>,
 });
 
 type Row = Invoice & { buyer_b2b: B2BBuyer | null; buyer_b2b_updated_at: string | null; id: string; restaurant_id: string; restaurants: { name: string } | null };
