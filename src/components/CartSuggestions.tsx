@@ -19,9 +19,16 @@ export const isSimple = (i: MenuItem) => !i.builder && !(i.options ?? []).some((
 
 /** Suggestions : boissons, desserts, sauces, accompagnements absents du panier (1 par famille puis complément). */
 export function useSuggestions(max = 4): MenuItem[] {
-  const { catalog, lines } = useCart();
+  const { catalog, lines, restaurant } = useCart();
+  const up = restaurant.config.upsell;
   return useMemo(() => {
     const inCart = new Set(lines.map((l) => l.itemId));
+    const manual: MenuItem[] = [];
+    if (up?.mode === "manual") {
+      const ids = [...(up.itemIds ?? []), ...catalog.categories.filter((c) => up.categoryIds?.includes(c.id)).flatMap((c) => c.items.map((i) => i.id))];
+      for (const id of ids) { const it = catalog.itemsById[id]; if (it && !inCart.has(id) && !manual.includes(it)) manual.push(it); }
+      if (manual.length) return manual.slice(0, max);
+    }
     const kindsInCart = new Set<string>();
     const byKind: Record<string, MenuItem[]> = {};
     for (const c of catalog.categories) {
@@ -38,7 +45,7 @@ export function useSuggestions(max = 4): MenuItem[] {
       for (const l of lists) { const it = l[round]; if (it && out.length < max) out.push(it); }
     }
     return out;
-  }, [catalog, lines, max]);
+  }, [catalog, lines, max, up]);
 }
 
 export function CartSuggestions({ className }: { className?: string }) {

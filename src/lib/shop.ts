@@ -38,6 +38,7 @@ export type Restaurant = {
     qr?: { tables?: number; reviewUrl?: string; room?: boolean; self?: boolean; tableValidation?: boolean };
     /** Moment de commande (ASAP / planifiée) et acceptation en cuisine */
     timing?: TimingConfig;
+    upsell?: { mode?: "auto" | "manual"; itemIds?: string[]; categoryIds?: string[] };
     reservations?: { enabled?: boolean; noShowFee?: number; maxParty?: number };
   };
 };

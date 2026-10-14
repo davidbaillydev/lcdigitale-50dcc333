@@ -1,3 +1,4 @@
+import { UpsellPanel } from "@/components/UpsellPanel";
 import { FeaturesPanel } from "@/components/FeaturesPanel";
 import { Crumbs } from "@/components/Crumbs";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -66,6 +67,7 @@ function Page() {
           <p className="text-sm text-muted-foreground">Identité, logo et couleurs se modifient depuis la console (bouton « Modifier »).</p>
           <FeaturesPanel restaurantId={r.id} initial={r.enabled_features} onSaved={() => refetch()} />
           <RestaurantSettingsForm restaurant={r} onSaved={() => refetch()} />
+          <UpsellPanel key={`u-${r.id}`} restaurant={r} onSaved={() => refetch()} />
           <PaymentProvidersPanel restaurantId={r.id} />
           <VoiceChannelPanel restaurantId={r.id} />
           <VapiWebPanel key={r.id} restaurant={r} onSaved={() => refetch()} />
