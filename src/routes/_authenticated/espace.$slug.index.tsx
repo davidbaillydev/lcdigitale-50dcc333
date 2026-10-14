@@ -171,14 +171,14 @@ function Kitchen() {
       .channel(`orders-kitchen-${rid}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `restaurant_id=eq.${rid}` }, (p) => {
         const n = p.new as Order;
-        const becamePaid = p.eventType === "UPDATE" && n.status !== "awaiting_payment" && n.payment_method === "online" && n.payment_status === "paid" && !ordersRef.current.some((x) => x.id === n.id);
+        const becamePaid = p.eventType === "UPDATE" && n.status !== "awaiting_payment" && (n.payment_method === "online" || n.payment_method === "card_terminal") && n.payment_status === "paid" && !ordersRef.current.some((x) => x.id === n.id);
         // Borne + TPE : le ticket attend l'issue du paiement (Payé, ou bon de pré-commande si échec)
         const kioskCard = n.source === "kiosk" && n.payment_method === "card_terminal";
         if (p.eventType === "UPDATE" && kioskCard && deferred.current.has(n.id) && (n.payment_status === "paid" || n.payment_status === "failed")) {
           deferred.current.delete(n.id);
           if (printRef.current.auto) void printRef.current.doPrint(n, ["kitchen", "receipt"], true);
         }
-        if (p.eventType === "INSERT" && kioskCard && n.payment_status !== "paid") {
+        if (p.eventType === "INSERT" && kioskCard && n.payment_status !== "paid" && n.status !== "awaiting_payment") {
           deferred.current.add(n.id);
           setTimeout(() => {
             if (!deferred.current.has(n.id)) return;

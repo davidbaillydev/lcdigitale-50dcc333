@@ -5,7 +5,7 @@ import { validateSelections, orderLine } from "./menu";
 import { loadOptionData, withOptions } from "./menu-options";
 import { getCatalog } from "./catalogs";
 import { computeServiceFee, type ServiceFeeChannel } from "./service-fee";
-import { ORDERS_PAUSED_MSG, ordersPaused, RESTAURANT_COLUMNS, deliveryFee, isValidSlot, isOpenNow, asapSlot, timingOf, modeEnabled, paymentEnabled, availableSlots, DELIVERY_FULL_MSG, type Restaurant } from "./shop";
+import { ORDERS_PAUSED_MSG, ordersPaused, RESTAURANT_COLUMNS, deliveryFee, isValidSlot, isOpenNow, asapSlot, timingOf, modeEnabled, paymentEnabled, availableSlots, DELIVERY_FULL_MSG, kioskCardOnly, type Restaurant } from "./shop";
 import { cgvVersion } from "./legal";
 
 const orderSchema = z.object({
@@ -239,8 +239,15 @@ export const createKioskOrder = createServerFn({ method: "POST" })
     { const ft = featuresOf(r.enabled_features);
       if (!ft.borne) throw new Error("La borne n'est pas activée pour ce restaurant.");
       if (data.payment_method === "counter" && !ft.borne_cash_payment) throw new Error("Le paiement au comptoir n'est pas accepté sur la borne."); }
+    const cardOnly = kioskCardOnly(r);
+    if (cardOnly) {
+      // Voie B : la borne n'enregistre que des paiements carte sur un terminal bancaire connecté.
+      if (data.payment_method !== "card_terminal") throw new Error("Cette borne accepte uniquement le paiement par carte bancaire.");
+      const { kioskTerminalReady } = await import("./payments.functions");
+      if (!(await kioskTerminalReady(r.id))) throw new Error("Le terminal de paiement est indisponible. Merci de commander au comptoir.");
+    }
     if (!modeEnabled(r, data.mode)) throw new Error("Ce mode n'est pas proposé.");
-    if (!paymentEnabled(r, data.payment_method)) throw new Error("Ce mode de paiement n'est pas accepté.");
+    if (!cardOnly && !paymentEnabled(r, data.payment_method)) throw new Error("Ce mode de paiement n'est pas accepté.");
     const catalog = withOptions(getCatalog(r), await loadOptionData(supabaseAdmin, r.id));
     const { data: so } = await supabaseAdmin.from("menu_stock").select("item_id").eq("restaurant_id", r.id).eq("sold_out", true);
     const soldOut = new Set((so ?? []).map((x) => x.item_id));
@@ -274,7 +281,9 @@ export const createKioskOrder = createServerFn({ method: "POST" })
         total: Math.round((subtotal - promo.discount + serviceFee) * 100) / 100,
         payment_method: data.payment_method,
         source: "kiosk",
-        status: r.config.autoAccept ? "accepted" : "new",
+        // Voie B : rien n'arrive en cuisine tant que la banque n'a pas accepté le paiement.
+        ...(cardOnly ? { payment_status: "pending" } : {}),
+        status: cardOnly ? "awaiting_payment" : r.config.autoAccept ? "accepted" : "new",
       })
       .select("id, order_number, total")
       .single();
@@ -286,6 +295,7 @@ export const createKioskOrder = createServerFn({ method: "POST" })
       const { data: pc } = await supabaseAdmin.from("restaurant_promo_codes").select("id, uses").eq("restaurant_id", r.id).eq("code", promo.code).maybeSingle();
       if (pc) await supabaseAdmin.from("restaurant_promo_codes").update({ uses: pc.uses + 1 }).eq("id", pc.id);
     }
+    if (cardOnly) return row;
     { const { syncOrderToPos } = await import("./pos.server"); await syncOrderToPos(row.id); }
     if (data.payment_method === "counter") { const { sendRestaurantNewOrder } = await import("./order-email.server"); await sendRestaurantNewOrder(supabaseAdmin, row.id).catch((e) => console.error(e)); }
     return row;
