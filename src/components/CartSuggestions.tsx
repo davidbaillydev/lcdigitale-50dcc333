@@ -35,7 +35,7 @@ export function useSuggestions(max = 4): MenuItem[] {
     const lists = order.map((k) => (byKind[k] ?? []).slice().sort((a, b) => Number(isSimple(b)) - Number(isSimple(a)) || (fromPrice(a) ?? a.price) - (fromPrice(b) ?? b.price)));
     const out: MenuItem[] = [];
     for (let round = 0; out.length < max && lists.some((l) => l[round]); round++) {
-      for (const l of lists) if (l[round] && out.length < max) out.push(l[round]);
+      for (const l of lists) { const it = l[round]; if (it && out.length < max) out.push(it); }
     }
     return out;
   }, [catalog, lines, max]);
