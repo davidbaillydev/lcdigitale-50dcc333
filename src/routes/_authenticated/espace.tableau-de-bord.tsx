@@ -1,3 +1,4 @@
+import { ManagerOnlyGuard } from "@/components/RestaurantGuard";
 import { Crumbs } from "@/components/Crumbs";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -21,7 +22,7 @@ export const Route = createFileRoute("/_authenticated/espace/tableau-de-bord")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: Dashboard,
+  component: () => <ManagerOnlyGuard><Dashboard /></ManagerOnlyGuard>,
 });
 
 const SOURCE: Record<string, string> = { web: "Site web", embed: "Bouton site du restaurant", facebook: "Facebook", link: "Lien partagé", qr: "QR code table", kiosk: "Borne", phone: "Téléphone IA" };

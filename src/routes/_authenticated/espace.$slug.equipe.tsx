@@ -1,3 +1,4 @@
+import { RestaurantGuard, RestaurantNav } from "@/components/RestaurantGuard";
 import { Crumbs } from "@/components/Crumbs";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -24,7 +25,7 @@ export const Route = createFileRoute("/_authenticated/espace/$slug/equipe")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: Team,
+  component: () => <RestaurantGuard level="agency"><Team /></RestaurantGuard>,
 });
 
 function Team() {
@@ -78,6 +79,7 @@ function Team() {
   return (
     <div className="mx-auto max-w-2xl p-6">
       <div className="flex items-center justify-between"><Crumbs slug={slug} page="Équipe" /><ThemeToggle /></div>
+      <RestaurantNav slug={slug} className="print:hidden" />
       <h1 className="mt-4 text-5xl">Équipe · {restaurant?.name}</h1>
       <p className="text-sm text-muted-foreground">Invitez vos gérants et votre équipe cuisine par email : ils reçoivent un lien pour choisir leur mot de passe. Ils n'accèdent qu'à ce restaurant.</p>
       <div className="mt-4 flex flex-wrap gap-2 rounded-xl border border-border bg-card p-4">

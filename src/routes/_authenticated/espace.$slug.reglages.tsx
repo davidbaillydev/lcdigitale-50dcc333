@@ -1,3 +1,4 @@
+import { RestaurantGuard, RestaurantNav } from "@/components/RestaurantGuard";
 import { Crumbs } from "@/components/Crumbs";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -26,7 +27,7 @@ export const Route = createFileRoute("/_authenticated/espace/$slug/reglages")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: Page,
+  component: () => <RestaurantGuard level="manager"><Page /></RestaurantGuard>,
 });
 
 function Page() {
@@ -38,6 +39,7 @@ function Page() {
   return (
     <div className="mx-auto max-w-3xl space-y-5 p-6">
       <div className="flex items-center justify-between"><Crumbs slug={slug} page="Réglages" /><ThemeToggle /></div>
+      <RestaurantNav slug={slug} className="print:hidden" />
       <h1 className="text-5xl">Réglages {data?.name ?? ""}</h1>
       {error && <p className="text-destructive">{(error as Error).message}</p>}
       {data && <RestaurantSettingsForm restaurant={data} onSaved={() => refetch()} agency={isAgency} />}

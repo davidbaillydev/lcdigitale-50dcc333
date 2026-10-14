@@ -1,3 +1,4 @@
+import { RestaurantGuard, RestaurantNav } from "@/components/RestaurantGuard";
 import { FeatureGate } from "@/components/FeatureGate";
 import { createFileRoute, Link, ClientOnly } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -35,7 +36,7 @@ export const Route = createFileRoute("/_authenticated/espace/$slug/livraison")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: Gated,
+  component: () => <RestaurantGuard level="manager"><Gated /></RestaurantGuard>,
 });
 
 type Tool = "none" | "center" | "origin" | "polygon";
@@ -108,6 +109,7 @@ function Page() {
   return (
     <div className="mx-auto max-w-6xl p-4 pb-20 sm:p-6">
       <div className="flex items-center justify-between gap-3"><Crumbs slug={slug} page="Livraison" /><ThemeToggle /></div>
+      <RestaurantNav slug={slug} className="print:hidden" />
       <header className="mt-4 flex items-center gap-4"><BrandLogo src={r?.logo_url} name={r?.name ?? "Restaurant"} className="h-14 w-14 rounded-lg object-contain" /><div><p className="text-sm text-muted-foreground">{r?.name}</p><h1 className="text-4xl sm:text-5xl">Livraison & livreurs</h1></div></header>
       <p className="text-sm text-muted-foreground">Dessinez vos zones sur la carte. Dès qu'une zone existe, le client vérifie son adresse et l'éligibilité est calculée automatiquement (les codes postaux des Réglages ne servent plus).</p>
 

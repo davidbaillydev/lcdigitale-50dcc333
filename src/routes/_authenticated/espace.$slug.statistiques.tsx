@@ -1,3 +1,4 @@
+import { RestaurantGuard, RestaurantNav } from "@/components/RestaurantGuard";
 import { createFileRoute } from "@tanstack/react-router";
 import { Crumbs } from "@/components/Crumbs";
 import { ConversionFunnel } from "@/components/ConversionFunnel";
@@ -15,7 +16,7 @@ export const Route = createFileRoute("/_authenticated/espace/$slug/statistiques"
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: Page,
+  component: () => <RestaurantGuard level="manager"><Page /></RestaurantGuard>,
 });
 
 function Page() {
@@ -27,6 +28,7 @@ function Page() {
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-6">
       <div className="flex items-center gap-2"><Crumbs slug={slug} page="Statistiques" /><span className="mr-auto" /><ThemeToggle /></div>
+      <RestaurantNav slug={slug} className="print:hidden" />
       <h1 className="text-5xl">Tunnel de conversion & abandon</h1>
       <ConversionFunnel restaurantIds={[r.id]} />
     </div>

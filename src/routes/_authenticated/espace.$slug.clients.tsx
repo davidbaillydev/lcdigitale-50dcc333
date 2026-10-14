@@ -1,3 +1,4 @@
+import { RestaurantGuard, RestaurantNav } from "@/components/RestaurantGuard";
 import { Crumbs } from "@/components/Crumbs";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -29,7 +30,7 @@ export const Route = createFileRoute("/_authenticated/espace/$slug/clients")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: Page,
+  component: () => <RestaurantGuard level="manager"><Page /></RestaurantGuard>,
 });
 
 type Customer = { id: string; name: string | null; email: string | null; phone: string | null; marketing_consent: boolean; consent_at: string | null; consent_source: string | null; source: string; created_at: string };
@@ -166,6 +167,7 @@ function Page() {
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-6">
       <div className="flex items-center gap-2"><Crumbs slug={slug} page="Clients" /><span className="mr-auto" /><ThemeToggle /></div>
+      <RestaurantNav slug={slug} className="print:hidden" />
       <div className="flex flex-wrap items-end gap-3">
         <h1 className="mr-auto text-5xl">Clients {r.name}</h1>
         <Button variant="secondary" onClick={syncFromOrders} disabled={!data}><RefreshCw /> Ajouter les clients des commandes</Button>

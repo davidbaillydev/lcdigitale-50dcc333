@@ -1,3 +1,4 @@
+import { RestaurantGuard, RestaurantNav } from "@/components/RestaurantGuard";
 import { Crumbs } from "@/components/Crumbs";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -34,7 +35,7 @@ export const Route = createFileRoute("/_authenticated/espace/$slug/carte")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: MenuEditor,
+  component: () => <RestaurantGuard level="manager"><MenuEditor /></RestaurantGuard>,
 });
 
 const uid = (p: string) => `${p}-${Math.random().toString(36).slice(2, 8)}`;
@@ -125,6 +126,7 @@ function MenuEditor() {
   return (
       <div className="admin-menu mx-auto max-w-4xl p-6 pb-28">
         <div className="flex items-center justify-between gap-3"><Crumbs slug={slug} page="Carte" /><ThemeToggle /></div>
+      <RestaurantNav slug={slug} className="print:hidden" />
         <h1 className="mt-4 text-5xl">Carte · {r?.name}</h1>
         <p className="text-sm text-muted-foreground">
           {!menu.length ? "Carte vierge : déposez votre menu ci-dessous ou ajoutez vos catégories à la main." : custom ? "Carte personnalisée de ce restaurant." : "Vous partez de la carte de base : elle deviendra propre à ce restaurant dès le premier enregistrement."} Les modifications n'affectent aucun autre établissement.
