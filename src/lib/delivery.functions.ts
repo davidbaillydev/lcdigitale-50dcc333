@@ -178,3 +178,34 @@ export const courierUpdate = createServerFn({ method: "POST" })
     }
     return { ok: true };
   });
+
+/* ---------- Capacité par créneau ---------- */
+
+/** Public : créneaux de livraison complets aujourd'hui (aucune donnée client). */
+export const deliverySlotLoad = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ slug: z.string().trim().min(1).max(40) }).parse(d))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: r } = await supabaseAdmin.from("restaurants").select("id, delivery").eq("slug", data.slug.toLowerCase()).eq("active", true).maybeSingle();
+    if (!r) return { limit: null as number | null, minutes: 30, counts: {} as Record<string, number> };
+    const { deliveryLoad } = await import("./delivery-capacity.server");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return deliveryLoad(supabaseAdmin, r as any);
+  });
+
+/** Gérant : plafond de livraisons par créneau. */
+export const saveDeliveryCapacity = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    restaurantId: z.string().uuid(),
+    capacity: z.object({ enabled: z.boolean(), mode: z.enum(["fixed", "per_driver"]), max: z.number().int().min(1).max(200), perDriver: z.number().int().min(1).max(20), slotMinutes: z.union([z.literal(15), z.literal(20), z.literal(30)]) }),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertManager(context.supabase, context.userId, data.restaurantId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: cur } = await supabaseAdmin.from("restaurants").select("delivery").eq("id", data.restaurantId).single();
+    const delivery = { ...((cur?.delivery as Record<string, unknown>) ?? {}), capacity: data.capacity };
+    const { error } = await supabaseAdmin.from("restaurants").update({ delivery: delivery as never }).eq("id", data.restaurantId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

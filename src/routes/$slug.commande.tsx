@@ -19,6 +19,8 @@ import { geocodeAddress } from "@/lib/delivery.functions";
 import { computeServiceFee, serviceFeeLabel, type ServiceFeeChannel } from "@/lib/service-fee";
 import { asapSlot, availableSlots, deliveryFee, fmtTime, isOpenNow, modeEnabled, timingOf } from "@/lib/shop";
 import { createOrder } from "@/lib/orders.functions";
+import { deliverySlotLoad } from "@/lib/delivery.functions";
+import { capacityBucket } from "@/lib/shop";
 import { onlinePaymentInfo } from "@/lib/payments.functions";
 import { StripePayment } from "@/components/StripePayment";
 import { cn } from "@/lib/utils";
@@ -90,7 +92,23 @@ function Checkout() {
     setOpenNow(o);
     if (!o) setWhen("later"); else if (!timingOf(restaurant).scheduled) setWhen("asap");
   }, [mode, restaurant]);
-  const asap = when === "asap" && openNow;
+  const loadFn = useServerFn(deliverySlotLoad);
+  const [load, setLoad] = useState<{ limit: number | null; minutes: number; counts: Record<string, number> } | null>(null);
+  useEffect(() => {
+    if (mode !== "delivery") { setLoad(null); return; }
+    let alive = true;
+    const run = () => loadFn({ data: { slug: restaurant.slug } }).then((l) => { if (alive) setLoad(l); }).catch(() => {});
+    run(); const t = setInterval(run, 30_000);
+    return () => { alive = false; clearInterval(t); };
+  }, [mode, restaurant.slug, loadFn]);
+  const isFullSlot = (iso: string) => mode === "delivery" && !!load && load.limit !== null && (load.counts[capacityBucket(iso, load.minutes)] ?? 0) >= load.limit;
+  const freeSlots = useMemo(() => slots.filter((s) => !isFullSlot(s)), [slots, load, mode]); // eslint-disable-line react-hooks/exhaustive-deps
+  const asapFull = openNow && isFullSlot(asapSlot(restaurant, mode));
+  useEffect(() => {
+    if (slot && isFullSlot(slot)) setSlot(freeSlots[0] ?? "");
+    if (asapFull && when === "asap" && freeSlots[0]) { setWhen("later"); setSlot(freeSlots[0]); }
+  }, [load]); // eslint-disable-line react-hooks/exhaustive-deps
+  const asap = when === "asap" && openNow && !asapFull;
 
   const geoZones = DELIVERY.geoZones ?? [];
   const geoFn = useServerFn(geocodeAddress);
@@ -115,9 +133,9 @@ function Checkout() {
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
 
   const canSubmit = useMemo(
-    () => table ? lines.length && !!f.first_name.trim() && !!f.last_name.trim() && f.phone.trim().length >= 8 : lines.length && (asap || (timing.scheduled && slot)) && !!f.first_name.trim() && !!f.last_name.trim() && f.phone.trim().length >= 8 && !belowMin &&
+    () => table ? lines.length && !!f.first_name.trim() && !!f.last_name.trim() && f.phone.trim().length >= 8 : lines.length && (asap || (timing.scheduled && slot && !isFullSlot(slot))) && !!f.first_name.trim() && !!f.last_name.trim() && f.phone.trim().length >= 8 && !belowMin &&
       (mode === "pickup" || (f.address.trim().length > 4 && (geoZones.length ? !!geo?.zone : f.postal_code))),
-    [lines, slot, f, belowMin, mode, table, asap, timing.scheduled, geo, geoZones.length],
+    [lines, slot, f, belowMin, mode, table, asap, load, timing.scheduled, geo, geoZones.length],
   );
 
   const submit = async () => {
@@ -212,7 +230,7 @@ function Checkout() {
             <h2 className="text-3xl">2. Quand souhaitez-vous votre commande ?</h2>
             {(openNow || timing.scheduled) ? (
               <div role="radiogroup" aria-label="Moment de la commande" className="mt-3 grid grid-cols-2 gap-3">
-                {openNow && (
+                {openNow && !asapFull && (
                   <button type="button" role="radio" aria-checked={when === "asap"} onClick={() => setWhen("asap")} className={cn("rounded-xl border p-4 text-left", when === "asap" ? "border-primary bg-primary/10" : "border-border")}>
                     <Clock className="mb-2 h-6 w-6 text-primary" />
                     <p className="font-semibold">Dès que possible</p>
@@ -232,10 +250,11 @@ function Checkout() {
               <div className="mt-3 max-w-xs">
                 <Label htmlFor="slot-select">Horaire {mode === "delivery" ? "de livraison" : "de retrait"}</Label>
                 <select id="slot-select" value={slot} onChange={(e) => setSlot(e.target.value)} className="mt-1 h-12 w-full rounded-lg border border-input bg-background px-3 text-base">
-                  {slots.map((s) => <option key={s} value={s}>{fmtTime(s)}</option>)}
+                  {slots.map((s) => <option key={s} value={s} disabled={isFullSlot(s)}>{fmtTime(s)}{isFullSlot(s) ? " — Complet" : ""}</option>)}
                 </select>
               </div>
             )}
+            {asapFull && <p role="status" className="mt-3 rounded-lg bg-primary/10 p-3 text-sm">Livraison immédiate complète{freeSlots[0] ? ` : prochain créneau disponible à ${fmtTime(freeSlots[0])}.` : "."} Le retrait reste possible.</p>}
             {!openNow && (!timing.scheduled || !slots.length) && (
               <p className="mt-3 rounded-lg bg-card p-4 text-sm text-muted-foreground">Plus aucun créneau disponible aujourd'hui. {restaurant.config.hoursLabel ? `Horaires : ${restaurant.config.hoursLabel}.` : ""}</p>
             )}

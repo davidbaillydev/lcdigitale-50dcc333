@@ -4,7 +4,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { GeoZone, LatLng } from "@/lib/geo";
 
-type Marker = { id: string; at: LatLng; label: string };
+type Marker = { id: string; at: LatLng; label: string; color?: string; popup?: string };
 type Props = {
   center: LatLng;
   zones?: GeoZone[];
@@ -12,17 +12,20 @@ type Props = {
   draft?: LatLng[];
   markers?: Marker[];
   onMapClick?: (p: LatLng) => void;
+  onMarkerClick?: (id: string) => void;
   className?: string;
 };
 
 const dot = (color: string) => L.divIcon({ className: "", html: `<span style="display:block;width:16px;height:16px;border-radius:50%;background:${color};border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)"></span>`, iconSize: [16, 16], iconAnchor: [8, 8] });
 
-export default function ZoneMap({ center, zones = [], selectedId, draft, markers = [], onMapClick, className }: Props) {
+export default function ZoneMap({ center, zones = [], selectedId, draft, markers = [], onMapClick, onMarkerClick, className }: Props) {
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
   const layer = useRef<L.LayerGroup | null>(null);
   const clickRef = useRef(onMapClick);
   clickRef.current = onMapClick;
+  const mkRef = useRef(onMarkerClick);
+  mkRef.current = onMarkerClick;
 
   useEffect(() => {
     if (!el.current) return;
@@ -53,7 +56,12 @@ export default function ZoneMap({ center, zones = [], selectedId, draft, markers
       }
     }
     if (draft?.length) { L.polyline(draft, { color: "#007af5", dashArray: "4 4" }).addTo(g); draft.forEach((p) => L.circleMarker(p, { radius: 5, color: "#007af5" }).addTo(g)); }
-    for (const mk of markers) { L.marker(mk.at, { icon: dot("#e11d48") }).bindTooltip(mk.label).addTo(g); bounds.push(mk.at); }
+    for (const mk of markers) {
+      const m2 = L.marker(mk.at, { icon: dot(mk.color ?? "#e11d48"), title: mk.label }).bindTooltip(mk.label);
+      if (mk.popup) m2.bindPopup(mk.popup, { maxWidth: 280 });
+      m2.on("click", () => mkRef.current?.(mk.id));
+      m2.addTo(g); bounds.push(mk.at);
+    }
   }, [center, zones, selectedId, draft, markers]);
 
   useEffect(() => {
