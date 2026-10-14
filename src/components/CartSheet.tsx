@@ -3,6 +3,7 @@ import { Minus, Plus, ShoppingBag } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/lib/cart";
+import { CartSuggestions } from "@/components/CartSuggestions";
 import { describeSelections, euro, selectedExtras, unitPrice } from "@/lib/menu";
 
 export function CartLines() {
@@ -49,7 +50,7 @@ export function CartSheet() {
       </SheetTrigger>
       <SheetContent className="flex w-full flex-col sm:max-w-md">
         <SheetHeader><SheetTitle className="font-display text-3xl">Votre panier</SheetTitle></SheetHeader>
-        <div className="flex-1 overflow-y-auto px-4"><CartLines /></div>
+        <div className="flex-1 overflow-y-auto px-4"><CartLines /><CartSuggestions className="pb-4" /></div>
         <div className="space-y-3 border-t border-border p-4">
           <div className="flex justify-between font-semibold"><span>Sous-total</span><span>{euro(subtotal)}</span></div>
           <Button asChild size="lg" className="w-full font-semibold" disabled={!count}>

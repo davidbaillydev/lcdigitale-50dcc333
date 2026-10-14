@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Bike, CalendarClock, Clock, ShoppingBag, CreditCard, Store, Wallet, Landmark, MapPin, LocateFixed } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { CartLines } from "@/components/CartSheet";
+import { CartSuggestions } from "@/components/CartSuggestions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -313,6 +314,7 @@ function Checkout() {
         <aside className="h-fit rounded-xl border border-border bg-card p-5 lg:sticky lg:top-20">
           <h2 className="text-3xl">Récapitulatif</h2>
           <CartLines />
+          {!payment && <CartSuggestions className="mb-3" />}
           {!payment && <div className="mb-3"><PromoCodeField slug={restaurant.slug} subtotal={subtotal} channel="web" email={f.email} phone={f.phone} onChange={(d, code) => setPromo({ d, code })} /></div>}
           <div className="space-y-1 border-t border-border pt-3 text-sm">
             <div className="flex justify-between"><span>Sous-total</span><span>{euro(subtotal)}</span></div>
