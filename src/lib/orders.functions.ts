@@ -221,7 +221,7 @@ export const getOrderStatus = createServerFn({ method: "GET" })
 const kioskSchema = z.object({
   restaurant: z.string().max(40),
   mode: z.enum(["dine_in", "pickup"]),
-  payment_method: z.enum(["counter", "card_terminal"]),
+  payment_method: z.enum(["counter", "card_terminal", "qr"]),
   customer_name: z.string().trim().max(40).optional(),
   promo_code: z.string().trim().max(30).optional(),
   lines: orderSchema.shape.lines,
@@ -240,14 +240,20 @@ export const createKioskOrder = createServerFn({ method: "POST" })
       if (!ft.borne) throw new Error("La borne n'est pas activée pour ce restaurant.");
       if (data.payment_method === "counter" && !ft.borne_cash_payment) throw new Error("Le paiement au comptoir n'est pas accepté sur la borne."); }
     const cardOnly = kioskCardOnly(r);
-    if (cardOnly) {
+    const qr = data.payment_method === "qr";
+    if (qr) {
+      // QR code : le client paie sur son téléphone (Mollie/Stripe), validation automatique après paiement.
+      if (r.config.payments?.qr !== true) throw new Error("Le paiement par QR code n'est pas proposé.");
+      const { kioskQrReady } = await import("./payments.functions");
+      if (!(await kioskQrReady(r.id))) throw new Error("Le paiement par QR code est indisponible pour le moment.");
+    } else if (cardOnly) {
       // Voie B : la borne n'enregistre que des paiements carte sur un terminal bancaire connecté.
       if (data.payment_method !== "card_terminal") throw new Error("Cette borne accepte uniquement le paiement par carte bancaire.");
       const { kioskTerminalReady } = await import("./payments.functions");
       if (!(await kioskTerminalReady(r.id))) throw new Error("Le terminal de paiement est indisponible. Merci de commander au comptoir.");
     }
     if (!modeEnabled(r, data.mode)) throw new Error("Ce mode n'est pas proposé.");
-    if (!cardOnly && !paymentEnabled(r, data.payment_method)) throw new Error("Ce mode de paiement n'est pas accepté.");
+    if (!cardOnly && !qr && !paymentEnabled(r, data.payment_method as "counter" | "card_terminal")) throw new Error("Ce mode de paiement n'est pas accepté.");
     const catalog = withOptions(getCatalog(r), await loadOptionData(supabaseAdmin, r.id));
     const { data: so } = await supabaseAdmin.from("menu_stock").select("item_id").eq("restaurant_id", r.id).eq("sold_out", true);
     const soldOut = new Set((so ?? []).map((x) => x.item_id));
@@ -279,11 +285,11 @@ export const createKioskOrder = createServerFn({ method: "POST" })
         discount: promo.discount,
         promo_code: promo.discount ? promo.code : null,
         total: Math.round((subtotal - promo.discount + serviceFee) * 100) / 100,
-        payment_method: data.payment_method,
+        payment_method: qr ? "online" : data.payment_method,
         source: "kiosk",
         // Voie B : rien n'arrive en cuisine tant que la banque n'a pas accepté le paiement.
-        ...(cardOnly ? { payment_status: "pending" } : {}),
-        status: cardOnly ? "awaiting_payment" : r.config.autoAccept ? "accepted" : "new",
+        ...(cardOnly || qr ? { payment_status: "pending" } : {}),
+        status: cardOnly || qr ? "awaiting_payment" : r.config.autoAccept ? "accepted" : "new",
       })
       .select("id, order_number, total")
       .single();
@@ -295,7 +301,7 @@ export const createKioskOrder = createServerFn({ method: "POST" })
       const { data: pc } = await supabaseAdmin.from("restaurant_promo_codes").select("id, uses").eq("restaurant_id", r.id).eq("code", promo.code).maybeSingle();
       if (pc) await supabaseAdmin.from("restaurant_promo_codes").update({ uses: pc.uses + 1 }).eq("id", pc.id);
     }
-    if (cardOnly) return row;
+    if (cardOnly || qr) return row;
     { const { syncOrderToPos } = await import("./pos.server"); await syncOrderToPos(row.id); }
     if (data.payment_method === "counter") { const { sendRestaurantNewOrder } = await import("./order-email.server"); await sendRestaurantNewOrder(supabaseAdmin, row.id).catch((e) => console.error(e)); }
     return row;

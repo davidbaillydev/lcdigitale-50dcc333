@@ -5,13 +5,15 @@ import { featuresOf } from "@/lib/features";
 import { createFileRoute } from "@tanstack/react-router";
 import { computeServiceFee, serviceFeeLabel } from "@/lib/service-fee";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Check, ChevronLeft, CreditCard, Minus, Plus, ShoppingBag, Trash2, UtensilsCrossed, Banknote } from "lucide-react";
+import { Check, ChevronLeft, CreditCard, Minus, Plus, ShoppingBag, Trash2, UtensilsCrossed, Banknote, QrCode } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { cn } from "@/lib/utils";
 import { AllergenBadges, AllergenInfo, AllergenPicker } from "@/components/Allergens";
 import { safeFor } from "@/lib/allergens";
 import { useCart } from "@/lib/cart";
 import { createKioskOrder } from "@/lib/orders.functions";
+import QRCode from "qrcode";
+import { abandonKioskQr, kioskQrAvailable, kioskQrStatus, startKioskQrPayment } from "@/lib/payments.functions";
 import { abandonKioskOrder, cancelKioskPayment, kioskPaymentStatus, kioskTerminalAvailable, startKioskCardPayment } from "@/lib/payments.functions";
 import { activeGroups, fromPrice, selectedExtras, describeSelections, euro, groupCost, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
 import { itemImage, menuImage } from "@/lib/menu-images";
@@ -38,7 +40,7 @@ export const Route = createFileRoute("/$slug/borne")({
 });
 
 const IDLE_MS = 60_000;
-type Step = "welcome" | "menu" | "cart" | "pay" | "terminal" | "done";
+type Step = "welcome" | "menu" | "cart" | "pay" | "terminal" | "qr" | "done";
 type Mode = "dine_in" | "pickup";
 
 function Kiosk() {
@@ -71,6 +73,30 @@ function Kiosk() {
   const [terminal, setTerminal] = useState(false);
   const [pending, setPending] = useState<{ id: string; n: number; total: number } | null>(null);
   const [cardState, setCardState] = useState<"pending" | "failed">("pending");
+  const checkQr = useServerFn(kioskQrAvailable);
+  const startQr = useServerFn(startKioskQrPayment);
+  const pollQr = useServerFn(kioskQrStatus);
+  const abandonQr = useServerFn(abandonKioskQr);
+  const [qrReady, setQrReady] = useState(false);
+  const [qr, setQr] = useState<{ id: string; n: number; total: number; img: string; started: number } | null>(null);
+  const [qrFailed, setQrFailed] = useState(false);
+  const qrOn = restaurant.config.payments?.qr === true && qrReady;
+  useEffect(() => { if (restaurant.config.payments?.qr === true) checkQr({ data: { slug: restaurant.slug } }).then((r) => setQrReady(r.available)).catch(() => {}); }, [restaurant.slug, restaurant.config.payments?.qr, checkQr]);
+  useEffect(() => {
+    if (step !== "qr" || !qr || qrFailed) return;
+    const t = setInterval(async () => {
+      try {
+        const r = await pollQr({ data: { orderId: qr.id } });
+        if (r.status === "paid") { track("completed", "Paiement QR validé", qr.id); setResult({ n: qr.n, total: qr.total, pay: "card_paid" }); setQr(null); setStep("done"); }
+        else if (r.status === "failed") setQrFailed(true);
+      } catch { /* réessai */ }
+    }, 2000);
+    return () => clearInterval(t);
+  }, [step, qr, qrFailed, pollQr]); // eslint-disable-line react-hooks/exhaustive-deps
+  const cancelQr = useCallback(async (id: string) => {
+    const r = await abandonQr({ data: { orderId: id } }).catch(() => null);
+    return r?.status === "paid";
+  }, [abandonQr]);
   useEffect(() => { checkTerminal({ data: { slug: restaurant.slug } }).then((r) => setTerminal(r.available)).catch(() => {}); }, [restaurant.slug, checkTerminal]);
   useEffect(() => {
     if (step !== "terminal" || !pending || cardState !== "pending") return;
@@ -96,6 +122,10 @@ function Kiosk() {
     window.addEventListener("pointerdown", touch);
     const t = setInterval(() => {
       if (step === "welcome") return;
+      if (step === "qr") {
+        if (qr && Date.now() - qr.started > 180_000) { const o = qr; setQr(null); void cancelQr(o.id).then((paid) => { if (paid) { setResult({ n: o.n, total: o.total, pay: "card_paid" }); setStep("done"); } else reset(); }); }
+        return;
+      }
       if (step === "terminal") {
         if (cardState === "failed" && pending && Date.now() - last.current > 60_000) { void abandon({ data: { orderId: pending.id } }).catch(() => {}); setPending(null); reset(); }
         return;
@@ -106,10 +136,29 @@ function Kiosk() {
       else if (step !== "done" && idle > limit - 15_000) setWarn(true);
     }, 1000);
     return () => { window.removeEventListener("pointerdown", touch); clearInterval(t); };
-  }, [step, reset, cardState, pending, abandon]);
+  }, [step, reset, cardState, pending, abandon, qr, cancelQr]);
 
   // Vide un éventuel panier resté sur la borne au démarrage
   useEffect(() => { clear(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const payQr = async () => {
+    setBusy(true); setError(null);
+    try {
+      const row = await send({ data: { restaurant: restaurant.slug, mode, payment_method: "qr", ...(promo.code ? { promo_code: promo.code } : {}), lines: lines.map((l) => ({ itemId: l.itemId, qty: l.qty, sel: l.sel })) } });
+      try {
+        const { url } = await startQr({ data: { orderId: row.id, origin: window.location.origin } });
+        const img = await QRCode.toDataURL(url, { width: 520, margin: 1, errorCorrectionLevel: "M" });
+        track("payment_pending", "Paiement QR");
+        clear(); last.current = Date.now(); setQrFailed(false);
+        setQr({ id: row.id, n: row.order_number, total: Number(row.total), img, started: Date.now() }); setStep("qr");
+      } catch (e) {
+        await cancelQr(row.id);
+        throw e;
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur, merci de réessayer.");
+    } finally { setBusy(false); }
+  };
 
   const pay = async (payment_method: "counter" | "card_terminal") => {
     setBusy(true); setError(null);
@@ -291,10 +340,33 @@ function Kiosk() {
               <span className="font-display text-4xl">Carte bancaire</span>
               <span className="text-lg text-muted-foreground">{terminal || cardOnly ? "Sur le terminal de la borne" : "Sur le terminal au comptoir"}</span>
             </button>}
+            {qrOn && <button disabled={busy} onClick={payQr} className="flex flex-col items-center gap-4 rounded-2xl border-2 border-border bg-card p-10 active:border-primary disabled:opacity-50">
+              <QrCode className="h-20 w-20 text-primary" />
+              <span className="font-display text-4xl">QR code</span>
+              <span className="text-lg text-muted-foreground">Payez avec votre téléphone · Carte, Apple Pay, Google Pay</span>
+            </button>}
           </div>
           {cardOnly && <p className="text-xl text-muted-foreground">Paiement par carte bancaire uniquement · Espèces, chèques et tickets restaurant papier non acceptés sur cette borne</p>}
           {error && <p className="text-2xl text-destructive">{error}</p>}
           <button onClick={() => setStep("cart")} className="rounded-xl bg-muted px-8 py-5 text-xl font-semibold">Retour au panier</button>
+        </div>
+      )}
+
+      {step === "qr" && qr && (
+        <div role="dialog" aria-modal="true" aria-live="polite" className="flex flex-1 flex-col items-center justify-center gap-6 p-10 text-center">
+          {!qrFailed ? (<>
+            <p className="font-display text-6xl">Scannez pour payer</p>
+            <p className="text-2xl text-muted-foreground">Ouvrez l'appareil photo de votre téléphone et visez le QR code</p>
+            <img src={qr.img} alt="QR code de paiement" className="h-[26rem] w-[26rem] rounded-2xl bg-card p-4" />
+            <p className="text-4xl">{euro(qr.total)} · Commande n° {qr.n}</p>
+            <p className="animate-pulse text-xl text-primary">En attente du paiement… la commande partira en cuisine automatiquement.</p>
+          </>) : (<>
+            <QrCode className="h-28 w-28 text-destructive" />
+            <p className="font-display text-6xl">Paiement non abouti</p>
+            <p className="text-2xl text-muted-foreground">Votre commande n'a pas été envoyée en cuisine.</p>
+          </>)}
+          <button onClick={async () => { const o = qr; setQr(null); const paid = await cancelQr(o.id); if (paid) { setResult({ n: o.n, total: o.total, pay: "card_paid" }); setStep("done"); } else reset(); }}
+            className="rounded-xl bg-muted px-8 py-5 text-xl font-semibold">{qrFailed ? "Retour à l'accueil" : "Annuler la commande"}</button>
         </div>
       )}
 
