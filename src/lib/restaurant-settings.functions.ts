@@ -66,12 +66,12 @@ export const saveRestaurantSettings = createServerFn({ method: "POST" })
     const marketing = (cur?.config as { marketing?: unknown } | null)?.marketing;
     const qr = (cur?.config as { qr?: unknown } | null)?.qr;
     const reservations = (cur?.config as { reservations?: unknown } | null)?.reservations;
-    const { geoZones, origin } = (cur?.delivery as { geoZones?: unknown; origin?: unknown } | null) ?? {};
+    const { geoZones, origin, capacity } = (cur?.delivery as { geoZones?: unknown; origin?: unknown; capacity?: unknown } | null) ?? {};
     // L'impression est un réglage agence : un gérant ne peut pas la modifier.
     const { data: isAgency } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
     const printing = (cur?.config as { printing?: unknown } | null)?.printing;
     if (!isAgency && printing) s.config.printing = printing as typeof s.config.printing;
-    const { error } = await supabaseAdmin.from("restaurants").update({ opening: s.opening, delivery: { ...s.delivery, ...(geoZones ? { geoZones } : {}), ...(origin ? { origin } : {}) } as never, config: { ...s.config, ordersPaused: (cur?.config as { ordersPaused?: boolean } | null)?.ordersPaused === true, ...(marketing ? { marketing } : {}), ...(qr ? { qr } : {}), ...(reservations ? { reservations } : {}), ...((cur?.config as { notifications?: unknown } | null)?.notifications ? { notifications: (cur?.config as { notifications?: unknown }).notifications } : {}), ...((cur?.config as { upsell?: unknown } | null)?.upsell ? { upsell: (cur?.config as { upsell?: unknown }).upsell } : {}) } as never }).eq("id", data.restaurantId);
+    const { error } = await supabaseAdmin.from("restaurants").update({ opening: s.opening, delivery: { ...s.delivery, ...(geoZones ? { geoZones } : {}), ...(origin ? { origin } : {}), ...(capacity ? { capacity } : {}) } as never, config: { ...s.config, ordersPaused: (cur?.config as { ordersPaused?: boolean } | null)?.ordersPaused === true, ...(marketing ? { marketing } : {}), ...(qr ? { qr } : {}), ...(reservations ? { reservations } : {}), ...((cur?.config as { notifications?: unknown } | null)?.notifications ? { notifications: (cur?.config as { notifications?: unknown }).notifications } : {}), ...((cur?.config as { upsell?: unknown } | null)?.upsell ? { upsell: (cur?.config as { upsell?: unknown }).upsell } : {}) } as never }).eq("id", data.restaurantId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
