@@ -241,7 +241,7 @@ function Kiosk() {
               );
             })}
           </div>
-          {suggestions.length > 0 && lines.length > 0 && (
+          {!kioskPaused && suggestions.length > 0 && lines.length > 0 && (
             <div className="mt-4">
               <p className="mb-2 text-xl font-semibold text-muted-foreground">Pour accompagner votre commande</p>
               <div className="flex gap-3 overflow-x-auto pb-1">
