@@ -135,7 +135,7 @@ function Checkout() {
   const canSubmit = useMemo(
     () => table ? lines.length && !!f.first_name.trim() && !!f.last_name.trim() && f.phone.trim().length >= 8 : lines.length && (asap || (timing.scheduled && slot && !isFullSlot(slot))) && !!f.first_name.trim() && !!f.last_name.trim() && f.phone.trim().length >= 8 && !belowMin &&
       (mode === "pickup" || (f.address.trim().length > 4 && (geoZones.length ? !!geo?.zone : f.postal_code))),
-    [lines, slot, f, belowMin, mode, table, asap, timing.scheduled, geo, geoZones.length],
+    [lines, slot, f, belowMin, mode, table, asap, load, timing.scheduled, geo, geoZones.length],
   );
 
   const submit = async () => {
