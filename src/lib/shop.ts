@@ -104,3 +104,19 @@ export const fmtTime = (iso: string) =>
 /** Un mode/paiement est actif sauf s'il a été explicitement désactivé */
 export const modeEnabled = (r: Restaurant, m: "pickup" | "delivery" | "dine_in") => r.config.modes?.[m] !== false;
 export const paymentEnabled = (r: Restaurant, p: "on_site" | "counter" | "card_terminal") => r.config.payments?.[p] !== false;
+
+/* ---------- Capacité de livraison par créneau ---------- */
+export type DeliveryCapacity = { enabled?: boolean; mode?: "fixed" | "per_driver"; max?: number; perDriver?: number; slotMinutes?: 15 | 20 | 30 };
+export function capacityOf(r: Pick<Restaurant, "delivery">) {
+  const c = (r.delivery as DeliveryConfig & { capacity?: DeliveryCapacity }).capacity ?? {};
+  const s = c.slotMinutes;
+  return { enabled: c.enabled === true, mode: c.mode === "per_driver" ? "per_driver" as const : "fixed" as const, max: Math.max(1, c.max ?? 4), perDriver: Math.max(1, c.perDriver ?? 2), slotMinutes: (s === 15 || s === 20 || s === 30 ? s : 30) as 15 | 20 | 30 };
+}
+/** Plafond de livraisons par créneau (null = illimité). */
+export function capacityLimit(cap: ReturnType<typeof capacityOf>, activeDrivers: number) {
+  if (!cap.enabled) return null;
+  return cap.mode === "per_driver" ? cap.perDriver * activeDrivers : cap.max;
+}
+/** Clé du créneau de capacité contenant l'heure donnée. */
+export const capacityBucket = (iso: string, minutes: number) => String(Math.floor(new Date(iso).getTime() / (minutes * 60000)));
+export const DELIVERY_FULL_MSG = "Ce créneau de livraison est complet, merci d'en choisir un autre.";
