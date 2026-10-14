@@ -17,9 +17,11 @@ import { ThemeToggle } from "@/lib/theme";
 import { useStaff } from "@/hooks/use-staff";
 import { supabase } from "@/integrations/supabase/client";
 import { loadRestaurantAdmin } from "@/lib/restaurant-settings.functions";
-import { courierPinStatus, saveDeliveryZones, setCourierPin } from "@/lib/delivery.functions";
+import { courierPinStatus, saveDeliveryCapacity, saveDeliveryZones, setCourierPin } from "@/lib/delivery.functions";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import type { GeoZone, LatLng } from "@/lib/geo";
-import { fmtTime } from "@/lib/shop";
+import { capacityOf, fmtTime } from "@/lib/shop";
 import { DriverSelect, useDrivers } from "@/components/DriverSelect";
 
 const ZoneMap = lazy(() => import("@/components/ZoneMap"));
@@ -40,7 +42,17 @@ export const Route = createFileRoute("/_authenticated/espace/$slug/livraison")({
 });
 
 type Tool = "none" | "center" | "origin" | "polygon";
-type Del = { id: string; order_number: number; customer_name: string; address: string | null; slot: string; status: string; courier_status: string | null; courier_name: string | null; zone_name: string | null; driver_id: string | null };
+type Del = { id: string; order_number: number; customer_name: string; phone: string; address: string | null; postal_code: string | null; city: string | null; slot: string; status: string; total: number; payment_method: string; payment_status: string; delivery_lat: number | null; delivery_lng: number | null; courier_status: string | null; courier_name: string | null; zone_name: string | null; driver_id: string | null };
+type St = "waiting" | "ready" | "en_route" | "delivered";
+const ST: Record<St, { label: string; color: string; dot: string }> = {
+  waiting: { label: "En attente / À préparer", color: "#f59e0b", dot: "bg-[#f59e0b]" },
+  ready: { label: "Prête / Assignée", color: "#2563eb", dot: "bg-[#2563eb]" },
+  en_route: { label: "En route", color: "#7c3aed", dot: "bg-[#7c3aed]" },
+  delivered: { label: "Livrée", color: "#16a34a", dot: "bg-[#16a34a]" },
+};
+const stateOf = (o: Del): St => o.courier_status === "delivered" || o.status === "done" ? "delivered" : o.courier_status === "en_route" ? "en_route" : o.status === "ready" || o.courier_status === "assigned" ? "ready" : "waiting";
+const esc = (t: string) => t.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+const fullAddr = (o: Del) => [o.address, [o.postal_code, o.city].filter(Boolean).join(" ")].filter(Boolean).join(", ");
 const uid = () => Math.random().toString(36).slice(2, 10);
 const COURIER: Record<string, string> = { assigned: "Assignée", en_route: "En cours", delivered: "Livrée" };
 
@@ -71,7 +83,7 @@ function Page() {
     if (!r) return;
     const since = new Date(Date.now() - 12 * 3600_000).toISOString();
     const fetchO = async () => {
-      const { data, error } = await supabase.from("orders").select("id, order_number, customer_name, address, slot, status, courier_status, courier_name, zone_name, driver_id").eq("restaurant_id", r.id).eq("mode", "delivery").gte("created_at", since).neq("status", "awaiting_payment").order("slot");
+      const { data, error } = await supabase.from("orders").select("id, order_number, customer_name, phone, address, postal_code, city, slot, status, total, payment_method, payment_status, delivery_lat, delivery_lng, courier_status, courier_name, zone_name, driver_id").eq("restaurant_id", r.id).eq("mode", "delivery").gte("created_at", since).not("status", "in", "(awaiting_payment,cancelled,rejected)").order("slot");
       if (error) { toast.error("Livraisons indisponibles"); return; } setOrders((data ?? []) as Del[]);
     };
     fetchO();
@@ -92,6 +104,20 @@ function Page() {
     if (tool === "polygon" && z.type === "polygon") patch({ points: [...(z.points ?? []), p] });
   };
   const markers = useMemo(() => [], []);
+  const saveCap = useServerFn(saveDeliveryCapacity);
+  const [cap, setCap] = useState(() => capacityOf({ delivery: { minOrder: 0, fee: 0, freeFrom: 0, zones: [] } }));
+  useEffect(() => { if (r) setCap(capacityOf(r)); }, [r]);
+  const [filter, setFilter] = useState<"all" | "active">("active");
+  const [focus, setFocus] = useState<string | null>(null);
+  const counts = useMemo(() => { const c: Record<St, number> = { waiting: 0, ready: 0, en_route: 0, delivered: 0 }; orders.forEach((o) => { c[stateOf(o)]++; }); return c; }, [orders]);
+  const shown = useMemo(() => orders.filter((o) => filter === "all" || stateOf(o) !== "delivered"), [orders, filter]);
+  const liveMarkers = useMemo(() => shown.filter((o) => o.delivery_lat != null && o.delivery_lng != null).map((o) => {
+    const st = stateOf(o), a = fullAddr(o), q = encodeURIComponent(a);
+    const nav = `${o.delivery_lat},${o.delivery_lng}`;
+    return { id: o.id, at: [o.delivery_lat!, o.delivery_lng!] as LatLng, color: ST[st].color, label: `n°${o.order_number} · ${ST[st].label}`,
+      popup: `<strong>Commande n°${o.order_number}</strong> — ${esc(ST[st].label)}<br>${esc(o.customer_name)} · ${esc(o.phone)}<br>${esc(a)}<br>Créneau ${fmtTime(o.slot)} · ${Number(o.total).toFixed(2)} € · ${o.payment_status === "paid" ? "payé en ligne" : "à encaisser"}<br>Livreur : ${esc(o.courier_name ?? "non assigné")}<br><a href="https://waze.com/ul?ll=${nav}&navigate=yes" target="_blank" rel="noreferrer">Waze</a> · <a href="https://www.google.com/maps/dir/?api=1&destination=${q || nav}" target="_blank" rel="noreferrer">Google Maps</a>` };
+  }), [shown]);
+  const focused = orders.find((o) => o.id === focus);
 
   if (loading) return <div className="mx-auto max-w-6xl space-y-4 p-6"><Skeleton className="h-10 w-64" /><Skeleton className="h-[420px] w-full" /></div>;
   if (!canManage) return <p className="p-10 text-center">Réservé au gérant. <Link to="/espace" className="underline">Retour</Link></p>;
@@ -113,6 +139,58 @@ function Page() {
       <header className="mt-4 flex items-center gap-4"><BrandLogo src={r?.logo_url} name={r?.name ?? "Restaurant"} className="h-14 w-14 rounded-lg object-contain" /><div><p className="text-sm text-muted-foreground">{r?.name}</p><h1 className="text-4xl sm:text-5xl">Livraison & livreurs</h1></div></header>
       <p className="text-sm text-muted-foreground">Dessinez vos zones sur la carte. Dès qu'une zone existe, le client vérifie son adresse et l'éligibilité est calculée automatiquement (les codes postaux des Réglages ne servent plus).</p>
 
+      <Tabs defaultValue="live" className="mt-4">
+        <TabsList className="flex h-auto flex-wrap">
+          <TabsTrigger value="live" className="min-h-11">Carte en direct des livraisons</TabsTrigger>
+          <TabsTrigger value="zones" className="min-h-11">Zones & Tarifs</TabsTrigger>
+          <TabsTrigger value="team" className="min-h-11">Équipe & Livreurs</TabsTrigger>
+        </TabsList>
+        <TabsContent value="live" className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant={filter === "all" ? "default" : "outline"} className="min-h-11" onClick={() => setFilter("all")}>Toutes ({orders.length})</Button>
+            <Button variant={filter === "active" ? "default" : "outline"} className="min-h-11" onClick={() => setFilter("active")}>En cours / À livrer ({orders.length - counts.delivered})</Button>
+            {(Object.keys(ST) as St[]).map((k) => <span key={k} className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs"><span className={`h-3 w-3 rounded-full ${ST[k].dot}`} />{ST[k].label} · <strong>{counts[k]}</strong></span>)}
+          </div>
+          <ClientOnly fallback={<Skeleton className="h-[460px] w-full" />}>
+            <Suspense fallback={<Skeleton className="h-[460px] w-full" />}>
+              <ZoneMap center={origin} zones={zones} markers={liveMarkers} onMarkerClick={setFocus} className="h-[460px] w-full rounded-xl border border-border" />
+            </Suspense>
+          </ClientOnly>
+          {shown.some((o) => o.delivery_lat == null) && <p className="text-xs text-muted-foreground">{shown.filter((o) => o.delivery_lat == null).length} livraison(s) sans position GPS : visibles uniquement dans la liste.</p>}
+          {focused && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary bg-card p-3 text-sm">
+              <span><strong>n°{focused.order_number}</strong> · {focused.customer_name} · {fmtTime(focused.slot)}<br /><span className="text-muted-foreground">{fullAddr(focused)}</span></span>
+              <DriverSelect orderId={focused.id} driverId={focused.driver_id} drivers={drivers} courierStatus={focused.courier_status} />
+            </div>
+          )}
+          <div className="rounded-xl border border-border bg-card p-4">
+          <h2 className="text-2xl">Livraisons du jour</h2>
+          {!shown.length ? <p className="mt-2 text-sm text-muted-foreground">Aucune livraison pour le moment.</p> : (
+            <ul className="mt-2 divide-y divide-border">
+              {shown.map((o) => (
+                <li key={o.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
+                  <button type="button" className="text-left" onClick={() => setFocus(o.id)}><span className={`mr-2 inline-block h-3 w-3 rounded-full ${ST[stateOf(o)].dot}`} /><strong>n°{o.order_number}</strong> · {fmtTime(o.slot)} · {o.customer_name}<br /><span className="text-muted-foreground">{fullAddr(o)}{o.zone_name ? ` · ${o.zone_name}` : ""}</span></button>
+                  <span className="flex flex-wrap items-center gap-2"><DriverSelect orderId={o.id} driverId={o.driver_id} drivers={drivers} courierStatus={o.courier_status} />
+                  <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold">{ST[stateOf(o)].label}{o.courier_name ? ` · ${o.courier_name}` : ""}</span></span>
+                </li>
+              ))}
+            </ul>
+          )}
+          </div>
+        </TabsContent>
+        <TabsContent value="zones">
+      <section className="mb-4 space-y-3 rounded-xl border border-border bg-card p-4">
+        <div className="flex items-center justify-between gap-3"><h2 className="text-2xl">Capacité par créneau</h2><Switch checked={cap.enabled} onCheckedChange={(v) => setCap({ ...cap, enabled: v })} aria-label="Limiter les livraisons par créneau" /></div>
+        <p className="text-sm text-muted-foreground">Au-delà du plafond, le créneau s'affiche « Complet » pour la livraison ; le retrait reste possible.</p>
+        {cap.enabled && <div className="grid gap-3 sm:grid-cols-3">
+          <div><Label htmlFor="cs">Durée du créneau</Label><select id="cs" value={cap.slotMinutes} onChange={(e) => setCap({ ...cap, slotMinutes: Number(e.target.value) as 15 | 20 | 30 })} className="mt-1 h-11 w-full rounded-md border border-input bg-background px-2">{[15, 20, 30].map((m) => <option key={m} value={m}>{m} min</option>)}</select></div>
+          <div><Label htmlFor="cm">Calcul</Label><select id="cm" value={cap.mode} onChange={(e) => setCap({ ...cap, mode: e.target.value as "fixed" | "per_driver" })} className="mt-1 h-11 w-full rounded-md border border-input bg-background px-2"><option value="fixed">Plafond fixe</option><option value="per_driver">Par livreur actif</option></select></div>
+          {cap.mode === "fixed"
+            ? <div><Label htmlFor="cx">Livraisons max / créneau</Label><Input id="cx" inputMode="numeric" value={cap.max} onChange={(e) => setCap({ ...cap, max: Math.max(1, Math.min(200, Number(e.target.value.replace(/\D/g, "")) || 1)) })} /></div>
+            : <div><Label htmlFor="cp">Courses / livreur / créneau</Label><Input id="cp" inputMode="numeric" value={cap.perDriver} onChange={(e) => setCap({ ...cap, perDriver: Math.max(1, Math.min(20, Number(e.target.value.replace(/\D/g, "")) || 1)) })} /><p className="mt-1 text-xs text-muted-foreground">{drivers.filter((d) => d.active).length} livreur(s) actif(s) → {cap.perDriver * drivers.filter((d) => d.active).length} livraisons max</p></div>}
+        </div>}
+        <Button className="min-h-11" disabled={!r} onClick={async () => { try { await saveCap({ data: { restaurantId: r!.id, capacity: cap } }); await refetch(); toast.success("Capacité enregistrée"); } catch (e) { toast.error((e as Error).message); } }}><Save /> Enregistrer la capacité</Button>
+      </section>
       <div className="mt-4 flex flex-wrap gap-2">
         <Button variant="secondary" className="min-h-12" onClick={() => add("circle")}><Circle /> Zone rayon</Button>
         <Button variant="secondary" className="min-h-12" onClick={() => add("polygon")}><Hexagon /> Zone dessinée</Button>
@@ -173,7 +251,9 @@ function Page() {
         </aside>
       </div>
 
-      <section className="mt-8 grid gap-4 md:grid-cols-[320px_minmax(0,1fr)]">
+        </TabsContent>
+        <TabsContent value="team">
+      <section className="grid gap-4 md:grid-cols-[320px_minmax(0,1fr)]">
         <div className="space-y-3 rounded-xl border border-border bg-card p-4">
           <h2 className="flex items-center gap-2 text-2xl"><KeyRound className="h-5 w-5 text-primary" /> Accès livreurs</h2>
           <div className="flex flex-wrap gap-2"><Button variant="secondary" asChild className="min-h-12"><a href={courierUrl} target="_blank" rel="noreferrer"><ExternalLink /> Ouvrir l’accès</a></Button><Button variant="outline" className="min-h-12" onClick={async () => { try { await navigator.clipboard.writeText(courierUrl); toast.success("Lien copié"); } catch { toast.error("Copie indisponible"); } }}><Copy /> Copier le lien</Button></div>
@@ -184,23 +264,7 @@ function Page() {
           </div>
           {pin?.enabled && <Button variant="ghost" className="min-h-11" onClick={async () => { await savePin({ data: { restaurantId: r?.id ?? "", pin: null } }); refetchPin(); toast.success("Écran livreur fermé"); }}>Désactiver le code</Button>}
         </div>
-        <div className="rounded-xl border border-border bg-card p-4">
-          <h2 className="text-2xl">Livraisons du jour</h2>
-          {!orders.length ? <p className="mt-2 text-sm text-muted-foreground">Aucune livraison pour le moment.</p> : (
-            <ul className="mt-2 divide-y divide-border">
-              {orders.map((o) => (
-                <li key={o.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
-                  <span><strong>n°{o.order_number}</strong> · {fmtTime(o.slot)} · {o.customer_name}<br /><span className="text-muted-foreground">{o.address}{o.zone_name ? ` · ${o.zone_name}` : ""}</span></span>
-                  <span className="flex flex-wrap items-center gap-2">{o.status !== "cancelled" && <DriverSelect orderId={o.id} driverId={o.driver_id} drivers={drivers} courierStatus={o.courier_status} />}
-                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${o.courier_status === "delivered" ? "bg-primary/15 text-primary" : o.courier_status ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground"}`}>
-                    {o.status === "cancelled" ? "Annulée" : o.courier_status ? `${COURIER[o.courier_status]}${o.courier_name ? ` · ${o.courier_name}` : ""}` : "À attribuer"}
-                  </span></span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-        <div className="space-y-3 border-t border-border pt-4 md:col-span-2">
+        <div className="space-y-3 rounded-xl border border-border bg-card p-4">
           <h2 className="flex items-center gap-2 text-2xl"><Bike className="text-primary" /> Équipe de livraison</h2>
           {!drivers.length && <p className="text-sm text-muted-foreground">Aucun livreur enregistré.</p>}
           <ul className="divide-y divide-border">
@@ -220,6 +284,8 @@ function Page() {
           </form>
         </div>
       </section>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
