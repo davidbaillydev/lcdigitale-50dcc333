@@ -12,7 +12,7 @@ import { AllergenBadges, AllergenInfo, AllergenPicker } from "@/components/Aller
 import { safeFor } from "@/lib/allergens";
 import { useCart } from "@/lib/cart";
 import { createKioskOrder } from "@/lib/orders.functions";
-import { cancelKioskPayment, kioskPaymentStatus, kioskTerminalAvailable, startKioskCardPayment } from "@/lib/payments.functions";
+import { abandonKioskOrder, cancelKioskPayment, kioskPaymentStatus, kioskTerminalAvailable, startKioskCardPayment } from "@/lib/payments.functions";
 import { activeGroups, fromPrice, selectedExtras, describeSelections, euro, groupCost, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
 import { itemImage, menuImage } from "@/lib/menu-images";
 import { BrandLogo } from "@/lib/brand";
@@ -66,6 +66,8 @@ function Kiosk() {
   const startCard = useServerFn(startKioskCardPayment);
   const pollCard = useServerFn(kioskPaymentStatus);
   const cancelCard = useServerFn(cancelKioskPayment);
+  const abandon = useServerFn(abandonKioskOrder);
+  const cardOnly = restaurant.config.kiosk?.cardOnly === true;
   const [terminal, setTerminal] = useState(false);
   const [pending, setPending] = useState<{ id: string; n: number; total: number } | null>(null);
   const [cardState, setCardState] = useState<"pending" | "failed">("pending");
@@ -93,14 +95,18 @@ function Kiosk() {
     const touch = () => { last.current = Date.now(); setWarn(false); };
     window.addEventListener("pointerdown", touch);
     const t = setInterval(() => {
-      if (step === "welcome" || step === "terminal") return;
+      if (step === "welcome") return;
+      if (step === "terminal") {
+        if (cardState === "failed" && pending && Date.now() - last.current > 60_000) { void abandon({ data: { orderId: pending.id } }).catch(() => {}); setPending(null); reset(); }
+        return;
+      }
       const idle = Date.now() - last.current;
       const limit = step === "done" ? 15_000 : IDLE_MS;
       if (idle > limit) reset();
       else if (step !== "done" && idle > limit - 15_000) setWarn(true);
     }, 1000);
     return () => { window.removeEventListener("pointerdown", touch); clearInterval(t); };
-  }, [step, reset]);
+  }, [step, reset, cardState, pending, abandon]);
 
   // Vide un éventuel panier resté sur la borne au démarrage
   useEffect(() => { clear(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -109,14 +115,17 @@ function Kiosk() {
     setBusy(true); setError(null);
     try {
       const row = await send({ data: { restaurant: restaurant.slug, mode, payment_method, ...(promo.code ? { promo_code: promo.code } : {}), lines: lines.map((l) => ({ itemId: l.itemId, qty: l.qty, sel: l.sel })) } });
-      if (payment_method === "card_terminal" && terminal) track("payment_pending", "Paiement TPE"); else track("completed", "Commande comptoir validée", row.id);
+      if (payment_method === "card_terminal" && (terminal || cardOnly)) track("payment_pending", "Paiement TPE"); else track("completed", "Commande comptoir validée", row.id);
       clear(); last.current = Date.now();
-      if (payment_method === "card_terminal" && terminal) {
+      if (payment_method === "card_terminal" && (terminal || cardOnly)) {
         try {
           await startCard({ data: { orderId: row.id } });
           setPending({ id: row.id, n: row.order_number, total: Number(row.total) }); setCardState("pending"); setStep("terminal");
           return;
-        } catch { /* terminal indisponible : paiement par carte au comptoir */ }
+        } catch {
+          if (cardOnly) { await abandon({ data: { orderId: row.id } }).catch(() => {}); throw new Error("Le terminal de paiement ne répond pas. Votre commande n'a pas été envoyée ; merci de réessayer ou de commander au comptoir."); }
+          /* terminal indisponible : paiement par carte au comptoir */
+        }
       }
       if (payment_method === "card_terminal" && terminal) track("completed", "Carte au comptoir", row.id);
       setResult({ n: row.order_number, total: Number(row.total), pay: payment_method });
@@ -272,17 +281,18 @@ function Kiosk() {
           {serviceFee > 0 && <p className="text-2xl">{serviceFeeLabel(restaurant.config.serviceFee)} : {euro(serviceFee)}</p>}
           <p className="text-3xl">Total : <span className="font-display text-primary">{euro(toPay)}</span></p>
           <div className="grid w-full max-w-4xl grid-cols-2 gap-6">
-            {restaurant.config.payments?.counter !== false && featuresOf(restaurant.enabled_features).borne_cash_payment && <button disabled={busy} onClick={() => pay("counter")} className="flex flex-col items-center gap-4 rounded-2xl border-2 border-border bg-card p-10 active:border-primary disabled:opacity-50">
+            {!cardOnly && restaurant.config.payments?.counter !== false && featuresOf(restaurant.enabled_features).borne_cash_payment && <button disabled={busy} onClick={() => pay("counter")} className="flex flex-col items-center gap-4 rounded-2xl border-2 border-border bg-card p-10 active:border-primary disabled:opacity-50">
               <Banknote className="h-20 w-20 text-primary" />
               <span className="font-display text-4xl">Payer au comptoir</span>
               <span className="text-lg text-muted-foreground">Espèces · Tickets resto</span>
             </button>}
-            {restaurant.config.payments?.card_terminal !== false && <button disabled={busy} onClick={() => pay("card_terminal")} className="flex flex-col items-center gap-4 rounded-2xl border-2 border-border bg-card p-10 active:border-primary disabled:opacity-50">
+            {(cardOnly || restaurant.config.payments?.card_terminal !== false) && <button disabled={busy} onClick={() => pay("card_terminal")} className="flex flex-col items-center gap-4 rounded-2xl border-2 border-border bg-card p-10 active:border-primary disabled:opacity-50">
               <CreditCard className="h-20 w-20 text-primary" />
               <span className="font-display text-4xl">Carte bancaire</span>
-              <span className="text-lg text-muted-foreground">{terminal ? "Sur le terminal de la borne" : "Sur le terminal au comptoir"}</span>
+              <span className="text-lg text-muted-foreground">{terminal || cardOnly ? "Sur le terminal de la borne" : "Sur le terminal au comptoir"}</span>
             </button>}
           </div>
+          {cardOnly && <p className="text-xl text-muted-foreground">Paiement par carte bancaire uniquement · Espèces, chèques et tickets restaurant papier non acceptés sur cette borne</p>}
           {error && <p className="text-2xl text-destructive">{error}</p>}
           <button onClick={() => setStep("cart")} className="rounded-xl bg-muted px-8 py-5 text-xl font-semibold">Retour au panier</button>
         </div>
@@ -300,8 +310,13 @@ function Kiosk() {
             <div className="flex flex-wrap justify-center gap-4">
               <button onClick={async () => { try { await startCard({ data: { orderId: pending.id } }); setCardState("pending"); } catch { /* ignore */ } }}
                 className="rounded-xl bg-primary px-8 py-5 text-xl font-semibold text-primary-foreground">Réessayer</button>
+              {cardOnly ? (
+                <button onClick={async () => { await abandon({ data: { orderId: pending.id } }).catch(() => {}); setPending(null); reset(); }}
+                  className="rounded-xl bg-muted px-8 py-5 text-xl font-semibold">Abandonner la commande</button>
+              ) : (
               <button onClick={() => { setResult({ n: pending.n, total: pending.total, pay: "card_terminal" }); setPending(null); setStep("done"); }}
                 className="rounded-xl bg-muted px-8 py-5 text-xl font-semibold">Payer au comptoir</button>
+              )}
             </div>
           )}
         </div>

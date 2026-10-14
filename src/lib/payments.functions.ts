@@ -253,6 +253,19 @@ export const kioskTerminalAvailable = createServerFn({ method: "POST" })
     return { available: !!(await terminalForRestaurant(r.id)) };
   });
 
+/** Terminal de borne configuré (usage serveur uniquement). */
+export async function kioskTerminalReady(restaurantId: string) { return !!(await terminalForRestaurant(restaurantId)); }
+
+/** Commande borne en attente de paiement carte (Voie B) : passe en cuisine une fois payée. */
+async function releaseKioskOrder(db: Awaited<ReturnType<typeof admin>>, orderId: string) {
+  const { data: o } = await db.from("orders").select("id, status, restaurants(config)").eq("id", orderId).single();
+  if (!o || o.status !== "awaiting_payment") return;
+  const cfg = (o.restaurants as unknown as { config: { autoAccept?: boolean } | null } | null)?.config;
+  const { data: upd } = await db.from("orders").update({ status: cfg?.autoAccept ? "accepted" : "new", updated_at: new Date().toISOString() }).eq("id", orderId).eq("status", "awaiting_payment").select("id");
+  if (!upd?.length) return;
+  try { const { syncOrderToPos } = await import("./pos.server"); await syncOrderToPos(orderId); } catch (e) { console.error(e); }
+}
+
 async function kioskOrder(orderId: string) {
   const db = await admin();
   const { data: o } = await db.from("orders").select("id, restaurant_id, order_number, total, source, payment_method, payment_status, payment_ref, created_at").eq("id", orderId).maybeSingle();
@@ -324,6 +337,7 @@ export const kioskPaymentStatus = createServerFn({ method: "POST" })
       }
     } catch { return { status: "pending" as const }; } // transaction pas encore créée
     if (next !== "pending") await db.from("orders").update({ payment_status: next, updated_at: new Date().toISOString() }).eq("id", o.id).eq("payment_status", "pending");
+    if (next === "paid") await releaseKioskOrder(db, o.id);
     return { status: next };
   });
 
@@ -332,7 +346,7 @@ export const cancelKioskPayment = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     const { db, o } = await kioskOrder(data.orderId);
-    if (o.payment_status === "paid") return { status: "paid" as const };
+    if (o.payment_status === "paid") { await releaseKioskOrder(db, o.id); return { status: "paid" as const }; }
     // Jamais d'annulation sur le terminal sans paiement en attente propre à cette commande
     if (o.payment_status !== "pending" || !o.payment_ref) return { status: "failed" as const };
     const t = await terminalForRestaurant(o.restaurant_id);
@@ -353,9 +367,22 @@ export const cancelKioskPayment = createServerFn({ method: "POST" })
     } catch { /* déjà terminé */ }
     // Un paiement validé juste avant l'annulation reste payé
     const { data: cur } = await db.from("orders").select("payment_status").eq("id", o.id).single();
-    if (cur?.payment_status === "paid") return { status: "paid" as const };
+    if (cur?.payment_status === "paid") { await releaseKioskOrder(db, o.id); return { status: "paid" as const }; }
     await db.from("orders").update({ payment_status: "failed" }).eq("id", o.id).eq("payment_status", "pending");
     return { status: "failed" as const };
+  });
+
+/** Voie B : le client abandonne après un refus/annulation — la commande non payée est annulée, jamais envoyée en cuisine. */
+export const abandonKioskOrder = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    const db = await admin();
+    const { data: o } = await db.from("orders").select("id, source, payment_method, payment_status, payment_ref, status").eq("id", data.orderId).maybeSingle();
+    if (!o || o.source !== "kiosk" || o.payment_method !== "card_terminal" || o.status !== "awaiting_payment") return { status: "ignored" as const };
+    if (o.payment_status === "paid") { await releaseKioskOrder(db, o.id); return { status: "paid" as const }; }
+    if (o.payment_status === "pending" && o.payment_ref) return { status: "pending" as const }; // annuler d'abord sur le terminal
+    await db.from("orders").update({ status: "cancelled", payment_status: "failed", updated_at: new Date().toISOString() }).eq("id", o.id).eq("status", "awaiting_payment").neq("payment_status", "paid");
+    return { status: "cancelled" as const };
   });
 
 // ───────────── Stripe (paiement en ligne sur le site) ─────────────

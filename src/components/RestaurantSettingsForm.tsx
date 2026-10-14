@@ -29,6 +29,7 @@ export function initialSettings(r: Restaurant): Settings {
       timing: timingOf(r),
       modes: { pickup: c.modes?.pickup !== false, delivery: c.modes?.delivery !== false, dine_in: c.modes?.dine_in !== false },
       payments: { on_site: c.payments?.on_site !== false, counter: c.payments?.counter !== false, card_terminal: c.payments?.card_terminal !== false },
+      kiosk: { cardOnly: c.kiosk?.cardOnly === true },
       printing: printingDefaults(c.printing),
       serviceFee: serviceFeeDefaults(c.serviceFee),
     },
@@ -180,7 +181,9 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
 
       <Section title="Paiements acceptés">
         <Toggle label="Paiement au retrait / à la livraison (site)" checked={s.config.payments.on_site} onChange={(v) => cfg({ payments: { ...s.config.payments, on_site: v } })} />
-        <Toggle label="Payer au comptoir — espèces, tickets resto (borne)" checked={s.config.payments.counter} onChange={(v) => cfg({ payments: { ...s.config.payments, counter: v } })} />
+        {agency && <Toggle label="Borne 100 % carte bancaire (Voie B — dispense de caisse sécurisée)" checked={!!s.config.kiosk?.cardOnly} onChange={(v) => cfg({ kiosk: { cardOnly: v }, ...(v ? { payments: { ...s.config.payments, counter: false, card_terminal: true } } : {}) })} />}
+        {s.config.kiosk?.cardOnly && <p className="mb-2 rounded bg-muted p-2 text-sm text-muted-foreground">La borne n'accepte que la carte sur son terminal connecté (Stripe Terminal, Mollie POS ou SumUp). Aucune espèce, chèque ou ticket restaurant papier n'est proposé ni enregistré ; une commande n'est envoyée en cuisine qu'une fois le paiement accepté (BOI-TVA-DECLA-30-10-30, § 35 et § 37 ex. 4).</p>}
+        <Toggle label="Payer au comptoir — espèces, tickets resto (borne)" checked={s.config.payments.counter && !s.config.kiosk?.cardOnly} onChange={(v) => { if (!s.config.kiosk?.cardOnly) cfg({ payments: { ...s.config.payments, counter: v } }); }} />
         <Toggle label="Carte bancaire au comptoir (borne)" checked={s.config.payments.card_terminal} onChange={(v) => cfg({ payments: { ...s.config.payments, card_terminal: v } })} />
         <p className="mt-2 text-sm text-muted-foreground">Le paiement en ligne par carte n'est pas encore activé.</p>
       </Section>
