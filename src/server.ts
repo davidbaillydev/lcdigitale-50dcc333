@@ -77,9 +77,41 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
+// Domaines personnalisés : la racine d'un domaine propre à un restaurant ouvre directement sa page.
+const PLATFORM_HOSTS = /(^|\.)(lcdigitale\.fr|lovable\.app|lovableproject\.com)$|^(localhost|127\.0\.0\.1)$/i;
+const KNOWN_DOMAINS: Record<string, string> = { "commande.woknsushi.com": "woknsushi" };
+const domainCache = new Map<string, { slug: string | null; at: number }>();
+
+async function slugForHost(host: string): Promise<string | null> {
+  if (KNOWN_DOMAINS[host]) return KNOWN_DOMAINS[host]!;
+  const hit = domainCache.get(host);
+  if (hit && Date.now() - hit.at < 300_000) return hit.slug;
+  let slug: string | null = null;
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin.from("restaurants").select("slug").eq("active", true)
+      .contains("config", { customDomains: [host] }).limit(1).maybeSingle();
+    slug = data?.slug ?? null;
+  } catch (e) { console.error(e); }
+  domainCache.set(host, { slug, at: Date.now() });
+  return slug;
+}
+
+async function customDomainRedirect(request: Request): Promise<Response | null> {
+  const url = new URL(request.url);
+  if (url.pathname !== "/" || (request.method !== "GET" && request.method !== "HEAD")) return null;
+  const host = url.hostname.toLowerCase().replace(/^www\./, "");
+  if (PLATFORM_HOSTS.test(host)) return null;
+  const slug = await slugForHost(host);
+  if (!slug) return null;
+  return new Response(null, { status: 302, headers: { Location: `/${slug}${url.search}` } });
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const redirect = await customDomainRedirect(request);
+      if (redirect) return redirect;
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return withSecurityHeaders(await normalizeCatastrophicSsrResponse(response), request);
