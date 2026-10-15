@@ -73,11 +73,14 @@ export const savePaymentProvider = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({
     restaurantId: z.string().uuid(), provider: z.enum(PROVIDERS), enabled: z.boolean(), credentials: credSchema,
+    clear: z.array(z.string().max(40)).max(10).optional(),
   }).parse(d))
   .handler(async ({ data, context }) => {
     await assertManager(context.supabase, context.userId, data.restaurantId);
     const prev = await getRow(data.restaurantId, data.provider);
     const credentials = { ...(prev?.credentials ?? {}) };
+    // Effacement explicite de clés saisies à la main (jamais les jetons OAuth ni le mode).
+    for (const k of data.clear ?? []) if (!k.startsWith("oauth") && k !== "mode") delete credentials[k];
     for (const [k, v] of Object.entries(data.credentials)) if (v) credentials[k] = v;
     if (data.enabled && data.provider === "sumup" && (!credentials["apiKey"] || !credentials["merchantCode"]))
       throw new Error("Renseignez la clé API et le code marchand SumUp.");

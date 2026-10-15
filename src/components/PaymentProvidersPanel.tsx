@@ -119,7 +119,16 @@ function ProviderCard({ restaurantId, p, onChange }: { restaurantId: string; p: 
                     onChange={(e) => setCreds({ ...creds, [f.key]: e.target.value })} />
                   {f.secret && <Button type="button" variant="ghost" size="sm" className="min-h-9" onClick={() => setShow({ ...show, [f.key]: !show[f.key] })}>{show[f.key] ? "Masquer" : "Afficher"}</Button>}
                 </div>
-                {p.credentials[f.key] && <p className="mt-1 text-xs text-muted-foreground">Enregistrée : {p.credentials[f.key]} (laisser vide pour conserver)</p>}
+                {p.credentials[f.key] && (
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <p className="text-xs text-muted-foreground">Enregistrée : {p.credentials[f.key]} (laisser vide pour conserver)</p>
+                    <Button type="button" variant="ghost" size="sm" className="min-h-9 text-destructive" disabled={busy}
+                      onClick={() => { if (!confirm(`Effacer « ${f.label} » ?`)) return; void run(async () => {
+                        await save({ data: { restaurantId, provider: p.provider, enabled, credentials: {}, clear: [f.key] } });
+                        toast.success("Valeur effacée"); onChange();
+                      }); }}>Effacer</Button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
