@@ -24,6 +24,8 @@ export type Restaurant = {
   delivery: DeliveryConfig;
   config: {
     slotMinutes?: number; lead?: { pickup: number; delivery: number }; hoursLabel?: string; tagline?: string;
+    /** Domaines personnalisés (ex. commande.monresto.fr) : leur racine ouvre la page du restaurant. */
+    customDomains?: string[];
     /** Commandes acceptées automatiquement (sinon validation manuelle en cuisine) */
     autoAccept?: boolean;
     /** Réception des commandes suspendue (site, borne, QR, téléphone) */
