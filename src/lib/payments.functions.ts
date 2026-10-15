@@ -745,7 +745,10 @@ export const testMollie = createServerFn({ method: "POST" })
     await assertManager(context.supabase, context.userId, data.restaurantId);
     const m = await mollieForRestaurant(data.restaurantId, false);
     if (!m) throw new Error("Enregistrez d'abord la clé correspondant au mode choisi.");
-    const res = await mollieCall(m.key, "/methods?locale=fr_FR") as { _embedded?: { methods?: { id: string; description: string }[] } };
+    if (m.oauth && !m.profileId) throw new Error("Aucun profil de site trouvé sur le compte Mollie connecté : créez-en un dans Mollie puis réessayez.");
+    const qs = new URLSearchParams({ locale: "fr_FR" });
+    if (m.oauth && m.profileId) { qs.set("profileId", m.profileId); if (!m.live) qs.set("testmode", "true"); }
+    const res = await mollieCall(m.key, `/methods?${qs}`) as { _embedded?: { methods?: { id: string; description: string }[] } };
     return { live: m.live, methods: (res._embedded?.methods ?? []).map((x) => ({ id: x.id, name: x.description })) };
   });
 
