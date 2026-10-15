@@ -619,7 +619,19 @@ export async function mollieForRestaurant(restaurantId: string, requireEnabled =
       await db.from("restaurant_payment_providers").update({ credentials }).eq("restaurant_id", restaurantId).eq("provider", "mollie");
     }
     if (!live) mollieOauthTestTokens.add(access);
-    return { key: access, live, profileId: c["profileId"] || undefined, oauth: true };
+    let profileId = c["profileId"] || undefined;
+    // Mollie Connect exige un profil de site web : si absent, on récupère le profil du compte et on le mémorise.
+    if (!profileId) {
+      try {
+        const prof = await mollieCall(access, "/profiles?limit=1") as { _embedded?: { profiles?: { id: string }[] } };
+        profileId = prof._embedded?.profiles?.[0]?.id;
+        if (profileId) {
+          const db = await admin();
+          await db.from("restaurant_payment_providers").update({ credentials: { ...c, profileId } }).eq("restaurant_id", restaurantId).eq("provider", "mollie");
+        }
+      } catch (e) { console.error("mollie profile fetch", e); }
+    }
+    return { key: access, live, profileId, oauth: true };
   }
   const key = live ? c["apiKeyLive"] : c["apiKeyTest"];
   if (!key) return null;
