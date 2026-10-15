@@ -102,7 +102,7 @@ describe("Mollie Connect", () => {
 
   it("renouvelle automatiquement un jeton expiré", async () => {
     db.rows.push({ restaurant_id: R, provider: "mollie", enabled: true, settings: {},
-      credentials: { mode: "live", oauthAccessToken: "old", oauthRefreshToken: "refresh_1", oauthExpiresAt: String(Date.now() - 1000) } });
+      credentials: { mode: "live", oauthAccessToken: "old", oauthRefreshToken: "refresh_1", oauthExpiresAt: String(Date.now() - 1000), profileId: "pfl_x" } });
     fetchMock.mockResolvedValueOnce(json({ access_token: "access_2", refresh_token: "refresh_2", expires_in: 3600 }));
     const { mollieForRestaurant } = await import("@/lib/payments.functions");
     const m = await mollieForRestaurant(R);
@@ -113,7 +113,7 @@ describe("Mollie Connect", () => {
 
   it("garde un jeton encore valide sans appel réseau", async () => {
     db.rows.push({ restaurant_id: R, provider: "mollie", enabled: true, settings: {},
-      credentials: { mode: "live", oauthAccessToken: "fresh", oauthRefreshToken: "r", oauthExpiresAt: String(Date.now() + 3_600_000) } });
+      credentials: { mode: "live", oauthAccessToken: "fresh", oauthRefreshToken: "r", oauthExpiresAt: String(Date.now() + 3_600_000), profileId: "pfl_x" } });
     const { mollieForRestaurant } = await import("@/lib/payments.functions");
     expect((await mollieForRestaurant(R))?.key).toBe("fresh");
     expect(fetchMock).not.toHaveBeenCalled();
