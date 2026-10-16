@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Bell, BellOff, Bike, Check, ChefHat, Lock, LogOut, Maximize, Minimize, MoonStar, PanelTopClose, PanelTopOpen, Phone, Printer, ShoppingBag, Sun, Users, Volume2, VolumeX } from "lucide-react";
 import { useKitchenFullscreen } from "@/hooks/use-kitchen-fullscreen";
 import { useWakeLock } from "@/hooks/use-wake-lock";
-import { printTickets, printingDefaults, type PrintingConfig, type TicketKind } from "@/lib/ticket";
+import { printTickets, printingDefaults, useTicketWidth, type PrintingConfig, type TicketKind } from "@/lib/ticket";
 import { hasKitchenPin } from "@/lib/kitchen-pin.functions";
 import { KitchenLock } from "@/components/KitchenLock";
 import { PrinterSetup } from "@/components/PrinterSetup";
@@ -91,7 +91,9 @@ function Kitchen() {
   const posSync = useServerFn(retryPosSync);
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
-  const printing = printingDefaults((restaurant?.config as { printing?: Partial<PrintingConfig> } | null)?.printing);
+  const printingBase = printingDefaults((restaurant?.config as { printing?: Partial<PrintingConfig> } | null)?.printing);
+  const [deviceWidth, setDeviceWidth] = useTicketWidth(printingBase.width);
+  const printing = { ...printingBase, width: deviceWidth };
   const [printState, setPrintState] = useState<Record<string, "ok" | "failed">>({});
   const [logs, setLogs] = useState<Record<string, PrintLog[]>>({});
   const [openLog, setOpenLog] = useState<string | null>(null);
@@ -326,7 +328,9 @@ function Kitchen() {
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/tableau-de-bord">Tableau de bord</Link></Button>}
         {rid && <StockDialog slug={slug} restaurantId={rid} />}
         <PrinterSetup compact width={printing.width} shop={{ name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null }} />
-        <span className="flex items-center gap-1 text-sm text-muted-foreground"><Printer className="h-4 w-4" />{printing.width} mm · {printing.auto ? "auto" : "manuel"}</span>
+        <Button size="sm" variant="outline" onClick={() => setDeviceWidth(printing.width === 80 ? 58 : 80)} aria-label={`Rouleau ${printing.width} mm — basculer en ${printing.width === 80 ? 58 : 80} mm`} title="Changer le format de rouleau sur cet appareil">
+          <Printer className="h-4 w-4" />{printing.width} mm · {printing.auto ? "auto" : "manuel"}
+        </Button>
         </nav>
       </header>
       <div className="kds-service flex flex-wrap items-center justify-between gap-4 bg-primary px-6 py-5 text-primary-foreground">

@@ -1,4 +1,5 @@
 // Impression de tickets thermiques (80 mm / 58 mm) via le dialogue d'impression du navigateur.
+import { useEffect, useState } from "react";
 import { allergenLabel } from "./allergens";
 
 /** Nom du plat suivi de sa taille en majuscules : PIZZA ROYALE [XL]. */
@@ -36,11 +37,27 @@ export function printingDefaults(p?: Partial<PrintingConfig> | null): PrintingCo
   };
 }
 
-export function getTicketWidth(): TicketWidth {
-  if (typeof window === "undefined") return 80;
-  return localStorage.getItem("ticket-width") === "58" ? 58 : 80;
+/** Largeur choisie sur cet appareil (null = pas de choix local). */
+export function getDeviceTicketWidth(): TicketWidth | null {
+  if (typeof window === "undefined") return null;
+  try { const v = localStorage.getItem("ticket-width"); return v === "58" ? 58 : v === "80" ? 80 : null; } catch { return null; }
 }
-export function setTicketWidth(w: TicketWidth) { localStorage.setItem("ticket-width", String(w)); }
+/** Largeur effective : appareil en priorité, sinon défaut du restaurant. */
+export function getTicketWidth(fallback: TicketWidth = 80): TicketWidth { return getDeviceTicketWidth() ?? fallback; }
+export function setTicketWidth(w: TicketWidth) {
+  try { localStorage.setItem("ticket-width", String(w)); } catch { /* stockage indisponible */ }
+  window.dispatchEvent(new CustomEvent("lc-ticket-width", { detail: w }));
+}
+/** Hook : largeur effective, synchronisée entre composants. */
+export function useTicketWidth(fallback: TicketWidth): [TicketWidth, (w: TicketWidth) => void] {
+  const [w, setW] = useState<TicketWidth>(fallback);
+  useEffect(() => {
+    const sync = () => setW(getTicketWidth(fallback));
+    sync(); window.addEventListener("lc-ticket-width", sync);
+    return () => window.removeEventListener("lc-ticket-width", sync);
+  }, [fallback]);
+  return [w, setTicketWidth];
+}
 
 export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth, shopIn: TicketShop | string, fieldsIn?: Partial<KitchenFields>) {
   const shop = typeof shopIn === "string" ? { name: shopIn } : shopIn;

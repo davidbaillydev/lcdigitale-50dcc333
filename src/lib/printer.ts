@@ -1,6 +1,6 @@
 // Imprimante directe (ESC/POS) mémorisée par appareil : Bluetooth, USB/série, ou réseau Wi-Fi/Ethernet via le pont LC Print.
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export type PrinterType = "bluetooth" | "usb" | "network";
+export type PrinterType = "bluetooth" | "usb" | "network" | "rawbt";
 export type PrinterConfig = { type: PrinterType; name: string; host?: string; port?: number; bridgeUrl?: string; baud?: number };
 
 const KEY = "lc-direct-printer";
@@ -22,6 +22,7 @@ export const support = () => ({
   bluetooth: typeof navigator !== "undefined" && "bluetooth" in navigator,
   usb: typeof navigator !== "undefined" && "serial" in navigator,
   network: true,
+  rawbt: true,
 });
 
 // ---- Bluetooth (BLE) ----
@@ -94,8 +95,29 @@ async function sendNetwork(p: PrinterConfig, data: Uint8Array) {
   if (!r.ok) throw new Error((await r.text()) || "Échec d'impression réseau");
 }
 
+// ---- RawBT (Android) : serveur local, sinon intent / schéma d'URL ----
+export const RAWBT_URL = "http://localhost:40213/";
+export const isAndroid = () => typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
+async function sendRawbt(data: Uint8Array) {
+  const b = b64(data);
+  try {
+    const r = await fetch(RAWBT_URL, {
+      method: "POST", headers: { "Content-Type": "application/octet-stream" },
+      body: data as unknown as BodyInit, signal: AbortSignal.timeout(2500),
+    });
+    if (r.ok) return;
+  } catch { /* serveur local inactif ou bloqué : repli sur l'intent */ }
+  const url = isAndroid()
+    ? `intent:base64,${b}#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;`
+    : `rawbt:data:application/octet-stream;base64,${b}`;
+  const a = document.createElement("a");
+  a.href = url; a.rel = "noopener"; a.style.display = "none";
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
 export async function sendToPrinter(p: PrinterConfig, data: Uint8Array) {
   if (p.type === "bluetooth") return sendBluetooth(data);
   if (p.type === "usb") return sendUsb(data, p.baud);
+  if (p.type === "rawbt") return sendRawbt(data);
   return sendNetwork(p, data);
 }
