@@ -147,6 +147,26 @@ export const saveNotifications = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/** Domaines personnalisés du restaurant (agence uniquement). */
+export const saveCustomDomains = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    restaurantId: z.string().uuid(),
+    domains: z.array(z.string().trim().toLowerCase().max(200).regex(/^(?!-)[a-z0-9-]{1,63}(?<!-)(\.[a-z0-9-]{1,63})+$/)).max(10),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: isAgency } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    if (!isAgency) throw new Error("Réservé à l'agence");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: cur, error: e1 } = await supabaseAdmin.from("restaurants").select("config").eq("id", data.restaurantId).single();
+    if (e1 || !cur) throw new Error("Restaurant introuvable");
+    const domains = [...new Set(data.domains)];
+    const config = { ...((cur.config as Record<string, unknown>) ?? {}), customDomains: domains };
+    const { error } = await supabaseAdmin.from("restaurants").update({ config: config as never }).eq("id", data.restaurantId);
+    if (error) throw new Error(error.message);
+    return { ok: true, domains };
+  });
+
 /** Ventes suggestives : mode automatique ou sélection manuelle (gérant ou agence). */
 export const saveUpsell = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
