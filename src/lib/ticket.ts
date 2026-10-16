@@ -1,4 +1,5 @@
 // Impression de tickets thermiques (80 mm / 58 mm) via le dialogue d'impression du navigateur.
+import { useEffect, useState } from "react";
 import { allergenLabel } from "./allergens";
 
 /** Nom du plat suivi de sa taille en majuscules : PIZZA ROYALE [XL]. */
