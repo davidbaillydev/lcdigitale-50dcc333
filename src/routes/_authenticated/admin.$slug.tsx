@@ -1,4 +1,5 @@
 import { UpsellPanel } from "@/components/UpsellPanel";
+import { CustomDomainPanel } from "@/components/CustomDomainPanel";
 import { FeaturesPanel } from "@/components/FeaturesPanel";
 import { Crumbs } from "@/components/Crumbs";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -66,6 +67,7 @@ function Page() {
           </div>
           <p className="text-sm text-muted-foreground">Identité, logo et couleurs se modifient depuis la console (bouton « Modifier »).</p>
           <FeaturesPanel restaurantId={r.id} initial={r.enabled_features} onSaved={() => refetch()} />
+          <CustomDomainPanel key={`d-${r.id}`} restaurantId={r.id} initial={(r.config as { customDomains?: string[] }).customDomains} onSaved={() => refetch()} />
           <RestaurantSettingsForm restaurant={r} onSaved={() => refetch()} />
           <UpsellPanel key={`u-${r.id}`} restaurant={r} onSaved={() => refetch()} />
           <PaymentProvidersPanel restaurantId={r.id} />
