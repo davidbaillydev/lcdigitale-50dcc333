@@ -19,7 +19,7 @@ export function cleanDomain(input: string): string {
 
 const DOMAIN_RE = /^(?!-)[a-z0-9-]{1,63}(?<!-)(\.[a-z0-9-]{1,63})+$/;
 
-export function CustomDomainPanel({ restaurantId, initial, onSaved }: { restaurantId: string; initial?: string[]; onSaved?: () => void }) {
+export function CustomDomainPanel({ restaurantId, initial, onSaved }: { restaurantId: string; initial?: string[] | undefined; onSaved?: () => void }) {
   const [domains, setDomains] = useState<string[]>(initial ?? []);
   const [draft, setDraft] = useState("");
   const [saving, setSaving] = useState(false);
