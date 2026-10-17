@@ -11,7 +11,7 @@
 
 - Restaurants store hours, delivery and config as jsonb; public pages use `/$slug`. Base menus live in `src/lib/catalogs.ts` by `menu_key`; `restaurants.menu` (same Category shape) overrides them through shared getCatalog(restaurant). Servers recompute every order total, never trusting client prices.
 - Customer orders are inserted by a public server function with the admin client; staff read/update orders via RLS (`can_access_restaurant`) and Realtime filtered by restaurant_id.
-- Agency (global) role is `admin` in user_roles (first account via trigger); per-restaurant access (manager/kitchen) lives in `restaurant_members`.
+- Agency admins use user_roles and agency-verified invitations only; restaurant roles use restaurant_members. Why: no public privilege grants.
 - Site/kiosk/courier use BrandTheme; authenticated screens/dialogs use editorial tokens with restaurant logos. Why: recognizable restaurants, consistent administration.
 - Authenticated menu imports stay staged in the editor until manager review/save; uploads are not persisted. Why: uncertain AI extraction must never silently replace live prices or another restaurant's menu.
 - Private screens live under `src/routes/_authenticated/`: `/admin/*` (agency only, has_role gate in admin.tsx beforeLoad) and `/espace/*` (restaurateurs: per-restaurant pages check membership); every server function re-checks the role. Why: UI gates are UX, server checks are the boundary.

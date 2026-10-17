@@ -47,3 +47,4 @@ Verified on a temporary restaurant, now deactivated: upload and reload persisten
 - [x] Cuisine : mode service et plein écran entrée/sortie vérifiés connecté, 320/390/1024px, alternative navigateur vérifiée ; safe areas simulées (34px bas), aucun changement de commande. Matériel iOS/Android non testé.
 - Modules par restaurant (feature flags) : fait
 - TPE Cloud borne + mentions non fiscales : fait (non testé sur lecteur réel)
+- [x] Ajouter la liste et l'invitation sécurisée d'administrateurs agence : 8 tests réussis, liste et ajout sans doublon vérifiés connecté sur ordinateur/mobile ; aucun nouvel email d'invitation envoyé pendant les tests.

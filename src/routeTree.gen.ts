@@ -35,6 +35,7 @@ import { Route as SuiviIdRouteImport } from './routes/suivi.$id'
 import { Route as SlugSuiviIdRouteImport } from './routes/$slug.suivi.$id'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminSlugRouteImport } from './routes/_authenticated/admin.$slug'
+import { Route as AuthenticatedAdminAdministrateursRouteImport } from './routes/_authenticated/admin.administrateurs'
 import { Route as AuthenticatedAdminClientsRouteImport } from './routes/_authenticated/admin.clients'
 import { Route as AuthenticatedAdminQrcodesRouteImport } from './routes/_authenticated/admin.qrcodes'
 import { Route as AuthenticatedAdminStatistiquesRouteImport } from './routes/_authenticated/admin.statistiques'
@@ -189,6 +190,12 @@ const AuthenticatedAdminSlugRoute = AuthenticatedAdminSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminAdministrateursRoute =
+  AuthenticatedAdminAdministrateursRouteImport.update({
+    id: '/administrateurs',
+    path: '/administrateurs',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminClientsRoute =
   AuthenticatedAdminClientsRouteImport.update({
     id: '/clients',
@@ -355,6 +362,7 @@ export interface FileRoutesByFullPath {
   '/cuisine/': typeof CuisineIndexRoute
   '/$slug/suivi/$id': typeof SlugSuiviIdRoute
   '/admin/$slug': typeof AuthenticatedAdminSlugRoute
+  '/admin/administrateurs': typeof AuthenticatedAdminAdministrateursRoute
   '/admin/clients': typeof AuthenticatedAdminClientsRoute
   '/admin/qrcodes': typeof AuthenticatedAdminQrcodesRoute
   '/admin/statistiques': typeof AuthenticatedAdminStatistiquesRoute
@@ -404,6 +412,7 @@ export interface FileRoutesByTo {
   '/cuisine': typeof CuisineIndexRoute
   '/$slug/suivi/$id': typeof SlugSuiviIdRoute
   '/admin/$slug': typeof AuthenticatedAdminSlugRoute
+  '/admin/administrateurs': typeof AuthenticatedAdminAdministrateursRoute
   '/admin/clients': typeof AuthenticatedAdminClientsRoute
   '/admin/qrcodes': typeof AuthenticatedAdminQrcodesRoute
   '/admin/statistiques': typeof AuthenticatedAdminStatistiquesRoute
@@ -457,6 +466,7 @@ export interface FileRoutesById {
   '/cuisine/': typeof CuisineIndexRoute
   '/$slug/suivi/$id': typeof SlugSuiviIdRoute
   '/_authenticated/admin/$slug': typeof AuthenticatedAdminSlugRoute
+  '/_authenticated/admin/administrateurs': typeof AuthenticatedAdminAdministrateursRoute
   '/_authenticated/admin/clients': typeof AuthenticatedAdminClientsRoute
   '/_authenticated/admin/qrcodes': typeof AuthenticatedAdminQrcodesRoute
   '/_authenticated/admin/statistiques': typeof AuthenticatedAdminStatistiquesRoute
@@ -510,6 +520,7 @@ export interface FileRouteTypes {
     | '/cuisine/'
     | '/$slug/suivi/$id'
     | '/admin/$slug'
+    | '/admin/administrateurs'
     | '/admin/clients'
     | '/admin/qrcodes'
     | '/admin/statistiques'
@@ -559,6 +570,7 @@ export interface FileRouteTypes {
     | '/cuisine'
     | '/$slug/suivi/$id'
     | '/admin/$slug'
+    | '/admin/administrateurs'
     | '/admin/clients'
     | '/admin/qrcodes'
     | '/admin/statistiques'
@@ -611,6 +623,7 @@ export interface FileRouteTypes {
     | '/cuisine/'
     | '/$slug/suivi/$id'
     | '/_authenticated/admin/$slug'
+    | '/_authenticated/admin/administrateurs'
     | '/_authenticated/admin/clients'
     | '/_authenticated/admin/qrcodes'
     | '/_authenticated/admin/statistiques'
@@ -847,6 +860,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminSlugRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/administrateurs': {
+      id: '/_authenticated/admin/administrateurs'
+      path: '/administrateurs'
+      fullPath: '/admin/administrateurs'
+      preLoaderRoute: typeof AuthenticatedAdminAdministrateursRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/clients': {
       id: '/_authenticated/admin/clients'
       path: '/clients'
@@ -1020,6 +1040,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminSlugRoute: typeof AuthenticatedAdminSlugRoute
+  AuthenticatedAdminAdministrateursRoute: typeof AuthenticatedAdminAdministrateursRoute
   AuthenticatedAdminClientsRoute: typeof AuthenticatedAdminClientsRoute
   AuthenticatedAdminQrcodesRoute: typeof AuthenticatedAdminQrcodesRoute
   AuthenticatedAdminStatistiquesRoute: typeof AuthenticatedAdminStatistiquesRoute
@@ -1028,6 +1049,8 @@ interface AuthenticatedAdminRouteChildren {
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminSlugRoute: AuthenticatedAdminSlugRoute,
+  AuthenticatedAdminAdministrateursRoute:
+    AuthenticatedAdminAdministrateursRoute,
   AuthenticatedAdminClientsRoute: AuthenticatedAdminClientsRoute,
   AuthenticatedAdminQrcodesRoute: AuthenticatedAdminQrcodesRoute,
   AuthenticatedAdminStatistiquesRoute: AuthenticatedAdminStatistiquesRoute,
