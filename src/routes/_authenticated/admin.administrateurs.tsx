@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ThemeToggle } from "@/lib/theme";
+import { LimitedAccessPanel, limitedAccessQuery } from "@/components/LimitedAccessPanel";
 
 const adminsQuery = { queryKey: ["agency-admins"], queryFn: () => listAgencyAdmins() };
 export const Route = createFileRoute("/_authenticated/admin/administrateurs")({
@@ -21,7 +22,7 @@ export const Route = createFileRoute("/_authenticated/admin/administrateurs")({
     { property: "og:description", content: "Comptes administrateurs du réseau de restaurants LC Digitale." },
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }, { name: "robots", content: "noindex" },
   ] }),
-  loader: ({ context }) => context.queryClient.ensureQueryData(adminsQuery),
+  loader: ({ context }) => Promise.all([context.queryClient.ensureQueryData(adminsQuery), context.queryClient.ensureQueryData(limitedAccessQuery)]),
   component: Administrators,
 });
 
@@ -62,5 +63,6 @@ function Administrators() {
     <section><h2 className="mb-4 font-display text-2xl">Équipe agence</h2><ul className="divide-y divide-border">
       {admins.map((admin) => <li key={admin.id} className="flex flex-wrap items-center gap-3 py-4"><ShieldCheck className="h-6 w-6 shrink-0 text-primary" aria-hidden /><div className="min-w-0 flex-1"><p className="break-all font-semibold">{admin.email}{admin.isSelf && <span className="ml-2 font-normal text-muted-foreground">(vous)</span>}</p><p className="text-sm text-muted-foreground">Administrateur agence · {admin.activated ? "Compte actif" : "Activation en attente"}</p></div><span className="text-sm text-muted-foreground">Depuis le {new Date(admin.createdAt).toLocaleDateString("fr-FR")}</span></li>)}
     </ul></section>
+    <LimitedAccessPanel />
   </main>;
 }
