@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { ALLERGEN_IDS, cleanAllergens } from "./allergens";
+import { menuOutputFormat, readMenuResponse } from "./menu-import-response";
 
 const request = z.object({
   restaurantId: z.string().uuid(),
@@ -27,12 +28,19 @@ export const analyzeMenu = createServerFn({ method: "POST" })
     ];
     const response = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
       method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model: "openai/gpt-6-astra", input: [{ role: "user", content }] }),
+      headers: { "Lovable-API-Key": apiKey, "X-Lovable-AIG-SDK": "fetch", "Content-Type": "application/json" },
+      body: JSON.stringify({ model: "openai/gpt-6-astra", input: [{ role: "user", content }], stream: true, store: false,
+        reasoning: { effort: "low", summary: "auto" }, include: ["reasoning.encrypted_content"], text: { format: menuOutputFormat } }),
     });
-    if (!response.ok) throw new Error(response.status === 429 ? "Trop de demandes, réessayez plus tard" : "Analyse impossible, réessayez avec un fichier plus net");
-    const result = await response.json() as { output?: { content?: { type: string; text?: string }[] }[] };
-    const raw = result.output?.flatMap((o) => o.content ?? []).filter((c) => c.type === "output_text").map((c) => c.text ?? "").join("") ?? "";
+    if (!response.ok) {
+      console.error("menu-import gateway failure", { status: response.status, runId: response.headers.get("X-Lovable-AIG-Run-ID") });
+      const message = response.status === 429 ? "Trop de demandes, réessayez plus tard"
+        : response.status === 402 ? "Le crédit d’analyse IA est insuffisant. Contactez l’agence."
+        : response.status === 401 || response.status === 403 ? "L’accès à l’analyse IA est indisponible. Contactez l’agence."
+        : "L’analyse est momentanément indisponible. Votre carte n’a pas été modifiée.";
+      throw new Error(message);
+    }
+    const raw = await readMenuResponse(response);
     let parsed: unknown;
     try { parsed = JSON.parse(raw.replace(/^```(?:json)?\s*|\s*```$/g, "")); }
     catch { throw new Error("La carte n'a pas pu être reconnue. Essayez un document plus lisible."); }
