@@ -1,4 +1,5 @@
 - [x] Add secure per-restaurant banner upload and removal in restaurant settings.
+- [ ] Corriger l’import des PDF texte et vérifier la proposition sans modifier la carte publiée.
 - [x] Show the banner on the customer site and kiosk, with brand/logo fallback.
 - [x] Verify upload, persistence, removal, fallback and current app errors.
 - [x] Apply the selected editorial direction to the directory; verify themes, imagery and navigation.

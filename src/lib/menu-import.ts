@@ -24,15 +24,23 @@ export async function readMenuFile(file: File): Promise<ImportPage[]> {
     try { return [{ type: "image", content: imageDataUrl(bitmap, bitmap.width, bitmap.height) }]; }
     finally { bitmap.close(); }
   }
-  if (file.type === "application/pdf" && ext === "pdf") {
+  if (ext === "pdf" && ["application/pdf", "application/octet-stream", ""].includes(file.type)) {
     const pdfjs = await import("pdfjs-dist");
     const worker = await import("pdfjs-dist/build/pdf.worker.min.mjs?url");
     pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
     const doc = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+    try {
     if (doc.numPages > 8) throw new Error("Le document ne doit pas dépasser 8 pages");
     const pages: ImportPage[] = [];
     for (let n = 1; n <= doc.numPages; n++) {
       const page = await doc.getPage(n);
+      const textContent = await page.getTextContent();
+      const text = textContent.items.map((item) => "str" in item ? `${item.str}${item.hasEOL ? "\n" : " "}` : "").join("").trim();
+      // Preserve native text and prices; scanned pages still use image recognition.
+      if (text.length >= 20 && /\d/.test(text)) {
+        pages.push({ type: "text", content: `Page ${n}\n${text.slice(0, 100_000)}` });
+        continue;
+      }
       const viewport = page.getViewport({ scale: Math.min(2, 1600 / Math.max(page.getViewport({ scale: 1 }).width, page.getViewport({ scale: 1 }).height)) });
       const canvas = document.createElement("canvas");
       canvas.width = Math.round(viewport.width); canvas.height = Math.round(viewport.height);
@@ -42,6 +50,7 @@ export async function readMenuFile(file: File): Promise<ImportPage[]> {
       pages.push({ type: "image", content: canvas.toDataURL("image/jpeg", 0.8) });
     }
     return pages;
+    } finally { await doc.destroy(); }
   }
   if (file.type === "text/plain" || file.type === "text/csv" || ["txt", "csv"].includes(ext ?? "")) {
     return [{ type: "text", content: (await file.text()).slice(0, 100_000) }];
