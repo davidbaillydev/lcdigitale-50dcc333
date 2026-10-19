@@ -28,6 +28,7 @@
 - Kitchen and courier PINs: hashed in service-role-only tables (`restaurant_kitchen_pins`, `restaurant_courier_pins`) with attempt lockout; courier sessions are HMAC tokens keyed on the PIN hash. Why: no extra accounts, PIN change revokes sessions.
 - Invoice transmission stays disabled pending provider and compliance validation; PDFs alone are not fiscal compliance.
 - Kitchen: column scrolling, collapsible nav, fullscreen dialogs, safe-area insets.
+- Read subdirectory AGENTS.md before edits; they contain scoped rules.
 - Restaurant modules live in restaurants.enabled_features (missing key = enabled), agency-written, re-checked by server functions. Why: subscription gating must not rely on hidden UI.
 - Kiosk "Voie B" (config.kiosk.cardOnly, agency-only): server accepts only card_terminal with a configured terminal, inserts awaiting_payment and releases to kitchen/POS only after provider-confirmed payment; unpaid orders are cancelled. Why: BOI-TVA-DECLA-30-10-30 §37 ex.4 exemption requires no cash recorded.
 - Kiosk QR payment (config.payments.qr, opt-in per restaurant): order stored as payment_method online + awaiting_payment, Mollie preferred else Stripe Checkout; kitchen release only via provider-verified markPaid. Why: no unpaid QR order reaches the kitchen.
