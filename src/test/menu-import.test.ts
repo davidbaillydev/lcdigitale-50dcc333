@@ -3,8 +3,8 @@ import { readMenuFile } from "@/lib/menu-import";
 import { readMenuResponse } from "@/lib/menu-import-response";
 
 const pdf = vi.hoisted(() => ({ getDocument: vi.fn(), destroy: vi.fn(), getPage: vi.fn() }));
-vi.mock("pdfjs-dist", () => ({ GlobalWorkerOptions: {}, getDocument: pdf.getDocument }));
-vi.mock("pdfjs-dist/build/pdf.worker.min.mjs?url", () => ({ default: "worker-url" }));
+vi.mock("pdfjs-dist/legacy/build/pdf.mjs", () => ({ GlobalWorkerOptions: {}, getDocument: pdf.getDocument }));
+vi.mock("pdfjs-dist/legacy/build/pdf.worker.min.mjs?url", () => ({ default: "worker-url" }));
 
 beforeEach(() => {
   vi.clearAllMocks();

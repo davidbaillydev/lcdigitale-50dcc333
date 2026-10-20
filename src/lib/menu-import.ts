@@ -25,8 +25,9 @@ export async function readMenuFile(file: File): Promise<ImportPage[]> {
     finally { bitmap.close(); }
   }
   if (ext === "pdf" && ["application/pdf", "application/octet-stream", ""].includes(file.type)) {
-    const pdfjs = await import("pdfjs-dist");
-    const worker = await import("pdfjs-dist/build/pdf.worker.min.mjs?url");
+    // Keep PDF.js and its worker on the compatibility build (older Safari/Android).
+    const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+    const worker = await import("pdfjs-dist/legacy/build/pdf.worker.min.mjs?url");
     pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
     const task = pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) });
     try {
@@ -47,7 +48,7 @@ export async function readMenuFile(file: File): Promise<ImportPage[]> {
       canvas.width = Math.round(viewport.width); canvas.height = Math.round(viewport.height);
       const ctx = canvas.getContext("2d");
       if (!ctx) throw new Error("Impossible de lire le PDF");
-      await page.render({ canvas, canvasContext: ctx, viewport }).promise;
+      await page.render({ canvasContext: ctx, viewport }).promise;
       pages.push({ type: "image", content: canvas.toDataURL("image/jpeg", 0.8) });
     }
     return pages;
