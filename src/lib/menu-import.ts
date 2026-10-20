@@ -48,7 +48,7 @@ export async function readMenuFile(file: File): Promise<ImportPage[]> {
       canvas.width = Math.round(viewport.width); canvas.height = Math.round(viewport.height);
       const ctx = canvas.getContext("2d");
       if (!ctx) throw new Error("Impossible de lire le PDF");
-      await page.render({ canvas, canvasContext: ctx, viewport }).promise;
+      await page.render({ canvasContext: ctx, viewport }).promise;
       pages.push({ type: "image", content: canvas.toDataURL("image/jpeg", 0.8) });
     }
     return pages;
