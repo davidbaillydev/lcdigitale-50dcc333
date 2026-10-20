@@ -1,4 +1,5 @@
 - [x] Add secure per-restaurant banner upload and removal in restaurant settings.
+- [ ] Diagnostiquer et corriger l’erreur « undefined is not a function » signalée après l’import PDF.
 - [x] Corriger la lecture native des PDF texte et les réponses IA interrompues : 7 tests passent, compilation OK, import connecté exécuté sans modifier la carte publiée.
 - [ ] Vérifier la proposition de carte complète : bloqué par le refus 402 du service IA (crédit insuffisant), nécessite une recharge puis un nouvel import.
 - [x] Show the banner on the customer site and kiosk, with brand/logo fallback.
