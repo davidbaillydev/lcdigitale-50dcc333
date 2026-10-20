@@ -25,8 +25,9 @@ export async function readMenuFile(file: File): Promise<ImportPage[]> {
     finally { bitmap.close(); }
   }
   if (ext === "pdf" && ["application/pdf", "application/octet-stream", ""].includes(file.type)) {
-    const pdfjs = await import("pdfjs-dist");
-    const worker = await import("pdfjs-dist/build/pdf.worker.min.mjs?url");
+    // Keep PDF.js and its worker on the compatibility build (older Safari/Android).
+    const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+    const worker = await import("pdfjs-dist/legacy/build/pdf.worker.min.mjs?url");
     pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
     const task = pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) });
     try {
