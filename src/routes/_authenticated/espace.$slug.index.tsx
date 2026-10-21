@@ -33,6 +33,7 @@ import { cn } from "@/lib/utils";
 import { BrandLogo } from "@/lib/brand";
 import { ThemeToggle } from "@/lib/theme";
 import { OrdersPausedToggle } from "@/components/OrdersPausedToggle";
+import { TicketPreviewDialog } from "@/components/TicketPreviewDialog";
 
 export const Route = createFileRoute("/_authenticated/espace/$slug/")({
   head: () => ({
