@@ -32,7 +32,10 @@ beforeEach(() => {
   mocks.invite.mockResolvedValue({ data: { user: { id: "new-admin" } }, error: null });
   mocks.maybeSingle.mockResolvedValue({ data: null, error: null });
   mocks.upsert.mockResolvedValue({ error: null });
+  mocks.deleteUser.mockResolvedValue({ error: null });
+  mocks.del.mockImplementation(() => { const q: Record<string, unknown> = { eq: () => q, then: (resolve: (value: unknown) => unknown) => resolve({ error: null }) }; return q; });
   mocks.rows = [];
+  mocks.eqData = [];
 });
 describe("Administrateurs agence", () => {
   it.each([false, null])("refuse l'ajout sans rôle agence (%s)", async (role) => {
