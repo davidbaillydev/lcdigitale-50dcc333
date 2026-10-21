@@ -70,7 +70,7 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
     <div class="cat">${esc(it.category ?? "Carte").toUpperCase()}</div>
     <div class="row"><b>${it.qty}× ${esc(itemTitle(it))}</b>${f.prices && it.total != null ? `<span>${eur(it.total)}</span>` : ""}</div>
     ${(f.options ? it.details ?? [] : []).map((d) => `<div class="det"><b>Choix inclus :</b> ${esc(d)}</div>`).join("")}
-    ${(f.options ? it.selected_options ?? [] : []).map((op) => `<div class="row det"><b>Supplément : + ${esc(op.name)}</b>${f.prices && op.price ? `<span>+${eur(op.price)}</span>` : ""}</div>`).join("")}
+    ${(f.options ? it.selected_options ?? [] : []).map((op) => `<div class="row det"><b>Supplément : + ${esc(op.name)}</b>${op.price ? `<span>+${eur(op.price)}</span>` : ""}</div>`).join("")}
     ${f.allergens && it.allergens?.length ? `<div class="alg">⚠ ALLERGÈNES : ${it.allergens.map((a) => esc(allergenLabel(a)).toUpperCase()).join(", ")}</div>` : ""}`).join("");
   const allAlg = [...new Set(o.items.flatMap((i) => i.allergens ?? []))];
   return `<!doctype html><html><head><meta charset="utf-8"><title>Ticket ${o.order_number}</title><style>

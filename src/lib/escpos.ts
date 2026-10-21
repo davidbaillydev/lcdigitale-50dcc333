@@ -64,7 +64,7 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
     if (f.prices && it.total != null) e.line(lr(name, eur(it.total), cols)); else wrap(name, cols).forEach((l) => e.line(l));
     e.bold(false);
     if (f.options) for (const d of it.details ?? []) wrap(`  Choix inclus : ${d}`, cols).forEach((l) => e.line(l));
-    if (f.options) for (const op of it.selected_options ?? []) { const t = `  Supplement : + ${op.name}`; if (f.prices && op.price) e.line(lr(t, `+${eur(op.price)}`, cols)); else wrap(t, cols).forEach((l) => e.line(l)); }
+    if (f.options) for (const op of it.selected_options ?? []) { const t = `  Supplement : + ${op.name}`; if (op.price) e.line(lr(t, `+${eur(op.price)}`, cols)); else wrap(t, cols).forEach((l) => e.line(l)); }
     if (f.allergens && it.allergens?.length) { e.bold(true); wrap(`  ! ALLERGENES : ${it.allergens.map((a) => allergenLabel(a).toUpperCase()).join(", ")}`, cols).forEach((l) => e.line(l)); e.bold(false); }
   }
   const allAlg = [...new Set(o.items.flatMap((i) => i.allergens ?? []))];
