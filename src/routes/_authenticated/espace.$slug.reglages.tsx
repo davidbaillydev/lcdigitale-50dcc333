@@ -8,6 +8,7 @@ import { UpsellPanel } from "@/components/UpsellPanel";
 import { NotificationsPanel } from "@/components/NotificationsPanel";
 import { MarketingPanel } from "@/components/MarketingPanel";
 import { PaymentProvidersPanel } from "@/components/PaymentProvidersPanel";
+import { paymentModulesOf } from "@/components/PaymentModulesPanel";
 import { VapiWebPanel } from "@/components/VapiWebPanel";
 import { RestaurantSettingsForm } from "@/components/RestaurantSettingsForm";
 import { Button } from "@/components/ui/button";
@@ -45,7 +46,7 @@ function Page() {
       {error && <p className="text-destructive">{(error as Error).message}</p>}
        {data && <SettingsWorkspace agency={isAgency} showAgency={false}>
          <RestaurantSettingsForm restaurant={data} onSaved={() => refetch()} agency={isAgency} />
-         {isAgency && <SettingsGroup name="payments"><PaymentProvidersPanel restaurantId={data.id} /></SettingsGroup>}
+         {isAgency && <SettingsGroup name="payments"><PaymentProvidersPanel restaurantId={data.id} modules={paymentModulesOf(data.config)} /></SettingsGroup>}
          <SettingsGroup name="communication">
            <NotificationsPanel key={`n-${data.id}`} restaurantId={data.id} notifications={(data.config as { notifications?: { received?: boolean; confirmed?: boolean; restaurant?: boolean; email?: string } }).notifications} defaultEmail={data.email ?? null} onSaved={() => refetch()} />
            <UpsellPanel key={`u-${data.id}`} restaurant={data} onSaved={() => refetch()} />

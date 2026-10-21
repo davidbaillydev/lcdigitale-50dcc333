@@ -57,16 +57,18 @@ const META: Record<Provider, { name: string; desc: string; fields: { key: string
   },
 };
 
-export function PaymentProvidersPanel({ restaurantId }: { restaurantId: string }) {
+export function PaymentProvidersPanel({ restaurantId, modules }: { restaurantId: string; modules?: Partial<Record<Provider, boolean>> }) {
   const list = useServerFn(listPaymentProviders);
   const { data, refetch } = useQuery({ queryKey: ["pay-providers", restaurantId], queryFn: () => list({ data: { restaurantId } }) });
+  const visible = (data ?? []).filter((p) => modules?.[p.provider] !== false);
   return (
     <section className="rounded-xl border border-border bg-card p-5">
       <h2 className="mb-1 text-3xl">Prestataires de paiement</h2>
       <p className="mb-4 text-sm text-muted-foreground">Les clés sont gardées sur le serveur et ne sont jamais réaffichées en entier.</p>
       <div className="space-y-4">
         <TerminalChoice restaurantId={restaurantId} />
-        {(data ?? []).map((p) => <ProviderCard key={p.provider} restaurantId={restaurantId} p={p} onChange={() => refetch()} />)}
+        {visible.map((p) => <ProviderCard key={p.provider} restaurantId={restaurantId} p={p} onChange={() => refetch()} />)}
+        {!visible.length && <p className="text-sm text-muted-foreground">Aucun module de paiement n'est proposé à ce restaurant. L'agence peut les activer dans « Modules de paiement proposés ».</p>}
       </div>
     </section>
   );

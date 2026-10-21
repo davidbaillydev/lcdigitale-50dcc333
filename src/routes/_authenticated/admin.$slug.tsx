@@ -10,6 +10,7 @@ import { loadRestaurantAdmin } from "@/lib/restaurant-settings.functions";
 import { RestaurantSettingsForm } from "@/components/RestaurantSettingsForm";
 import { MarketingPanel } from "@/components/MarketingPanel";
 import { PaymentProvidersPanel } from "@/components/PaymentProvidersPanel";
+import { PaymentModulesPanel, paymentModulesOf } from "@/components/PaymentModulesPanel";
 import { VapiWebPanel } from "@/components/VapiWebPanel";
 import { VoiceChannelPanel } from "@/components/VoiceChannelPanel";
 import { LegalPanel } from "@/components/LegalPanel";
@@ -69,7 +70,10 @@ function Page() {
           <p className="text-sm text-muted-foreground">Identité, logo et couleurs se modifient depuis la console (bouton « Modifier »).</p>
            <SettingsWorkspace agency>
              <RestaurantSettingsForm restaurant={r} onSaved={() => refetch()} />
-             <SettingsGroup name="payments"><PaymentProvidersPanel restaurantId={r.id} /></SettingsGroup>
+             <SettingsGroup name="payments">
+               <PaymentModulesPanel key={`pm-${r.id}`} restaurantId={r.id} initial={r.config} onSaved={() => refetch()} />
+               <PaymentProvidersPanel restaurantId={r.id} modules={paymentModulesOf(r.config)} />
+             </SettingsGroup>
              <SettingsGroup name="communication">
                <UpsellPanel key={`u-${r.id}`} restaurant={r} onSaved={() => refetch()} />
                <MarketingPanel restaurantId={r.id} marketing={r.config.marketing} onSaved={() => refetch()} />
