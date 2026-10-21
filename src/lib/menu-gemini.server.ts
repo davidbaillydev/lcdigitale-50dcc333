@@ -1,6 +1,17 @@
 import { createParser } from "eventsource-parser";
 
 export const GEMINI_MENU_MODEL = "gemini-2.5-flash";
+export class GeminiUnavailable extends Error {}
+
+export async function menuAnalysisWithFallback<T>(gemini: (() => Promise<T>) | undefined, lovable: () => Promise<T>, report: (reason: string) => Promise<void>): Promise<T> {
+  if (!gemini) return lovable();
+  try { return await gemini(); }
+  catch (error) {
+    if (!(error instanceof GeminiUnavailable)) throw error;
+    await report(error.message);
+    return lovable();
+  }
+}
 type Page = { type: "text" | "image"; content: string };
 
 export function geminiMenuBody(prompt: string, pages: Page[]) {
@@ -64,11 +75,20 @@ export async function readGeminiMenuResponse(response: Response) {
 
 export async function analyzeWithGemini(apiKey: string, prompt: string, pages: Page[]) {
   const body = geminiMenuBody(prompt, pages);
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MENU_MODEL}:streamGenerateContent?alt=sse`, {
+  let response: Response;
+  try { response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MENU_MODEL}:streamGenerateContent?alt=sse`, {
     method: "POST", headers: { "x-goog-api-key": apiKey, "Content-Type": "application/json" }, body: JSON.stringify(body),
-  });
+  }); } catch { throw new GeminiUnavailable("Connexion à Gemini indisponible"); }
   if (!response.ok) {
     // Never return/log Google error payloads: they may contain credential material.
+    let invalidKey = response.status === 401;
+    if (response.status === 400) {
+      const payload = await response.json().catch(() => null) as { error?: { details?: { reason?: string }[] } } | null;
+      invalidKey = payload?.error?.details?.some((detail) => detail.reason === "API_KEY_INVALID") === true;
+    }
+    if (invalidKey) throw new GeminiUnavailable("Clé Gemini rejetée");
+    if (response.status === 429) throw new GeminiUnavailable("Quota Gemini atteint");
+    if (response.status === 404 || response.status >= 500) throw new GeminiUnavailable("Service Gemini indisponible");
     const message = response.status === 400 || response.status === 401 ? "Clé Gemini invalide ou demande non acceptée. Vérifiez la clé dans la console agence."
       : response.status === 403 ? "Accès Gemini refusé. Vérifiez les autorisations du projet Google."
       : response.status === 429 ? "Quota Gemini atteint. Vérifiez les quotas et la facturation du compte Google."

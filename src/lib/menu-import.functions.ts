@@ -27,13 +27,13 @@ export const analyzeMenu = createServerFn({ method: "POST" })
         ? { type: "input_image", image_url: p.content }
         : { type: "input_text", text: p.content }),
     ];
-    let raw: string;
-    if (gemini?.api_key) {
-      const { analyzeWithGemini } = await import("./menu-gemini.server");
-      const instruction = content[0];
-      if (!instruction || !("text" in instruction) || typeof instruction.text !== "string") throw new Error("Instructions d’analyse manquantes");
-      raw = await analyzeWithGemini(gemini.api_key, instruction.text, data.pages);
-    } else {
+    const { analyzeWithGemini, menuAnalysisWithFallback } = await import("./menu-gemini.server");
+    const instruction = content[0];
+    if (!instruction || !("text" in instruction) || typeof instruction.text !== "string") throw new Error("Instructions d’analyse manquantes");
+    const geminiKey = gemini?.api_key;
+    const raw = await menuAnalysisWithFallback(
+      geminiKey ? () => analyzeWithGemini(geminiKey, instruction.text, data.pages) : undefined,
+      async () => {
     const apiKey = process.env['LOVABLE_API_KEY'];
     if (!apiKey) throw new Error("L'analyse de carte est momentanément indisponible");
     const response = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
@@ -50,8 +50,12 @@ export const analyzeMenu = createServerFn({ method: "POST" })
         : "L’analyse est momentanément indisponible. Votre carte n’a pas été modifiée.";
       throw new Error(message);
     }
-    raw = await readMenuResponse(response);
-    }
+    return readMenuResponse(response);
+    },
+    async (reason) => {
+      const { error } = await supabaseAdmin.from("agency_menu_ai_credentials").update({ last_fallback_reason: reason, last_fallback_at: new Date().toISOString() }).eq("id", "gemini");
+      if (error) throw new Error("Impossible d’enregistrer l’avertissement de repli IA. Réessayez plus tard.");
+    });
     let parsed: unknown;
     try { parsed = JSON.parse(raw.replace(/^```(?:json)?\s*|\s*```$/g, "")); }
     catch { throw new Error("La carte n'a pas pu être reconnue. Essayez un document plus lisible."); }

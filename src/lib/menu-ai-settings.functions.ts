@@ -14,9 +14,9 @@ export const getMenuAiSettings = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     await agency(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin.from("agency_menu_ai_credentials").select("id").eq("id", "gemini").maybeSingle();
+    const { data, error } = await supabaseAdmin.from("agency_menu_ai_credentials").select("id, last_fallback_reason, last_fallback_at").eq("id", "gemini").maybeSingle();
     if (error) throw new Error("Impossible de charger le réglage Gemini");
-    return { configured: Boolean(data) };
+    return { configured: Boolean(data), fallbackReason: data?.last_fallback_reason ?? null, fallbackAt: data?.last_fallback_at ?? null };
   });
 
 export const saveMenuAiKey = createServerFn({ method: "POST" })
@@ -25,7 +25,7 @@ export const saveMenuAiKey = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     await agency(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("agency_menu_ai_credentials").upsert({ id: "gemini", api_key: data.apiKey, updated_at: new Date().toISOString() });
+    const { error } = await supabaseAdmin.from("agency_menu_ai_credentials").upsert({ id: "gemini", api_key: data.apiKey, updated_at: new Date().toISOString(), last_fallback_reason: null, last_fallback_at: null });
     if (error) throw new Error("La clé Gemini n’a pas pu être enregistrée");
     return { configured: true };
   });

@@ -24,7 +24,7 @@ describe("Agency Gemini key permissions", () => {
     expect(mocks.from).not.toHaveBeenCalled();
   });
   it("returns presence only", async () => {
-    expect(await (getMenuAiSettings as unknown as Invocation)({ context })).toEqual({ configured: true });
+    expect(await (getMenuAiSettings as unknown as Invocation)({ context })).toEqual({ configured: true, fallbackReason: null, fallbackAt: null });
   });
   it("saves the shared key without returning it", async () => {
     expect(await (saveMenuAiKey as unknown as Invocation)({ context, data: { apiKey: "fixture" } })).toEqual({ configured: true });

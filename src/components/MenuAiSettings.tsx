@@ -15,7 +15,7 @@ export function MenuAiSettings() {
   const remove = useServerFn(removeMenuAiKey);
   const client = useQueryClient();
   const queryKey = ["agency-menu-ai"];
-  const { data, isPending, error } = useQuery({ queryKey, queryFn: () => get() });
+  const { data, isPending, error } = useQuery({ queryKey, queryFn: () => get(), refetchInterval: 30_000 });
   const [key, setKey] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirm, setConfirm] = useState(false);
@@ -23,7 +23,7 @@ export function MenuAiSettings() {
     setBusy(true);
     try {
       const result = deleting ? await remove() : await save({ data: { apiKey: key } });
-      client.setQueryData(queryKey, result);
+      client.setQueryData(queryKey, { ...result, fallbackReason: null, fallbackAt: null });
       setKey(""); setConfirm(false);
       toast.success(deleting ? "Clé Gemini supprimée" : "Clé Gemini enregistrée");
     } catch (e) { toast.error(e instanceof Error ? e.message : "Enregistrement impossible"); }
@@ -32,6 +32,7 @@ export function MenuAiSettings() {
   return <section className="mt-8 space-y-5 border-t border-border pt-6">
     <div className="flex items-center gap-3"><KeyRound className="h-6 w-6 text-primary" /><h2 className="font-display text-2xl font-semibold">Gemini · Analyse des cartes</h2></div>
     <p className="text-sm text-muted-foreground">{isPending ? "Chargement…" : error ? "Réglage indisponible" : data?.configured ? "Clé enregistrée · Gemini actif pour les imports de tous les restaurants" : "Aucune clé Gemini · Analyse Lovable AI active"}</p>
+    {data?.fallbackReason && <div role="status" className="border-l-4 border-primary bg-muted p-4 text-sm">{data.fallbackReason} · Retour automatique à Lovable AI déclenché{data.fallbackAt ? ` le ${new Date(data.fallbackAt).toLocaleString("fr-FR")}` : ""}. Les crédits Lovable de l’agence sont nécessaires ; ce message ne confirme pas la réussite de l’import.</div>}
     <form onSubmit={(e) => { e.preventDefault(); void update(false); }} className="space-y-4">
       <div className="space-y-2"><Label htmlFor="gemini-key">{data?.configured ? "Remplacer la clé API Gemini" : "Clé API Gemini"}</Label>
         <Input id="gemini-key" type="password" autoComplete="new-password" value={key} onChange={(e) => setKey(e.target.value)} placeholder="Saisir une clé Google AI Studio" disabled={busy || isPending || Boolean(error)} />
@@ -44,7 +45,7 @@ export function MenuAiSettings() {
         </div>
       </div>
     </form>
-    <p className="text-xs text-muted-foreground">Les documents sont transmis à Google pour analyse. L’utilisation est soumise aux quotas et à la facturation de votre compte Google. La carte reste à valider avant publication.</p>
+    <p className="text-xs text-muted-foreground">Les documents sont transmis à Google pour analyse. Si la clé est rejetée, le quota atteint ou Gemini indisponible, l’analyse revient automatiquement à Lovable AI, qui consomme les crédits de l’agence et n’est pas gratuit. Aucun repli après un refus de contenu ou d’accès. La carte reste à valider avant publication.</p>
     <AlertDialog open={confirm} onOpenChange={(open) => { if (!busy) setConfirm(open); }}>
       <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Supprimer la clé Gemini ?</AlertDialogTitle><AlertDialogDescription>Les prochains imports utiliseront Lovable AI et les crédits de l’agence. Les cartes existantes restent inchangées.</AlertDialogDescription></AlertDialogHeader>
         <AlertDialogFooter><AlertDialogCancel disabled={busy}>Annuler</AlertDialogCancel><AlertDialogAction disabled={busy} onClick={(e) => { e.preventDefault(); void update(true); }}>Supprimer la clé</AlertDialogAction></AlertDialogFooter>

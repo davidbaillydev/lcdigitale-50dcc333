@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { geminiMenuBody, readGeminiMenuResponse, analyzeWithGemini } from "@/lib/menu-gemini.server";
+import { geminiMenuBody, readGeminiMenuResponse, analyzeWithGemini, GeminiUnavailable, menuAnalysisWithFallback } from "@/lib/menu-gemini.server";
 
 function sse(events: unknown[]) {
   const bytes = new TextEncoder().encode(events.map((event) => `data: ${JSON.stringify(event)}\n\n`).join(""));
@@ -35,5 +35,18 @@ describe("Gemini menu extraction", () => {
     vi.stubGlobal("fetch", fetcher);
     await expect(analyzeWithGemini("test-fixture", "Extract", [{ type: "text", content: "Mochi 4,50 €" }])).rejects.toThrow("Quota Gemini");
     expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+  it.each(["Clé Gemini rejetée", "Quota Gemini atteint", "Service Gemini indisponible"])("falls back once and reports %s", async (reason) => {
+    const fallback = vi.fn().mockResolvedValue("menu"); const report = vi.fn().mockResolvedValue(undefined);
+    expect(await menuAnalysisWithFallback(async () => { throw new GeminiUnavailable(reason); }, fallback, report)).toBe("menu");
+    expect(fallback).toHaveBeenCalledOnce(); expect(report).toHaveBeenCalledWith(reason);
+  });
+  it("never falls back after a refusal", async () => {
+    const fallback = vi.fn(); const report = vi.fn();
+    await expect(menuAnalysisWithFallback(async () => { throw new Error("refusé"); }, fallback, report)).rejects.toThrow("refusé");
+    expect(fallback).not.toHaveBeenCalled(); expect(report).not.toHaveBeenCalled();
+  });
+  it("does not hide a Lovable fallback failure", async () => {
+    await expect(menuAnalysisWithFallback(async () => { throw new GeminiUnavailable("quota"); }, async () => { throw new Error("Crédits insuffisants"); }, async () => {})).rejects.toThrow("Crédits insuffisants");
   });
 });
