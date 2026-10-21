@@ -43,7 +43,7 @@ function Page() {
       <RestaurantNav slug={slug} className="print:hidden" />
       <h1 className="text-5xl">Réglages {data?.name ?? ""}</h1>
       {error && <p className="text-destructive">{(error as Error).message}</p>}
-       {data && <SettingsWorkspace agency={isAgency}>
+       {data && <SettingsWorkspace agency={isAgency} showAgency={false}>
          <RestaurantSettingsForm restaurant={data} onSaved={() => refetch()} agency={isAgency} />
          {isAgency && <SettingsGroup name="payments"><PaymentProvidersPanel restaurantId={data.id} /></SettingsGroup>}
          <SettingsGroup name="communication">
