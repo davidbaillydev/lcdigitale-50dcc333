@@ -8,6 +8,7 @@ import { UpsellPanel } from "@/components/UpsellPanel";
 import { NotificationsPanel } from "@/components/NotificationsPanel";
 import { MarketingPanel } from "@/components/MarketingPanel";
 import { PaymentProvidersPanel } from "@/components/PaymentProvidersPanel";
+import { paymentModulesOf } from "@/components/PaymentModulesPanel";
 import { VapiWebPanel } from "@/components/VapiWebPanel";
 import { RestaurantSettingsForm } from "@/components/RestaurantSettingsForm";
 import { Button } from "@/components/ui/button";

@@ -10,6 +10,7 @@ import { loadRestaurantAdmin } from "@/lib/restaurant-settings.functions";
 import { RestaurantSettingsForm } from "@/components/RestaurantSettingsForm";
 import { MarketingPanel } from "@/components/MarketingPanel";
 import { PaymentProvidersPanel } from "@/components/PaymentProvidersPanel";
+import { PaymentModulesPanel, paymentModulesOf } from "@/components/PaymentModulesPanel";
 import { VapiWebPanel } from "@/components/VapiWebPanel";
 import { VoiceChannelPanel } from "@/components/VoiceChannelPanel";
 import { LegalPanel } from "@/components/LegalPanel";
