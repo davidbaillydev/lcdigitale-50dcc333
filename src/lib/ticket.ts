@@ -42,10 +42,23 @@ export function getDeviceTicketWidth(): TicketWidth | null {
   if (typeof window === "undefined") return null;
   try { const v = localStorage.getItem("ticket-width"); return v === "58" ? 58 : v === "80" ? 80 : null; } catch { return null; }
 }
-/** Largeur effective : appareil en priorité, sinon défaut du restaurant. */
-export function getTicketWidth(fallback: TicketWidth = 80): TicketWidth { return getDeviceTicketWidth() ?? fallback; }
+/** Largeur mémorisée pour l'imprimante directe configurée, le cas échéant. */
+export function getPrinterTicketWidth(): TicketWidth | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const p = JSON.parse(localStorage.getItem("lc-direct-printer") ?? "null") as { width?: number } | null;
+    return p?.width === 58 ? 58 : p?.width === 80 ? 80 : null;
+  } catch { return null; }
+}
+/** Largeur effective : imprimante configurée en priorité, sinon choix de l'appareil, sinon défaut du restaurant. */
+export function getTicketWidth(fallback: TicketWidth = 80): TicketWidth { return getPrinterTicketWidth() ?? getDeviceTicketWidth() ?? fallback; }
 export function setTicketWidth(w: TicketWidth) {
   try { localStorage.setItem("ticket-width", String(w)); } catch { /* stockage indisponible */ }
+  // Mémorise aussi le format sur l'imprimante directe configurée.
+  try {
+    const raw = localStorage.getItem("lc-direct-printer");
+    if (raw) { const p = JSON.parse(raw); p.width = w; localStorage.setItem("lc-direct-printer", JSON.stringify(p)); }
+  } catch { /* stockage indisponible */ }
   window.dispatchEvent(new CustomEvent("lc-ticket-width", { detail: w }));
 }
 /** Hook : largeur effective, synchronisée entre composants. */
