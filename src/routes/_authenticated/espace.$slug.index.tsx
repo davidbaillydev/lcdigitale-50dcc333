@@ -33,6 +33,7 @@ import { cn } from "@/lib/utils";
 import { BrandLogo } from "@/lib/brand";
 import { ThemeToggle } from "@/lib/theme";
 import { OrdersPausedToggle } from "@/components/OrdersPausedToggle";
+import { TicketPreviewDialog } from "@/components/TicketPreviewDialog";
 
 export const Route = createFileRoute("/_authenticated/espace/$slug/")({
   head: () => ({
@@ -97,6 +98,7 @@ function Kitchen() {
   const [printState, setPrintState] = useState<Record<string, "ok" | "failed">>({});
   const [logs, setLogs] = useState<Record<string, PrintLog[]>>({});
   const [openLog, setOpenLog] = useState<string | null>(null);
+  const [preview, setPreview] = useState<{ order: Order; kinds: TicketKind[] } | null>(null);
   const doPrint = useCallback(async (o: Order, kinds: TicketKind[], auto = false) => {
     const shop = { name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null };
     const ok = await printTickets(o, kinds, shop, printing.width, printing.kitchen);
@@ -400,8 +402,8 @@ function Kitchen() {
                       {c.s === "new" && <Button size="lg" variant="outline" className="min-h-14" onClick={() => confirm("Refuser cette commande ?") && move(o, "cancelled")}>Refuser</Button>}
                     </div>
                     <div className="mt-2 flex gap-2">
-                      <Button size="sm" variant="secondary" className="min-h-12 min-w-0 flex-1" onClick={() => doPrint(o, ["kitchen"])}><Printer /> {logs[o.id]?.length ? "Réimprimer cuisine" : "Cuisine"}</Button>
-                      <Button size="sm" variant="secondary" className="min-h-12 min-w-0 flex-1" onClick={() => doPrint(o, ["receipt"])}><Printer /> Caisse</Button>
+                      <Button size="sm" variant="secondary" className="min-h-12 min-w-0 flex-1" onClick={() => setPreview({ order: o, kinds: ["kitchen"] })}><Printer /> {logs[o.id]?.length ? "Réimprimer cuisine" : "Cuisine"}</Button>
+                      <Button size="sm" variant="secondary" className="min-h-12 min-w-0 flex-1" onClick={() => setPreview({ order: o, kinds: ["receipt"] })}><Printer /> Caisse</Button>
                       <InvoiceButton orderId={o.id} />
                     </div>
                     <div className="mt-2 space-y-2"><RefundBadge o={o as never} /><RefundButton o={o as never} />{feat.pos_sync && <PosSyncStatus o={o as never} onDone={load} />}</div>
@@ -432,6 +434,15 @@ function Kitchen() {
         })}
       </div>
       {locked && rid && <KitchenLock restaurantId={rid} name={restaurant?.name ?? ""} onUnlock={() => setLock(false)} />}
+      <TicketPreviewDialog
+        order={preview?.order ?? null}
+        kinds={preview?.kinds ?? ["kitchen"]}
+        shop={{ name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null }}
+        width={printing.width}
+        kitchen={printing.kitchen}
+        onClose={() => setPreview(null)}
+        onPrint={(o, kinds) => { setPreview(null); void doPrint(o as Order, kinds); }}
+      />
     </div>
   );
 }
