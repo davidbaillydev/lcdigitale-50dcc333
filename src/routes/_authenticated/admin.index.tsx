@@ -16,6 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ThemeToggle } from "@/lib/theme";
 import { OrdersPausedToggle } from "@/components/OrdersPausedToggle";
+import { MenuAiSettings } from "@/components/MenuAiSettings";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   head: () => ({
@@ -146,6 +147,7 @@ function Console() {
         </div>
       )}
 
+      <MenuAiSettings />
       <RestaurantDialog form={form} setForm={setForm} onSaved={(slug, created) => { load(); if (created) navigate({ to: "/admin/$slug", params: { slug } }); }} />
     </div>
   );

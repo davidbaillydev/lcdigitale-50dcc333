@@ -18,14 +18,24 @@ export const analyzeMenu = createServerFn({ method: "POST" })
       _user_id: context.userId, _restaurant_id: data.restaurantId,
     });
     if (accessError || !allowed) throw new Error("Accès réservé au gérant ou à l'agence");
-    const apiKey = process.env['LOVABLE_API_KEY'];
-    if (!apiKey) throw new Error("L'analyse de carte est momentanément indisponible");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: gemini, error: settingsError } = await supabaseAdmin.from("agency_menu_ai_credentials").select("api_key").eq("id", "gemini").maybeSingle();
+    if (settingsError) throw new Error("Impossible de charger le fournisseur d’analyse de carte");
     const content = [
       { type: "input_text", text: `Extrais la carte de restaurant jointe. Réponds UNIQUEMENT avec un JSON valide de forme {\"categories\":[{\"label\":\"...\",\"items\":[{\"name\":\"...\",\"desc\":\"...\",\"price\":12.5,\"allergens\":[\"gluten\"]}]}]}. Reprends exclusivement les plats et prix clairement lisibles ; ne devine aucun prix, ne crée pas de plat. Ignore les lignes sans prix vérifiable. Prix en euros numériques, virgule décimale convertie en point. Regroupe sous des catégories appropriées. Les options ou suppléments incertains sont à vérifier humainement. Pour chaque plat, renseigne \"allergens\" avec les identifiants parmi ${ALLERGEN_IDS.join(", ")} : ceux indiqués sur la carte (pictogrammes, mentions) ET ceux évidents d'après les ingrédients cités (ex. sushi/maki → poissons, sésame, soja via sauce ; tempura/nouilles de blé → gluten ; crevette → crustacés). Tableau vide si rien d'identifiable.` },
       ...data.pages.map((p) => p.type === "image"
         ? { type: "input_image", image_url: p.content }
         : { type: "input_text", text: p.content }),
     ];
+    const { analyzeWithGemini, menuAnalysisWithFallback } = await import("./menu-gemini.server");
+    const instruction = content[0];
+    if (!instruction || !("text" in instruction) || typeof instruction.text !== "string") throw new Error("Instructions d’analyse manquantes");
+    const geminiKey = gemini?.api_key;
+    const raw = await menuAnalysisWithFallback(
+      geminiKey ? () => analyzeWithGemini(geminiKey, instruction.text, data.pages) : undefined,
+      async () => {
+    const apiKey = process.env['LOVABLE_API_KEY'];
+    if (!apiKey) throw new Error("L'analyse de carte est momentanément indisponible");
     const response = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
       method: "POST",
       headers: { "Lovable-API-Key": apiKey, "X-Lovable-AIG-SDK": "fetch", "Content-Type": "application/json" },
@@ -40,7 +50,12 @@ export const analyzeMenu = createServerFn({ method: "POST" })
         : "L’analyse est momentanément indisponible. Votre carte n’a pas été modifiée.";
       throw new Error(message);
     }
-    const raw = await readMenuResponse(response);
+    return readMenuResponse(response);
+    },
+    async (reason) => {
+      const { error } = await supabaseAdmin.from("agency_menu_ai_credentials").update({ last_fallback_reason: reason, last_fallback_at: new Date().toISOString() }).eq("id", "gemini");
+      if (error) throw new Error("Impossible d’enregistrer l’avertissement de repli IA. Réessayez plus tard.");
+    });
     let parsed: unknown;
     try { parsed = JSON.parse(raw.replace(/^```(?:json)?\s*|\s*```$/g, "")); }
     catch { throw new Error("La carte n'a pas pu être reconnue. Essayez un document plus lisible."); }

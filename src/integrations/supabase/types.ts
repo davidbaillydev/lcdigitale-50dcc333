@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      agency_menu_ai_credentials: {
+        Row: {
+          api_key: string
+          id: string
+          last_fallback_at: string | null
+          last_fallback_reason: string | null
+          updated_at: string
+        }
+        Insert: {
+          api_key: string
+          id: string
+          last_fallback_at?: string | null
+          last_fallback_reason?: string | null
+          updated_at?: string
+        }
+        Update: {
+          api_key?: string
+          id?: string
+          last_fallback_at?: string | null
+          last_fallback_reason?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cart_sessions: {
         Row: {
           cart_items: Json

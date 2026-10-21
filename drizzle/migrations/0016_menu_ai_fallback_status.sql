@@ -1,0 +1,2 @@
+ALTER TABLE public.agency_menu_ai_credentials ADD COLUMN last_fallback_reason text, ADD COLUMN last_fallback_at timestamptz;
+COMMENT ON COLUMN public.agency_menu_ai_credentials.last_fallback_reason IS 'Safe agency-visible Gemini fallback reason; never raw provider messages or credentials.';

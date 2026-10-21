@@ -1,3 +1,6 @@
+- [x] Ajouter le repli automatique Gemini → Lovable AI pour clé rejetée, quotas ou indisponibilité, avec avertissement agence ; refus de contenu et d’accès sans repli, tests réussis.
+- [x] Ajouter la clé Gemini agence pour l’analyse des cartes, stockage privé et tests des droits ; console connectée vérifiée sur ordinateur/mobile.
+- [ ] Vérifier un import réel Gemini et son repli : attend une clé Google valide saisie dans la console et des crédits Lovable pour le repli ; aucune clé réelle disponible, cartes publiées inchangées.
 - [x] Réorganiser les réglages restaurant et agence par thème ; enregistrements placés au bas des sections, barre visible pour les réglages principaux ; navigation connectée et conservation des changements vérifiées sur ordinateur/mobile sans enregistrer de données réelles.
 - [x] Add secure per-restaurant banner upload and removal in restaurant settings.
 - [x] Corriger l’incompatibilité PDF des anciens navigateurs : PDF.js 4.10.38 legacy + worker correspondant ; lecture réelle des noms/prix vérifiée connecté avec fonctions récentes désactivées, 7 tests réussis et compilation OK. L’analyse reste bloquée par le crédit IA insuffisant ; aucune carte publiée modifiée.
