@@ -154,8 +154,8 @@ export function sampleOrder(): TicketOrder {
   return {
     order_number: 999, customer_name: "Client test", phone: "06 00 00 00 00", mode: "pickup", slot: now, created_at: now,
     items: [
-      { name: "Wok poulet", qty: 2, total: 23.8, details: ["Nouilles sautées", "+ Sauce piquante"] },
-      { name: "California saumon", qty: 1, total: 6.5, details: ["Sans sésame"], allergens: ["poissons", "sesame", "soja"] },
+      { name: "Wok poulet", qty: 2, total: 25.8, category: "Woks signatures", details: ["Base : Nouilles sautées"], selected_options: [{ name: "Sauce piquante", price: 1 }] },
+      { name: "California saumon", qty: 1, total: 6.5, category: "California x8", details: ["Choix : Sans sésame"], allergens: ["poissons", "sesame", "soja"] },
     ],
     notes: "TICKET DE TEST", total: 30.3, payment_method: "on_site", source: "web",
   };
