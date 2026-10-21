@@ -1,7 +1,7 @@
 // Imprimante directe (ESC/POS) mémorisée par appareil : Bluetooth, USB/série, ou réseau Wi-Fi/Ethernet via le pont LC Print.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type PrinterType = "bluetooth" | "usb" | "network" | "rawbt";
-export type PrinterConfig = { type: PrinterType; name: string; host?: string; port?: number; bridgeUrl?: string; baud?: number };
+export type PrinterConfig = { type: PrinterType; name: string; host?: string; port?: number; bridgeUrl?: string; baud?: number; width?: 58 | 80 };
 
 const KEY = "lc-direct-printer";
 const BT_SERVICES = [
