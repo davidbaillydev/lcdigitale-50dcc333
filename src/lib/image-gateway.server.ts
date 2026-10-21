@@ -3,7 +3,7 @@ import { GeminiUnavailable } from "./menu-gemini.server";
 export type ImageConfig = { baseURL: string; apiKey: string; model: string };
 
 export const imageSettings = { baseURL: "https://ai.gateway.lovable.dev", model: "openai/gpt-image-2.5-sunburst" };
-export const GOOGLE_IMAGE_MODEL = "imagen-3.0-generate-002";
+export const GOOGLE_IMAGE_MODEL = "gemini-2.5-flash-image";
 
 export function generateImage(config: ImageConfig, prompt: string, stream = true) {
   return fetch(`${config.baseURL}/v1/images/generations`, {
@@ -13,32 +13,38 @@ export function generateImage(config: ImageConfig, prompt: string, stream = true
   });
 }
 
-/** Génère une photo via Imagen 3 et la clé Google privée de l'agence. */
+/** Génère une photo via Nano Banana (Gemini 2.5 Flash Image) et la clé Google privée de l'agence. */
 export async function generateGoogleImage(apiKey: string, prompt: string): Promise<string> {
   let response: Response;
   try {
-    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GOOGLE_IMAGE_MODEL}:predict`, {
+    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GOOGLE_IMAGE_MODEL}:generateContent`, {
       method: "POST",
       headers: { "x-goog-api-key": apiKey, "Content-Type": "application/json" },
       body: JSON.stringify({
-        instances: [{ prompt }],
-        parameters: { sampleCount: 1, aspectRatio: "3:2", personGeneration: "dont_allow" },
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: { responseModalities: ["IMAGE"], imageConfig: { aspectRatio: "3:2" } },
       }),
     });
   } catch {
-    throw new GeminiUnavailable("Service Google Imagen indisponible");
+    throw new GeminiUnavailable("Service Google Nano Banana indisponible");
   }
   if (!response.ok) {
     if (response.status === 400 || response.status === 401) throw new GeminiUnavailable("Clé Google rejetée");
-    if (response.status === 429) throw new GeminiUnavailable("Quota Google Imagen atteint");
-    if (response.status === 404 || response.status >= 500) throw new GeminiUnavailable("Service Google Imagen indisponible");
-    if (response.status === 403) throw new Error("Accès Google Imagen refusé. Vérifiez les autorisations du projet Google.");
-    throw new Error("Google Imagen a refusé la création de cette photo.");
+    if (response.status === 429) throw new GeminiUnavailable("Quota Google Nano Banana atteint");
+    if (response.status === 404 || response.status >= 500) throw new GeminiUnavailable("Service Google Nano Banana indisponible");
+    if (response.status === 403) throw new Error("Accès Google Nano Banana refusé. Vérifiez les autorisations du projet Google.");
+    throw new Error("Google a refusé la création de cette photo.");
   }
-  const payload = await response.json().catch(() => null) as { predictions?: { bytesBase64Encoded?: string; mimeType?: string }[] } | null;
-  const image = payload?.predictions?.[0]?.bytesBase64Encoded;
-  if (!image) throw new Error("Google Imagen n'a renvoyé aucune photo");
-  return image;
+  const payload = await response.json().catch(() => null) as {
+    promptFeedback?: { blockReason?: string };
+    candidates?: { finishReason?: string; content?: { parts?: { inlineData?: { data?: string }; inline_data?: { data?: string } }[] } }[];
+  } | null;
+  if (payload?.promptFeedback?.blockReason) throw new Error("Google a refusé la création de cette photo.");
+  for (const part of payload?.candidates?.[0]?.content?.parts ?? []) {
+    const data = part.inlineData?.data ?? part.inline_data?.data;
+    if (data) return data;
+  }
+  throw new Error("Google a refusé la création de cette photo.");
 }
 
 export function imageSse(image: string): Response {
