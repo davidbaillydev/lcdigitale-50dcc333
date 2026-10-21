@@ -69,7 +69,10 @@ function Page() {
           <p className="text-sm text-muted-foreground">Identité, logo et couleurs se modifient depuis la console (bouton « Modifier »).</p>
            <SettingsWorkspace agency>
              <RestaurantSettingsForm restaurant={r} onSaved={() => refetch()} />
-             <SettingsGroup name="payments"><PaymentProvidersPanel restaurantId={r.id} /></SettingsGroup>
+             <SettingsGroup name="payments">
+               <PaymentModulesPanel key={`pm-${r.id}`} restaurantId={r.id} initial={r.config} onSaved={() => refetch()} />
+               <PaymentProvidersPanel restaurantId={r.id} modules={paymentModulesOf(r.config)} />
+             </SettingsGroup>
              <SettingsGroup name="communication">
                <UpsellPanel key={`u-${r.id}`} restaurant={r} onSaved={() => refetch()} />
                <MarketingPanel restaurantId={r.id} marketing={r.config.marketing} onSaved={() => refetch()} />
