@@ -4,16 +4,16 @@ import { GeminiUnavailable } from "@/lib/menu-gemini.server";
 
 afterEach(() => vi.unstubAllGlobals());
 
-describe("Google Imagen dish photos", () => {
-  it("requests one 3:2 Imagen 3 photo without people", async () => {
-    const fetcher = vi.fn().mockResolvedValue(Response.json({ predictions: [{ bytesBase64Encoded: "YQ==" }] }));
+describe("Google Nano Banana dish photos", () => {
+  it("requests one 3:2 image from gemini-2.5-flash-image via generateContent", async () => {
+    const fetcher = vi.fn().mockResolvedValue(Response.json({ candidates: [{ content: { parts: [{ inlineData: { mimeType: "image/png", data: "YQ==" } }] } }] }));
     vi.stubGlobal("fetch", fetcher);
     await expect(generateGoogleImage("test-fixture", "Sushi")).resolves.toBe("YQ==");
     const [url, init] = fetcher.mock.calls[0] as [string, RequestInit];
-    expect(url).toContain(`${GOOGLE_IMAGE_MODEL}:predict`);
+    expect(url).toContain(`${GOOGLE_IMAGE_MODEL}:generateContent`);
     expect(JSON.parse(String(init.body))).toMatchObject({
-      instances: [{ prompt: "Sushi" }],
-      parameters: { sampleCount: 1, aspectRatio: "3:2", personGeneration: "dont_allow" },
+      contents: [{ parts: [{ text: "Sushi" }] }],
+      generationConfig: { responseModalities: ["IMAGE"], imageConfig: { aspectRatio: "3:2" } },
     });
   });
 
@@ -24,6 +24,11 @@ describe("Google Imagen dish photos", () => {
 
   it("does not fall back after an access denial", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("{}", { status: 403 })));
+    await expect(generateGoogleImage("test-fixture", "Sushi")).rejects.toThrow("refusé");
+  });
+
+  it("treats a blocked prompt as a refusal, not a fallback", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ promptFeedback: { blockReason: "SAFETY" } })));
     await expect(generateGoogleImage("test-fixture", "Sushi")).rejects.toThrow("refusé");
   });
 
