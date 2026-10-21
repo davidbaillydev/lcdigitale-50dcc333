@@ -434,6 +434,15 @@ function Kitchen() {
         })}
       </div>
       {locked && rid && <KitchenLock restaurantId={rid} name={restaurant?.name ?? ""} onUnlock={() => setLock(false)} />}
+      <TicketPreviewDialog
+        order={preview?.order ?? null}
+        kinds={preview?.kinds ?? ["kitchen"]}
+        shop={{ name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null }}
+        width={printing.width}
+        kitchen={printing.kitchen}
+        onClose={() => setPreview(null)}
+        onPrint={(o, kinds) => { setPreview(null); void doPrint(o as Order, kinds); }}
+      />
     </div>
   );
 }
