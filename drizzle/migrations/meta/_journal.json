@@ -113,6 +113,13 @@
       "when": 1792560930161,
       "tag": "0015_agency_menu_ai_credentials",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792561127344,
+      "tag": "0016_menu_ai_fallback_status",
+      "breakpoints": true
     }
   ]
 }

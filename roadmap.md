@@ -1,3 +1,4 @@
+- [ ] Ajouter le repli automatique Gemini → Lovable AI pour clé rejetée, quotas ou indisponibilité, avec avertissement agence ; jamais contourner un refus de contenu ou d’accès.
 - [ ] Ajouter la clé Gemini agence pour l’analyse des cartes, stockage privé et tests des droits ; validation réelle attend une clé fournie dans la console.
 - [x] Réorganiser les réglages restaurant et agence par thème ; enregistrements placés au bas des sections, barre visible pour les réglages principaux ; navigation connectée et conservation des changements vérifiées sur ordinateur/mobile sans enregistrer de données réelles.
 - [x] Add secure per-restaurant banner upload and removal in restaurant settings.

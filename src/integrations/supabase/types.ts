@@ -18,16 +18,22 @@ export type Database = {
         Row: {
           api_key: string
           id: string
+          last_fallback_at: string | null
+          last_fallback_reason: string | null
           updated_at: string
         }
         Insert: {
           api_key: string
           id: string
+          last_fallback_at?: string | null
+          last_fallback_reason?: string | null
           updated_at?: string
         }
         Update: {
           api_key?: string
           id?: string
+          last_fallback_at?: string | null
+          last_fallback_reason?: string | null
           updated_at?: string
         }
         Relationships: []
