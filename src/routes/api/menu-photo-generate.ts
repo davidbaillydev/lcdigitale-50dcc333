@@ -42,7 +42,7 @@ export const Route = createFileRoute("/api/menu-photo-generate")({
         return imageSse(await generateGoogleImage(google.api_key, prompt));
       } catch (error) {
         if (!(error instanceof GeminiUnavailable)) {
-          const message = error instanceof Error ? error.message : "Création Google Imagen impossible";
+          const message = error instanceof Error ? error.message : "Création Google impossible";
           return new Response(message, { status: /refusé/.test(message) ? 400 : 502 });
         }
         await supabaseAdmin.from("agency_menu_ai_credentials").update({
