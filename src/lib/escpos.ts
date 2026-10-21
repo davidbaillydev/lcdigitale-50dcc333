@@ -12,7 +12,8 @@ class Enc {
   b: number[] = [];
   raw(...n: number[]) { this.b.push(...n); return this; }
   text(s: string) {
-    for (const ch of s) {
+    const clean = s.replace(/[’‘‛`´]/g, "'").replace(/[“”]/g, '"').replace(/œ/g, "oe").replace(/Œ/g, "OE");
+    for (const ch of clean) {
       const c = ch.charCodeAt(0);
       if (c < 128) this.b.push(c);
       else if (CP858[ch] != null) this.b.push(CP858[ch]);
