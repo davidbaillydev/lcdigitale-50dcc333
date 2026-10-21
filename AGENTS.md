@@ -13,7 +13,7 @@
 - Customer orders are inserted by a public server function with the admin client; staff read/update orders via RLS (`can_access_restaurant`) and Realtime filtered by restaurant_id.
 - Agency admins use user_roles and agency-verified invitations only; restaurant roles use restaurant_members. Why: no public privilege grants.
 - Site/kiosk/courier use BrandTheme; authenticated screens/dialogs use editorial tokens with restaurant logos. Why: recognizable restaurants, consistent administration.
-- Authenticated menu imports stay staged in the editor until manager review/save; uploads are not persisted. Why: uncertain AI extraction must never silently replace live prices or another restaurant's menu.
+- Menu imports stay staged; uploads are not persisted. Agency-only Gemini key in a service-role-only singleton, presence returned only; use Gemini if set, else existing Lovable AI, no failure fallback. Why: protect keys and live menus.
 - Private screens live under `src/routes/_authenticated/`: `/admin/*` (agency only, has_role gate in admin.tsx beforeLoad) and `/espace/*` (restaurateurs: per-restaurant pages check membership); every server function re-checks the role. Why: UI gates are UX, server checks are the boundary.
 - Restaurateur accounts are invite-only (public signup disabled; inviteMember adds restaurant_members, invite lands on /reset-password). Team lists expose only that restaurant's members. Why: no cross-restaurant email exposure or self-signup.
 - Ordering rules (enabled modes, accepted payments, autoAccept, lead times, delivery zones/fees) live in restaurants.config/delivery, edited by RestaurantSettingsForm and enforced server-side in createOrder/createKioskOrder. Why: one source of truth for site, kiosk and kitchen.
@@ -24,7 +24,7 @@
 - Phone orders (Vapi voice assistant) arrive via /api/public/vapi/$restaurantId, authenticated by a per-restaurant x-vapi-secret stored in `restaurant_voice_channels` (service-role only, agency-managed); source 'phone', server prices; web voice SDK (public key + assistant id) is client-only. Why: never trust callers, no SSR import.
 - Legal pages come from src/lib/legal.ts templates + restaurants.legal (agency writes); orders store CGV acceptance server-side. Why: compliant by default, traceable.
 - Reservations: public fns insert via admin + Stripe SetupIntent (restaurant keys, no charge); staff use RLS + Realtime; no-show is an off-session PaymentIntent. Why: guarantee without fees.
-- Public restaurant data: TanStack Query cache 15 min; live data uses Realtime. Why: fewer reads, fresh service data.
+- Public restaurant data: Query cache 15 min, Realtime for live data. Why: fewer reads, fresh data.
 - Kitchen and courier PINs: hashed in service-role-only tables (`restaurant_kitchen_pins`, `restaurant_courier_pins`) with attempt lockout; courier sessions are HMAC tokens keyed on the PIN hash. Why: no extra accounts, PIN change revokes sessions.
 - Invoice transmission stays disabled pending provider and compliance validation; PDFs alone are not fiscal compliance.
 - Kitchen: column scrolling, collapsible nav, fullscreen dialogs, safe-area insets.
