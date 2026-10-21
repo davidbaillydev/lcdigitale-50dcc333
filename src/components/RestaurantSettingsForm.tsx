@@ -184,13 +184,29 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
       </Section>}
 
       <Section group="payments" title="Paiements acceptés">
-        <Toggle label="Paiement au retrait / à la livraison (site)" checked={s.config.payments.on_site} onChange={(v) => cfg({ payments: { ...s.config.payments, on_site: v } })} />
-        {agency && <Toggle label="Borne 100 % carte bancaire (Voie B — dispense de caisse sécurisée)" checked={!!s.config.kiosk?.cardOnly} onChange={(v) => cfg({ kiosk: { cardOnly: v }, ...(v ? { payments: { ...s.config.payments, counter: false, card_terminal: true } } : {}) })} />}
-        {s.config.kiosk?.cardOnly && <p className="mb-2 rounded bg-muted p-2 text-sm text-muted-foreground">La borne n'accepte que la carte sur son terminal connecté (Stripe Terminal, Mollie POS ou SumUp). Aucune espèce, chèque ou ticket restaurant papier n'est proposé ni enregistré ; une commande n'est envoyée en cuisine qu'une fois le paiement accepté (BOI-TVA-DECLA-30-10-30, § 35 et § 37 ex. 4).</p>}
-        <Toggle label="Payer au comptoir — espèces, tickets resto (borne)" checked={s.config.payments.counter && !s.config.kiosk?.cardOnly} onChange={(v) => { if (!s.config.kiosk?.cardOnly) cfg({ payments: { ...s.config.payments, counter: v } }); }} />
-        <Toggle label="Carte bancaire au comptoir (borne)" checked={s.config.payments.card_terminal} onChange={(v) => cfg({ payments: { ...s.config.payments, card_terminal: v } })} />
-        <Toggle label="QR code de paiement sur téléphone (borne — Mollie ou Stripe)" checked={!!s.config.payments.qr} onChange={(v) => cfg({ payments: { ...s.config.payments, qr: v } })} />
-        <p className="mt-2 text-sm text-muted-foreground">Le paiement en ligne par carte n'est pas encore activé.</p>
+        <div className="space-y-6">
+          <div>
+            <p className="mb-2 text-sm font-semibold">Sur le site de commande</p>
+            <div className="space-y-1 rounded-lg border border-border p-3">
+              <Toggle label="Paiement en ligne par carte (Stripe, Mollie, PayPal, Lyra)" hint="S'active en connectant un prestataire dans la section « Prestataires de paiement » ci-dessous." checked={false} onChange={() => { /* informatif : dépend des prestataires connectés */ }} />
+              <Toggle label="Paiement au retrait ou à la livraison" hint="Le client règle en mains propres (espèces, carte, tickets resto)." checked={s.config.payments.on_site} onChange={(v) => cfg({ payments: { ...s.config.payments, on_site: v } })} />
+            </div>
+          </div>
+          <div>
+            <p className="mb-2 text-sm font-semibold">Sur la borne tactile</p>
+            <div className="space-y-1 rounded-lg border border-border p-3">
+              <Toggle label="Carte bancaire sur le terminal de la borne" hint="Le client paie sur le TPE connecté (Stripe Terminal, Mollie POS ou SumUp)." checked={s.config.payments.card_terminal} onChange={(v) => cfg({ payments: { ...s.config.payments, card_terminal: v } })} />
+              <Toggle label="QR code de paiement sur téléphone" hint="Le client scanne un QR code et paie en ligne (Mollie ou Stripe)." checked={!!s.config.payments.qr} onChange={(v) => cfg({ payments: { ...s.config.payments, qr: v } })} />
+              <Toggle label="Payer au comptoir — espèces, tickets resto" hint="La borne émet un bon de pré-commande à régler en caisse." checked={s.config.payments.counter && !s.config.kiosk?.cardOnly} onChange={(v) => { if (!s.config.kiosk?.cardOnly) cfg({ payments: { ...s.config.payments, counter: v } }); }} />
+            </div>
+          </div>
+          {agency && (
+            <div className="rounded-lg border border-border p-3">
+              <Toggle label="Borne 100 % carte bancaire (Voie B — dispense de caisse sécurisée)" checked={!!s.config.kiosk?.cardOnly} onChange={(v) => cfg({ kiosk: { cardOnly: v }, ...(v ? { payments: { ...s.config.payments, counter: false, card_terminal: true } } : {}) })} />
+              {s.config.kiosk?.cardOnly && <p className="mt-2 rounded bg-muted p-2 text-sm text-muted-foreground">La borne n'accepte que la carte sur son terminal connecté (Stripe Terminal, Mollie POS ou SumUp). Aucune espèce, chèque ou ticket restaurant papier n'est proposé ni enregistré ; une commande n'est envoyée en cuisine qu'une fois le paiement accepté (BOI-TVA-DECLA-30-10-30, § 35 et § 37 ex. 4).</p>}
+            </div>
+          )}
+        </div>
       </Section>
 
       <Section group="delivery" title="Livraison">
