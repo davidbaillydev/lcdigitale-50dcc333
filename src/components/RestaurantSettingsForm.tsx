@@ -186,18 +186,18 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
       <Section group="payments" title="Paiements acceptés">
         <div className="space-y-6">
           <div>
-            <p className="mb-2 text-sm font-semibold">Sur le site de commande</p>
+            <p className="mb-2 text-sm font-semibold">Site de commande en ligne</p>
             <div className="space-y-1 rounded-lg border border-border p-3">
-              <Toggle label="Paiement au retrait ou à la livraison" hint="Le client règle en mains propres (espèces, carte, tickets resto)." checked={s.config.payments.on_site} onChange={(v) => cfg({ payments: { ...s.config.payments, on_site: v } })} />
-              <p className="pt-1 text-sm text-muted-foreground">Le paiement en ligne par carte s'active en connectant un prestataire (Stripe, Mollie, PayPal ou Lyra) dans la section « Prestataires de paiement » ci-dessous.</p>
+              <Toggle label="Paiement à la remise de la commande" hint="Le client commande sur le site et paie en mains propres au retrait ou à la livraison (espèces, carte ou tickets restaurant)." checked={s.config.payments.on_site} onChange={(v) => cfg({ payments: { ...s.config.payments, on_site: v } })} />
+              <p className="pt-1 text-sm text-muted-foreground">Le paiement en ligne par carte sur le site s'active en connectant un prestataire (Stripe, Mollie, PayPal ou Lyra) dans la section « Prestataires de paiement » ci-dessous.</p>
             </div>
           </div>
           <div>
-            <p className="mb-2 text-sm font-semibold">Sur la borne tactile</p>
+            <p className="mb-2 text-sm font-semibold">Borne tactile en magasin</p>
             <div className="space-y-1 rounded-lg border border-border p-3">
-              <Toggle label="Carte bancaire sur le terminal de la borne" hint="Le client paie sur le TPE connecté (Stripe Terminal, Mollie POS ou SumUp)." checked={s.config.payments.card_terminal} onChange={(v) => cfg({ payments: { ...s.config.payments, card_terminal: v } })} />
-              <Toggle label="QR code de paiement sur téléphone" hint="Le client scanne un QR code et paie en ligne (Mollie ou Stripe)." checked={!!s.config.payments.qr} onChange={(v) => cfg({ payments: { ...s.config.payments, qr: v } })} />
-              <Toggle label="Payer au comptoir — espèces, tickets resto" hint="La borne émet un bon de pré-commande à régler en caisse." checked={s.config.payments.counter && !s.config.kiosk?.cardOnly} onChange={(v) => { if (!s.config.kiosk?.cardOnly) cfg({ payments: { ...s.config.payments, counter: v } }); }} />
+              <Toggle label="Carte bancaire sur le terminal de paiement relié à la borne" hint="Le client insère ou approche sa carte sur le TPE de la borne (Stripe Terminal, Mollie POS ou SumUp) ; la commande part en cuisine une fois le paiement accepté." checked={s.config.payments.card_terminal} onChange={(v) => cfg({ payments: { ...s.config.payments, card_terminal: v } })} />
+              <Toggle label="QR code affiché sur la borne" hint="Le client scanne le QR code avec son téléphone et paie en ligne (Mollie ou Stripe) ; la commande est validée automatiquement après paiement." checked={!!s.config.payments.qr} onChange={(v) => cfg({ payments: { ...s.config.payments, qr: v } })} />
+              <Toggle label="Paiement au comptoir" hint="La borne imprime un bon de pré-commande non fiscal ; le client le présente en caisse et paie au comptoir (espèces, carte ou tickets restaurant)." checked={s.config.payments.counter && !s.config.kiosk?.cardOnly} onChange={(v) => { if (!s.config.kiosk?.cardOnly) cfg({ payments: { ...s.config.payments, counter: v } }); }} />
             </div>
           </div>
           {agency && (
