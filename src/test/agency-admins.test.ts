@@ -79,3 +79,44 @@ describe("Administrateurs agence", () => {
     expect(mocks.invite).not.toHaveBeenCalled();
   });
 });
+describe("Révocation des administrateurs", () => {
+  it("interdit de retirer son propre accès", async () => {
+    await expect(revokeAdmin({ context, data: { userId: "agency-user" } })).rejects.toThrow("propre accès");
+    expect(mocks.del).not.toHaveBeenCalled();
+  });
+  it("protège le dernier administrateur", async () => {
+    mocks.eqData = [{ user_id: "last-admin" }];
+    await expect(revokeAdmin({ context, data: { userId: "last-admin" } })).rejects.toThrow("dernier administrateur");
+    expect(mocks.del).not.toHaveBeenCalled();
+  });
+  it("refuse un compte qui n'est pas administrateur", async () => {
+    mocks.eqData = [{ user_id: "someone-else" }, { user_id: "another" }];
+    await expect(revokeAdmin({ context, data: { userId: "not-admin" } })).rejects.toThrow("pas administrateur");
+    expect(mocks.del).not.toHaveBeenCalled();
+  });
+  it("retire un administrateur quand il en reste d'autres", async () => {
+    mocks.eqData = [{ user_id: "target" }, { user_id: "other" }];
+    expect(await revokeAdmin({ context, data: { userId: "target" } })).toEqual({ ok: true });
+    expect(mocks.del).toHaveBeenCalled();
+  });
+  it("exige le rôle agence", async () => {
+    mocks.rpc.mockResolvedValue({ data: false, error: null });
+    await expect(revokeAdmin({ context, data: { userId: "target" } })).rejects.toThrow("Réservé");
+  });
+});
+describe("Suppression des comptes à accès limité", () => {
+  it("interdit de supprimer son propre compte", async () => {
+    await expect(deleteAccount({ context, data: { userId: "agency-user" } })).rejects.toThrow("propre compte");
+    expect(mocks.deleteUser).not.toHaveBeenCalled();
+  });
+  it("refuse de supprimer un administrateur agence", async () => {
+    mocks.maybeSingle.mockResolvedValue({ data: { id: "role-1" }, error: null });
+    await expect(deleteAccount({ context, data: { userId: "admin-user" } })).rejects.toThrow("administrateur");
+    expect(mocks.deleteUser).not.toHaveBeenCalled();
+  });
+  it("retire les accès puis supprime le compte", async () => {
+    expect(await deleteAccount({ context, data: { userId: "limited-user" } })).toEqual({ ok: true });
+    expect(mocks.del).toHaveBeenCalled();
+    expect(mocks.deleteUser).toHaveBeenCalledWith("limited-user");
+  });
+});
