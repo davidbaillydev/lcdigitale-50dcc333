@@ -16,6 +16,7 @@ import { LegalPanel } from "@/components/LegalPanel";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/lib/theme";
 import { BrandLogo } from "@/lib/brand";
+import { SettingsGroup, SettingsWorkspace } from "@/components/SettingsWorkspace";
 
 export const Route = createFileRoute("/_authenticated/admin/$slug")({
   head: () => ({
@@ -66,15 +67,23 @@ function Page() {
             <Button asChild variant="secondary"><a href={`/${slug}/borne`} target="_blank" rel="noreferrer"><Tablet /> Borne</a></Button>
           </div>
           <p className="text-sm text-muted-foreground">Identité, logo et couleurs se modifient depuis la console (bouton « Modifier »).</p>
-          <FeaturesPanel restaurantId={r.id} initial={r.enabled_features} onSaved={() => refetch()} />
-          <CustomDomainPanel key={`d-${r.id}`} restaurantId={r.id} initial={(r.config as { customDomains?: string[] }).customDomains} onSaved={() => refetch()} />
-          <RestaurantSettingsForm restaurant={r} onSaved={() => refetch()} />
-          <UpsellPanel key={`u-${r.id}`} restaurant={r} onSaved={() => refetch()} />
-          <PaymentProvidersPanel restaurantId={r.id} />
-          <VoiceChannelPanel restaurantId={r.id} />
-          <VapiWebPanel key={r.id} restaurant={r} onSaved={() => refetch()} />
-          <MarketingPanel restaurantId={r.id} marketing={r.config.marketing} onSaved={() => refetch()} />
-          <LegalPanel key={`legal-${r.id}-${r.legal?.updatedAt ?? ""}`} restaurant={r} onSaved={() => refetch()} />
+           <SettingsWorkspace agency>
+             <RestaurantSettingsForm restaurant={r} onSaved={() => refetch()} />
+             <SettingsGroup name="payments"><PaymentProvidersPanel restaurantId={r.id} /></SettingsGroup>
+             <SettingsGroup name="communication">
+               <UpsellPanel key={`u-${r.id}`} restaurant={r} onSaved={() => refetch()} />
+               <MarketingPanel restaurantId={r.id} marketing={r.config.marketing} onSaved={() => refetch()} />
+             </SettingsGroup>
+             <SettingsGroup name="integrations">
+               <CustomDomainPanel key={`d-${r.id}`} restaurantId={r.id} initial={(r.config as { customDomains?: string[] }).customDomains} onSaved={() => refetch()} />
+               <VoiceChannelPanel restaurantId={r.id} />
+               <VapiWebPanel key={r.id} restaurant={r} onSaved={() => refetch()} />
+             </SettingsGroup>
+             <SettingsGroup name="agency">
+               <FeaturesPanel restaurantId={r.id} initial={r.enabled_features} onSaved={() => refetch()} />
+               <LegalPanel key={`legal-${r.id}-${r.legal?.updatedAt ?? ""}`} restaurant={r} onSaved={() => refetch()} />
+             </SettingsGroup>
+           </SettingsWorkspace>
         </>
       )}
     </div>

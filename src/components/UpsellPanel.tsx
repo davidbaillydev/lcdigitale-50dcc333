@@ -67,7 +67,7 @@ export function UpsellPanel({ restaurant, onSaved }: { restaurant: Pick<Restaura
           </div>
         </div>
       )}
-      <Button onClick={submit} disabled={busy} className="min-h-11">Enregistrer les suggestions</Button>
+      <div className="flex justify-end border-t border-border pt-4"><Button onClick={submit} disabled={busy} className="min-h-11 w-full sm:w-auto">{busy ? "Enregistrement…" : "Enregistrer les suggestions"}</Button></div>
     </section>
   );
 }

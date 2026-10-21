@@ -15,6 +15,7 @@ import { ThemeToggle } from "@/lib/theme";
 import { useStaff } from "@/hooks/use-staff";
 import { useRestaurantFeatures } from "@/hooks/use-restaurant-features";
 import { PosConnectorPanel } from "@/components/PosConnectorPanel";
+import { SettingsGroup, SettingsWorkspace } from "@/components/SettingsWorkspace";
 
 export const Route = createFileRoute("/_authenticated/espace/$slug/reglages")({
   head: () => ({
@@ -42,13 +43,19 @@ function Page() {
       <RestaurantNav slug={slug} className="print:hidden" />
       <h1 className="text-5xl">Réglages {data?.name ?? ""}</h1>
       {error && <p className="text-destructive">{(error as Error).message}</p>}
-      {data && <RestaurantSettingsForm restaurant={data} onSaved={() => refetch()} agency={isAgency} />}
-      {data && isAgency && <PaymentProvidersPanel restaurantId={data.id} />}
-      {data && isAgency && features.pos_sync && <PosConnectorPanel restaurantId={data.id} />}
-      {data && <NotificationsPanel key={`n-${data.id}`} restaurantId={data.id} notifications={(data.config as { notifications?: { received?: boolean; confirmed?: boolean; restaurant?: boolean; email?: string } }).notifications} defaultEmail={data.email ?? null} onSaved={() => refetch()} />}
-      {data && <UpsellPanel key={`u-${data.id}`} restaurant={data} onSaved={() => refetch()} />}
-      {data && <VapiWebPanel key={data.id} restaurant={data} onSaved={() => refetch()} />}
-      {data && <MarketingPanel restaurantId={data.id} marketing={data.config.marketing} onSaved={() => refetch()} />}
+       {data && <SettingsWorkspace agency={isAgency}>
+         <RestaurantSettingsForm restaurant={data} onSaved={() => refetch()} agency={isAgency} />
+         {isAgency && <SettingsGroup name="payments"><PaymentProvidersPanel restaurantId={data.id} /></SettingsGroup>}
+         <SettingsGroup name="communication">
+           <NotificationsPanel key={`n-${data.id}`} restaurantId={data.id} notifications={(data.config as { notifications?: { received?: boolean; confirmed?: boolean; restaurant?: boolean; email?: string } }).notifications} defaultEmail={data.email ?? null} onSaved={() => refetch()} />
+           <UpsellPanel key={`u-${data.id}`} restaurant={data} onSaved={() => refetch()} />
+           <MarketingPanel restaurantId={data.id} marketing={data.config.marketing} onSaved={() => refetch()} />
+         </SettingsGroup>
+         <SettingsGroup name="integrations">
+           {isAgency && features.pos_sync && <PosConnectorPanel restaurantId={data.id} />}
+           <VapiWebPanel key={data.id} restaurant={data} onSaved={() => refetch()} />
+         </SettingsGroup>
+       </SettingsWorkspace>}
       {data && !isAgency && <p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">Paiements en ligne, impression des tickets, logo et bannière sont gérés par votre agence LC Digitale. Contactez-la pour toute modification.</p>}
     </div>
   );
