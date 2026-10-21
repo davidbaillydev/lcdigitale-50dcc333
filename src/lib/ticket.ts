@@ -10,7 +10,7 @@ export type TicketKind = "kitchen" | "receipt";
 export type TicketOrder = {
   order_number: number; customer_name?: string | null; phone?: string | null; mode: string;
   address?: string | null; city?: string | null; slot: string; created_at?: string;
-  items: { name: string; qty: number; total?: number; details?: string[]; allergens?: string[]; size?: { name: string } | null; selected_options?: { name: string; price: number }[] }[];
+  items: { name: string; qty: number; total?: number; category?: string; details?: string[]; allergens?: string[]; size?: { name: string } | null; selected_options?: { name: string; price: number }[] }[];
   notes?: string | null; total: number | string; delivery_fee?: number | string | null; service_fee?: number | string | null;
   discount?: number | string | null; promo_code?: string | null;
   payment_method: string; payment_status?: string | null; source?: string | null; table_label?: string | null; room_label?: string | null;
@@ -67,9 +67,10 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
     : { ...printingDefaults().kitchen, ...(fieldsIn ?? {}) };
   const big = width === 80 ? 15 : 12;
   const items = o.items.map((it) => `
+    <div class="cat">${esc(it.category ?? "Carte").toUpperCase()}</div>
     <div class="row"><b>${it.qty}× ${esc(itemTitle(it))}</b>${f.prices && it.total != null ? `<span>${eur(it.total)}</span>` : ""}</div>
-    ${(f.options ? it.details ?? [] : []).map((d) => `<div class="det">${esc(d)}</div>`).join("")}
-    ${(f.options ? it.selected_options ?? [] : []).map((op) => `<div class="row det"><b>+ ${esc(op.name)}</b>${f.prices && op.price ? `<span>+${eur(op.price)}</span>` : ""}</div>`).join("")}
+    ${(f.options ? it.details ?? [] : []).map((d) => `<div class="det"><b>Choix inclus :</b> ${esc(d)}</div>`).join("")}
+    ${(f.options ? it.selected_options ?? [] : []).map((op) => `<div class="row det"><b>Supplément : + ${esc(op.name)}</b>${op.price ? `<span>+${eur(op.price)}</span>` : ""}</div>`).join("")}
     ${f.allergens && it.allergens?.length ? `<div class="alg">⚠ ALLERGÈNES : ${it.allergens.map((a) => esc(allergenLabel(a)).toUpperCase()).join(", ")}</div>` : ""}`).join("");
   const allAlg = [...new Set(o.items.flatMap((i) => i.allergens ?? []))];
   return `<!doctype html><html><head><meta charset="utf-8"><title>Ticket ${o.order_number}</title><style>
@@ -78,10 +79,11 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
     body { width: ${width}mm; margin: 0; padding: 3mm; font: ${big}px/1.3 "Courier New", monospace; color: #000; background: #fff; }
     .c { text-align: center; } .xl { font-size: ${big * 2}px; font-weight: bold; } .l { font-size: ${big * 1.3}px; font-weight: bold; }
     .row { display: flex; justify-content: space-between; gap: 4px; margin-top: 4px; }
+    .cat { display: inline-block; border: 1px solid #000; padding: 1px 4px; margin-top: 6px; font-size: ${big - 3}px; font-weight: bold; letter-spacing: .04em; }
     .det { padding-left: 10px; font-size: ${big - 2}px; }
     hr { border: 0; border-top: 1px dashed #000; margin: 6px 0; }
     .alg { padding-left: 10px; font-size: ${big - 2}px; font-weight: bold; }
-    .note { border: 2px solid #000; padding: 4px; margin-top: 6px; font-weight: bold; }
+    .note { border: 3px double #000; padding: 6px; margin-top: 8px; font-weight: bold; font-size: ${big + 1}px; background: #fff; }
     .box { border: 2px solid #000; padding: 6px; margin-top: 6px; display: flex; justify-content: space-around; font-weight: bold; }
     .ck { display: inline-block; width: 1em; height: 1em; border: 2px solid #000; vertical-align: -2px; margin-right: 4px; text-align: center; line-height: .9em; }
     .band { background: #000; color: #fff; padding: 3px 6px; font-weight: bold; text-align: center; margin-top: 4px; }
@@ -152,8 +154,8 @@ export function sampleOrder(): TicketOrder {
   return {
     order_number: 999, customer_name: "Client test", phone: "06 00 00 00 00", mode: "pickup", slot: now, created_at: now,
     items: [
-      { name: "Wok poulet", qty: 2, total: 23.8, details: ["Nouilles sautées", "+ Sauce piquante"] },
-      { name: "California saumon", qty: 1, total: 6.5, details: ["Sans sésame"], allergens: ["poissons", "sesame", "soja"] },
+      { name: "Wok poulet", qty: 2, total: 25.8, category: "Woks signatures", details: ["Base : Nouilles sautées"], selected_options: [{ name: "Sauce piquante", price: 1 }] },
+      { name: "California saumon", qty: 1, total: 6.5, category: "California x8", details: ["Choix : Sans sésame"], allergens: ["poissons", "sesame", "soja"] },
     ],
     notes: "TICKET DE TEST", total: 30.3, payment_method: "on_site", source: "web",
   };

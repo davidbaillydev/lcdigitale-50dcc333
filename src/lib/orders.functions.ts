@@ -50,6 +50,10 @@ function backParam(returnTo?: string, ref?: string): string {
   } catch { return ""; }
 }
 
+function categoryOf(catalog: ReturnType<typeof getCatalog>, itemId: string) {
+  return catalog.categories.find((c) => c.items.some((i) => i.id === itemId))?.label;
+}
+
 export const createOrder = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => orderSchema.parse(d))
   .handler(async ({ data }) => {
@@ -104,7 +108,7 @@ export const createOrder = createServerFn({ method: "POST" })
       if (soldOut.has(item.id)) throw new Error(`« ${item.name} » est momentanément épuisé. Retirez-le de votre panier.`);
       const err = validateSelections(item, l.sel);
       if (err) throw new Error(err);
-      return orderLine(item, l.sel, l.qty);
+      return orderLine(item, l.sel, l.qty, categoryOf(catalog, item.id));
     });
     const subtotal = Math.round(items.reduce((s, i) => s + i.total, 0) * 100) / 100;
 
@@ -263,7 +267,7 @@ export const createKioskOrder = createServerFn({ method: "POST" })
       if (soldOut.has(item.id)) throw new Error(`« ${item.name} » est momentanément épuisé. Retirez-le de votre panier.`);
       const err = validateSelections(item, l.sel);
       if (err) throw new Error(err);
-      return orderLine(item, l.sel, l.qty);
+      return orderLine(item, l.sel, l.qty, categoryOf(catalog, item.id));
     });
     const subtotal = Math.round(items.reduce((s, i) => s + i.total, 0) * 100) / 100;
     const { resolveDiscount } = await import("./promo.server");

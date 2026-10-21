@@ -12,7 +12,8 @@ class Enc {
   b: number[] = [];
   raw(...n: number[]) { this.b.push(...n); return this; }
   text(s: string) {
-    for (const ch of s) {
+    const clean = s.replace(/[’‘‛`´]/g, "'").replace(/[“”]/g, '"').replace(/œ/g, "oe").replace(/Œ/g, "OE");
+    for (const ch of clean) {
       const c = ch.charCodeAt(0);
       if (c < 128) this.b.push(c);
       else if (CP858[ch] != null) this.b.push(CP858[ch]);
@@ -57,17 +58,23 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
   if (o.mode === "delivery" && o.address) wrap(`${o.address}, ${o.city ?? ""}`, cols).forEach((l) => e.line(l));
   e.align(0).line(hr);
   for (const it of o.items) {
+    e.bold(true).line(`[ ${(it.category ?? "Carte").toUpperCase()} ]`).bold(false);
     e.bold(true);
     const name = `${it.qty}x ${itemTitle(it)}`;
     if (f.prices && it.total != null) e.line(lr(name, eur(it.total), cols)); else wrap(name, cols).forEach((l) => e.line(l));
     e.bold(false);
-    if (f.options) for (const d of it.details ?? []) wrap(`  ${d}`, cols).forEach((l) => e.line(l));
-    if (f.options) for (const op of it.selected_options ?? []) { const t = `  + ${op.name}`; if (f.prices && op.price) e.line(lr(t, `+${eur(op.price)}`, cols)); else wrap(t, cols).forEach((l) => e.line(l)); }
+    if (f.options) for (const d of it.details ?? []) wrap(`  Choix inclus : ${d}`, cols).forEach((l) => e.line(l));
+    if (f.options) for (const op of it.selected_options ?? []) { const t = `  Supplement : + ${op.name}`; if (op.price) e.line(lr(t, `+${eur(op.price)}`, cols)); else wrap(t, cols).forEach((l) => e.line(l)); }
     if (f.allergens && it.allergens?.length) { e.bold(true); wrap(`  ! ALLERGENES : ${it.allergens.map((a) => allergenLabel(a).toUpperCase()).join(", ")}`, cols).forEach((l) => e.line(l)); e.bold(false); }
   }
   const allAlg = [...new Set(o.items.flatMap((i) => i.allergens ?? []))];
   if (f.allergens && kind === "kitchen" && allAlg.length) { e.line(hr).bold(true); wrap(`ALLERGENES COMMANDE : ${allAlg.map(allergenLabel).join(", ")}`, cols).forEach((l) => e.line(l)); e.bold(false); }
-  if (f.notes && o.notes) { e.line(hr).bold(true); wrap(`! REMARQUE CLIENT : ${o.notes}`, cols).forEach((l) => e.line(l)); e.bold(false); }
+  if (f.notes && o.notes) {
+    const border = "=".repeat(cols);
+    e.line(hr).bold(true).size(1, 2).line(border);
+    wrap(`! REMARQUE CLIENT : ${o.notes}`, cols).forEach((l) => e.line(l));
+    e.line(border).size(1, 1).bold(false);
+  }
   e.line(hr);
   if (f.prices && Number(o.delivery_fee) > 0) e.line(lr("Livraison", eur(o.delivery_fee), cols));
   if (f.prices && Number(o.service_fee) > 0) e.line(lr("Frais de service", eur(o.service_fee), cols));

@@ -92,7 +92,8 @@ export const Route = createFileRoute("/api/public/vapi/$restaurantId")({
                 const sel = l.sel ?? {};
                 const err = validateSelections(item, sel);
                 if (err) throw new Error(`${item.name} : ${err}`);
-                const line = orderLine(item, sel, l.qty);
+                const category = catalog.categories.find((c) => c.items.some((i) => i.id === item.id))?.label;
+                const line = orderLine(item, sel, l.qty, category);
                 return { ...line, details: [...line.details, ...(l.notes ? [l.notes] : [])] };
               });
               const subtotal = Math.round(items.reduce((s, i) => s + i.total, 0) * 100) / 100;

@@ -1,3 +1,4 @@
+- [x] Clarifier les tickets : catégorie par article, choix inclus vs suppléments payants, remarques encadrées et accents/apostrophes thermiques ; tests unitaires réussis.
 - [x] Ajouter le repli automatique Gemini → Lovable AI pour clé rejetée, quotas ou indisponibilité, avec avertissement agence ; refus de contenu et d’accès sans repli, tests réussis.
 - [x] Brancher Google Imagen 3 pour les photos de plats avec la clé Google agence et repli Lovable AI ; tests unitaires réussis.
 - [ ] Vérifier un import réel Gemini, une photo Imagen 3 et leurs replis : attend une clé Google valide saisie dans la console et des crédits Lovable ; aucune clé réelle disponible, cartes publiées inchangées.

@@ -304,12 +304,13 @@ export function selectedExtras(item: MenuItem, sel: Selections): { size: Selecte
 }
 
 /** Ligne de commande calculée côté serveur (prix jamais repris du navigateur). */
-export function orderLine(item: MenuItem, sel: Selections, qty: number) {
+export function orderLine(item: MenuItem, sel: Selections, qty: number, category?: string) {
   const unit = unitPrice(item, sel);
   const { size, selected_options } = selectedExtras(item, sel);
   return {
     id: item.id, name: item.name, qty, unit, total: Math.round(unit * qty * 100) / 100,
     details: describeSelections(item, sel),
+    ...(category ? { category } : {}),
     ...(size ? { size } : {}), ...(selected_options.length ? { selected_options } : {}),
     ...(item.allergens?.length ? { allergens: item.allergens } : {}), ...(item.vatRate ? { vatRate: item.vatRate } : {}),
   };
