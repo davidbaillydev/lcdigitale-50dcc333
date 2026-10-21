@@ -40,6 +40,11 @@ export function LimitedAccessPanel() {
     try { await revoke({ data: { userId, restaurantId, role: r } }); toast.success("Accès retiré"); await refresh(); }
     catch (err) { toast.error(err instanceof Error ? err.message : "Retrait impossible"); }
   }
+  async function removeAccountClick(userId: string, accountEmail: string) {
+    if (!confirm(`Supprimer définitivement le compte ${accountEmail} ?\n\nTous ses accès restaurants seront retirés et le compte sera supprimé. Cette action est irréversible.`)) return;
+    try { await removeAccount({ data: { userId } }); toast.success("Compte supprimé"); await refresh(); }
+    catch (err) { toast.error(err instanceof Error ? err.message : "Suppression impossible"); }
+  }
 
   return <section className="space-y-6 border-t border-border pt-6">
     <div><h2 className="flex items-center gap-2 font-display text-2xl"><KeyRound className="text-primary" /> Accès limités</h2>
