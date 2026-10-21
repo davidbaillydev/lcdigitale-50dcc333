@@ -68,7 +68,7 @@ export function PrinterSetup({ shop, width: defaultWidth, compact }: { shop: Tic
     setTested(true);
     setMsg({ ok: true, text: d.type === "rawbt" ? "Ticket envoyé à RawBT. S'il est bien sorti, validez l'imprimante." : "Ticket de test envoyé. S'il est bien sorti, validez l'imprimante." });
   });
-  const validate = () => { if (!draft) return; savePrinter(draft); setCurrent(draft); setMsg({ ok: true, text: "Imprimante enregistrée sur cet appareil. Les tickets partiront directement, sans fenêtre d'impression." }); };
+  const validate = () => { if (!draft) return; const p = { ...draft, width }; savePrinter(p); setCurrent(p); setMsg({ ok: true, text: `Imprimante enregistrée sur cet appareil (format ${width} mm mémorisé). Les tickets partiront directement, sans fenêtre d'impression.` }); };
   const remove = () => { savePrinter(null); setCurrent(null); setMsg({ ok: true, text: "Imprimante retirée : retour à l'impression par le navigateur." }); };
 
   return (
