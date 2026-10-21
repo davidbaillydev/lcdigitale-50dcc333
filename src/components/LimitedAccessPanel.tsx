@@ -61,7 +61,8 @@ export function LimitedAccessPanel() {
     </form>
     <ul className="divide-y divide-border">
       {data.accounts.length === 0 && <li className="py-4 text-sm text-muted-foreground">Aucun accès limité.</li>}
-      {data.accounts.map((a) => <li key={a.id} className="space-y-2 py-4"><p className="break-all font-semibold">{a.email}</p>
+      {data.accounts.map((a) => <li key={a.id} className="space-y-2 py-4"><div className="flex flex-wrap items-center gap-2"><p className="min-w-0 flex-1 break-all font-semibold">{a.email}</p>
+        <Button type="button" variant="destructive" size="sm" onClick={() => removeAccountClick(a.id, a.email)}><Trash2 /> Supprimer le compte</Button></div>
         <div className="flex flex-wrap gap-2">{a.access.map((x) => <span key={x.restaurantId + x.role} className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-1 text-sm text-secondary-foreground">
           {name(x.restaurantId)} · {x.role === "manager" ? "Gérant" : "Cuisine"}
           <button type="button" aria-label="Retirer l'accès" className="grid h-8 w-8 place-items-center" onClick={() => remove(a.id, x.restaurantId, x.role)}><X className="h-4 w-4" /></button></span>)}</div></li>)}
