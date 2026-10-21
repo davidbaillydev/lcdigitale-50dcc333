@@ -9,7 +9,7 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
-- Restaurants store hours, delivery and config as jsonb; public pages use `/$slug`. Base menus live in `src/lib/catalogs.ts` by `menu_key`; `restaurants.menu` (same Category shape) overrides them through shared getCatalog(restaurant). Servers recompute every order total, never trusting client prices.
+- Hours/delivery/config use jsonb; public pages use `/$slug`. `getCatalog(restaurant)` resolves restaurants.menu over catalogs.ts/menu_key. Servers recompute totals, never trusting client prices.
 - Customer orders are inserted by a public server function with the admin client; staff read/update orders via RLS (`can_access_restaurant`) and Realtime filtered by restaurant_id.
 - Agency admins use user_roles and agency-verified invitations only; restaurant roles use restaurant_members. Why: no public privilege grants.
 - Site/kiosk/courier use BrandTheme; authenticated screens/dialogs use editorial tokens with restaurant logos. Why: recognizable restaurants, consistent administration.
@@ -28,6 +28,7 @@
 - Kitchen and courier PINs: hashed in service-role-only tables (`restaurant_kitchen_pins`, `restaurant_courier_pins`) with attempt lockout; courier sessions are HMAC tokens keyed on the PIN hash. Why: no extra accounts, PIN change revokes sessions.
 - Invoice transmission stays disabled pending provider and compliance validation; PDFs alone are not fiscal compliance.
 - Kitchen: column scrolling, collapsible nav, fullscreen dialogs, safe-area insets.
+- Settings share themed navigation with mounted hidden sections and scoped save actions. Why: changing themes retains drafts without implying a global save.
 - Read subdirectory AGENTS.md before edits; they contain scoped rules.
 - Restaurant modules live in restaurants.enabled_features (missing key = enabled), agency-written, re-checked by server functions. Why: subscription gating must not rely on hidden UI.
 - Kiosk "Voie B" (config.kiosk.cardOnly, agency-only): server accepts only card_terminal with a configured terminal, inserts awaiting_payment and releases to kitchen/POS only after provider-confirmed payment; unpaid orders are cancelled. Why: BOI-TVA-DECLA-30-10-30 §37 ex.4 exemption requires no cash recorded.

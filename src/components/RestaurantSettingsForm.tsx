@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { saveRestaurantSettings, type Settings } from "@/lib/restaurant-settings.functions";
 import { timingOf, type Restaurant } from "@/lib/shop";
@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { RestaurantBannerUpload } from "@/components/RestaurantBannerUpload";
 import { PrinterSetup } from "@/components/PrinterSetup";
 import { OrdersPausedToggle } from "@/components/OrdersPausedToggle";
+import { SettingsGroup, useSettingsGroup, type SettingsGroupKey } from "@/components/SettingsWorkspace";
 
 const DAYS = [["1", "Lundi"], ["2", "Mardi"], ["3", "Mercredi"], ["4", "Jeudi"], ["5", "Vendredi"], ["6", "Samedi"], ["0", "Dimanche"]] as const;
 const toHHMM = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
@@ -38,8 +39,8 @@ export function initialSettings(r: Restaurant): Settings {
 
 import { serviceFeeDefaults } from "@/lib/service-fee";
 import { printingDefaults, printTickets, sampleOrder, ticketHtml } from "@/lib/ticket";
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return <section className="rounded-xl border border-border bg-card p-5"><h2 className="mb-4 text-3xl">{title}</h2>{children}</section>;
+function Section({ title, group, children }: { title: string; group: SettingsGroupKey; children: React.ReactNode }) {
+  return <SettingsGroup name={group}><section className="border-t border-border py-6"><h2 className="mb-4 text-2xl">{title}</h2>{children}</section></SettingsGroup>;
 }
 function Toggle({ label, hint, checked, onChange }: { label: string; hint?: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
@@ -58,6 +59,9 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
   const save = useServerFn(saveRestaurantSettings);
   const [s, setS] = useState<Settings>(() => initialSettings(restaurant));
   const [busy, setBusy] = useState(false);
+  const activeGroup = useSettingsGroup();
+  const [savedSettings, setSavedSettings] = useState(() => JSON.stringify(initialSettings(restaurant)));
+  const dirty = JSON.stringify(s) !== savedSettings;
   const [testResult, setTestResult] = useState<null | "ok" | "failed">(null);
   const shop = { name: restaurant.name, address: restaurant.address, phone: restaurant.phone };
   const testPrint = async () => {
@@ -72,14 +76,14 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
 
   const submit = async () => {
     setBusy(true);
-    try { await save({ data: { restaurantId: restaurant.id, settings: s } }); toast.success("Réglages enregistrés"); onSaved?.(); }
+    try { await save({ data: { restaurantId: restaurant.id, settings: s } }); setSavedSettings(JSON.stringify(s)); toast.success("Réglages enregistrés"); onSaved?.(); }
     catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
   };
 
   return (
     <div className="space-y-5">
-      <RestaurantBannerUpload restaurant={restaurant} onSaved={onSaved} />
-      <Section title="Horaires d'ouverture">
+      {agency && <SettingsGroup name="appearance"><RestaurantBannerUpload restaurant={restaurant} onSaved={onSaved} /></SettingsGroup>}
+      <Section group="service" title="Horaires d'ouverture">
         <div className="space-y-3">
           {DAYS.map(([d, label]) => {
             const ranges = s.opening[d] ?? [];
@@ -104,7 +108,7 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
         </div>
       </Section>
 
-      <Section title="Commandes & acceptation">
+      <Section group="service" title="Commandes & acceptation">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-3">
           <span><span className="block font-medium">Prise de commandes</span><span className="block text-sm text-muted-foreground">Enregistré immédiatement. Suspendue : le menu reste consultable, aucune commande acceptée (site, borne, QR, téléphone).</span></span>
           <OrdersPausedToggle restaurant={restaurant} />
@@ -134,7 +138,7 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
         </div>
       </Section>
 
-      <Section title="Frais de service">
+      <Section group="payments" title="Frais de service">
         {(() => { const sf = serviceFeeDefaults(s.config.serviceFee); const set = (p: Partial<typeof sf>) => cfg({ serviceFee: { ...sf, ...p } }); return (<>
         <Toggle label="Appliquer des frais de service" hint="Ajoutés automatiquement au panier, aux tickets et aux factures (TVA au taux par défaut de l'établissement)." checked={sf.enabled} onChange={(v) => set({ enabled: v })} />
         {sf.enabled && <>
@@ -152,7 +156,7 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
         </>); })()}
       </Section>
 
-      {agency && <Section title="Impression des tickets">
+      {agency && <Section group="appearance" title="Impression des tickets">
         <div className="grid gap-6 lg:grid-cols-[1fr_auto]">
         <div>
         <div className="mb-3 flex gap-2">
@@ -179,7 +183,7 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
         </div>
       </Section>}
 
-      <Section title="Paiements acceptés">
+      <Section group="payments" title="Paiements acceptés">
         <Toggle label="Paiement au retrait / à la livraison (site)" checked={s.config.payments.on_site} onChange={(v) => cfg({ payments: { ...s.config.payments, on_site: v } })} />
         {agency && <Toggle label="Borne 100 % carte bancaire (Voie B — dispense de caisse sécurisée)" checked={!!s.config.kiosk?.cardOnly} onChange={(v) => cfg({ kiosk: { cardOnly: v }, ...(v ? { payments: { ...s.config.payments, counter: false, card_terminal: true } } : {}) })} />}
         {s.config.kiosk?.cardOnly && <p className="mb-2 rounded bg-muted p-2 text-sm text-muted-foreground">La borne n'accepte que la carte sur son terminal connecté (Stripe Terminal, Mollie POS ou SumUp). Aucune espèce, chèque ou ticket restaurant papier n'est proposé ni enregistré ; une commande n'est envoyée en cuisine qu'une fois le paiement accepté (BOI-TVA-DECLA-30-10-30, § 35 et § 37 ex. 4).</p>}
@@ -189,7 +193,7 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
         <p className="mt-2 text-sm text-muted-foreground">Le paiement en ligne par carte n'est pas encore activé.</p>
       </Section>
 
-      <Section title="Livraison">
+      <Section group="delivery" title="Livraison">
         <div className="grid gap-3 sm:grid-cols-3">
           <Num id="fee" label="Frais de livraison (€)" step={0.5} value={s.delivery.fee} onChange={(v) => del({ fee: v })} />
           <Num id="min" label="Minimum de commande (€)" value={s.delivery.minOrder} onChange={(v) => del({ minOrder: v })} />
@@ -210,7 +214,10 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
         </div>
       </Section>
 
-      <Button size="lg" onClick={submit} disabled={busy}>{busy ? "Enregistrement…" : "Enregistrer les réglages"}</Button>
+      {["service", "delivery", "payments", ...(agency ? ["appearance"] : [])].includes(activeGroup) && <div className="sticky bottom-0 z-20 flex flex-wrap items-center justify-between gap-3 border-y border-border bg-background px-1 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <span role="status" className="text-sm text-muted-foreground">{dirty ? "Modifications non enregistrées" : "Réglages enregistrés"}</span>
+        <Button size="lg" className="w-full sm:w-auto" onClick={submit} disabled={busy || !dirty}><Save aria-hidden="true" />{busy ? "Enregistrement…" : "Enregistrer les réglages"}</Button>
+      </div>}
     </div>
   );
 }

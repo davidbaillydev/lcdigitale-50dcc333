@@ -71,7 +71,7 @@ export function MarketingPanel({ restaurantId, marketing, onSaved }: { restauran
         </div>
         <p className="text-xs text-muted-foreground">Appliquée automatiquement si l'email et le téléphone n'ont jamais commandé dans ce restaurant. Non cumulable avec un code promo.</p>
       </div>
-      <Button onClick={saveSettings} disabled={busy}>{busy ? "Enregistrement…" : "Enregistrer bannière et offre"}</Button>
+      <div className="flex justify-end border-t border-border pt-4"><Button className="w-full sm:w-auto" onClick={saveSettings} disabled={busy}>{busy ? "Enregistrement…" : "Enregistrer bannière et offre"}</Button></div>
 
       <div className="space-y-3 border-t border-border pt-4">
         <Label className="flex items-center gap-2 text-base"><Tag className="h-4 w-4 text-primary" /> Codes promo</Label>

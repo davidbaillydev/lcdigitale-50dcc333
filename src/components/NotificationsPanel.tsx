@@ -31,7 +31,7 @@ export function NotificationsPanel({ restaurantId, notifications, defaultEmail, 
       {row("confirmed", "Email « Commande confirmée » au client")}
       {row("restaurant", "Email « Nouvelle commande » au restaurant")}
       <div><Label htmlFor="notif-email">Email de réception des commandes</Label><Input id="notif-email" type="email" maxLength={255} value={n.email} onChange={(e) => setN({ ...n, email: e.target.value })} /></div>
-      <Button onClick={submit} disabled={busy}>Enregistrer</Button>
+      <div className="flex justify-end border-t border-border pt-4"><Button className="w-full sm:w-auto" onClick={submit} disabled={busy}>{busy ? "Enregistrement…" : "Enregistrer les notifications"}</Button></div>
     </section>
   );
 }
