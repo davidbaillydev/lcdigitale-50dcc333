@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from "react";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { KeyRound, X } from "lucide-react";
+import { KeyRound, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
-import { listLimitedAccess, grantLimitedAccess, revokeLimitedAccess } from "@/lib/agency-admins.functions";
+import { listLimitedAccess, grantLimitedAccess, revokeLimitedAccess, deleteLimitedAccount } from "@/lib/agency-admins.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +16,7 @@ export function LimitedAccessPanel() {
   const { data } = useSuspenseQuery(limitedAccessQuery);
   const grant = useServerFn(grantLimitedAccess);
   const revoke = useServerFn(revokeLimitedAccess);
+  const removeAccount = useServerFn(deleteLimitedAccount);
   const qc = useQueryClient();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"manager" | "kitchen">("manager");
