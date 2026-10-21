@@ -188,8 +188,8 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
           <div>
             <p className="mb-2 text-sm font-semibold">Sur le site de commande</p>
             <div className="space-y-1 rounded-lg border border-border p-3">
-              <Toggle label="Paiement en ligne par carte (Stripe, Mollie, PayPal, Lyra)" hint="S'active en connectant un prestataire dans la section « Prestataires de paiement » ci-dessous." checked={false} onChange={() => { /* informatif : dépend des prestataires connectés */ }} />
               <Toggle label="Paiement au retrait ou à la livraison" hint="Le client règle en mains propres (espèces, carte, tickets resto)." checked={s.config.payments.on_site} onChange={(v) => cfg({ payments: { ...s.config.payments, on_site: v } })} />
+              <p className="pt-1 text-sm text-muted-foreground">Le paiement en ligne par carte s'active en connectant un prestataire (Stripe, Mollie, PayPal ou Lyra) dans la section « Prestataires de paiement » ci-dessous.</p>
             </div>
           </div>
           <div>
