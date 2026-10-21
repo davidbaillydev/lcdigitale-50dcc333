@@ -1,19 +1,28 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ rpc: vi.fn(), listUsers: vi.fn(), invite: vi.fn(), upsert: vi.fn(), maybeSingle: vi.fn(), getUser: vi.fn(), rows: [] as { user_id: string; created_at: string }[] }));
+const mocks = vi.hoisted(() => ({ rpc: vi.fn(), listUsers: vi.fn(), invite: vi.fn(), upsert: vi.fn(), maybeSingle: vi.fn(), getUser: vi.fn(), deleteUser: vi.fn(), del: vi.fn(), rows: [] as { user_id: string; created_at: string }[], eqData: [] as { user_id: string }[] }));
 vi.mock("@/integrations/supabase/auth-middleware", () => ({ requireSupabaseAuth: {} }));
 vi.mock("@tanstack/react-start", () => ({ createServerFn: () => {
   const builder = { middleware: () => builder, inputValidator: () => builder, handler: (handler: unknown) => handler };
   return builder;
 } }));
 vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: {
-  auth: { admin: { listUsers: mocks.listUsers, inviteUserByEmail: mocks.invite, getUserById: mocks.getUser } },
-  from: () => { const query = { select: () => query, eq: () => query, order: async () => ({ data: mocks.rows, error: null }), maybeSingle: mocks.maybeSingle, upsert: mocks.upsert }; return query; },
+  auth: { admin: { listUsers: mocks.listUsers, inviteUserByEmail: mocks.invite, getUserById: mocks.getUser, deleteUser: mocks.deleteUser } },
+  from: () => {
+    const query: Record<string, unknown> = {
+      select: () => query, eq: () => query, order: async () => ({ data: mocks.rows, error: null }),
+      maybeSingle: mocks.maybeSingle, upsert: mocks.upsert, delete: mocks.del,
+      then: (resolve: (value: unknown) => unknown) => resolve({ data: mocks.eqData, error: null }),
+    };
+    return query;
+  },
 } }));
-import { inviteAgencyAdmin, listAgencyAdmins } from "@/lib/agency-admins.functions";
+import { inviteAgencyAdmin, listAgencyAdmins, revokeAgencyAdmin, deleteLimitedAccount } from "@/lib/agency-admins.functions";
 type Context = { userId: string; supabase: { rpc: typeof mocks.rpc } };
 const invite = inviteAgencyAdmin as unknown as (input: { data: { email: string }; context: Context }) => Promise<{ invited: boolean; alreadyAdmin: boolean }>;
 const list = listAgencyAdmins as unknown as (input: { context: Context }) => Promise<unknown[]>;
+const revokeAdmin = revokeAgencyAdmin as unknown as (input: { data: { userId: string }; context: Context }) => Promise<{ ok: boolean }>;
+const deleteAccount = deleteLimitedAccount as unknown as (input: { data: { userId: string }; context: Context }) => Promise<{ ok: boolean }>;
 const context = { userId: "agency-user", supabase: { rpc: mocks.rpc } };
 
 beforeEach(() => {
