@@ -185,3 +185,24 @@ export const saveUpsell = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/** Modules de paiement proposés au restaurant (agence uniquement). */
+export const savePaymentModules = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    restaurantId: z.string().uuid(),
+    modules: z.object({
+      stripe: z.boolean(), mollie: z.boolean(), paypal: z.boolean(), lyra: z.boolean(), sumup: z.boolean(),
+    }),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: isAgency } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    if (!isAgency) throw new Error("Réservé à l'agence");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: cur, error: e1 } = await supabaseAdmin.from("restaurants").select("config").eq("id", data.restaurantId).single();
+    if (e1 || !cur) throw new Error("Restaurant introuvable");
+    const config = { ...((cur.config as Record<string, unknown>) ?? {}), paymentModules: data.modules };
+    const { error } = await supabaseAdmin.from("restaurants").update({ config: config as never }).eq("id", data.restaurantId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
