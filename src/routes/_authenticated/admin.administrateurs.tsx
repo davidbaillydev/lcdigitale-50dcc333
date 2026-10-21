@@ -2,9 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, type FormEvent } from "react";
-import { ShieldCheck, UserPlus } from "lucide-react";
+import { ShieldCheck, UserMinus, UserPlus } from "lucide-react";
 import { toast } from "sonner";
-import { listAgencyAdmins, inviteAgencyAdmin } from "@/lib/agency-admins.functions";
+import { listAgencyAdmins, inviteAgencyAdmin, revokeAgencyAdmin } from "@/lib/agency-admins.functions";
 import { Crumbs } from "@/components/Crumbs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,11 +29,20 @@ export const Route = createFileRoute("/_authenticated/admin/administrateurs")({
 function Administrators() {
   const { data: admins } = useSuspenseQuery(adminsQuery);
   const invite = useServerFn(inviteAgencyAdmin);
+  const revoke = useServerFn(revokeAgencyAdmin);
   const queryClient = useQueryClient();
   const [email, setEmail] = useState("");
   const [confirmed, setConfirmed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState("");
+  async function revokeClick(admin: { id: string; email: string }) {
+    if (!confirm(`Retirer l'accès administrateur de ${admin.email} ?\n\nCe compte n'aura plus accès à la console agence ni aux réglages réservés à l'agence.`)) return;
+    try {
+      await revoke({ data: { userId: admin.id } });
+      toast.success("Accès administrateur retiré");
+      await queryClient.invalidateQueries({ queryKey: adminsQuery.queryKey });
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Retrait impossible"); }
+  }
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (busy || !confirmed) return;
@@ -61,7 +70,7 @@ function Administrators() {
       </form>
     </section>
     <section><h2 className="mb-4 font-display text-2xl">Équipe agence</h2><ul className="divide-y divide-border">
-      {admins.map((admin) => <li key={admin.id} className="flex flex-wrap items-center gap-3 py-4"><ShieldCheck className="h-6 w-6 shrink-0 text-primary" aria-hidden /><div className="min-w-0 flex-1"><p className="break-all font-semibold">{admin.email}{admin.isSelf && <span className="ml-2 font-normal text-muted-foreground">(vous)</span>}</p><p className="text-sm text-muted-foreground">Administrateur agence · {admin.activated ? "Compte actif" : "Activation en attente"}</p></div><span className="text-sm text-muted-foreground">Depuis le {new Date(admin.createdAt).toLocaleDateString("fr-FR")}</span></li>)}
+      {admins.map((admin) => <li key={admin.id} className="flex flex-wrap items-center gap-3 py-4"><ShieldCheck className="h-6 w-6 shrink-0 text-primary" aria-hidden /><div className="min-w-0 flex-1"><p className="break-all font-semibold">{admin.email}{admin.isSelf && <span className="ml-2 font-normal text-muted-foreground">(vous)</span>}</p><p className="text-sm text-muted-foreground">Administrateur agence · {admin.activated ? "Compte actif" : "Activation en attente"}</p></div><span className="text-sm text-muted-foreground">Depuis le {new Date(admin.createdAt).toLocaleDateString("fr-FR")}</span>{!admin.isSelf && <Button type="button" variant="destructive" size="sm" onClick={() => revokeClick(admin)}><UserMinus /> Retirer l'accès</Button>}</li>)}
     </ul></section>
     <LimitedAccessPanel />
   </main>;

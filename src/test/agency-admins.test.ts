@@ -1,19 +1,28 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ rpc: vi.fn(), listUsers: vi.fn(), invite: vi.fn(), upsert: vi.fn(), maybeSingle: vi.fn(), getUser: vi.fn(), rows: [] as { user_id: string; created_at: string }[] }));
+const mocks = vi.hoisted(() => ({ rpc: vi.fn(), listUsers: vi.fn(), invite: vi.fn(), upsert: vi.fn(), maybeSingle: vi.fn(), getUser: vi.fn(), deleteUser: vi.fn(), del: vi.fn(), rows: [] as { user_id: string; created_at: string }[], eqData: [] as { user_id: string }[] }));
 vi.mock("@/integrations/supabase/auth-middleware", () => ({ requireSupabaseAuth: {} }));
 vi.mock("@tanstack/react-start", () => ({ createServerFn: () => {
   const builder = { middleware: () => builder, inputValidator: () => builder, handler: (handler: unknown) => handler };
   return builder;
 } }));
 vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: {
-  auth: { admin: { listUsers: mocks.listUsers, inviteUserByEmail: mocks.invite, getUserById: mocks.getUser } },
-  from: () => { const query = { select: () => query, eq: () => query, order: async () => ({ data: mocks.rows, error: null }), maybeSingle: mocks.maybeSingle, upsert: mocks.upsert }; return query; },
+  auth: { admin: { listUsers: mocks.listUsers, inviteUserByEmail: mocks.invite, getUserById: mocks.getUser, deleteUser: mocks.deleteUser } },
+  from: () => {
+    const query: Record<string, unknown> = {
+      select: () => query, eq: () => query, order: async () => ({ data: mocks.rows, error: null }),
+      maybeSingle: mocks.maybeSingle, upsert: mocks.upsert, delete: mocks.del,
+      then: (resolve: (value: unknown) => unknown) => resolve({ data: mocks.eqData, error: null }),
+    };
+    return query;
+  },
 } }));
-import { inviteAgencyAdmin, listAgencyAdmins } from "@/lib/agency-admins.functions";
+import { inviteAgencyAdmin, listAgencyAdmins, revokeAgencyAdmin, deleteLimitedAccount } from "@/lib/agency-admins.functions";
 type Context = { userId: string; supabase: { rpc: typeof mocks.rpc } };
 const invite = inviteAgencyAdmin as unknown as (input: { data: { email: string }; context: Context }) => Promise<{ invited: boolean; alreadyAdmin: boolean }>;
 const list = listAgencyAdmins as unknown as (input: { context: Context }) => Promise<unknown[]>;
+const revokeAdmin = revokeAgencyAdmin as unknown as (input: { data: { userId: string }; context: Context }) => Promise<{ ok: boolean }>;
+const deleteAccount = deleteLimitedAccount as unknown as (input: { data: { userId: string }; context: Context }) => Promise<{ ok: boolean }>;
 const context = { userId: "agency-user", supabase: { rpc: mocks.rpc } };
 
 beforeEach(() => {
@@ -23,7 +32,10 @@ beforeEach(() => {
   mocks.invite.mockResolvedValue({ data: { user: { id: "new-admin" } }, error: null });
   mocks.maybeSingle.mockResolvedValue({ data: null, error: null });
   mocks.upsert.mockResolvedValue({ error: null });
+  mocks.deleteUser.mockResolvedValue({ error: null });
+  mocks.del.mockImplementation(() => { const q: Record<string, unknown> = { eq: () => q, then: (resolve: (value: unknown) => unknown) => resolve({ error: null }) }; return q; });
   mocks.rows = [];
+  mocks.eqData = [];
 });
 describe("Administrateurs agence", () => {
   it.each([false, null])("refuse l'ajout sans rôle agence (%s)", async (role) => {
@@ -65,5 +77,46 @@ describe("Administrateurs agence", () => {
     await invite({ context, data: { email: "existing@example.test" } });
     expect(mocks.listUsers).toHaveBeenNthCalledWith(2, { page: 2, perPage: 100 });
     expect(mocks.invite).not.toHaveBeenCalled();
+  });
+});
+describe("Révocation des administrateurs", () => {
+  it("interdit de retirer son propre accès", async () => {
+    await expect(revokeAdmin({ context, data: { userId: "agency-user" } })).rejects.toThrow("propre accès");
+    expect(mocks.del).not.toHaveBeenCalled();
+  });
+  it("protège le dernier administrateur", async () => {
+    mocks.eqData = [{ user_id: "last-admin" }];
+    await expect(revokeAdmin({ context, data: { userId: "last-admin" } })).rejects.toThrow("dernier administrateur");
+    expect(mocks.del).not.toHaveBeenCalled();
+  });
+  it("refuse un compte qui n'est pas administrateur", async () => {
+    mocks.eqData = [{ user_id: "someone-else" }, { user_id: "another" }];
+    await expect(revokeAdmin({ context, data: { userId: "not-admin" } })).rejects.toThrow("pas administrateur");
+    expect(mocks.del).not.toHaveBeenCalled();
+  });
+  it("retire un administrateur quand il en reste d'autres", async () => {
+    mocks.eqData = [{ user_id: "target" }, { user_id: "other" }];
+    expect(await revokeAdmin({ context, data: { userId: "target" } })).toEqual({ ok: true });
+    expect(mocks.del).toHaveBeenCalled();
+  });
+  it("exige le rôle agence", async () => {
+    mocks.rpc.mockResolvedValue({ data: false, error: null });
+    await expect(revokeAdmin({ context, data: { userId: "target" } })).rejects.toThrow("Réservé");
+  });
+});
+describe("Suppression des comptes à accès limité", () => {
+  it("interdit de supprimer son propre compte", async () => {
+    await expect(deleteAccount({ context, data: { userId: "agency-user" } })).rejects.toThrow("propre compte");
+    expect(mocks.deleteUser).not.toHaveBeenCalled();
+  });
+  it("refuse de supprimer un administrateur agence", async () => {
+    mocks.maybeSingle.mockResolvedValue({ data: { id: "role-1" }, error: null });
+    await expect(deleteAccount({ context, data: { userId: "admin-user" } })).rejects.toThrow("administrateur");
+    expect(mocks.deleteUser).not.toHaveBeenCalled();
+  });
+  it("retire les accès puis supprime le compte", async () => {
+    expect(await deleteAccount({ context, data: { userId: "limited-user" } })).toEqual({ ok: true });
+    expect(mocks.del).toHaveBeenCalled();
+    expect(mocks.deleteUser).toHaveBeenCalledWith("limited-user");
   });
 });

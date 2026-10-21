@@ -109,3 +109,39 @@ export const revokeLimitedAccess = createServerFn({ method: "POST" })
     if (error) throw new Error("Retrait impossible");
     return { ok: true };
   });
+
+/** Révoque un administrateur agence. Interdit de se retirer soi-même ou de retirer le dernier administrateur. */
+export const revokeAgencyAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ userId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAgency(context.supabase, context.userId);
+    if (data.userId === context.userId) throw new Error("Vous ne pouvez pas retirer votre propre accès administrateur");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: admins, error: countError } = await supabaseAdmin.from("user_roles").select("user_id").eq("role", "admin");
+    if (countError) throw new Error("Impossible de vérifier les administrateurs");
+    const isAdmin = (admins ?? []).some((row) => row.user_id === data.userId);
+    if (!isAdmin) throw new Error("Ce compte n'est pas administrateur");
+    if ((admins ?? []).length <= 1) throw new Error("Impossible de retirer le dernier administrateur de l'agence");
+    const { error } = await supabaseAdmin.from("user_roles").delete().eq("user_id", data.userId).eq("role", "admin");
+    if (error) throw new Error("Retrait impossible");
+    return { ok: true };
+  });
+
+/** Supprime un compte à accès limité : retire tous ses accès restaurants puis supprime le compte. */
+export const deleteLimitedAccount = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ userId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAgency(context.supabase, context.userId);
+    if (data.userId === context.userId) throw new Error("Vous ne pouvez pas supprimer votre propre compte");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: adminRole, error: roleError } = await supabaseAdmin.from("user_roles").select("id").eq("user_id", data.userId).eq("role", "admin").maybeSingle();
+    if (roleError) throw new Error("Impossible de vérifier le compte");
+    if (adminRole) throw new Error("Ce compte est administrateur : retirez d'abord son accès administrateur");
+    const { error: memberError } = await supabaseAdmin.from("restaurant_members").delete().eq("user_id", data.userId);
+    if (memberError) throw new Error("Suppression des accès impossible");
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(data.userId);
+    if (error) throw new Error("Suppression du compte impossible");
+    return { ok: true };
+  });
