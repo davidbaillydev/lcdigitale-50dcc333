@@ -23,6 +23,7 @@ import { Languages, PackageX } from "lucide-react";
 import { setSoldOut, useSoldOut } from "@/lib/stock";
 import { useOptionData } from "@/lib/menu-options-live";
 import { ItemOptionsEditor, OptionGroupsPanel } from "@/components/MenuOptionsEditor";
+import { PRESET_DRINKS } from "@/lib/drinks-preset";
 
 export const Route = createFileRoute("/_authenticated/espace/$slug/carte")({
   head: () => ({
@@ -159,6 +160,21 @@ function MenuEditor() {
           <Button onClick={() => pretranslate()} disabled={translating}><Languages /> {translating ? "Traduction…" : "Pré-traduire"}</Button>
           {!missing && <Button variant="ghost" onClick={() => { if (confirm("Retraduire toute la carte ? Vos corrections de traduction seront remplacées.")) void pretranslate(true); }} disabled={translating}>Tout retraduire</Button>}
         </div>}
+
+        {(() => {
+          const ids = new Set(menu.flatMap((c) => c.items.map((i) => i.id)));
+          const toggle = (d: (typeof PRESET_DRINKS)[number]) => {
+            if (ids.has(d.id)) { update(menu.map((c) => ({ ...c, items: c.items.filter((i) => i.id !== d.id) }))); return; }
+            const ci = menu.findIndex((c) => /boisson/i.test(c.label));
+            if (ci < 0) update([...menu, { id: uid("cat"), label: "Boissons", items: [{ id: d.id, name: d.name, price: d.price }] }]);
+            else setCat(ci, { items: [...menu[ci]!.items, { id: d.id, name: d.name, price: d.price }] });
+          };
+          return <details className="mt-6 rounded-xl border border-border bg-card p-4">
+            <summary className="cursor-pointer font-semibold">Boissons prêtes à ajouter · {PRESET_DRINKS.filter((d) => ids.has(d.id)).length}/{PRESET_DRINKS.length} proposées</summary>
+            <p className="mt-1 text-sm text-muted-foreground">Touchez une boisson pour l'ajouter à la catégorie « Boissons » (créée si besoin), touchez à nouveau pour la retirer. Prix modifiable ensuite, puis enregistrez la carte.</p>
+            <div className="mt-3 flex flex-wrap gap-2">{PRESET_DRINKS.map((d) => <Button key={d.id} size="sm" className="min-h-10" variant={ids.has(d.id) ? "default" : "outline"} aria-pressed={ids.has(d.id)} onClick={() => toggle(d)}>{ids.has(d.id) ? "✓ " : "+ "}{d.name}</Button>)}</div>
+          </details>;
+        })()}
 
         {r && <OptionGroupsPanel restaurantId={r.id} data={opt.data} reload={opt.reload} />}
 
