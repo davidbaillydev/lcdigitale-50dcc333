@@ -3,8 +3,6 @@ import { ArrowDownRight, ArrowUpRight, MapPin } from "lucide-react";
 import { listRestaurants } from "@/lib/restaurants.functions";
 import { ThemeToggle } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
-import chickenImage from "@/assets/food-chicken.jpg";
-import sushiImage from "@/assets/food-sushi.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -53,11 +51,11 @@ function Home() {
         </div>
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-10">
           {restaurants.map((r, index) => {
-            const image = r.slug === "woknsushi" ? sushiImage : r.name.toLowerCase().includes("miami") ? chickenImage : null;
+            const image = r.brand?.coverUrl ?? null;
             return (
               <article key={r.id} className="directory-establishment group flex min-w-0 flex-col">
                 <Link to="/$slug" params={{ slug: r.slug }} aria-label={`Commander chez ${r.name}`} className="directory-image relative block overflow-hidden rounded-lg bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
-                  {image ? <img src={image} alt={r.slug === "woknsushi" ? "Sushis — visuel illustratif" : "Poulet croustillant — visuel illustratif"} className="h-full w-full object-cover transition-transform duration-500 motion-safe:group-hover:scale-105 motion-reduce:transition-none" /> : r.logo_url ? <img src={r.logo_url} alt={r.name} className="h-full w-full object-contain p-8" /> : <div className="flex h-full items-center justify-center font-display text-3xl font-bold text-muted-foreground">{r.name}</div>}
+                  {image ? <img src={image} alt={`Photo de ${r.name}`} className="h-full w-full object-cover transition-transform duration-500 motion-safe:group-hover:scale-105 motion-reduce:transition-none" /> : r.logo_url ? <img src={r.logo_url} alt={r.name} className="h-full w-full object-contain p-8" /> : <div className="flex h-full items-center justify-center font-display text-3xl font-bold text-muted-foreground">{r.name}</div>}
                   <span className="absolute bottom-4 right-4 flex h-12 w-12 items-center justify-center rounded-md bg-primary text-primary-foreground"><ArrowUpRight aria-hidden="true" /></span>
                 </Link>
                 <div className="flex flex-1 flex-col py-6">
