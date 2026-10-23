@@ -9,9 +9,10 @@ const body = z.object({
   name: z.string().trim().min(1).max(120),
   desc: z.string().max(500).optional(),
   stream: z.boolean().optional(),
+  kind: z.enum(["dish", "cover"]).optional(),
 });
 
-/** Création IA de la photo d'un plat d'après son nom et sa description (gérant ou agence). */
+/** Création IA de la photo d'un plat ou de la couverture d'un restaurant (gérant ou agence). */
 export const Route = createFileRoute("/api/menu-photo-generate")({
   server: { handlers: { POST: async ({ request }) => {
     const token = request.headers.get("Authorization")?.replace(/^Bearer /, "");
@@ -33,8 +34,10 @@ export const Route = createFileRoute("/api/menu-photo-generate")({
     if (!ok) return new Response("Réservé au gérant ou à l'agence", { status: 403 });
     const apiKey = process.env["LOVABLE_API_KEY"];
     if (!apiKey) return new Response("Création d'image indisponible", { status: 500 });
-    const { name, desc, stream = true } = parsed.data;
-    const prompt = `Professional appetizing food photograph of the restaurant dish "${name}"${desc ? `, described as: ${desc}` : ""}. Served on a plate, realistic, natural soft light, shallow depth of field, 3/4 overhead angle, clean neutral background, no text, no logo, no people.`;
+    const { name, desc, stream = true, kind = "dish" } = parsed.data;
+    const prompt = kind === "cover"
+      ? `Inviting professional cover photograph for the restaurant "${name}"${desc ? `. Context: ${desc}` : ""}. Showcase its signature food and atmosphere, appetizing, realistic, warm natural light, landscape composition suited to a directory thumbnail, no text, no logo, no watermark.`
+      : `Professional appetizing food photograph of the restaurant dish "${name}"${desc ? `, described as: ${desc}` : ""}. Served on a plate, realistic, natural soft light, shallow depth of field, 3/4 overhead angle, clean neutral background, no text, no logo, no people.`;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: google } = await supabaseAdmin.from("agency_menu_ai_credentials").select("api_key").eq("id", "gemini").maybeSingle();
     if (google?.api_key) {
