@@ -1,3 +1,4 @@
+- [ ] Réordonner les groupes, leurs suppléments et les tailles par flèches et glisser-déposer ; mémoriser l’ordre et vérifier le parcours connecté.
 - [x] Clarifier les tickets : catégorie par article, choix inclus vs suppléments payants, remarques encadrées et accents/apostrophes thermiques ; tests unitaires réussis.
 - [x] Ajouter le repli automatique Gemini → Lovable AI pour clé rejetée, quotas ou indisponibilité, avec avertissement agence ; refus de contenu et d’accès sans repli, tests réussis.
 - [x] Brancher Google Imagen 3 pour les photos de plats avec la clé Google agence et repli Lovable AI ; tests unitaires réussis.
