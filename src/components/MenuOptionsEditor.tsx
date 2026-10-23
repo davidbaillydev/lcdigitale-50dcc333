@@ -16,9 +16,9 @@ const nextOrder = (rows: { sort_order: number }[]) => Math.max(-1, ...rows.map((
 async function reorder(table: "option_groups" | "option_items" | "product_variants", rows: { id: string }[], restaurantId: string, reload: () => void, scope?: { column: "group_id" | "product_id"; id: string }) {
   try {
     await Promise.all(rows.map((row, sort_order) => {
-      let query = supabase.from(table).update({ sort_order }).eq("id", row.id).eq("restaurant_id", restaurantId);
-      if (scope) query = query.eq(scope.column, scope.id);
-      return run(query);
+      if (table === "option_items" && scope?.column === "group_id") return run(supabase.from("option_items").update({ sort_order }).eq("id", row.id).eq("restaurant_id", restaurantId).eq("group_id", scope.id));
+      if (table === "product_variants" && scope?.column === "product_id") return run(supabase.from("product_variants").update({ sort_order }).eq("id", row.id).eq("restaurant_id", restaurantId).eq("product_id", scope.id));
+      return run(supabase.from("option_groups").update({ sort_order }).eq("id", row.id).eq("restaurant_id", restaurantId));
     }));
     toast.success("Ordre enregistré");
   } catch (e) { fail(e); throw e; }
