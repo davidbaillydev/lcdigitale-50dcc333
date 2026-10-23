@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { RestaurantBannerUpload } from "@/components/RestaurantBannerUpload";
+import { RestaurantCoverUpload } from "@/components/RestaurantCoverUpload";
 import { PrinterSetup } from "@/components/PrinterSetup";
 import { OrdersPausedToggle } from "@/components/OrdersPausedToggle";
 import { SettingsGroup, useSettingsGroup, type SettingsGroupKey } from "@/components/SettingsWorkspace";
@@ -82,7 +83,7 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
 
   return (
     <div className="space-y-5">
-      {agency && <SettingsGroup name="appearance"><RestaurantBannerUpload restaurant={restaurant} onSaved={onSaved} /></SettingsGroup>}
+      <SettingsGroup name="appearance"><RestaurantCoverUpload restaurant={restaurant} onSaved={onSaved} />{agency && <RestaurantBannerUpload restaurant={restaurant} onSaved={onSaved} />}</SettingsGroup>
       <Section group="service" title="Horaires d'ouverture">
         <div className="space-y-3">
           {DAYS.map(([d, label]) => {
