@@ -10,7 +10,7 @@ export type LinkRow = { id: string; product_id: string; group_id: string; varian
 export type OptionData = { variants: VariantRow[]; groups: GroupRow[]; items: OptionItemRow[]; links: LinkRow[] };
 export const EMPTY_OPTIONS: OptionData = { variants: [], groups: [], items: [], links: [] };
 
-const bySort = <T extends { sort_order: number }>(a: T, b: T) => a.sort_order - b.sort_order;
+const bySort = <T extends { id: string; sort_order: number }>(a: T, b: T) => a.sort_order - b.sort_order || a.id.localeCompare(b.id);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function loadOptionData(client: SupabaseClient<any>, restaurantId: string): Promise<OptionData> {
@@ -32,13 +32,14 @@ export async function loadOptionData(client: SupabaseClient<any>, restaurantId: 
 /** Groupes construits pour un plat : taille d'abord (obligatoire), puis suppléments (globaux ou liés à une taille). */
 export function groupsFor(productId: string, d: OptionData): OptionGroup[] {
   const out: OptionGroup[] = [];
-  const sizes = d.variants.filter((v) => v.product_id === productId);
+  const sizes = d.variants.filter((v) => v.product_id === productId).sort(bySort);
   if (sizes.length) out.push({ id: "size", label: "Taille / format", kind: "size", min: 1, max: 1, choices: sizes.map((s) => ({ id: s.id, label: s.name, price: s.price, ...(s.is_available ? {} : { soldOut: true }) })) });
-  for (const link of d.links.filter((l) => l.product_id === productId)) {
+  const ranks = new Map([...d.groups].sort(bySort).map((g, index) => [g.id, index]));
+  for (const link of d.links.filter((l) => l.product_id === productId).sort((a, b) => (ranks.get(a.group_id) ?? 0) - (ranks.get(b.group_id) ?? 0) || a.id.localeCompare(b.id))) {
     const g = d.groups.find((x) => x.id === link.group_id);
     if (!g) continue;
     if (link.variant_id && !sizes.some((s) => s.id === link.variant_id)) continue;
-    const choices = d.items.filter((i) => i.group_id === g.id).map((i) => ({ id: i.id, label: i.name, price: i.price, ...(i.is_available ? {} : { soldOut: true }) }));
+    const choices = d.items.filter((i) => i.group_id === g.id).sort(bySort).map((i) => ({ id: i.id, label: i.name, price: i.price, ...(i.is_available ? {} : { soldOut: true }) }));
     if (!choices.length) continue;
     const min = g.is_required ? Math.max(1, g.min_selection) : g.min_selection;
     out.push({
