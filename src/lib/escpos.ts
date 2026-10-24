@@ -70,7 +70,6 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
   if (o.mode === "delivery" && o.address) wrap(`${o.address}, ${o.city ?? ""}`, cols).forEach((l) => e.line(l));
   e.align(0).line().bold(true).line("Articles:").bold(false);
   for (const it of o.items) {
-    wrap((it.category ?? "Carte").toUpperCase(), cols).forEach((l) => e.line(l));
     e.bold(true);
     const right = f.prices && it.total != null ? eur(it.total) : "";
     const names = wrap(`${it.qty}x ${itemTitle(it)}`, Math.max(8, cols - right.length - 1));
