@@ -72,8 +72,8 @@ function beep(ctx: AudioContext) {
   const start = ctx.currentTime;
   let remaining = 8;
   // Do–Mi–Sol–Do : aucune harmonique métallique ou dissonante.
-  for (const [frequency, offset] of [[523.25, 0], [659.25, 0.3], [783.99, 0.6], [1046.5, 0.95]]) {
-    for (const [multiple, amplitude] of [[1, 0.22], [2, 0.025]]) {
+  for (const [frequency, offset] of [[523.25, 0], [659.25, 0.3], [783.99, 0.6], [1046.5, 0.95]] as const) {
+    for (const [multiple, amplitude] of [[1, 0.22], [2, 0.025]] as const) {
       const oscillator = ctx.createOscillator();
       const envelope = ctx.createGain();
       const at = start + offset;
