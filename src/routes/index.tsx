@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowDownRight, ArrowUpRight, MapPin } from "lucide-react";
+import { ArrowUpRight, MapPin, Search, Store, ShieldCheck, ChefHat, Bike, UtensilsCrossed } from "lucide-react";
+import { useState } from "react";
 import { listRestaurants } from "@/lib/restaurants.functions";
 import { ThemeToggle } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -22,61 +24,60 @@ export const Route = createFileRoute("/")({
 
 function Home() {
   const restaurants = Route.useLoaderData();
+  const [search, setSearch] = useState("");
+  const query = search.trim().toLocaleLowerCase("fr");
+  const shown = restaurants.filter((r) => `${r.name} ${r.city}`.toLocaleLowerCase("fr").includes(query));
+  const cover = restaurants.find((r) => r.brand?.coverUrl)?.brand?.coverUrl;
   return (
-    <div className="restaurant-directory min-h-screen bg-background text-foreground">
-      <nav aria-label="Navigation principale" className="directory-nav flex items-center justify-between gap-3">
-        <span className="font-display text-lg font-bold">LC<span className="text-primary">.</span></span>
-        <div className="flex items-center gap-3">
-          <Button asChild variant="ghost" className="text-foreground"><Link to="/connexion">Espace restaurant <ArrowUpRight aria-hidden="true" /></Link></Button>
-          <ThemeToggle />
-        </div>
-      </nav>
-      <header className="directory-poster bg-primary text-primary-foreground">
-        <div className="directory-poster-inner">
-          <div className="flex items-center justify-between gap-4 text-sm font-semibold">
-            <span>Les établissements partenaires</span>
-            <ArrowDownRight aria-hidden="true" className="h-8 w-8 shrink-0" />
+    <div className="restaurant-directory foodcourt-directory min-h-screen bg-background text-foreground">
+      <div className="foodcourt-shell">
+        <nav aria-label="Navigation principale" className="flex items-center justify-between gap-3 py-6">
+          <Link to="/" className="font-display text-xl font-bold">LC Digitale<span className="text-primary">.</span></Link>
+          <div className="flex items-center gap-2"><span className="hidden text-sm text-muted-foreground sm:block">Les établissements partenaires</span><ThemeToggle /></div>
+        </nav>
+        <header className={`foodcourt-welcome relative overflow-hidden ${cover ? "has-cover" : ""}`}>
+          {cover && <img src={cover} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+          <div className="foodcourt-welcome-content relative">
+            <p className="mb-3 flex items-center gap-2 text-sm font-semibold"><UtensilsCrossed className="h-4 w-4" /> À emporter · En livraison · À votre table</p>
+            <h1 className="font-display text-4xl font-bold leading-tight sm:text-5xl">Nos restaurants<span className="text-primary">.</span></h1>
+            <p className="mt-3 text-lg">Une envie ? Bon appétit !</p>
           </div>
-          <h1 className="directory-title font-display font-bold">LC Digitale<span aria-hidden="true">.</span></h1>
-          <div className="flex flex-wrap items-end justify-between gap-4 border-t border-primary-foreground/30 pt-5">
-            <p className="text-lg font-medium">À emporter. En livraison. À votre table.</p>
-            <span className="text-sm">{restaurants.length} établissement{restaurants.length > 1 ? "s" : ""}</span>
-          </div>
-        </div>
-      </header>
-      <main className="directory-partners">
-        <div className="mb-7 flex items-end justify-between gap-4 border-b border-border pb-5">
-          <h2 className="font-display text-2xl font-semibold">Nos restaurants</h2>
-          <span className="text-sm text-muted-foreground">La sélection LC Digitale</span>
-        </div>
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-10">
-          {restaurants.map((r, index) => {
-            const image = r.brand?.coverUrl ?? null;
-            return (
-              <article key={r.id} className="directory-establishment group flex min-w-0 flex-col">
-                <Link to="/$slug" params={{ slug: r.slug }} aria-label={`Commander chez ${r.name}`} className="directory-image relative block overflow-hidden rounded-lg bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
-                  {image ? <img src={image} alt={`Photo de ${r.name}`} className="h-full w-full object-cover transition-transform duration-500 motion-safe:group-hover:scale-105 motion-reduce:transition-none" /> : r.logo_url ? <img src={r.logo_url} alt={r.name} className="h-full w-full object-contain p-8" /> : <div className="flex h-full items-center justify-center font-display text-3xl font-bold text-muted-foreground">{r.name}</div>}
-                  <span className="absolute bottom-4 right-4 flex h-12 w-12 items-center justify-center rounded-md bg-primary text-primary-foreground"><ArrowUpRight aria-hidden="true" /></span>
-                </Link>
-                <div className="flex flex-1 flex-col py-6">
-                  <div className="mb-4 flex items-center justify-between gap-3 text-sm">
-                    <p className="flex items-center gap-1.5 text-muted-foreground"><MapPin aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />{r.city}</p>
-                    <span className="font-display font-semibold text-primary">{String(index + 1).padStart(2, "0")}</span>
+        </header>
+        <div className="foodcourt-layout">
+          <main className="min-w-0">
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+              <h2 className="font-display text-xl font-semibold">Choisissez votre restaurant <span className="ml-1 text-sm font-normal text-muted-foreground">({shown.length})</span></h2>
+              <div className="relative w-full sm:w-64"><Search aria-hidden="true" className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input aria-label="Rechercher un restaurant ou une ville" placeholder="Restaurant, ville…" value={search} onChange={(e) => setSearch(e.target.value)} className="h-11 bg-card pl-9" /></div>
+            </div>
+            <div className="foodcourt-grid">
+              {shown.map((r) => (
+                <article key={r.id} className="foodcourt-tile group flex min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-card">
+                  <Link to="/$slug" params={{ slug: r.slug }} aria-label={`Voir la carte de ${r.name}`} className="foodcourt-brand flex items-center justify-center bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
+                    {r.logo_url ? <img src={r.logo_url} alt={r.name} className="h-24 w-36 object-contain" /> : r.brand?.coverUrl ? <img src={r.brand.coverUrl} alt={`Photo de ${r.name}`} className="h-full w-full object-cover transition-transform duration-300 motion-safe:group-hover:scale-105" /> : <Store aria-hidden="true" className="h-12 w-12 text-primary" />}
+                  </Link>
+                  <div className="flex flex-1 flex-col items-center px-4 pb-4 pt-5 text-center">
+                    <h3 className="font-display text-xl font-semibold leading-tight">{r.name}</h3>
+                    <p className="mt-2 flex items-center justify-center gap-1 text-xs text-muted-foreground"><MapPin aria-hidden="true" className="h-3 w-3 shrink-0" />{r.city}</p>
+                    {r.config.tagline && <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{r.config.tagline}</p>}
+                    <Button asChild variant="outline" className="mt-5 min-h-11 w-full text-primary"><Link to="/$slug" params={{ slug: r.slug }}>Voir la carte <ArrowUpRight aria-hidden="true" /></Link></Button>
                   </div>
-                  <h3 className="directory-partner-name font-display font-semibold">{r.name}</h3>
-                  {r.config.tagline && <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{r.config.tagline}</p>}
-                  <div className="mt-auto flex flex-wrap justify-between gap-3 border-b border-border py-6">
-                    <Button asChild className="h-12 rounded-md px-6 text-base font-semibold"><Link to="/$slug" params={{ slug: r.slug }}>Commander <ArrowUpRight aria-hidden="true" /></Link></Button>
-                    <Button asChild variant="ghost" className="h-12 rounded-md px-2 text-sm text-foreground"><Link to="/connexion">Espace restaurant</Link></Button>
-                  </div>
-                </div>
-              </article>
-            );
-          })}
+                </article>
+              ))}
+            </div>
+            {!shown.length && <p className="py-12 text-center text-muted-foreground">{restaurants.length ? "Aucun restaurant ne correspond à votre recherche." : "Aucun restaurant disponible pour le moment."}</p>}
+          </main>
+          <aside className="foodcourt-pro" aria-label="Accès professionnels">
+            <p className="mb-3 font-display text-sm font-semibold text-muted-foreground">Espaces professionnels</p>
+            <nav className="foodcourt-pro-links" aria-label="Connexion aux espaces professionnels">
+              <Button asChild variant="secondary" className="foodcourt-pro-link"><Link to="/connexion"><Store /><span>Espace restaurant</span><ArrowUpRight /></Link></Button>
+              <Button asChild variant="secondary" className="foodcourt-pro-link"><Link to="/connexion"><ShieldCheck /><span>Console agence</span><ArrowUpRight /></Link></Button>
+              <Button asChild variant="ghost" className="foodcourt-pro-link"><Link to="/cuisine"><ChefHat /><span>Espace cuisine</span><ArrowUpRight /></Link></Button>
+              <Button asChild variant="ghost" className="foodcourt-pro-link"><Link to="/livreur"><Bike /><span>Espace livreur</span><ArrowUpRight /></Link></Button>
+            </nav>
+          </aside>
         </div>
-        {restaurants.length === 0 && <p className="py-12 text-center text-muted-foreground">Aucun restaurant disponible pour le moment.</p>}
-        <footer className="mt-12 flex items-center justify-between gap-4 border-t border-border py-7 text-sm text-muted-foreground"><span className="font-display font-semibold text-foreground">LC Digitale<span className="text-primary">.</span></span><span>Les établissements partenaires</span></footer>
-      </main>
+        <footer className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-border py-6 text-xs text-muted-foreground"><span className="font-display font-semibold">LC Digitale.</span><span>Les établissements partenaires</span></footer>
+      </div>
     </div>
   );
 }
