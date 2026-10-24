@@ -203,6 +203,18 @@ function MenuEditor() {
                         <DishPhoto restaurantId={r!.id} item={it} onChange={(image) => setItem(ci, ii, { image })} />
                         <Input value={it.name} onChange={(e) => setItem(ci, ii, { name: e.target.value })} aria-label="Nom du plat" />
                         <Textarea rows={2} value={it.desc ?? ""} placeholder="Description" onChange={(e) => setItem(ci, ii, { desc: e.target.value })} />
+                        <div className="space-y-1">
+                          <label className="flex flex-wrap items-center gap-2 text-xs font-semibold">Ingrédients retirables par le client
+                            <select className="min-h-10 rounded-md border border-input bg-background px-2 text-sm" value={it.removable === undefined ? "auto" : it.removable.length ? "custom" : "none"} onChange={(e) => { const v = e.target.value; setItem(ci, ii, { removable: v === "auto" ? undefined : v === "none" ? [] : (it.removable?.length ? it.removable : []) }); }} aria-label="Mode de personnalisation des ingrédients">
+                              <option value="auto">Automatique (d'après la description)</option>
+                              <option value="custom">Liste personnalisée</option>
+                              <option value="none">Aucun retrait possible</option>
+                            </select>
+                          </label>
+                          {it.removable !== undefined && it.removable.length > 0 && <Input value={it.removable.join(", ")} placeholder="Ex. Oignons, Ciboulette, Coriandre" onChange={(e) => setItem(ci, ii, { removable: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })} aria-label="Ingrédients retirables, séparés par des virgules" />}
+                          {it.removable !== undefined && it.removable.length === 0 && <p className="text-xs text-muted-foreground">Liste vide : le client ne pourra retirer aucun ingrédient. Ajoutez-en ci-dessus ou passez en mode automatique.</p>}
+                          {it.removable === undefined && <p className="text-xs text-muted-foreground">Les ingrédients de la description seront proposés au retrait ; tout le reste du plat n'est pas modifiable.</p>}
+                        </div>
                         <label className="flex items-center gap-2 text-xs font-semibold">TVA <select className="min-h-10 rounded-md border border-input bg-background px-2 text-sm" value={it.vatRate ?? ""} onChange={(e) => setItem(ci, ii, { vatRate: e.target.value ? (Number(e.target.value) as 5.5 | 10 | 20) : undefined })}><option value="">Taux par défaut</option><option value="5.5">5,5 % (vente à emporter différée)</option><option value="10">10 % (restauration)</option><option value="20">20 % (alcools)</option></select></label>
                         <div><p className="mb-1 text-xs font-semibold">Allergènes (14 allergènes INCO) · {it.allergens === undefined ? <span className="text-destructive">non renseignés</span> : it.allergens.length ? `${it.allergens.length} coché(s)` : "aucun"} {it.allergens === undefined && <button type="button" className="underline" onClick={() => setItem(ci, ii, { allergens: [] })}>Marquer « aucun allergène »</button>}</p><AllergenPicker value={it.allergens ?? []} onChange={(v) => setItem(ci, ii, { allergens: v })} /></div>
                         <details className="rounded-md border border-border p-2"><summary className="cursor-pointer text-xs font-semibold">Traductions · {FOREIGN_LANGS.filter((l) => it.translations?.[l]?.name).length}/3</summary>
