@@ -6,7 +6,7 @@ const dish: MenuItem = { id: "sig-beef-lok-lak", name: "Beef Lok Lak", price: 10
 describe("ingrédients retirables", () => {
   it("déduit les ingrédients de la description quand rien n'est défini", () => {
     const labels = removableChoices(dish).map((c) => c.label);
-    expect(labels).toContain("Œuf");
+    expect(labels).toContain("œuf");
     expect(labels).toContain("Riz sauce tomate");
   });
 
@@ -22,10 +22,10 @@ describe("ingrédients retirables", () => {
   });
 
   it("accepte un retrait connu et le fait apparaître en « SANS : » pour la cuisine", () => {
-    const oeuf = removableChoices(dish).find((c) => c.label === "Œuf")!.id;
+    const oeuf = removableChoices(dish).find((c) => c.label === "œuf")!.id;
     const sel = { [REMOVE_KEY]: [oeuf] };
     expect(validateSelections(dish, sel)).toBeNull();
-    expect(describeSelections(dish, sel)).toEqual(["SANS : Œuf"]);
+    expect(describeSelections(dish, sel)).toEqual(["SANS : œuf"]);
   });
 
   it("refuse un ingrédient inconnu", () => {
