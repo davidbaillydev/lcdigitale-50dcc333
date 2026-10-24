@@ -28,7 +28,25 @@ describe("ticket formatting", () => {
   it("formats choices directly and adds the price only for paid options", () => {
     const item = order.items[0];
     if (!item) throw new Error("Missing fixture item");
-    expect(ticketOptions(item)).toEqual(["Base : Nouilles classiques", "+ Cordon bleu (+1,50 €)", "Sauces : Ketchup"]);
+    expect(ticketOptions(item)).toEqual(["Base: Nouilles classiques", "Sauces: Ketchup", "+ Cordon bleu (+1,50 €)"]);
+  });
+
+  it("matches the validated TACOS layout: grouped choices, paid choice first, extras last", () => {
+    expect(ticketOptions({
+      name: "TACOS Maxi XL", qty: 1, total: 11.5,
+      details: ["Boisson : Coca-Cola", "Sauce fromagère : Oui", "Sauces : Biggy", "Sauces : Algerienne", "2 Viandes : Kebab", "2 Viandes : Tenders"],
+      selected_options: [{ name: "Choix : Frites + Boisson", price: 2 }, { name: "Cordon bleu", price: 1.5 }],
+    })).toEqual([
+      "Choix: Frites + Boisson (+2,00 €)", "Boisson: Coca-Cola", "Sauce fromagère: Oui",
+      "Sauces: Biggy, Algerienne", "2 Viandes: Kebab, Tenders", "+ Cordon bleu (+1,50 €)",
+    ]);
+  });
+
+  it("no longer prints the category above items", () => {
+    const html = ticketHtml(order, "kitchen", 80, { name: "W" });
+    const text = Array.from(ticketEscpos(order, "kitchen", 80, { name: "W" })).map((b) => String.fromCharCode(b)).join("");
+    expect(html).not.toContain("WOKS SIGNATURES");
+    expect(text).not.toContain("WOKS SIGNATURES");
   });
 
   it("hides allergens unless explicitly requested on both ticket kinds", () => {

@@ -56,11 +56,27 @@ export function ticketFields(kind: TicketKind, fields?: Partial<KitchenFields>):
     ? { allergens: fields?.allergens === true, options: true, notes: true, customer: true, contact: true, prices: true, paid: true, qc: false }
     : { ...printingDefaults().kitchen, ...fields };
 }
+/** Options d'un article : choix inclus regroupés « Groupe: A, B », extras payants « + Nom (+1,50 €) ». */
 export function ticketOptions(it: TicketOrder["items"][number]): string[] {
-  return [
-    ...(it.details ?? []),
-    ...(it.selected_options ?? []).map((op) => Number(op.price) > 0 ? `${op.name.includes(":") ? "" : "+ "}${op.name} (+${eur(op.price)})` : op.name),
-  ];
+  const groups = new Map<string, string[]>();
+  const order: ({ g: string } | { s: string })[] = [];
+  const addChoice = (raw: string) => {
+    const m = raw.match(/^([^:]+?)\s*:\s*(.+)$/);
+    if (!m) { order.push({ s: raw.trim() }); return; }
+    const g = m[1].trim(), v = m[2].trim();
+    if (!groups.has(g)) { groups.set(g, []); order.push({ g }); }
+    groups.get(g)!.push(v);
+  };
+  const paid: string[] = [];
+  for (const d of it.details ?? []) addChoice(d);
+  for (const op of it.selected_options ?? []) {
+    if (Number(op.price) > 0) {
+      const m = op.name.match(/^([^:]+?)\s*:\s*(.+)$/);
+      paid.push(m ? `${m[1].trim()}: ${m[2].trim()} (+${eur(op.price)})` : `+ ${op.name.trim()} (+${eur(op.price)})`);
+    } else addChoice(op.name);
+  }
+  const choices = order.map((x) => ("g" in x ? `${x.g}: ${groups.get(x.g)!.join(", ")}` : x.s));
+  return [...paid.filter((p) => !p.startsWith("+ ")), ...choices, ...paid.filter((p) => p.startsWith("+ "))];
 }
 export function ticketTotals(o: TicketOrder) {
   const total = Number(o.total);
@@ -115,7 +131,6 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
   const timing = ticketTiming(o);
   const big = width === 80 ? 15 : 12;
   const items = o.items.map((it) => `
-    <div class="cat">${esc(it.category ?? "Carte").toUpperCase()}</div>
     <div class="row item"><b>${it.qty}x ${esc(itemTitle(it))}</b>${f.prices && it.total != null ? `<span>${eur(it.total)}</span>` : ""}</div>
     ${(f.options ? ticketOptions(it) : []).map((d) => `<div class="det">${esc(d)}</div>`).join("")}
     ${f.allergens && it.allergens?.length ? `<div class="alg">⚠ ALLERGÈNES : ${it.allergens.map((a) => esc(allergenLabel(a)).toUpperCase()).join(", ")}</div>` : ""}`).join("");
