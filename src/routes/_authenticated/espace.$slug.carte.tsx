@@ -10,7 +10,7 @@ import { loadMenu, saveMenu } from "@/lib/menu-admin.functions";
 import { analyzeMenu } from "@/lib/menu-import.functions";
 import { readMenuFile } from "@/lib/menu-import";
 import { baseCategories } from "@/lib/catalogs";
-import type { Category, MenuItem } from "@/lib/menu";
+import { removableChoices, type Category, type MenuItem } from "@/lib/menu";
 import { ThemeToggle } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -205,7 +205,7 @@ function MenuEditor() {
                         <Textarea rows={2} value={it.desc ?? ""} placeholder="Description" onChange={(e) => setItem(ci, ii, { desc: e.target.value })} />
                         <div className="space-y-1">
                           <label className="flex flex-wrap items-center gap-2 text-xs font-semibold">Ingrédients retirables par le client
-                            <select className="min-h-10 rounded-md border border-input bg-background px-2 text-sm" value={it.removable === undefined ? "auto" : it.removable.length ? "custom" : "none"} onChange={(e) => { const v = e.target.value; setItem(ci, ii, { removable: v === "auto" ? undefined : v === "none" ? [] : (it.removable?.length ? it.removable : []) }); }} aria-label="Mode de personnalisation des ingrédients">
+                            <select className="min-h-10 rounded-md border border-input bg-background px-2 text-sm" value={it.removable === undefined ? "auto" : it.removable.length ? "custom" : "none"} onChange={(e) => { const v = e.target.value; setItem(ci, ii, { removable: v === "auto" ? undefined : v === "none" ? [] : (it.removable?.length ? it.removable : removableChoices(it).map((c) => c.label)) }); }} aria-label="Mode de personnalisation des ingrédients">
                               <option value="auto">Automatique (d'après la description)</option>
                               <option value="custom">Liste personnalisée</option>
                               <option value="none">Aucun retrait possible</option>
