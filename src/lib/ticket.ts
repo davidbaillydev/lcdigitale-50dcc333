@@ -9,7 +9,7 @@ export type TicketWidth = 80 | 58;
 export type TicketKind = "kitchen" | "receipt";
 export type TicketOrder = {
   order_number: number; customer_name?: string | null; phone?: string | null; email?: string | null; mode: string;
-  address?: string | null; city?: string | null; slot: string; created_at?: string;
+  address?: string | null; city?: string | null; slot: string; created_at?: string; asap?: boolean; first_name?: string | null; last_name?: string | null;
   items: { name: string; qty: number; total?: number; category?: string; details?: string[]; allergens?: string[]; size?: { name: string } | null; selected_options?: { name: string; price: number }[] }[];
   notes?: string | null; total: number | string; subtotal?: number | string | null; delivery_fee?: number | string | null; service_fee?: number | string | null;
   discount?: number | string | null; promo_code?: string | null;
@@ -23,12 +23,25 @@ export const modeLabel = (m: string) => (m === "delivery" ? "LIVRAISON" : m === 
 /** Ticket client d'une commande non encore réglée : bon de pré-commande non fiscal. */
 export const isPreorder = (kind: TicketKind, o: { payment_method: string; payment_status?: string | null }) => kind === "receipt" && !isPaid(o);
 export const isPaid = (o: { payment_method: string; payment_status?: string | null }) => o.payment_status ? o.payment_status === "paid" : o.payment_method === "online";
-export const payLabel = (p: string) =>
-  p === "online" ? "En ligne" : p === "card_terminal" ? "Carte bancaire / terminal" : p === "counter" ? "Au comptoir" : "À la remise de la commande";
+export const payLabel = (p: string, paid = false) =>
+  p === "online" ? paid ? "Payé en ligne" : "Paiement en ligne (en attente)" : p === "card_terminal" ? "Carte bancaire (au comptoir)" : p === "counter" ? "Paiement au comptoir" : "Paiement à la remise";
 
 export type KitchenFields = { allergens: boolean; options: boolean; notes: boolean; customer: boolean; contact: boolean; prices: boolean; paid: boolean; qc: boolean };
 export type PrintingConfig = { width: TicketWidth; auto: boolean; kitchen: KitchenFields };
-export type TicketShop = { name: string; address?: string | null; phone?: string | null };
+export type TicketShop = { name: string; address?: string | null; phone?: string | null; slug?: string; customDomains?: string[] };
+export function ticketWebsite(shop: TicketShop) {
+  const domain = shop.customDomains?.find((d) => /^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i.test(d));
+  return domain ?? (shop.slug ? `restaurant.lcdigitale.fr/${shop.slug}` : "restaurant.lcdigitale.fr");
+}
+export function ticketCustomer(o: TicketOrder): [string, string][] {
+  const rows: [string, string][] = [];
+  if (o.first_name) rows.push(["Prénom:", o.first_name]);
+  if (o.last_name) rows.push(["Nom:", o.last_name]);
+  if (!o.first_name && !o.last_name && o.customer_name) rows.push(["Nom:", o.customer_name]);
+  if (o.email) rows.push(["Email:", o.email]);
+  if (o.phone && o.phone !== "-") rows.push(["Téléphone:", o.phone]);
+  return rows;
+}
 
 export function printingDefaults(p?: Partial<PrintingConfig> | null): PrintingConfig {
   return {
@@ -46,7 +59,7 @@ export function ticketFields(kind: TicketKind, fields?: Partial<KitchenFields>):
 export function ticketOptions(it: TicketOrder["items"][number]): string[] {
   return [
     ...(it.details ?? []),
-    ...(it.selected_options ?? []).map((op) => Number(op.price) > 0 ? `+ ${op.name} (+${eur(op.price)})` : op.name),
+    ...(it.selected_options ?? []).map((op) => Number(op.price) > 0 ? `${op.name.includes(":") ? "" : "+ "}${op.name} (+${eur(op.price)})` : op.name),
   ];
 }
 export function ticketTotals(o: TicketOrder) {
@@ -56,7 +69,7 @@ export function ticketTotals(o: TicketOrder) {
 }
 export function ticketTiming(o: TicketOrder) {
   const minutes = o.created_at ? Math.max(0, Math.round((Date.parse(o.slot) - Date.parse(o.created_at)) / 60_000)) : 0;
-  return `Pour ${time(o.slot)}${Number.isFinite(minutes) && minutes > 0 ? ` · Délai : ${minutes} min` : ""}`;
+  return { label: o.asap ? "Dès que possible" : "Prévu pour", value: o.asap && Number.isFinite(minutes) && minutes > 0 ? `${minutes} min` : time(o.slot) };
 }
 
 /** Largeur choisie sur cet appareil (null = pas de choix local). */
@@ -99,40 +112,46 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
   const restaurant = shop.name;
   const f = ticketFields(kind, fieldsIn);
   const totals = ticketTotals(o);
+  const timing = ticketTiming(o);
   const big = width === 80 ? 15 : 12;
   const items = o.items.map((it) => `
     <div class="cat">${esc(it.category ?? "Carte").toUpperCase()}</div>
-    <div class="row item"><b>${esc(itemTitle(it))}</b><span>${it.qty}×${f.prices && it.total != null ? ` · ${eur(it.total)}` : ""}</span></div>
+    <div class="row item"><b>${it.qty}x ${esc(itemTitle(it))}</b>${f.prices && it.total != null ? `<span>${eur(it.total)}</span>` : ""}</div>
     ${(f.options ? ticketOptions(it) : []).map((d) => `<div class="det">${esc(d)}</div>`).join("")}
     ${f.allergens && it.allergens?.length ? `<div class="alg">⚠ ALLERGÈNES : ${it.allergens.map((a) => esc(allergenLabel(a)).toUpperCase()).join(", ")}</div>` : ""}`).join("");
   const allAlg = [...new Set(o.items.flatMap((i) => i.allergens ?? []))];
   return `<!doctype html><html><head><meta charset="utf-8"><title>Ticket ${o.order_number}</title><style>
     @page { size: ${width}mm auto; margin: 0; }
     * { box-sizing: border-box; }
-    body { width: ${width}mm; margin: 0; padding: 3mm; font: ${big}px/1.3 "Courier New", monospace; color: #000; background: #fff; }
+    :root { --ticket-ink: #000; --ticket-paper: #fff; }
+    body { width: ${width}mm; margin: 0; padding: 3mm; font: ${big}px/1.3 Arial, sans-serif; color: var(--ticket-ink); background: var(--ticket-paper); }
     .c { text-align: center; } .xl { font-size: ${big * 2}px; font-weight: bold; } .l { font-size: ${big * 1.3}px; font-weight: bold; }
     body { overflow-wrap: anywhere; }
     .row { display: flex; justify-content: space-between; gap: 4px; margin-top: 4px; }
     .row > :first-child { min-width: 0; } .row > span:last-child { flex-shrink: 0; white-space: nowrap; }
     .item { font-size: ${big + 1}px; font-weight: bold; }
     .cat { margin-top: 8px; font-size: ${big - 3}px; }
-    .det { padding-left: 10px; font-size: ${big - 2}px; }
+    .det { padding-left: 10px; font-size: ${big - 1}px; }
+    .customer { display: grid; grid-template-columns: auto minmax(0,1fr); gap: 2px 8px; }
+    .customer .value { text-align: right; } .section { margin: 12px 0 4px; font-weight: bold; }
+    .promo { border: 1px solid var(--ticket-ink); padding: 10px 5px; margin: 12px 0; text-align: center; font-weight: bold; }
     hr { border: 0; border-top: 1px dashed #000; margin: 6px 0; }
     .alg { padding-left: 10px; font-size: ${big - 2}px; font-weight: bold; }
     .note { border: 3px double #000; padding: 6px; margin-top: 8px; font-weight: bold; font-size: ${big + 1}px; background: #fff; }
     .box { border: 2px solid #000; padding: 6px; margin-top: 6px; display: flex; justify-content: space-around; font-weight: bold; }
     .ck { display: inline-block; width: 1em; height: 1em; border: 2px solid #000; vertical-align: -2px; margin-right: 4px; text-align: center; line-height: .9em; }
-    .band { font-weight: bold; text-align: center; margin-top: 4px; }
+    .band { background: var(--ticket-ink); color: var(--ticket-paper); padding: 4px; margin: 8px 0; font-weight: bold; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    .band.row { align-items: start; }
     .sig { margin-top: 14px; border-bottom: 1px dotted #000; height: 1.4em; }
   </style></head><body>
     <div class="c">${kind === "kitchen" ? "TICKET CUISINE" : isPreorder(kind, o) ? "BON DE PRÉ-COMMANDE - À RÉGLER EN CAISSE" : "TICKET CLIENT"}</div>
     <hr><div class="c xl">N° ${o.order_number}</div>
-    <div class="c l">${modeLabel(o.mode)}${o.source === "kiosk" ? " · BORNE" : ""}${o.table_label ? ` · TABLE ${esc(o.table_label)}` : ""}${o.room_label ? ` · CHAMBRE ${esc(o.room_label)}` : ""}</div>
-    <div>Paiement : ${payLabel(o.payment_method)}</div>
-    <div class="band">${esc(ticketTiming(o))}</div>
-    ${f.customer && (o.customer_name || o.phone || o.email) ? `<hr><div class="l">Informations clients</div>${o.customer_name ? `<div>Nom : ${esc(o.customer_name)}</div>` : ""}${o.phone && o.phone !== "-" ? `<div>Téléphone : ${esc(o.phone)}</div>` : ""}${o.email ? `<div>Email : ${esc(o.email)}</div>` : ""}` : ""}
+    <div class="band">${payLabel(o.payment_method, isPaid(o))}</div>
+    <div class="band row"><span>${esc(timing.label)}</span><span>${esc(timing.value)}</span></div>
+    <div class="band">${modeLabel(o.mode)}${o.source === "kiosk" ? " · BORNE" : o.source === "phone" ? " · TÉL IA" : ""}${o.table_label ? ` · TABLE ${esc(o.table_label)}` : ""}${o.room_label ? ` · CHAMBRE ${esc(o.room_label)}` : ""}</div>
+    ${f.customer && ticketCustomer(o).length ? `<div class="section">Informations clients:</div><div class="customer">${ticketCustomer(o).map(([label, value]) => `<span>${label}</span><span class="value">${esc(value)}</span>`).join("")}</div>` : ""}
     ${o.mode === "delivery" && o.address ? `<div class="c">${esc(o.address)}, ${esc(o.city)}</div>` : ""}
-    <hr><div class="l">Articles</div>${items}
+    <div class="section">Articles:</div>${items}
     ${f.allergens && kind === "kitchen" && allAlg.length ? `<div class="note">ALLERGÈNES COMMANDE : ${allAlg.map((a) => esc(allergenLabel(a))).join(", ")}</div>` : ""}
     ${f.notes && o.notes ? `<div class="note">⚠ REMARQUE CLIENT : ${esc(o.notes)}</div>` : ""}
     <hr>
@@ -145,9 +164,10 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
     ${f.qc && kind === "kitchen" ? `<hr><div class="l">Contrôle emballage</div><div><span class="ck"></span>Articles conformes</div><div><span class="ck"></span>Tous les articles</div><div><span class="ck"></span>Couverts / sauces</div><div>Visa :</div><div class="sig"></div>` : ""}
     ${isPreorder(kind, o) ? `<hr><div class="c"><b>Document non fiscal - À régler obligatoirement à la caisse du restaurant avant délivrance de la commande</b></div>` : ""}
     ${kind === "receipt" && !isPreorder(kind, o) ? `<hr><div class="c">Payé — ticket non fiscal, facture disponible sur demande</div><div class="c">Merci de votre commande !</div>` : ""}
-    <hr><div class="c l">${esc(restaurant)}</div>
+    <div class="promo">Commande en ligne:<br>${esc(ticketWebsite(shop))}</div>
+    <div class="c l">${esc(restaurant.toUpperCase())}</div>
     ${shop.address ? `<div class="c">${esc(shop.address)}</div>` : ""}
-    ${f.contact && shop.phone ? `<div class="c">${esc(shop.phone)}</div>` : ""}
+    ${shop.phone ? `<div class="c">${esc(shop.phone)}</div>` : ""}
     <div class="c" style="margin-top:6px">${new Date().toLocaleString("fr-FR")}</div>
   </body></html>`;
 }

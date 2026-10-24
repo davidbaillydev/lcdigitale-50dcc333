@@ -1,6 +1,6 @@
 // Encodeur ESC/POS : transforme une commande en octets pour imprimante thermique.
 import { allergenLabel } from "./allergens";
-import { isPaid, isPreorder, itemTitle, modeLabel, payLabel, ticketFields, ticketOptions, ticketTiming, ticketTotals, type KitchenFields, type TicketKind, type TicketOrder, type TicketShop, type TicketWidth } from "./ticket";
+import { isPaid, isPreorder, itemTitle, modeLabel, payLabel, ticketCustomer, ticketFields, ticketOptions, ticketTiming, ticketTotals, ticketWebsite, type KitchenFields, type TicketKind, type TicketOrder, type TicketShop, type TicketWidth } from "./ticket";
 
 const CP858: Record<string, number> = {
   "Ç": 0x80, "ü": 0x81, "é": 0x82, "â": 0x83, "ä": 0x84, "à": 0x85, "ç": 0x87, "ê": 0x88, "ë": 0x89, "è": 0x8a,
@@ -25,6 +25,7 @@ class Enc {
   align(a: 0 | 1 | 2) { return this.raw(0x1b, 0x61, a); }
   bold(on: boolean) { return this.raw(0x1b, 0x45, on ? 1 : 0); }
   size(w: 1 | 2, h: 1 | 2) { return this.raw(0x1d, 0x21, ((w - 1) << 4) | (h - 1)); }
+  inverse(on: boolean) { return this.raw(0x1d, 0x42, on ? 1 : 0); }
 }
 
 const eur = (n: unknown) => `${Number(n ?? 0).toFixed(2).replace(".", ",")} €`;
@@ -48,28 +49,31 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
   const cols = width === 80 ? 48 : 32;
   const f = ticketFields(kind, fieldsIn);
   const totals = ticketTotals(o);
+  const timing = ticketTiming(o);
   const e = new Enc().raw(0x1b, 0x40, 0x1b, 0x74, 19);
   const hr = "-".repeat(cols);
   e.align(1);
   (isPreorder(kind, o) ? e.bold(true).line("BON DE PRE-COMMANDE").line("A REGLER EN CAISSE").bold(false) : e.line(kind === "kitchen" ? "TICKET CUISINE" : "TICKET CLIENT")).line(hr);
-  e.bold(true).size(2, 2).line(`N° ${o.order_number}`).size(1, 2);
-  wrap(modeLabel(o.mode) + (o.source === "kiosk" ? " - BORNE" : o.source === "phone" ? " - TEL IA" : "") + (o.table_label ? ` - TABLE ${o.table_label}` : "") + (o.room_label ? ` - CHAMBRE ${o.room_label}` : ""), cols).forEach((l) => e.line(l));
-  e.size(1, 1).bold(false).align(0);
-  wrap(`Paiement : ${payLabel(o.payment_method)}`, cols).forEach((l) => e.line(l));
-  wrap(ticketTiming(o), cols).forEach((l) => e.line(l));
-  if (f.customer && (o.customer_name || o.phone || o.email)) {
-    e.line(hr).bold(true).line("Informations clients").bold(false);
-    if (o.customer_name) wrap(`Nom : ${o.customer_name}`, cols).forEach((l) => e.line(l));
-    if (o.phone && o.phone !== "-") wrap(`Téléphone : ${o.phone}`, cols).forEach((l) => e.line(l));
-    if (o.email) wrap(`Email : ${o.email}`, cols).forEach((l) => e.line(l));
+  e.bold(true).size(2, 2).line(`N° ${o.order_number}`).size(1, 1).align(0);
+  e.inverse(true);
+  wrap(payLabel(o.payment_method, isPaid(o)), cols).forEach((l) => e.line(l.padEnd(cols)));
+  e.inverse(false).line().inverse(true).line(lr(timing.label, timing.value, cols)).inverse(false).line().inverse(true);
+  wrap(modeLabel(o.mode) + (o.source === "kiosk" ? " - BORNE" : o.source === "phone" ? " - TEL IA" : "") + (o.table_label ? ` - TABLE ${o.table_label}` : "") + (o.room_label ? ` - CHAMBRE ${o.room_label}` : ""), cols).forEach((l) => e.line(l.padEnd(cols)));
+  e.inverse(false).bold(false).line();
+  if (f.customer && ticketCustomer(o).length) {
+    e.bold(true).line("Informations clients:").bold(false);
+    for (const [label, value] of ticketCustomer(o)) {
+      const lines = wrap(value, cols - 12);
+      lines.forEach((v, i) => e.line(lr(i === 0 ? label : "", v, cols)));
+    }
   }
   if (o.mode === "delivery" && o.address) wrap(`${o.address}, ${o.city ?? ""}`, cols).forEach((l) => e.line(l));
-  e.align(0).line(hr).bold(true).line("Articles").bold(false);
+  e.align(0).line().bold(true).line("Articles:").bold(false);
   for (const it of o.items) {
     wrap((it.category ?? "Carte").toUpperCase(), cols).forEach((l) => e.line(l));
     e.bold(true);
-    const right = `${it.qty}x${f.prices && it.total != null ? ` ${eur(it.total)}` : ""}`;
-    const names = wrap(itemTitle(it), Math.max(8, cols - right.length - 1));
+    const right = f.prices && it.total != null ? eur(it.total) : "";
+    const names = wrap(`${it.qty}x ${itemTitle(it)}`, Math.max(8, cols - right.length - 1));
     names.forEach((name, i) => e.line(i === 0 ? lr(name, right, cols) : name));
     e.bold(false);
     if (f.options) for (const d of ticketOptions(it)) wrap(d, cols - 2).forEach((l) => e.line(`  ${l}`));
@@ -90,15 +94,17 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
   if (f.prices && Number(o.discount) > 0) e.line(lr(`Remise${o.promo_code ? ` ${o.promo_code}` : ""}`, `-${eur(o.discount)}`, cols));
   if (f.prices) e.line(lr("TVA (10 % incluse)", eur(totals.vat), cols));
   if (f.prices) e.bold(true).size(1, 2).line(lr("TOTAL", eur(totals.total), cols)).size(1, 1).bold(false);
-  if (f.paid) { const p = isPaid(o); e.line(hr).align(1).bold(true).size(1, 2).line(`[${p ? "X" : " "}] PAYE    [${p ? " " : "X"}] IMPAYE`).size(1, 1).bold(false).align(0); }
+  if (f.paid) { const p = isPaid(o); e.line(hr).align(1).bold(true).size(1, 2).line(`[${p ? "X" : " "}] PAYE    [${p ? " " : "X"}] IMPAYE`).size(1, 1).bold(false).line(hr).align(0); }
   if (f.qc && kind === "kitchen") { e.line(hr).bold(true).line("CONTROLE EMBALLAGE").bold(false).line("[ ] Articles conformes").line("[ ] Tous les articles").line("[ ] Couverts / sauces").line("").line("Visa : " + ".".repeat(Math.max(4, cols - 7))); }
   if (isPreorder(kind, o)) { e.line(hr).align(1).bold(true); wrap("Document non fiscal - A regler obligatoirement a la caisse du restaurant avant delivrance de la commande", cols).forEach((l) => e.line(l)); e.bold(false).line("Merci de votre commande !"); }
   else if (kind === "receipt") e.line(hr).align(1).line("PAYE - ticket non fiscal").line("Facture sur demande").line("Merci de votre commande !");
-  e.line(hr).align(1).bold(true).size(1, 2);
-  wrap(shop.name, cols).forEach((l) => e.line(l));
+  e.line(hr).align(1).bold(true).line("Commande en ligne:");
+  wrap(ticketWebsite(shop), cols).forEach((l) => e.line(l));
+  e.line(hr).line().size(1, 2);
+  wrap(shop.name.toUpperCase(), cols).forEach((l) => e.line(l));
   e.size(1, 1).bold(false);
   if (shop.address) wrap(shop.address, cols).forEach((l) => e.line(l));
-  if (f.contact && shop.phone) wrap(shop.phone, cols).forEach((l) => e.line(l));
+  if (shop.phone) wrap(shop.phone, cols).forEach((l) => e.line(l));
   e.line(new Date().toLocaleString("fr-FR"));
   e.raw(0x0a, 0x0a, 0x0a, 0x1d, 0x56, 0x42, 0x00); // avance + coupe
   return new Uint8Array(e.b);
