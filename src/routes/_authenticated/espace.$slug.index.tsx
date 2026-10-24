@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Bell, BellOff, Bike, Check, ChefHat, Lock, LogOut, Maximize, Minimize, MoonStar, PanelTopClose, PanelTopOpen, Phone, Printer, ShoppingBag, Sun, Users, Volume2, VolumeX } from "lucide-react";
 import { useKitchenFullscreen } from "@/hooks/use-kitchen-fullscreen";
 import { useWakeLock } from "@/hooks/use-wake-lock";
-import { printTickets, printingDefaults, printingFields, useTicketWidth, type PrintingConfig, type TicketKind } from "@/lib/ticket";
+import { printTickets, printingDefaults, printingFields, autoPrintKinds, autoPrintLabel, useTicketWidth, type PrintingConfig, type TicketKind } from "@/lib/ticket";
 import { hasKitchenPin } from "@/lib/kitchen-pin.functions";
 import { KitchenLock } from "@/components/KitchenLock";
 import { PrinterSetup } from "@/components/PrinterSetup";
@@ -112,7 +112,7 @@ function Kitchen() {
     }
     if (!ok) toast.error(`Impression du ticket n° ${o.order_number} échouée`);
   }, [restaurant, rid, logs, printing.width, printing.kitchen, printing.textSize, printing.font, slug]);
-  const printRef = useRef({ auto: false, doPrint }); printRef.current = { auto: printing.auto, doPrint };
+  const printRef = useRef({ auto: false, kinds: [] as TicketKind[], doPrint }); printRef.current = { auto: autoPrintKinds(printing).length > 0, kinds: autoPrintKinds(printing), doPrint };
   const [sound, setSound] = useState(false);
   const [started, setStarted] = useState(false);
   const [serviceMode, setServiceMode] = useState(false);
@@ -180,7 +180,7 @@ function Kitchen() {
         const kioskCard = n.source === "kiosk" && n.payment_method === "card_terminal";
         if (p.eventType === "UPDATE" && kioskCard && deferred.current.has(n.id) && (n.payment_status === "paid" || n.payment_status === "failed")) {
           deferred.current.delete(n.id);
-          if (printRef.current.auto) void printRef.current.doPrint(n, ["kitchen", "receipt"], true);
+          if (printRef.current.auto) void printRef.current.doPrint(n, printRef.current.kinds, true);
         }
         if (p.eventType === "INSERT" && kioskCard && n.payment_status !== "paid" && n.status !== "awaiting_payment") {
           deferred.current.add(n.id);
@@ -189,13 +189,13 @@ function Kitchen() {
             const cur = ordersRef.current.find((x) => x.id === n.id) as (Order & { payment_ref?: string | null }) | undefined;
             if (cur?.payment_ref) return; // paiement TPE en cours
             deferred.current.delete(n.id);
-            if (printRef.current.auto) void printRef.current.doPrint(cur ?? n, ["kitchen", "receipt"], true);
+            if (printRef.current.auto) void printRef.current.doPrint(cur ?? n, printRef.current.kinds, true);
           }, 8000);
         }
         if ((p.eventType === "INSERT" && n.status !== "awaiting_payment") || becamePaid) {
           toast.success(n.status === "pending_approval" ? `Nouvelle commande ${n.table_label ? `Table ${n.table_label}` : n.room_label ? `Chambre ${n.room_label}` : "libre-service"} · à valider` : `Nouvelle commande n° ${n.order_number}`, n.status === "pending_approval" ? { duration: 15000 } : undefined);
           if (audio.current && soundRef.current) beep(audio.current);
-          if (printRef.current.auto && n.status !== "pending_approval" && !deferred.current.has(n.id)) void printRef.current.doPrint(p.new as Order, ["kitchen", "receipt"], true);
+          if (printRef.current.auto && n.status !== "pending_approval" && !deferred.current.has(n.id)) void printRef.current.doPrint(p.new as Order, printRef.current.kinds, true);
         }
         load();
       })
@@ -331,7 +331,7 @@ function Kitchen() {
         {rid && <StockDialog slug={slug} restaurantId={rid} />}
         <PrinterSetup compact width={printing.width} shop={{ name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null, slug, customDomains: (restaurant?.config as Restaurant["config"] | null)?.customDomains }} />
         <Button size="sm" variant="outline" onClick={() => setDeviceWidth(printing.width === 80 ? 58 : 80)} aria-label={`Rouleau ${printing.width} mm — basculer en ${printing.width === 80 ? 58 : 80} mm`} title="Changer le format de rouleau sur cet appareil">
-          <Printer className="h-4 w-4" />{printing.width} mm · {printing.auto ? "auto" : "manuel"}
+          <Printer className="h-4 w-4" />{printing.width} mm · {autoPrintLabel(printing)}
         </Button>
         </nav>
       </header>
