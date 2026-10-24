@@ -104,6 +104,19 @@ export function PrinterSetup({ shop, width: defaultWidth, compact }: { shop: Tic
         </div>
         <p className="text-xs text-muted-foreground">{TYPES.find((x) => x.t === type)?.hint}{!sup[type] && " Non pris en charge par ce navigateur."}</p>
 
+        <details className="rounded-lg border border-border p-3 text-sm">
+          <summary className="cursor-pointer font-semibold">Marques et modèles compatibles</summary>
+          <p className="mt-2 text-xs text-muted-foreground">Toute imprimante thermique de tickets <b>ESC/POS</b> (la norme de 90 % des imprimantes de caisse) fonctionne. Marques courantes testées ou signalées :</p>
+          <ul className="mt-2 space-y-1.5 text-xs">
+            <li><b>Epson</b> — TM-T20, TM-T70, TM-T88, TM-m30 (référence du marché, Wi-Fi / USB / Bluetooth selon modèle)</li>
+            <li><b>Star Micronics</b> — TSP100, TSP650, mC-Print3 (très répandues en restauration)</li>
+            <li><b>Xprinter</b> — XP-58, XP-80, XP-Q200 (entrée de gamme fiable, 58 et 80 mm)</li>
+            <li><b>Metapace, Custom, Bixolon, Sewoo, Citizen</b> — compatibles ESC/POS</li>
+            <li><b>Imprimantes « no-name » 58/80 mm</b> (Amazon, AliExpress) — la plupart parlent ESC/POS ; vérifiez la mention « ESC/POS » sur la fiche produit</li>
+          </ul>
+          <p className="mt-2 text-xs text-muted-foreground"><b>Conseil de connexion :</b> Wi-Fi/réseau = le plus stable en cuisine · Bluetooth = pratique sur tablette · USB = ordinateur fixe · RawBT = n'importe quelle imprimante reliée à une tablette Android. Évitez les imprimantes « étiquettes » (Zebra, Dymo) : ce ne sont pas des imprimantes de tickets.</p>
+        </details>
+
         {type === "rawbt" ? (
           <ol className="list-decimal space-y-2 rounded-lg border border-border p-3 pl-7 text-sm">
             <li>Installez <b>RawBT Print Service</b> depuis le <a className="underline" href="https://play.google.com/store/apps/details?id=ru.a402d.rawbtprinter" target="_blank" rel="noreferrer">Google Play Store</a> sur la tablette Android.</li>
