@@ -39,7 +39,7 @@ export function initialSettings(r: Restaurant): Settings {
 }
 
 import { serviceFeeDefaults } from "@/lib/service-fee";
-import { printingDefaults, printTickets, sampleOrder, ticketHtml } from "@/lib/ticket";
+import { printingDefaults, printingFields, printTickets, sampleOrder, ticketHtml } from "@/lib/ticket";
 function Section({ title, group, children }: { title: string; group: SettingsGroupKey; children: React.ReactNode }) {
   return <SettingsGroup name={group}><section className="border-t border-border py-6"><h2 className="mb-4 text-2xl">{title}</h2>{children}</section></SettingsGroup>;
 }
@@ -67,7 +67,7 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
   const shop = { name: restaurant.name, address: restaurant.address, phone: restaurant.phone, slug: restaurant.slug, customDomains: restaurant.config.customDomains };
   const testPrint = async () => {
     setTestResult(null);
-    const ok = await printTickets(sampleOrder(), ["kitchen"], shop, s.config.printing.width, s.config.printing.kitchen);
+    const ok = await printTickets(sampleOrder(), ["kitchen"], shop, s.config.printing.width, printingFields(s.config.printing));
     setTestResult(ok ? "ok" : "failed");
   };
   const [cp, setCp] = useState(""); const [city, setCity] = useState("");
@@ -165,6 +165,17 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
             <Button key={w} type="button" variant={s.config.printing.width === w ? "default" : "secondary"} onClick={() => cfg({ printing: { ...s.config.printing, width: w } })}>{w} mm</Button>
           ))}
         </div>
+        <div className="mb-3 grid gap-3 sm:grid-cols-2">
+          <label className="text-sm font-medium">Taille du texte du ticket
+            <select className="mt-1 h-12 w-full rounded-md border border-input bg-background px-3" value={s.config.printing.textSize} onChange={(e) => cfg({ printing: { ...s.config.printing, textSize: e.target.value as "compact" | "normal" | "large" } })}>
+              <option value="compact">Compact (économise le papier)</option><option value="normal">Normal</option><option value="large">Grand (lecture en cuisine)</option>
+            </select></label>
+          <label className="text-sm font-medium">Police du ticket
+            <select className="mt-1 h-12 w-full rounded-md border border-input bg-background px-3" value={s.config.printing.font} onChange={(e) => cfg({ printing: { ...s.config.printing, font: e.target.value as "sans" | "mono" | "condensed" } })}>
+              <option value="sans">Moderne sans-serif</option><option value="mono">Classique caisse</option><option value="condensed">Condensée</option>
+            </select></label>
+          <p className="text-xs text-muted-foreground sm:col-span-2">La police s'applique à l'impression navigateur ; les imprimantes thermiques directes utilisent leur police interne mais respectent la taille.</p>
+        </div>
         <Toggle label="Impression automatique" hint="Imprime le ticket cuisine et le ticket de caisse dès qu'une commande arrive. Sinon, impression manuelle." checked={s.config.printing.auto} onChange={(v) => cfg({ printing: { ...s.config.printing, auto: v } })} />
         <p className="mt-3 text-sm font-semibold">Afficher sur le ticket cuisine</p>
         {([["allergens", "Allergènes des plats"], ["options", "Options et suppléments"], ["notes", "Notes du client"], ["customer", "Nom et téléphone du client"], ["contact", "Coordonnées du restaurant"], ["prices", "Prix, total et TVA"], ["paid", "Encadré Payé / Non payé"], ["qc", "Contrôle qualité emballage (cases + visa)"]] as const).map(([k, l]) => (
@@ -175,7 +186,7 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
           <p className="mb-2 text-sm font-semibold">Aperçu du ticket cuisine ({s.config.printing.width} mm)</p>
           <iframe title="Aperçu du ticket cuisine" className="max-w-full rounded border border-border bg-card"
             style={{ width: `${s.config.printing.width === 80 ? 330 : 250}px`, height: 460 }}
-            srcDoc={ticketHtml(sampleOrder(), "kitchen", s.config.printing.width, shop, s.config.printing.kitchen)} />
+            srcDoc={ticketHtml(sampleOrder(), "kitchen", s.config.printing.width, shop, printingFields(s.config.printing))} />
           <div className="mt-3"><PrinterSetup width={s.config.printing.width} shop={shop} /></div>
           <Button type="button" variant="secondary" className="mt-3 w-full" onClick={testPrint}>Imprimer un ticket de test</Button>
           {testResult === "ok" && <p role="status" className="mt-2 rounded bg-primary/15 p-2 text-sm">Ticket de test envoyé à l'imprimante. Vérifiez qu'il est bien sorti.</p>}

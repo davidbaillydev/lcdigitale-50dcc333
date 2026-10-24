@@ -27,7 +27,24 @@ export const payLabel = (p: string, paid = false) =>
   p === "online" ? paid ? "Payé en ligne" : "Paiement en ligne (en attente)" : p === "card_terminal" ? "Carte bancaire (au comptoir)" : p === "counter" ? "Paiement au comptoir" : "Paiement à la remise";
 
 export type KitchenFields = { allergens: boolean; options: boolean; notes: boolean; customer: boolean; contact: boolean; prices: boolean; paid: boolean; qc: boolean };
-export type PrintingConfig = { width: TicketWidth; auto: boolean; kitchen: KitchenFields };
+export type TicketTextSize = "compact" | "normal" | "large";
+export type TicketFont = "sans" | "mono" | "condensed";
+export type TicketStyle = { textSize?: TicketTextSize; font?: TicketFont };
+/** Réglages d'affichage passés aux rendus : champs cuisine + style du texte. */
+export type TicketFieldsIn = Partial<KitchenFields> & TicketStyle;
+export type PrintingConfig = { width: TicketWidth; auto: boolean; textSize: TicketTextSize; font: TicketFont; kitchen: KitchenFields };
+export const TICKET_FONTS: Record<TicketFont, string> = {
+  sans: "Arial, Helvetica, sans-serif",
+  mono: "'Courier New', Courier, monospace",
+  condensed: "'Arial Narrow', 'Roboto Condensed', 'Helvetica Neue Condensed', sans-serif-condensed, Arial, sans-serif",
+};
+/** Taille de base du texte HTML (px) selon le rouleau et la taille choisie. */
+export function ticketFontSize(width: TicketWidth, size: TicketTextSize = "normal") {
+  const base = width === 80 ? 15 : 12;
+  return size === "large" ? base + 3 : size === "compact" ? base - 2 : base;
+}
+/** Style + champs cuisine d'une configuration, prêt à passer aux rendus. */
+export const printingFields = (p: PrintingConfig): TicketFieldsIn => ({ ...p.kitchen, textSize: p.textSize, font: p.font });
 export type TicketShop = { name: string; address?: string | null; phone?: string | null; slug?: string; customDomains?: string[] | undefined };
 export function ticketWebsite(shop: TicketShop) {
   const domain = shop.customDomains?.find((d) => /^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i.test(d));
@@ -46,12 +63,15 @@ export function ticketCustomer(o: TicketOrder): [string, string][] {
 export function printingDefaults(p?: Partial<PrintingConfig> | null): PrintingConfig {
   return {
     width: p?.width === 58 ? 58 : 80, auto: p?.auto ?? false,
+    textSize: p?.textSize === "large" || p?.textSize === "compact" ? p.textSize : "normal",
+    font: p?.font === "mono" || p?.font === "condensed" ? p.font : "sans",
     kitchen: { allergens: false, options: true, notes: true, customer: true, contact: false, prices: false, paid: true, qc: false, ...(p?.kitchen ?? {}) },
   };
 }
 
 /** Présentation commune aux tickets HTML et thermiques ; les réglages cuisine restent respectés. */
-export function ticketFields(kind: TicketKind, fields?: Partial<KitchenFields>): KitchenFields {
+export function ticketFields(kind: TicketKind, fieldsIn?: TicketFieldsIn): KitchenFields {
+  const { textSize: _t, font: _f, ...fields } = fieldsIn ?? {};
   return kind === "receipt"
     ? { allergens: fields?.allergens === true, options: true, notes: true, customer: true, contact: true, prices: true, paid: true, qc: false }
     : { ...printingDefaults().kitchen, ...fields };
@@ -123,13 +143,14 @@ export function useTicketWidth(fallback: TicketWidth): [TicketWidth, (w: TicketW
   return [w, setTicketWidth];
 }
 
-export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth, shopIn: TicketShop | string, fieldsIn?: Partial<KitchenFields>) {
+export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth, shopIn: TicketShop | string, fieldsIn?: TicketFieldsIn) {
   const shop = typeof shopIn === "string" ? { name: shopIn } : shopIn;
   const restaurant = shop.name;
   const f = ticketFields(kind, fieldsIn);
   const totals = ticketTotals(o);
   const timing = ticketTiming(o);
-  const big = width === 80 ? 15 : 12;
+  const big = ticketFontSize(width, fieldsIn?.textSize);
+  const font = TICKET_FONTS[fieldsIn?.font ?? "sans"];
   const items = o.items.map((it) => `
     <div class="row item"><b>${it.qty}x ${esc(itemTitle(it))}</b>${f.prices && it.total != null ? `<span>${eur(it.total)}</span>` : ""}</div>
     ${(f.options ? ticketOptions(it) : []).map((d) => `<div class="det">${esc(d)}</div>`).join("")}
@@ -139,7 +160,7 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
     @page { size: ${width}mm auto; margin: 0; }
     * { box-sizing: border-box; }
     :root { --ticket-ink: #000; --ticket-paper: #fff; }
-    body { width: ${width}mm; margin: 0; padding: 3mm; font: ${big}px/1.3 Arial, sans-serif; color: var(--ticket-ink); background: var(--ticket-paper); }
+    body { width: ${width}mm; margin: 0; padding: 3mm; font: ${big}px/${fieldsIn?.textSize === "compact" ? 1.15 : 1.3} ${font}; color: var(--ticket-ink); background: var(--ticket-paper); }
     .c { text-align: center; } .xl { font-size: ${big * 2}px; font-weight: bold; } .l { font-size: ${big * 1.3}px; font-weight: bold; }
     body { overflow-wrap: anywhere; }
     .row { display: flex; justify-content: space-between; gap: 4px; margin-top: 4px; }
@@ -188,7 +209,7 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
 }
 
 /** Imprime directement sur l'imprimante ESC/POS de l'appareil si elle est configurée, sinon via le navigateur. */
-export async function printTickets(o: TicketOrder, kinds: TicketKind[], shopIn: TicketShop | string, width: TicketWidth = getTicketWidth(), fields?: Partial<KitchenFields>): Promise<boolean> {
+export async function printTickets(o: TicketOrder, kinds: TicketKind[], shopIn: TicketShop | string, width: TicketWidth = getTicketWidth(), fields?: TicketFieldsIn): Promise<boolean> {
   const { getPrinter, sendToPrinter } = await import("./printer");
   const p = getPrinter();
   if (p) {
@@ -200,7 +221,7 @@ export async function printTickets(o: TicketOrder, kinds: TicketKind[], shopIn: 
   return printBrowser(o, kinds, shopIn, width, fields);
 }
 
-function printBrowser(o: TicketOrder, kinds: TicketKind[], shop: TicketShop | string, width: TicketWidth, fields?: Partial<KitchenFields>): Promise<boolean> {
+function printBrowser(o: TicketOrder, kinds: TicketKind[], shop: TicketShop | string, width: TicketWidth, fields?: TicketFieldsIn): Promise<boolean> {
   return new Promise((resolve) => {
     try {
       const html = kinds.map((k) => ticketHtml(o, k, width, shop, fields)).join("");

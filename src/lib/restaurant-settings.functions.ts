@@ -29,6 +29,8 @@ export const settingsSchema = z.object({
     }).optional(),
     printing: z.object({
       width: z.union([z.literal(58), z.literal(80)]), auto: z.boolean(),
+      textSize: z.enum(["compact", "normal", "large"]).default("normal"),
+      font: z.enum(["sans", "mono", "condensed"]).default("sans"),
       kitchen: z.object({ allergens: z.boolean().default(true), options: z.boolean(), notes: z.boolean(), customer: z.boolean(), contact: z.boolean(), prices: z.boolean(), paid: z.boolean().default(true), qc: z.boolean().default(false) }),
     }),
   }),

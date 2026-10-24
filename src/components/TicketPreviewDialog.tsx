@@ -3,14 +3,14 @@ import { useMemo } from "react";
 import { Printer } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ticketHtml, type KitchenFields, type TicketKind, type TicketOrder, type TicketShop, type TicketWidth } from "@/lib/ticket";
+import { ticketHtml, type TicketFieldsIn, type TicketKind, type TicketOrder, type TicketShop, type TicketWidth } from "@/lib/ticket";
 
 type Props = {
   order: TicketOrder | null;
   kinds: TicketKind[];
   shop: TicketShop | string;
   width: TicketWidth;
-  kitchen: Partial<KitchenFields>;
+  kitchen: Partial<TicketFieldsIn>;
   onClose: () => void;
   onPrint: (order: TicketOrder, kinds: TicketKind[]) => void;
 };
