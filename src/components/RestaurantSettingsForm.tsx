@@ -177,7 +177,8 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
             </select></label>
           <p className="text-xs text-muted-foreground sm:col-span-2">La police s'applique à l'impression navigateur ; les imprimantes thermiques directes utilisent leur police interne mais respectent la taille.</p>
         </div>
-        <Toggle label="Impression automatique" hint="Imprime le ticket cuisine et le ticket de caisse dès qu'une commande arrive. Sinon, impression manuelle." checked={s.config.printing.auto} onChange={(v) => cfg({ printing: { ...s.config.printing, auto: v } })} />
+        <Toggle label="Impression auto du ticket cuisine" hint="Imprime automatiquement le ticket cuisine dès qu'une commande arrive." checked={!!s.config.printing.autoKitchen} onChange={(v) => cfg({ printing: { ...s.config.printing, autoKitchen: v, auto: v || !!s.config.printing.autoReceipt } })} />
+        <Toggle label="Impression auto du ticket de caisse" hint="Imprime automatiquement le ticket de caisse dès qu'une commande arrive." checked={!!s.config.printing.autoReceipt} onChange={(v) => cfg({ printing: { ...s.config.printing, autoReceipt: v, auto: v || !!s.config.printing.autoKitchen } })} />
         <p className="mt-3 text-sm font-semibold">Afficher sur le ticket cuisine</p>
         {([["allergens", "Allergènes des plats"], ["options", "Options et suppléments"], ["notes", "Notes du client"], ["customer", "Nom et téléphone du client"], ["contact", "Coordonnées du restaurant"], ["prices", "Prix, total et TVA"], ["paid", "Encadré Payé / Non payé"], ["qc", "Contrôle qualité emballage (cases + visa)"]] as const).map(([k, l]) => (
           <Toggle key={k} label={l} checked={s.config.printing.kitchen[k]} onChange={(v) => cfg({ printing: { ...s.config.printing, kitchen: { ...s.config.printing.kitchen, [k]: v } } })} />

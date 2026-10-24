@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ticketEscpos } from "@/lib/escpos";
-import { isPaid, isPreorder, payLabel, printingDefaults, ticketCustomer, ticketFields, ticketHtml, ticketOptions, ticketTiming, ticketTotals, ticketWebsite, ticketFontSize, TICKET_FONTS, type TicketOrder } from "@/lib/ticket";
+import { isPaid, isPreorder, payLabel, printingDefaults, ticketCustomer, ticketFields, ticketHtml, ticketOptions, ticketTiming, ticketTotals, ticketWebsite, autoPrintKinds, autoPrintLabel, ticketFontSize, TICKET_FONTS, type TicketOrder } from "@/lib/ticket";
 
 const order: TicketOrder = {
   order_number: 12,
@@ -174,5 +174,24 @@ describe("receipt aligned with kitchen format", () => {
   it("applies text size and font to the receipt too", () => {
     expect(ticketHtml(order, "receipt", 80, "W", { textSize: "large", font: "condensed" })).toContain(`${ticketFontSize(80, "large")}px`);
     expect(ticketHtml(order, "receipt", 80, "W", { font: "condensed" })).toContain(TICKET_FONTS.condensed);
+  });
+});
+
+describe("independent auto-print for kitchen and receipt", () => {
+  it("keeps legacy auto for both tickets", () => {
+    expect(printingDefaults({ auto: true })).toMatchObject({ autoKitchen: true, autoReceipt: true });
+    expect(printingDefaults({ auto: false })).toMatchObject({ autoKitchen: false, autoReceipt: false });
+  });
+  it("prints only the enabled tickets", () => {
+    expect(autoPrintKinds(printingDefaults({ autoKitchen: true, autoReceipt: true }))).toEqual(["kitchen", "receipt"]);
+    expect(autoPrintKinds(printingDefaults({ autoKitchen: true, autoReceipt: false }))).toEqual(["kitchen"]);
+    expect(autoPrintKinds(printingDefaults({ autoKitchen: false, autoReceipt: true }))).toEqual(["receipt"]);
+    expect(autoPrintKinds(printingDefaults({ auto: true, autoKitchen: false, autoReceipt: false }))).toEqual([]);
+  });
+  it("labels the toolbar state", () => {
+    expect(autoPrintLabel({ autoKitchen: true, autoReceipt: true })).toBe("auto : cuisine + caisse");
+    expect(autoPrintLabel({ autoKitchen: true, autoReceipt: false })).toBe("auto : cuisine seule");
+    expect(autoPrintLabel({ autoKitchen: false, autoReceipt: true })).toBe("auto : caisse seule");
+    expect(autoPrintLabel({ autoKitchen: false, autoReceipt: false })).toBe("manuel");
   });
 });

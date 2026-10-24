@@ -32,7 +32,7 @@ export type TicketFont = "sans" | "mono" | "condensed";
 export type TicketStyle = { textSize?: TicketTextSize; font?: TicketFont };
 /** Réglages d'affichage passés aux rendus : champs cuisine + style du texte. */
 export type TicketFieldsIn = Partial<KitchenFields> & TicketStyle;
-export type PrintingConfig = { width: TicketWidth; auto: boolean; textSize: TicketTextSize; font: TicketFont; kitchen: KitchenFields };
+export type PrintingConfig = { width: TicketWidth; /** Ancien réglage global, conservé = autoKitchen || autoReceipt. */ auto: boolean; autoKitchen: boolean; autoReceipt: boolean; textSize: TicketTextSize; font: TicketFont; kitchen: KitchenFields };
 export const TICKET_FONTS: Record<TicketFont, string> = {
   sans: "Arial, Helvetica, sans-serif",
   mono: "'Courier New', Courier, monospace",
@@ -43,8 +43,15 @@ export function ticketFontSize(width: TicketWidth, size: TicketTextSize = "norma
   const base = width === 80 ? 15 : 12;
   return size === "large" ? base + 3 : size === "compact" ? base - 2 : base;
 }
+/** Tickets à imprimer automatiquement à l'arrivée d'une commande. */
+export function autoPrintKinds(p: Pick<PrintingConfig, "autoKitchen" | "autoReceipt">): TicketKind[] {
+  return [...(p.autoKitchen ? ["kitchen" as const] : []), ...(p.autoReceipt ? ["receipt" as const] : [])];
+}
+export function autoPrintLabel(p: Pick<PrintingConfig, "autoKitchen" | "autoReceipt">) {
+  return p.autoKitchen && p.autoReceipt ? "auto : cuisine + caisse" : p.autoKitchen ? "auto : cuisine seule" : p.autoReceipt ? "auto : caisse seule" : "manuel";
+}
 /** Style + champs cuisine d'une configuration, prêt à passer aux rendus. */
-export const printingFields = (p: PrintingConfig): TicketFieldsIn => ({ ...p.kitchen, textSize: p.textSize, font: p.font });
+export const printingFields = (p: Pick<PrintingConfig, "kitchen" | "textSize" | "font">): TicketFieldsIn => ({ ...p.kitchen, textSize: p.textSize, font: p.font });
 export type TicketShop = { name: string; address?: string | null; phone?: string | null; slug?: string; customDomains?: string[] | undefined };
 export function ticketWebsite(shop: TicketShop) {
   const domain = shop.customDomains?.find((d) => /^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i.test(d));
@@ -62,7 +69,9 @@ export function ticketCustomer(o: TicketOrder): [string, string][] {
 
 export function printingDefaults(p?: Partial<PrintingConfig> | null): PrintingConfig {
   return {
-    width: p?.width === 58 ? 58 : 80, auto: p?.auto ?? false,
+    width: p?.width === 58 ? 58 : 80,
+    auto: (p?.autoKitchen ?? p?.auto ?? false) || (p?.autoReceipt ?? p?.auto ?? false),
+    autoKitchen: p?.autoKitchen ?? p?.auto ?? false, autoReceipt: p?.autoReceipt ?? p?.auto ?? false,
     textSize: p?.textSize === "large" || p?.textSize === "compact" ? p.textSize : "normal",
     font: p?.font === "mono" || p?.font === "condensed" ? p.font : "sans",
     kitchen: { allergens: false, options: true, notes: true, customer: true, contact: false, prices: false, paid: true, qc: false, ...(p?.kitchen ?? {}) },
