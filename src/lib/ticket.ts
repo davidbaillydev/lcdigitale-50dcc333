@@ -8,7 +8,7 @@ export const itemTitle = (it: { name: string; size?: { name: string } | null }) 
 export type TicketWidth = 80 | 58;
 export type TicketKind = "kitchen" | "receipt";
 export type TicketOrder = {
-  order_number: number; customer_name?: string | null; phone?: string | null; mode: string;
+  order_number: number; customer_name?: string | null; phone?: string | null; email?: string | null; mode: string;
   address?: string | null; city?: string | null; slot: string; created_at?: string;
   items: { name: string; qty: number; total?: number; category?: string; details?: string[]; allergens?: string[]; size?: { name: string } | null; selected_options?: { name: string; price: number }[] }[];
   notes?: string | null; total: number | string; delivery_fee?: number | string | null; service_fee?: number | string | null;
@@ -16,15 +16,15 @@ export type TicketOrder = {
   payment_method: string; payment_status?: string | null; source?: string | null; table_label?: string | null; room_label?: string | null;
 };
 
-const esc = (s: unknown) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
+const esc = (s: unknown) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] ?? c);
 const eur = (n: unknown) => `${Number(n ?? 0).toFixed(2).replace(".", ",")} €`;
 const time = (d: string) => new Date(d).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-const modeLabel = (m: string) => (m === "delivery" ? "LIVRAISON" : m === "dine_in" ? "SUR PLACE" : "À EMPORTER");
+export const modeLabel = (m: string) => (m === "delivery" ? "LIVRAISON" : m === "dine_in" ? "SUR PLACE" : "À EMPORTER");
 /** Ticket client d'une commande non encore réglée : bon de pré-commande non fiscal. */
 export const isPreorder = (kind: TicketKind, o: { payment_method: string; payment_status?: string | null }) => kind === "receipt" && !isPaid(o);
 export const isPaid = (o: { payment_method: string; payment_status?: string | null }) => o.payment_status ? o.payment_status === "paid" : o.payment_method === "online";
-const payLabel = (p: string) =>
-  p === "online" ? "Payé en ligne" : p === "card_terminal" ? "CB au comptoir" : p === "counter" ? "Espèces/TR au comptoir" : "À encaisser";
+export const payLabel = (p: string) =>
+  p === "online" ? "En ligne" : p === "card_terminal" ? "Carte bancaire / terminal" : p === "counter" ? "Au comptoir" : "À la remise de la commande";
 
 export type KitchenFields = { allergens: boolean; options: boolean; notes: boolean; customer: boolean; contact: boolean; prices: boolean; paid: boolean; qc: boolean };
 export type PrintingConfig = { width: TicketWidth; auto: boolean; kitchen: KitchenFields };
@@ -33,8 +33,30 @@ export type TicketShop = { name: string; address?: string | null; phone?: string
 export function printingDefaults(p?: Partial<PrintingConfig> | null): PrintingConfig {
   return {
     width: p?.width === 58 ? 58 : 80, auto: p?.auto ?? false,
-    kitchen: { allergens: true, options: true, notes: true, customer: true, contact: false, prices: false, paid: true, qc: false, ...(p?.kitchen ?? {}) },
+    kitchen: { allergens: false, options: true, notes: true, customer: true, contact: false, prices: false, paid: true, qc: false, ...(p?.kitchen ?? {}) },
   };
+}
+
+/** Présentation commune aux tickets HTML et thermiques ; les réglages cuisine restent respectés. */
+export function ticketFields(kind: TicketKind, fields?: Partial<KitchenFields>): KitchenFields {
+  return kind === "receipt"
+    ? { allergens: fields?.allergens === true, options: true, notes: true, customer: true, contact: true, prices: true, paid: true, qc: false }
+    : { ...printingDefaults().kitchen, ...fields };
+}
+export function ticketOptions(it: TicketOrder["items"][number]): string[] {
+  return [
+    ...(it.details ?? []),
+    ...(it.selected_options ?? []).map((op) => Number(op.price) > 0 ? `+ ${op.name} (+${eur(op.price)})` : op.name),
+  ];
+}
+export function ticketTotals(o: TicketOrder) {
+  const total = Number(o.total);
+  const subtotal = Math.round((total - Number(o.delivery_fee ?? 0) - Number(o.service_fee ?? 0) + Number(o.discount ?? 0)) * 100) / 100;
+  return { subtotal, vat: Math.round((total - total / 1.1) * 100) / 100, total };
+}
+export function ticketTiming(o: TicketOrder) {
+  const minutes = o.created_at ? Math.max(0, Math.round((Date.parse(o.slot) - Date.parse(o.created_at)) / 60_000)) : 0;
+  return `Pour ${time(o.slot)}${Number.isFinite(minutes) && minutes > 0 ? ` · Délai : ${minutes} min` : ""}`;
 }
 
 /** Largeur choisie sur cet appareil (null = pas de choix local). */
@@ -75,15 +97,13 @@ export function useTicketWidth(fallback: TicketWidth): [TicketWidth, (w: TicketW
 export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth, shopIn: TicketShop | string, fieldsIn?: Partial<KitchenFields>) {
   const shop = typeof shopIn === "string" ? { name: shopIn } : shopIn;
   const restaurant = shop.name;
-  const f: KitchenFields = kind === "receipt"
-    ? { allergens: true, options: true, notes: true, customer: true, contact: true, prices: true, paid: true, qc: false }
-    : { ...printingDefaults().kitchen, ...(fieldsIn ?? {}) };
+  const f = ticketFields(kind, fieldsIn);
+  const totals = ticketTotals(o);
   const big = width === 80 ? 15 : 12;
   const items = o.items.map((it) => `
     <div class="cat">${esc(it.category ?? "Carte").toUpperCase()}</div>
-    <div class="row"><b>${it.qty}× ${esc(itemTitle(it))}</b>${f.prices && it.total != null ? `<span>${eur(it.total)}</span>` : ""}</div>
-    ${(f.options ? it.details ?? [] : []).map((d) => `<div class="det"><b>Choix inclus :</b> ${esc(d)}</div>`).join("")}
-    ${(f.options ? it.selected_options ?? [] : []).map((op) => `<div class="row det"><b>Supplément : + ${esc(op.name)}</b>${op.price ? `<span>+${eur(op.price)}</span>` : ""}</div>`).join("")}
+    <div class="row item"><b>${esc(itemTitle(it))}</b><span>${it.qty}×${f.prices && it.total != null ? ` · ${eur(it.total)}` : ""}</span></div>
+    ${(f.options ? ticketOptions(it) : []).map((d) => `<div class="det">${esc(d)}</div>`).join("")}
     ${f.allergens && it.allergens?.length ? `<div class="alg">⚠ ALLERGÈNES : ${it.allergens.map((a) => esc(allergenLabel(a)).toUpperCase()).join(", ")}</div>` : ""}`).join("");
   const allAlg = [...new Set(o.items.flatMap((i) => i.allergens ?? []))];
   return `<!doctype html><html><head><meta charset="utf-8"><title>Ticket ${o.order_number}</title><style>
@@ -91,39 +111,43 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
     * { box-sizing: border-box; }
     body { width: ${width}mm; margin: 0; padding: 3mm; font: ${big}px/1.3 "Courier New", monospace; color: #000; background: #fff; }
     .c { text-align: center; } .xl { font-size: ${big * 2}px; font-weight: bold; } .l { font-size: ${big * 1.3}px; font-weight: bold; }
+    body { overflow-wrap: anywhere; }
     .row { display: flex; justify-content: space-between; gap: 4px; margin-top: 4px; }
-    .cat { display: inline-block; border: 1px solid #000; padding: 1px 4px; margin-top: 6px; font-size: ${big - 3}px; font-weight: bold; letter-spacing: .04em; }
+    .row > :first-child { min-width: 0; } .row > span:last-child { flex-shrink: 0; white-space: nowrap; }
+    .item { font-size: ${big + 1}px; font-weight: bold; }
+    .cat { margin-top: 8px; font-size: ${big - 3}px; }
     .det { padding-left: 10px; font-size: ${big - 2}px; }
     hr { border: 0; border-top: 1px dashed #000; margin: 6px 0; }
     .alg { padding-left: 10px; font-size: ${big - 2}px; font-weight: bold; }
     .note { border: 3px double #000; padding: 6px; margin-top: 8px; font-weight: bold; font-size: ${big + 1}px; background: #fff; }
     .box { border: 2px solid #000; padding: 6px; margin-top: 6px; display: flex; justify-content: space-around; font-weight: bold; }
     .ck { display: inline-block; width: 1em; height: 1em; border: 2px solid #000; vertical-align: -2px; margin-right: 4px; text-align: center; line-height: .9em; }
-    .band { background: #000; color: #fff; padding: 3px 6px; font-weight: bold; text-align: center; margin-top: 4px; }
+    .band { font-weight: bold; text-align: center; margin-top: 4px; }
     .sig { margin-top: 14px; border-bottom: 1px dotted #000; height: 1.4em; }
   </style></head><body>
-    <div class="c l">${esc(restaurant)}</div>
-    ${f.contact && (shop.address || shop.phone) ? `<div class="c">${esc(shop.address)}${shop.address && shop.phone ? "<br>" : ""}${esc(shop.phone)}</div>` : ""}
     <div class="c">${kind === "kitchen" ? "TICKET CUISINE" : isPreorder(kind, o) ? "BON DE PRÉ-COMMANDE - À RÉGLER EN CAISSE" : "TICKET CLIENT"}</div>
     <hr><div class="c xl">N° ${o.order_number}</div>
     <div class="c l">${modeLabel(o.mode)}${o.source === "kiosk" ? " · BORNE" : ""}${o.table_label ? ` · TABLE ${esc(o.table_label)}` : ""}${o.room_label ? ` · CHAMBRE ${esc(o.room_label)}` : ""}</div>
-    <div class="band">Pour ${time(o.slot)}${o.created_at ? ` · reçue ${time(o.created_at)}` : ""}</div>
-    ${f.customer && o.customer_name ? `<div class="c">${esc(o.customer_name)}${o.phone && o.phone !== "-" ? ` · ${esc(o.phone)}` : ""}</div>` : ""}
+    <div>Paiement : ${payLabel(o.payment_method)}</div>
+    <div class="band">${esc(ticketTiming(o))}</div>
+    ${f.customer && (o.customer_name || o.phone || o.email) ? `<hr><div class="l">Informations clients</div>${o.customer_name ? `<div>Nom : ${esc(o.customer_name)}</div>` : ""}${o.phone && o.phone !== "-" ? `<div>Téléphone : ${esc(o.phone)}</div>` : ""}${o.email ? `<div>Email : ${esc(o.email)}</div>` : ""}` : ""}
     ${o.mode === "delivery" && o.address ? `<div class="c">${esc(o.address)}, ${esc(o.city)}</div>` : ""}
-    <hr>${items}
+    <hr><div class="l">Articles</div>${items}
     ${f.allergens && kind === "kitchen" && allAlg.length ? `<div class="note">ALLERGÈNES COMMANDE : ${allAlg.map((a) => esc(allergenLabel(a))).join(", ")}</div>` : ""}
     ${f.notes && o.notes ? `<div class="note">⚠ REMARQUE CLIENT : ${esc(o.notes)}</div>` : ""}
     <hr>
+    ${f.prices ? `<div class="row"><span>Sous total</span><span>${eur(totals.subtotal)}</span></div>` : ""}
     ${f.prices && Number(o.delivery_fee) > 0 ? `<div class="row"><span>Livraison</span><span>${eur(o.delivery_fee)}</span></div>` : ""}
     ${f.prices && Number(o.service_fee) > 0 ? `<div class="row"><span>Frais de service</span><span>${eur(o.service_fee)}</span></div>` : ""}
     ${f.prices && Number(o.discount) > 0 ? `<div class="row"><span>Remise${o.promo_code ? ` ${esc(o.promo_code)}` : ""}</span><span>-${eur(o.discount)}</span></div>` : ""}
-    ${f.prices ? `<div class="row l"><span>TOTAL</span><span>${eur(o.total)}</span></div>` : ""}
-    ${f.prices ? `<div class="row"><span>dont TVA (10 % incluse)</span><span>${eur(Number(o.total) - Number(o.total) / 1.1)}</span></div>` : ""}
-    <div>${payLabel(o.payment_method)}</div>
-    ${f.paid && !isPreorder(kind, o) ? `<div class="box"><span><span class="ck">${isPaid(o) ? "✓" : ""}</span>Payé</span><span><span class="ck">${isPaid(o) ? "" : "✓"}</span>Non payé</span></div>` : ""}
+    ${f.prices ? `<div class="row"><span>TVA (10 % incluse)</span><span>${eur(totals.vat)}</span></div><div class="row l"><span>TOTAL</span><span>${eur(totals.total)}</span></div>` : ""}
+    ${f.paid ? `<div class="box"><span><span class="ck">${isPaid(o) ? "✓" : ""}</span>Payé</span><span><span class="ck">${isPaid(o) ? "" : "✓"}</span>Impayé</span></div>` : ""}
     ${f.qc && kind === "kitchen" ? `<hr><div class="l">Contrôle emballage</div><div><span class="ck"></span>Articles conformes</div><div><span class="ck"></span>Tous les articles</div><div><span class="ck"></span>Couverts / sauces</div><div>Visa :</div><div class="sig"></div>` : ""}
     ${isPreorder(kind, o) ? `<hr><div class="c"><b>Document non fiscal - À régler obligatoirement à la caisse du restaurant avant délivrance de la commande</b></div>` : ""}
     ${kind === "receipt" && !isPreorder(kind, o) ? `<hr><div class="c">Payé — ticket non fiscal, facture disponible sur demande</div><div class="c">Merci de votre commande !</div>` : ""}
+    <hr><div class="c l">${esc(restaurant)}</div>
+    ${shop.address ? `<div class="c">${esc(shop.address)}</div>` : ""}
+    ${f.contact && shop.phone ? `<div class="c">${esc(shop.phone)}</div>` : ""}
     <div class="c" style="margin-top:6px">${new Date().toLocaleString("fr-FR")}</div>
   </body></html>`;
 }
