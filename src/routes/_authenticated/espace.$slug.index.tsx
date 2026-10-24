@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Bell, BellOff, Bike, Check, ChefHat, Lock, LogOut, Maximize, Minimize, MoonStar, PanelTopClose, PanelTopOpen, Phone, Printer, ShoppingBag, Sun, Users, Volume2, VolumeX } from "lucide-react";
 import { useKitchenFullscreen } from "@/hooks/use-kitchen-fullscreen";
 import { useWakeLock } from "@/hooks/use-wake-lock";
-import { printTickets, printingDefaults, printingFields, autoPrintKinds, autoPrintLabel, useTicketWidth, type PrintingConfig, type TicketKind } from "@/lib/ticket";
+import { cleanOptionLabel, printTickets, printingDefaults, printingFields, autoPrintKinds, autoPrintLabel, useTicketWidth, type PrintingConfig, type TicketKind } from "@/lib/ticket";
 import { hasKitchenPin } from "@/lib/kitchen-pin.functions";
 import { KitchenLock } from "@/components/KitchenLock";
 import { PrinterSetup } from "@/components/PrinterSetup";

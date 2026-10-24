@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ticketEscpos } from "@/lib/escpos";
-import { isPaid, isPreorder, payLabel, printingDefaults, ticketCustomer, ticketFields, ticketHtml, ticketOptions, ticketTiming, ticketTotals, ticketWebsite, autoPrintKinds, autoPrintLabel, ticketFontSize, TICKET_FONTS, type TicketOrder } from "@/lib/ticket";
+import { cleanOptionLabel, isPaid, isPreorder, payLabel, printingDefaults, ticketCustomer, ticketFields, ticketHtml, ticketOptions, ticketTiming, ticketTotals, ticketWebsite, autoPrintKinds, autoPrintLabel, ticketFontSize, TICKET_FONTS, type TicketOrder } from "@/lib/ticket";
 
 const order: TicketOrder = {
   order_number: 12,
@@ -193,5 +193,23 @@ describe("independent auto-print for kitchen and receipt", () => {
     expect(autoPrintLabel({ autoKitchen: true, autoReceipt: false })).toBe("auto : cuisine seule");
     expect(autoPrintLabel({ autoKitchen: false, autoReceipt: true })).toBe("auto : caisse seule");
     expect(autoPrintLabel({ autoKitchen: false, autoReceipt: false })).toBe("manuel");
+  });
+});
+
+describe("nettoyage des libellés Supplément", () => {
+  it("retire les préfixes Supplément quelle que soit la casse ou l'accent", () => {
+    expect(cleanOptionLabel("Supplément : + Kebab")).toBe("Kebab");
+    expect(cleanOptionLabel("SUPPLEMENT: Kebab")).toBe("Kebab");
+    expect(cleanOptionLabel("supplément :+ Kebab")).toBe("Kebab");
+  });
+  it("extra payant devient « + Nom (+prix) » et choix inclus reste direct", () => {
+    const out = ticketOptions({ name: "Tacos", qty: 1, details: ["Supplément : Sauces: BBQ"], selected_options: [{ name: "Supplément : + Kebab", price: 1.5 }, { name: "Supplement : Viande: Tenders", price: 0 }] });
+    expect(out).toEqual(["Sauces: BBQ", "Viande: Tenders", "+ Kebab (+1,50 €)"]);
+    expect(out.join(" ")).not.toMatch(/suppl/i);
+  });
+  it("aucun Supplément dans le HTML ni l'ESC/POS", () => {
+    const o: TicketOrder = { order_number: 1, mode: "pickup", slot: new Date().toISOString(), total: 10, payment_method: "on_site", items: [{ name: "Tacos", qty: 1, total: 10, selected_options: [{ name: "Supplément : + Kebab", price: 1.5 }] }] };
+    expect(ticketHtml(o, "kitchen", 80, "R")).not.toMatch(/suppl/i);
+    expect(new TextDecoder("latin1").decode(ticketEscpos(o, "kitchen", 80, { name: "R" }))).not.toMatch(/suppl/i);
   });
 });
