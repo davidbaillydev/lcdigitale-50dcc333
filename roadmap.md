@@ -57,4 +57,4 @@ Verified on a temporary restaurant, now deactivated: upload and reload persisten
 - Modules par restaurant (feature flags) : fait
 - TPE Cloud borne + mentions non fiscales : fait (non testé sur lecteur réel)
 - [x] Ajouter la liste et l'invitation sécurisée d'administrateurs agence : 8 tests réussis, liste et ajout sans doublon vérifiés connecté sur ordinateur/mobile ; aucun nouvel email d'invitation envoyé pendant les tests.
-- [ ] Ingrédients retirables par plat : réglage par plat dans la carte, retrait côté client (site/borne), ligne "SANS :" sur tickets, non-personnalisables indiqués
+- [x] Ingrédients retirables par plat : réglage auto/liste/aucun dans la carte, retrait côté client (site + borne), ligne « SANS : » sur tickets, 6 tests réussis, vérifié à l’écran sur Wok & Sushi
