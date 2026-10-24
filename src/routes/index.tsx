@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowUpRight, ArrowRight, MapPin, Search, Store, ShieldCheck, ChefHat, Bike, UtensilsCrossed, LogIn } from "lucide-react";
+import { ArrowUpRight, ArrowRight, MapPin, Search, Store, ChefHat, Bike, UtensilsCrossed, LogIn } from "lucide-react";
 import { useState } from "react";
 import { listRestaurants } from "@/lib/restaurants.functions";
 import { ThemeToggle } from "@/lib/theme";
@@ -80,7 +80,6 @@ function Home() {
             <div className="foodcourt-pro-heading"><LogIn aria-hidden="true" className="h-5 w-5 text-primary" /><h2 className="font-display text-xl font-semibold">Espaces professionnels</h2></div>
             <nav className="foodcourt-pro-links" aria-label="Connexion aux espaces professionnels">
               <Button asChild variant="outline" className="foodcourt-pro-link"><Link to="/connexion"><span className="foodcourt-pro-icon"><Store aria-hidden="true" /></span><span>Espace restaurant</span><ArrowUpRight aria-hidden="true" /></Link></Button>
-              <Button asChild variant="outline" className="foodcourt-pro-link"><Link to="/connexion"><span className="foodcourt-pro-icon"><ShieldCheck aria-hidden="true" /></span><span>Console agence</span><ArrowUpRight aria-hidden="true" /></Link></Button>
               <Button asChild variant="outline" className="foodcourt-pro-link"><Link to="/cuisine"><span className="foodcourt-pro-icon"><ChefHat aria-hidden="true" /></span><span>Espace cuisine</span><ArrowUpRight aria-hidden="true" /></Link></Button>
               <Button asChild variant="outline" className="foodcourt-pro-link"><Link to="/livreur"><span className="foodcourt-pro-icon"><Bike aria-hidden="true" /></span><span>Espace livreur</span><ArrowUpRight aria-hidden="true" /></Link></Button>
             </nav>
