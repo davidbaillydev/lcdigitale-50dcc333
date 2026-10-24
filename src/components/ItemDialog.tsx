@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { activeGroups, euro, groupCost, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
+import { activeGroups, euro, groupCost, REMOVE_KEY, removableChoices, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
 import { useCart } from "@/lib/cart";
 import { itemImage } from "@/lib/menu-images";
 import { AllergenInfo } from "@/components/Allergens";
@@ -29,6 +29,13 @@ export function ItemDialog({ item, onClose }: { item: MenuItem | null; onClose: 
   const visible = stepped ? groups.slice(step, step + 1) : groups;
   const price = unitPrice(item, sel);
   const image = itemImage(item, catalog.categories);
+  const removable = removableChoices(item);
+  const removed = sel[REMOVE_KEY] ?? [];
+  const toggleRemove = (id: string) =>
+    setSel((prev) => {
+      const cur = prev[REMOVE_KEY] ?? [];
+      return { ...prev, [REMOVE_KEY]: cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id] };
+    });
 
   const toggle = (g: OptionGroup, id: string) => {
     setSel((prev) => {
