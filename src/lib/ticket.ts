@@ -28,7 +28,7 @@ export const payLabel = (p: string, paid = false) =>
 
 export type KitchenFields = { allergens: boolean; options: boolean; notes: boolean; customer: boolean; contact: boolean; prices: boolean; paid: boolean; qc: boolean };
 export type PrintingConfig = { width: TicketWidth; auto: boolean; kitchen: KitchenFields };
-export type TicketShop = { name: string; address?: string | null; phone?: string | null; slug?: string; customDomains?: string[] };
+export type TicketShop = { name: string; address?: string | null; phone?: string | null; slug?: string; customDomains?: string[] | undefined };
 export function ticketWebsite(shop: TicketShop) {
   const domain = shop.customDomains?.find((d) => /^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i.test(d));
   return domain ?? (shop.slug ? `restaurant.lcdigitale.fr/${shop.slug}` : "restaurant.lcdigitale.fr");
