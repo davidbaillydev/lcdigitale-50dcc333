@@ -24,6 +24,7 @@ export type MenuItem = {
   allergens?: string[]; // ids des 14 allergènes INCO (src/lib/allergens.ts)
   vatRate?: 5.5 | 10 | 20 | undefined; // taux de TVA du plat (défaut : taux restauration de l'établissement)
   image?: string | undefined; // photo du plat (/api/public/menu-photo/...)
+  removable?: string[] | undefined; // ingrédients que le client peut retirer ; [] = aucun, undefined = déduits de la description
   translations?: import("./i18n").ItemTranslations | undefined; // EN/ES/DE pré-traduits, stockés avec la carte
 };
 export type Category = { id: string; label: string; note?: string; items: MenuItem[]; translations?: import("./i18n").LabelTranslations | undefined };
@@ -242,9 +243,14 @@ export type Selections = Record<string, string[]>; // groupId -> choiceIds
 /** Clé réservée dans Selections pour les ingrédients retirés par le client. */
 export const REMOVE_KEY = "__remove";
 
-/** Ingrédients retirables, déduits de la description du plat (séparés par virgules / « et »). */
+/** Ingrédients retirables : liste définie par le restaurateur, sinon déduite de la description (virgules / « et »). */
 export function removableChoices(item: MenuItem): Choice[] {
-  if (item.builder || !item.desc) return [];
+  if (item.builder) return [];
+  if (item.removable !== undefined) {
+    const uniq = [...new Set(item.removable.map((s) => s.trim()).filter((s) => s.length >= 2 && s.length <= 40))];
+    return uniq.map((label) => ({ id: slug(label), label }));
+  }
+  if (!item.desc) return [];
   const parts = item.desc
     .split(/[,;]|\s+et\s+/i)
     .map((s) => s.trim().replace(/[.\u2026]+$/, "").trim())
