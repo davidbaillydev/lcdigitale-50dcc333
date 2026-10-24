@@ -62,4 +62,4 @@ Verified on a temporary restaurant, now deactivated: upload and reload persisten
 - [x] Ingrédients retirables par plat : réglage auto/liste/aucun dans la carte, retrait côté client (site + borne), ligne « SANS : » sur tickets, 6 tests réussis, vérifié à l’écran sur Wok & Sushi
 - [x] Mobile : section livraison du tunnel de paiement déborde
 - [x] Simulation séparée depuis la Carte : brouillon, options, panier sans paiement et historique temporaire ; 39 tests réussis, commande TEST créée et relue connecté, aucun appel de création/paiement, affichage mobile vérifié, compilation OK.
-- [ ] Refaire la présentation de l’annuaire selon la photo food-court, ajouter des accès professionnels latéraux et vérifier la navigation sur petits/grands écrans.
+- [x] Présentation food-court et accès professionnels latéraux : grille avec logos, recherche, lien restaurant et connexion vérifiés ; thèmes clair/sombre, 320/390/768/1280 px sans débordement ni erreur navigateur. Compilation OK. Deux anciens tests de navigation échouent sur le montage HTML du document, défaut déjà documenté hors de cette refonte.

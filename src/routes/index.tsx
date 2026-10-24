@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/")({
-  head: () => ({
+  head: ({ loaderData }) => ({
     meta: [
       { title: "LC Digitale — Les établissements partenaires" },
       { name: "description", content: "LC Digitale : choisissez votre restaurant et commandez en ligne, à emporter ou en livraison." },
@@ -15,6 +15,11 @@ export const Route = createFileRoute("/")({
       { property: "og:description", content: "Commandez en ligne dans les restaurants du réseau LC Digitale." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      ...(loaderData?.find((r) => r.brand?.coverUrl?.startsWith("https://"))?.brand?.coverUrl
+        ? [
+            { property: "og:image", content: loaderData.find((r) => r.brand?.coverUrl)?.brand?.coverUrl ?? "" },
+            { name: "twitter:image", content: loaderData.find((r) => r.brand?.coverUrl)?.brand?.coverUrl ?? "" },
+          ] : []),
     ],
   }),
   loader: () => listRestaurants(),
