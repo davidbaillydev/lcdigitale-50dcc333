@@ -1,6 +1,6 @@
 // Encodeur ESC/POS : transforme une commande en octets pour imprimante thermique.
 import { allergenLabel } from "./allergens";
-import { isPaid, isPreorder, itemTitle, modeLabel, payLabel, ticketCustomer, ticketFields, ticketOptions, ticketTiming, ticketTotals, ticketWebsite, type KitchenFields, type TicketKind, type TicketOrder, type TicketShop, type TicketWidth } from "./ticket";
+import { isPaid, isPreorder, itemTitle, modeLabel, payLabel, ticketCustomer, ticketFields, ticketOptions, ticketTiming, ticketTotals, ticketWebsite, type TicketFieldsIn, type TicketKind, type TicketOrder, type TicketShop, type TicketWidth } from "./ticket";
 
 const CP858: Record<string, number> = {
   "Ç": 0x80, "ü": 0x81, "é": 0x82, "â": 0x83, "ä": 0x84, "à": 0x85, "ç": 0x87, "ê": 0x88, "ë": 0x89, "è": 0x8a,
@@ -45,12 +45,17 @@ function wrap(s: string, cols: number): string[] {
 }
 const lr = (l: string, r: string, cols: number) => { const sp = cols - l.length - r.length; return sp > 0 ? l + " ".repeat(sp) + r : `${l} ${r}`; };
 
-export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidth, shop: TicketShop, fieldsIn?: Partial<KitchenFields>): Uint8Array {
+export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidth, shop: TicketShop, fieldsIn?: TicketFieldsIn): Uint8Array {
   const cols = width === 80 ? 48 : 32;
+  const large = fieldsIn?.textSize === "large";
+  const compact = fieldsIn?.textSize === "compact";
+  // Grand : titres d'articles en double hauteur et options en gras ; compact : interligne réduit.
+  const itemCols = cols;
   const f = ticketFields(kind, fieldsIn);
   const totals = ticketTotals(o);
   const timing = ticketTiming(o);
   const e = new Enc().raw(0x1b, 0x40, 0x1b, 0x74, 19);
+  if (compact) e.raw(0x1b, 0x33, 22); // interligne serré
   const hr = "-".repeat(cols);
   e.align(1);
   (isPreorder(kind, o) ? e.bold(true).line("BON DE PRE-COMMANDE").line("A REGLER EN CAISSE").bold(false) : e.line(kind === "kitchen" ? "TICKET CUISINE" : "TICKET CLIENT")).line(hr);
@@ -70,12 +75,14 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
   if (o.mode === "delivery" && o.address) wrap(`${o.address}, ${o.city ?? ""}`, cols).forEach((l) => e.line(l));
   e.align(0).line().bold(true).line("Articles:").bold(false);
   for (const it of o.items) {
-    e.bold(true);
+    e.bold(true); if (large) e.size(1, 2);
     const right = f.prices && it.total != null ? eur(it.total) : "";
     const names = wrap(`${it.qty}x ${itemTitle(it)}`, Math.max(8, cols - right.length - 1));
-    names.forEach((name, i) => e.line(i === 0 ? lr(name, right, cols) : name));
-    e.bold(false);
+    names.forEach((name, i) => e.line(i === 0 ? lr(name, right, itemCols) : name));
+    if (large) e.size(1, 1);
+    e.bold(large);
     if (f.options) for (const d of ticketOptions(it)) wrap(d, cols - 2).forEach((l) => e.line(`  ${l}`));
+    e.bold(false);
     if (f.allergens && it.allergens?.length) { e.bold(true); wrap(`  ! ALLERGENES : ${it.allergens.map((a) => allergenLabel(a).toUpperCase()).join(", ")}`, cols).forEach((l) => e.line(l)); e.bold(false); }
   }
   const allAlg = [...new Set(o.items.flatMap((i) => i.allergens ?? []))];

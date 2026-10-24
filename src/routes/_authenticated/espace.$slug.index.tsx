@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Bell, BellOff, Bike, Check, ChefHat, Lock, LogOut, Maximize, Minimize, MoonStar, PanelTopClose, PanelTopOpen, Phone, Printer, ShoppingBag, Sun, Users, Volume2, VolumeX } from "lucide-react";
 import { useKitchenFullscreen } from "@/hooks/use-kitchen-fullscreen";
 import { useWakeLock } from "@/hooks/use-wake-lock";
-import { printTickets, printingDefaults, useTicketWidth, type PrintingConfig, type TicketKind } from "@/lib/ticket";
+import { printTickets, printingDefaults, printingFields, useTicketWidth, type PrintingConfig, type TicketKind } from "@/lib/ticket";
 import { hasKitchenPin } from "@/lib/kitchen-pin.functions";
 import { KitchenLock } from "@/components/KitchenLock";
 import { PrinterSetup } from "@/components/PrinterSetup";
@@ -101,7 +101,7 @@ function Kitchen() {
   const [preview, setPreview] = useState<{ order: Order; kinds: TicketKind[] } | null>(null);
   const doPrint = useCallback(async (o: Order, kinds: TicketKind[], auto = false) => {
     const shop = { name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null, slug, customDomains: (restaurant?.config as Restaurant["config"] | null)?.customDomains };
-    const ok = await printTickets(o, kinds, shop, printing.width, printing.kitchen);
+    const ok = await printTickets(o, kinds, shop, printing.width, printingFields(printing));
     setPrintState((p) => ({ ...p, [o.id]: ok ? "ok" : "failed" }));
     if (rid) {
       const reprint = (logs[o.id] ?? []).length > 0;
@@ -111,7 +111,7 @@ function Kitchen() {
       if (row) setLogs((p) => ({ ...p, [o.id]: [...(p[o.id] ?? []), row as PrintLog] }));
     }
     if (!ok) toast.error(`Impression du ticket n° ${o.order_number} échouée`);
-  }, [restaurant, rid, logs, printing.width, printing.kitchen, slug]);
+  }, [restaurant, rid, logs, printing.width, printing.kitchen, printing.textSize, printing.font, slug]);
   const printRef = useRef({ auto: false, doPrint }); printRef.current = { auto: printing.auto, doPrint };
   const [sound, setSound] = useState(false);
   const [started, setStarted] = useState(false);
@@ -439,7 +439,7 @@ function Kitchen() {
         kinds={preview?.kinds ?? ["kitchen"]}
         shop={{ name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null, slug, customDomains: (restaurant?.config as Restaurant["config"] | null)?.customDomains }}
         width={printing.width}
-        kitchen={printing.kitchen}
+        kitchen={printingFields(printing)}
         onClose={() => setPreview(null)}
         onPrint={(o, kinds) => { setPreview(null); void doPrint(o as Order, kinds); }}
       />
