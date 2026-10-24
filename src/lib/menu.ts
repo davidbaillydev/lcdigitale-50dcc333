@@ -24,6 +24,7 @@ export type MenuItem = {
   allergens?: string[]; // ids des 14 allergènes INCO (src/lib/allergens.ts)
   vatRate?: 5.5 | 10 | 20 | undefined; // taux de TVA du plat (défaut : taux restauration de l'établissement)
   image?: string | undefined; // photo du plat (/api/public/menu-photo/...)
+  removable?: string[] | undefined; // ingrédients que le client peut retirer ; [] = aucun, undefined = déduits de la description
   translations?: import("./i18n").ItemTranslations | undefined; // EN/ES/DE pré-traduits, stockés avec la carte
 };
 export type Category = { id: string; label: string; note?: string; items: MenuItem[]; translations?: import("./i18n").LabelTranslations | undefined };
@@ -239,6 +240,25 @@ export const ITEMS_BY_ID: Record<string, MenuItem | undefined> = Object.fromEntr
 
 export type Selections = Record<string, string[]>; // groupId -> choiceIds
 
+/** Clé réservée dans Selections pour les ingrédients retirés par le client. */
+export const REMOVE_KEY = "__remove";
+
+/** Ingrédients retirables : liste définie par le restaurateur, sinon déduite de la description (virgules / « et »). */
+export function removableChoices(item: MenuItem): Choice[] {
+  if (item.builder) return [];
+  if (item.removable !== undefined) {
+    const uniq = [...new Set(item.removable.map((s) => s.trim()).filter((s) => s.length >= 2 && s.length <= 40))];
+    return uniq.map((label) => ({ id: slug(label), label }));
+  }
+  if (!item.desc) return [];
+  const parts = item.desc
+    .split(/[,;]|\s+et\s+/i)
+    .map((s) => s.trim().replace(/[.\u2026]+$/, "").trim())
+    .filter((s) => s.length >= 2 && s.length <= 40 && !/^\d/.test(s));
+  const uniq = [...new Set(parts)];
+  return uniq.length >= 2 ? uniq.map((label) => ({ id: slug(label), label })) : [];
+}
+
 export function groupCost(g: OptionGroup, picked: string[]) {
   let cost = 0;
   for (const id of picked) cost += g.choices.find((c) => c.id === id)?.price ?? 0;
@@ -255,7 +275,12 @@ export function activeGroups(item: MenuItem, sel: Selections): OptionGroup[] {
 
 export function validateSelections(item: MenuItem, sel: Selections): string | null {
   const active = activeGroups(item, sel);
-  for (const k of Object.keys(sel)) if ((sel[k] ?? []).length && !active.some((g) => g.id === k)) return "Choix non disponible pour cette taille";
+  for (const k of Object.keys(sel)) if (k !== REMOVE_KEY && (sel[k] ?? []).length && !active.some((g) => g.id === k)) return "Choix non disponible pour cette taille";
+  const removed = sel[REMOVE_KEY] ?? [];
+  if (removed.length) {
+    const allowed = removableChoices(item).map((c) => c.id);
+    if (removed.some((id) => !allowed.includes(id))) return "Ingrédient à retirer invalide";
+  }
   for (const g of active) {
     const picked = sel[g.id] ?? [];
     if (picked.some((id) => !g.choices.find((c) => c.id === id))) return `Choix invalide : ${g.label}`;
@@ -282,9 +307,14 @@ export function unitPrice(item: MenuItem, sel: Selections) {
 
 /** Détails texte des options « classiques » (hors taille et suppléments gérés en base). */
 export function describeSelections(item: MenuItem, sel: Selections): string[] {
-  return activeGroups(item, sel)
+  const lines = activeGroups(item, sel)
     .filter((g) => !g.kind && (sel[g.id] ?? []).length)
     .map((g) => `${g.label.replace(/^\d\.\s*/, "")} : ${(sel[g.id] ?? []).map((id) => g.choices.find((c) => c.id === id)?.label).join(", ")}`);
+  const removed = (sel[REMOVE_KEY] ?? [])
+    .map((id) => removableChoices(item).find((c) => c.id === id)?.label)
+    .filter((l): l is string => !!l);
+  if (removed.length) lines.push(`SANS : ${removed.join(", ")}`);
+  return lines;
 }
 
 export type SelectedOption = { id: string; name: string; price: number };

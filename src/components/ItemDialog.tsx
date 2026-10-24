@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { activeGroups, euro, groupCost, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
+import { activeGroups, euro, groupCost, REMOVE_KEY, removableChoices, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
 import { useCart } from "@/lib/cart";
 import { itemImage } from "@/lib/menu-images";
 import { AllergenInfo } from "@/components/Allergens";
@@ -29,6 +29,13 @@ export function ItemDialog({ item, onClose }: { item: MenuItem | null; onClose: 
   const visible = stepped ? groups.slice(step, step + 1) : groups;
   const price = unitPrice(item, sel);
   const image = itemImage(item, catalog.categories);
+  const removable = removableChoices(item);
+  const removed = sel[REMOVE_KEY] ?? [];
+  const toggleRemove = (id: string) =>
+    setSel((prev) => {
+      const cur = prev[REMOVE_KEY] ?? [];
+      return { ...prev, [REMOVE_KEY]: cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id] };
+    });
 
   const toggle = (g: OptionGroup, id: string) => {
     setSel((prev) => {
@@ -114,6 +121,35 @@ export function ItemDialog({ item, onClose }: { item: MenuItem | null; onClose: 
             </div>
           );
         })}
+
+        {removable.length > 0 && (!stepped || isLast) && (
+          <div className="space-y-3">
+            <div className="flex items-baseline justify-between gap-2">
+              <h3 className="text-xl">Retirer un ingrédient</h3>
+              <span className="text-xs text-muted-foreground">optionnel · les autres ingrédients ne sont pas modifiables</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {removable.map((c) => {
+                const on = removed.includes(c.id);
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => toggleRemove(c.id)}
+                    className={cn(
+                      "min-h-11 rounded-lg border px-3 py-2 text-sm transition-colors",
+                      on ? "border-destructive bg-destructive/15 line-through" : "border-border hover:border-primary/50",
+                    )}
+                  >
+                    {on ? `Sans ${c.label}` : c.label}
+                  </button>
+                );
+              })}
+            </div>
+            {removed.length > 0 && <p className="text-xs text-destructive">Sera préparé sans : {removable.filter((c) => removed.includes(c.id)).map((c) => c.label).join(", ")}</p>}
+          </div>
+        )}
 
         <div className="flex items-center justify-between gap-3 border-t border-border pt-4">
           <div className="flex items-center gap-2">
