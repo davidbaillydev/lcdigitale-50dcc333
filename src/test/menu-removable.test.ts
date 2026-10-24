@@ -22,7 +22,8 @@ describe("ingrédients retirables", () => {
   });
 
   it("accepte un retrait connu et le fait apparaître en « SANS : » pour la cuisine", () => {
-    const sel = { [REMOVE_KEY]: ["oeuf"] };
+    const oeuf = removableChoices(dish).find((c) => c.label === "Œuf")!.id;
+    const sel = { [REMOVE_KEY]: [oeuf] };
     expect(validateSelections(dish, sel)).toBeNull();
     expect(describeSelections(dish, sel)).toEqual(["SANS : Œuf"]);
   });
