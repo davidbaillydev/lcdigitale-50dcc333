@@ -3,7 +3,7 @@ import { Crumbs } from "@/components/Crumbs";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
-import { ArrowDown, ArrowUp, Eye, EyeOff, FileUp, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Copy, Eye, EyeOff, FileUp, Plus, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useStaff } from "@/hooks/use-staff";
 import { loadMenu, saveMenu } from "@/lib/menu-admin.functions";
@@ -187,6 +187,10 @@ function MenuEditor() {
                 <div className="col-span-2 flex justify-end gap-1 sm:ml-auto">
                   <Button size="icon" variant="ghost" onClick={() => update(move(menu, ci, -1))} aria-label="Monter"><ArrowUp /></Button>
                   <Button size="icon" variant="ghost" onClick={() => update(move(menu, ci, 1))} aria-label="Descendre"><ArrowDown /></Button>
+                  <Button size="icon" variant="ghost" title="Dupliquer la catégorie et ses plats" aria-label={`Dupliquer la catégorie ${c.label}`} onClick={() => {
+                    const copy: Category = { ...c, id: uid("cat"), label: `${c.label} (copie)`, items: c.items.map((i) => ({ ...i, id: uid("item"), image: undefined })) };
+                    update([...menu.slice(0, ci + 1), copy, ...menu.slice(ci + 1)]); setOpen(copy.id); toast.success(`Catégorie « ${c.label} » dupliquée — pensez à enregistrer la carte`);
+                  }}><Copy /></Button>
                   <Button size="icon" variant="ghost" onClick={() => { if (confirm(`Supprimer la catégorie « ${c.label} » et ses plats ?`)) update(menu.filter((_, i) => i !== ci)); }} aria-label="Supprimer la catégorie"><Trash2 /></Button>
                   <Button size="sm" variant="secondary" onClick={() => setOpen(open === c.id ? null : c.id)}>{open === c.id ? "Fermer" : "Plats"}</Button>
                 </div>
@@ -217,6 +221,10 @@ function MenuEditor() {
                         <Button size="sm" variant={soldOut.has(it.id) ? "destructive" : "outline"} className="min-h-10" onClick={async () => { const on = !soldOut.has(it.id); try { await setSoldOut(r!.id, it.id, on); toast.success(on ? `${it.name} : épuisé` : `${it.name} : disponible`); } catch { toast.error("Modification impossible"); } }} title="Effet immédiat sur le site, la borne et le menu QR, sans enregistrer la carte"><PackageX /> {soldOut.has(it.id) ? "Épuisé" : "Marquer épuisé"}</Button>
                         <Button size="icon" variant="ghost" onClick={() => setItem(ci, ii, { hidden: !it.hidden })} aria-label={it.hidden ? "Afficher" : "Masquer"} title={it.hidden ? "Indisponible — cliquer pour afficher" : "Masquer (rupture)"}>{it.hidden ? <EyeOff /> : <Eye />}</Button>
                         <Button size="icon" variant="ghost" onClick={() => setCat(ci, { items: move(c.items, ii, -1) })} aria-label="Monter"><ArrowUp /></Button>
+                        <Button size="icon" variant="ghost" title="Dupliquer le plat" aria-label={`Dupliquer le plat ${it.name}`} onClick={() => {
+                          const copy: MenuItem = { ...it, id: uid(it.id), name: `${it.name} (copie)`, image: undefined };
+                          setCat(ci, { items: [...c.items.slice(0, ii + 1), copy, ...c.items.slice(ii + 1)] }); toast.success(`« ${it.name} » dupliqué — pensez à enregistrer la carte`);
+                        }}><Copy /></Button>
                         <Button size="icon" variant="ghost" onClick={() => setCat(ci, { items: c.items.filter((_, i) => i !== ii) })} aria-label="Supprimer le plat"><Trash2 /></Button>
                       </div>
                     </div>
