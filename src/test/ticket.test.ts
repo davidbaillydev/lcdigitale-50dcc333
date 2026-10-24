@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ticketEscpos } from "@/lib/escpos";
-import { isPaid, isPreorder, payLabel, printingDefaults, ticketCustomer, ticketFields, ticketHtml, ticketOptions, ticketTiming, ticketTotals, ticketWebsite, type TicketOrder } from "@/lib/ticket";
+import { isPaid, isPreorder, payLabel, printingDefaults, ticketCustomer, ticketFields, ticketHtml, ticketOptions, ticketTiming, ticketTotals, ticketWebsite, ticketFontSize, TICKET_FONTS, type TicketOrder } from "@/lib/ticket";
 
 const order: TicketOrder = {
   order_number: 12,
@@ -136,5 +136,26 @@ describe("ticket formatting", () => {
   it("uses the stored subtotal when present and matches the model VAT", () => {
     expect(ticketTotals({ ...order, total: 17.5, subtotal: 17.5 })).toEqual({ subtotal: 17.5, total: 17.5, vat: 1.59 });
     expect(ticketTotals({ ...order, total: 17.5, subtotal: 20 })).toMatchObject({ subtotal: 20 });
+  });
+});
+
+describe("ticket text size and font", () => {
+  it("defaults to normal size and modern sans font", () => {
+    expect(printingDefaults()).toMatchObject({ textSize: "normal", font: "sans" });
+    expect(printingDefaults({ textSize: "large", font: "mono" })).toMatchObject({ textSize: "large", font: "mono" });
+  });
+  it("scales HTML text: compact < normal < large", () => {
+    expect(ticketFontSize(80, "compact")).toBeLessThan(ticketFontSize(80, "normal"));
+    expect(ticketFontSize(80, "large")).toBeGreaterThan(ticketFontSize(80, "normal"));
+    expect(ticketHtml(order, "kitchen", 80, "W", { textSize: "large" })).toContain(`${ticketFontSize(80, "large")}px`);
+  });
+  it("applies the chosen font family in HTML", () => {
+    expect(ticketHtml(order, "kitchen", 80, "W", { font: "mono" })).toContain(TICKET_FONTS.mono);
+    expect(ticketHtml(order, "kitchen", 80, "W", { font: "condensed" })).toContain(TICKET_FONTS.condensed);
+  });
+  it("enlarges item titles on ESC/POS only in large mode", () => {
+    const dbl = [0x1d, 0x21, 0x01].join(",");
+    const count = (b: Uint8Array) => Array.from(b).join(",").split(dbl).length;
+    expect(count(ticketEscpos(order, "kitchen", 80, { name: "W" }, { textSize: "large" }))).toBeGreaterThan(count(ticketEscpos(order, "kitchen", 80, { name: "W" })));
   });
 });
