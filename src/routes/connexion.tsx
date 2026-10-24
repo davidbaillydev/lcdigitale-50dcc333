@@ -12,9 +12,9 @@ export const Route = createFileRoute("/connexion")({
   head: () => ({
     meta: [
       { title: "Connexion — LC Digitale" },
-      { name: "description", content: "Connexion à la console agence ou à l'espace restaurateur LC Digitale." },
+      { name: "description", content: "Connexion à votre espace professionnel LC Digitale." },
       { property: "og:title", content: "Connexion — LC Digitale" },
-      { property: "og:description", content: "Accès agence et restaurateurs." },
+      { property: "og:description", content: "Accès aux espaces professionnels LC Digitale." },
       { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
     ],
@@ -58,19 +58,17 @@ function Login() {
         <div className="workspace-inner py-12 sm:py-16">
           <p className="text-sm font-semibold">LC Digitale / Accès</p>
           <h1 className="connexion-title font-display">Espace de connexion<span aria-hidden="true">.</span></h1>
-          <p className="border-t border-primary-foreground/30 pt-4 text-sm">Un seul accès : agence ou restaurateur, vous arrivez automatiquement sur votre espace.</p>
+          <p className="border-t border-primary-foreground/30 pt-4 text-sm">Connectez-vous à votre espace professionnel.</p>
         </div>
       </div>
       <main className="workspace-inner connexion-main grid gap-x-12 pb-16 pt-10 lg:grid-cols-2">
         <div className="connexion-statement border-b border-border pb-10 lg:border-b-0 lg:pb-0">
           <h2 className="font-display text-2xl sm:text-3xl">Vos écrans, en clair et en sombre.</h2>
           <p className="mt-4 max-w-prose text-muted-foreground">
-            Console agence pour l'ensemble des établissements partenaires, espace restaurateur pour vos commandes,
-            votre carte et votre cuisine. Chacun voit uniquement ce qui lui appartient.
+            Retrouvez votre établissement, vos commandes, votre carte et votre cuisine.
           </p>
           <ul className="mt-8 space-y-4">
             {[
-              ["Agence", "Création des restaurants, branding, paiements, campagnes, invitations."],
               ["Gérant", "Commandes, carte et prix, horaires et livraison, rapports, clients, promos."],
               ["Cuisine", "Écran de service temps réel, transmission des plats et impression."],
             ].map(([role, desc]) => (
