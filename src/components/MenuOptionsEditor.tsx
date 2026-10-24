@@ -1,6 +1,6 @@
 // Back-office : groupes de suppléments (par restaurant) et tailles / formats + rattachement (par plat).
 import { useState } from "react";
-import { PackageX, Plus, Trash2, Layers, Ruler } from "lucide-react";
+import { Copy, PackageX, Plus, Trash2, Layers, Ruler } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -53,8 +53,16 @@ function GroupCard({ g, items, uses, restaurantId, act, reload }: { g: OptionDat
   const upd = (patch: { name?: string; is_required?: boolean; min_selection?: number; max_selection?: number }) => act(supabase.from("option_groups").update(patch).eq("id", g.id));
   return (
     <div className="rounded-lg border border-border p-3">
-      <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+      <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
         <Input defaultValue={g.name} onBlur={(e) => e.target.value.trim() && e.target.value !== g.name && upd({ name: e.target.value.trim() })} aria-label="Nom du groupe" />
+        <Button variant="ghost" className="min-h-12" title="Dupliquer le groupe et ses suppléments" onClick={async () => {
+          try {
+            const { data: ng, error } = await supabase.from("option_groups").insert({ restaurant_id: restaurantId, name: `${g.name} (copie)`, is_required: g.is_required, min_selection: g.min_selection, max_selection: g.max_selection, sort_order: g.sort_order + 1 }).select("id").single();
+            if (error) throw new Error(error.message);
+            if (items.length) await run(supabase.from("option_items").insert(items.map((i) => ({ group_id: ng.id, restaurant_id: restaurantId, name: i.name, price: i.price, is_available: i.is_available, sort_order: i.sort_order }))));
+            toast.success(`Groupe « ${g.name} » dupliqué`); reload();
+          } catch (e) { fail(e); }
+        }}><Copy /> Dupliquer</Button>
         <Button variant="ghost" className="min-h-12 text-destructive" onClick={() => confirm(`Supprimer le groupe « ${g.name} » ?`) && act(supabase.from("option_groups").delete().eq("id", g.id), "Groupe supprimé")}><Trash2 /> Supprimer</Button>
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
