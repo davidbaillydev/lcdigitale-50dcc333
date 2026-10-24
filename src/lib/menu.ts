@@ -269,7 +269,12 @@ export function activeGroups(item: MenuItem, sel: Selections): OptionGroup[] {
 
 export function validateSelections(item: MenuItem, sel: Selections): string | null {
   const active = activeGroups(item, sel);
-  for (const k of Object.keys(sel)) if ((sel[k] ?? []).length && !active.some((g) => g.id === k)) return "Choix non disponible pour cette taille";
+  for (const k of Object.keys(sel)) if (k !== REMOVE_KEY && (sel[k] ?? []).length && !active.some((g) => g.id === k)) return "Choix non disponible pour cette taille";
+  const removed = sel[REMOVE_KEY] ?? [];
+  if (removed.length) {
+    const allowed = removableChoices(item).map((c) => c.id);
+    if (removed.some((id) => !allowed.includes(id))) return "Ingrédient à retirer invalide";
+  }
   for (const g of active) {
     const picked = sel[g.id] ?? [];
     if (picked.some((id) => !g.choices.find((c) => c.id === id))) return `Choix invalide : ${g.label}`;
@@ -296,9 +301,14 @@ export function unitPrice(item: MenuItem, sel: Selections) {
 
 /** Détails texte des options « classiques » (hors taille et suppléments gérés en base). */
 export function describeSelections(item: MenuItem, sel: Selections): string[] {
-  return activeGroups(item, sel)
+  const lines = activeGroups(item, sel)
     .filter((g) => !g.kind && (sel[g.id] ?? []).length)
     .map((g) => `${g.label.replace(/^\d\.\s*/, "")} : ${(sel[g.id] ?? []).map((id) => g.choices.find((c) => c.id === id)?.label).join(", ")}`);
+  const removed = (sel[REMOVE_KEY] ?? [])
+    .map((id) => removableChoices(item).find((c) => c.id === id)?.label)
+    .filter((l): l is string => !!l);
+  if (removed.length) lines.push(`SANS : ${removed.join(", ")}`);
+  return lines;
 }
 
 export type SelectedOption = { id: string; name: string; price: number };
