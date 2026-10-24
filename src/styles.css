@@ -211,6 +211,34 @@
   transition: box-shadow 300ms ease;
 }
 .directory-card:hover { box-shadow: var(--directory-shadow-hover); }
+.foodcourt-shell { width: min(calc(100% - 3rem), 80rem); margin-inline: auto; }
+.foodcourt-welcome { background: var(--secondary); color: var(--foreground); border-radius: 8px; }
+.foodcourt-welcome-content { padding: 2.5rem; }
+.foodcourt-welcome.has-cover { --welcome-foreground: oklch(1 0 0); --welcome-scrim: oklch(0.16 0.01 250 / 0.78); color: var(--welcome-foreground); }
+.foodcourt-welcome.has-cover::after { content: ""; position: absolute; inset: 0; background: var(--welcome-scrim); }
+.foodcourt-welcome-content { z-index: 1; }
+.foodcourt-layout { display: grid; grid-template-columns: minmax(0, 1fr) 13rem; gap: 2.5rem; padding-top: 2rem; align-items: start; }
+.foodcourt-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.foodcourt-brand { height: 10rem; }
+.foodcourt-tile { box-shadow: var(--directory-shadow); transition: border-color 200ms ease; }
+.foodcourt-tile:hover { border-color: var(--primary); }
+.foodcourt-directory :is(h3, a, p) { letter-spacing: 0; overflow-wrap: anywhere; }
+.foodcourt-pro { position: sticky; top: 2rem; border-left: 1px solid var(--border); padding-left: 1.25rem; }
+.foodcourt-pro-links { display: grid; gap: 0.75rem; }
+.foodcourt-pro-link { min-height: 3.5rem; height: auto; justify-content: flex-start; padding: 0.75rem; white-space: normal; text-align: left; }
+.foodcourt-pro-link span { flex: 1; }
+@media (max-width: 1100px) { .foodcourt-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .foodcourt-layout { gap: 1.5rem; } }
+@media (max-width: 767px) {
+  .foodcourt-shell { width: calc(100% - 2rem); }
+  .foodcourt-welcome-content { padding: 1.5rem; }
+  .foodcourt-layout { display: flex; flex-direction: column; }
+  .foodcourt-layout > main { width: 100%; }
+  .foodcourt-pro { position: static; width: 100%; border-left: 0; border-top: 1px solid var(--border); padding: 1.5rem 0 0; }
+  .foodcourt-pro-links { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .foodcourt-brand { height: 8rem; }
+  .foodcourt-brand img { max-width: 100%; }
+}
+@media (max-width: 374px) { .foodcourt-grid { grid-template-columns: minmax(0, 1fr); } .foodcourt-pro-links { grid-template-columns: minmax(0, 1fr); } }
 .directory-nav, .directory-poster-inner, .directory-partners { width: min(100% - 5rem, 80rem); margin-inline: auto; }
 .directory-nav { min-height: 5rem; }
 .directory-poster-inner { padding-block: 2rem; }
