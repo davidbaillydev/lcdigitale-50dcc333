@@ -16,7 +16,7 @@ export type Restaurant = {
   vapi_public_key?: string | null;
   vapi_phone_number?: string | null;
   is_vapi_web_enabled?: boolean;
-  brand: { primary?: string; accent?: string; bannerPath?: string; coverUrl?: string };
+  brand: { primary?: string; accent?: string; bannerPath?: string; bannerVideoPath?: string; coverUrl?: string };
   legal?: import("./legal").LegalInfo;
   enabled_features?: Partial<import("./features").Features>;
   /** 0 = dimanche. Plages en minutes depuis minuit (heure de Paris) */
