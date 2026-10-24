@@ -63,3 +63,4 @@ Verified on a temporary restaurant, now deactivated: upload and reload persisten
 - [x] Mobile : section livraison du tunnel de paiement déborde
 - [x] Simulation séparée depuis la Carte : brouillon, options, panier sans paiement et historique temporaire ; 39 tests réussis, commande TEST créée et relue connecté, aucun appel de création/paiement, affichage mobile vérifié, compilation OK.
 - [x] Présentation food-court et accès professionnels latéraux : grille avec logos, recherche, lien restaurant et connexion vérifiés ; thèmes clair/sombre, 320/390/768/1280 px sans débordement ni erreur navigateur. Compilation OK. Deux anciens tests de navigation échouent sur le montage HTML du document, défaut déjà documenté hors de cette refonte.
+- [ ] Affiner l’accueil : une carte par ligne sur smartphone, accès professionnels visibles et tactiles, profondeur visuelle et drapeau français ; vérifier les formats et les liens.
