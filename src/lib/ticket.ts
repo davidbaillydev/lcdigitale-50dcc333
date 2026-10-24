@@ -63,7 +63,7 @@ export function ticketOptions(it: TicketOrder["items"][number]): string[] {
   const addChoice = (raw: string) => {
     const m = raw.match(/^([^:]+?)\s*:\s*(.+)$/);
     if (!m) { order.push({ s: raw.trim() }); return; }
-    const g = m[1].trim(), v = m[2].trim();
+    const g = (m[1] ?? "").trim(), v = (m[2] ?? "").trim();
     if (!groups.has(g)) { groups.set(g, []); order.push({ g }); }
     groups.get(g)!.push(v);
   };
@@ -72,7 +72,7 @@ export function ticketOptions(it: TicketOrder["items"][number]): string[] {
   for (const op of it.selected_options ?? []) {
     if (Number(op.price) > 0) {
       const m = op.name.match(/^([^:]+?)\s*:\s*(.+)$/);
-      paid.push(m ? `${m[1].trim()}: ${m[2].trim()} (+${eur(op.price)})` : `+ ${op.name.trim()} (+${eur(op.price)})`);
+      paid.push(m ? `${(m[1] ?? "").trim()}: ${(m[2] ?? "").trim()} (+${eur(op.price)})` : `+ ${op.name.trim()} (+${eur(op.price)})`);
     } else addChoice(op.name);
   }
   const choices = order.map((x) => ("g" in x ? `${x.g}: ${groups.get(x.g)!.join(", ")}` : x.s));
