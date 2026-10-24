@@ -61,3 +61,4 @@ Verified on a temporary restaurant, now deactivated: upload and reload persisten
 - [x] Ajouter la liste et l'invitation sécurisée d'administrateurs agence : 8 tests réussis, liste et ajout sans doublon vérifiés connecté sur ordinateur/mobile ; aucun nouvel email d'invitation envoyé pendant les tests.
 - [x] Ingrédients retirables par plat : réglage auto/liste/aucun dans la carte, retrait côté client (site + borne), ligne « SANS : » sur tickets, 6 tests réussis, vérifié à l’écran sur Wok & Sushi
 - [x] Mobile : section livraison du tunnel de paiement déborde
+- [ ] Ajouter une simulation séparée depuis la Carte : menu en brouillon, panier sans paiement, historique de commandes de test et vérification connectée.
