@@ -28,17 +28,17 @@ async function reorder(table: "option_groups" | "option_items" | "product_varian
 /** Section « Groupes de suppléments & options » de la page Carte. */
 export function OptionGroupsPanel({ restaurantId, data, reload }: { restaurantId: string; data: OptionData; reload: () => void }) {
   const [name, setName] = useState("");
+  const [toggled, setToggled] = useState<boolean | null>(null);
   const act = (p: PromiseLike<{ error: { message: string } | null }>, ok?: string) => run(p).then(() => { if (ok) toast.success(ok); reload(); }).catch((e) => { fail(e); });
-  const open = !data.groups.length;
+  const isOpen = toggled ?? !data.groups.length;
 
   return (
-    <details className="group/details mt-6 rounded-xl border border-border bg-card p-4" aria-labelledby="opt-groups" open={open}>
+    <details className="mt-6 rounded-xl border border-border bg-card p-4" aria-labelledby="opt-groups" open={isOpen} onToggle={(e) => setToggled((e.target as HTMLDetailsElement).open)}>
       <summary className="flex cursor-pointer flex-wrap items-center gap-2 text-2xl font-semibold">
         <Layers className="h-5 w-5 text-primary" />
         <span id="opt-groups">Groupes de suppléments & options</span>
         <span className="text-sm text-muted-foreground">{data.groups.length ? `${data.groups.length} groupe(s)` : "aucun groupe"}</span>
-        <span className="ml-auto text-sm font-medium text-primary group-details-open:hidden">{data.groups.length ? "Afficher" : "Créer un groupe"}</span>
-        <span className="ml-auto hidden text-sm font-medium text-primary group-details-open:block">Masquer</span>
+        <span className="ml-auto text-sm font-medium text-primary">{isOpen ? "Masquer" : data.groups.length ? "Afficher" : "Créer un groupe"}</span>
       </summary>
       <p className="mt-2 text-sm text-muted-foreground">Créez vos groupes (ex. « Extra fromages », « Sauces »), puis rattachez-les aux plats dans leur fiche. Effet immédiat sur le site, la borne et le menu QR.</p>
       <form className="mt-3 flex flex-wrap gap-2" onSubmit={(e) => { e.preventDefault(); if (name.trim().length < 2) return; void act(supabase.from("option_groups").insert({ restaurant_id: restaurantId, name: name.trim(), sort_order: nextOrder(data.groups) }), "Groupe créé"); setName(""); }}>
