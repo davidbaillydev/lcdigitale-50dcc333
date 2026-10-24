@@ -239,6 +239,20 @@ export const ITEMS_BY_ID: Record<string, MenuItem | undefined> = Object.fromEntr
 
 export type Selections = Record<string, string[]>; // groupId -> choiceIds
 
+/** Clé réservée dans Selections pour les ingrédients retirés par le client. */
+export const REMOVE_KEY = "__remove";
+
+/** Ingrédients retirables, déduits de la description du plat (séparés par virgules / « et »). */
+export function removableChoices(item: MenuItem): Choice[] {
+  if (item.builder || !item.desc) return [];
+  const parts = item.desc
+    .split(/[,;]|\s+et\s+/i)
+    .map((s) => s.trim().replace(/[.\u2026]+$/, "").trim())
+    .filter((s) => s.length >= 2 && s.length <= 40 && !/^\d/.test(s));
+  const uniq = [...new Set(parts)];
+  return uniq.length >= 2 ? uniq.map((label) => ({ id: slug(label), label })) : [];
+}
+
 export function groupCost(g: OptionGroup, picked: string[]) {
   let cost = 0;
   for (const id of picked) cost += g.choices.find((c) => c.id === id)?.price ?? 0;
