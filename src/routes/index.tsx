@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/")({
-  head: ({ loaderData }) => ({
+  head: ({ loaderData }) => {
+    const cover = loaderData?.find((r) => r.brand?.coverUrl)?.brand?.coverUrl;
+    return {
     meta: [
       { title: "LC Digitale — Les établissements partenaires" },
       { name: "description", content: "LC Digitale : choisissez votre restaurant et commandez en ligne, à emporter ou en livraison." },
@@ -15,13 +17,14 @@ export const Route = createFileRoute("/")({
       { property: "og:description", content: "Commandez en ligne dans les restaurants du réseau LC Digitale." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      ...(loaderData?.find((r) => r.brand?.coverUrl?.startsWith("https://"))?.brand?.coverUrl
+      ...(cover?.startsWith("https://")
         ? [
-            { property: "og:image", content: loaderData.find((r) => r.brand?.coverUrl)?.brand?.coverUrl ?? "" },
-            { name: "twitter:image", content: loaderData.find((r) => r.brand?.coverUrl)?.brand?.coverUrl ?? "" },
+            { property: "og:image", content: cover },
+            { name: "twitter:image", content: cover },
           ] : []),
     ],
-  }),
+    };
+  },
   loader: () => listRestaurants(),
   errorComponent: () => <p className="p-10 text-center">Impossible de charger les restaurants.</p>,
   component: Home,
