@@ -159,3 +159,20 @@ describe("ticket text size and font", () => {
     expect(count(ticketEscpos(order, "kitchen", 80, { name: "W" }, { textSize: "large" }))).toBeGreaterThan(count(ticketEscpos(order, "kitchen", 80, { name: "W" })));
   });
 });
+
+describe("receipt aligned with kitchen format", () => {
+  const full = { ...order, delivery_fee: 3, service_fee: 1, discount: 2, promo_code: "BIENVENUE", total: 16.8 };
+  const shop = { name: "Wok & Sushi", address: "1 rue Test", phone: "05 00 00 00 00", slug: "woknsushi" };
+  it("always shows prices, fees, discount, VAT, total, status, shop block and non-fiscal notice", () => {
+    for (const html of [ticketHtml(full, "receipt", 80, shop, { prices: false }), ticketHtml(full, "receipt", 58, shop, { textSize: "compact", font: "mono" })]) {
+      for (const s of ["14,80 €", "Livraison", "Frais de service", "Remise BIENVENUE", "TVA (10 % incluse)", "TOTAL", "16,80 €", "Payé", "WOK &amp; SUSHI", "1 rue Test", "05 00 00 00 00", "restaurant.lcdigitale.fr/woknsushi", "non fiscal"]) expect(html).toContain(s);
+      expect(html).toContain("+ Cordon bleu (+1,50 €)");
+    }
+    const text = Array.from(ticketEscpos(full, "receipt", 80, shop, { prices: false })).map((b) => String.fromCharCode(b)).join("");
+    for (const s of ["Livraison", "Frais de service", "Remise BIENVENUE", "TOTAL", "non fiscal", "restaurant.lcdigitale.fr/woknsushi", "WOK & SUSHI"]) expect(text).toContain(s);
+  });
+  it("applies text size and font to the receipt too", () => {
+    expect(ticketHtml(order, "receipt", 80, "W", { textSize: "large", font: "condensed" })).toContain(`${ticketFontSize(80, "large")}px`);
+    expect(ticketHtml(order, "receipt", 80, "W", { font: "condensed" })).toContain(TICKET_FONTS.condensed);
+  });
+});
