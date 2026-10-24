@@ -64,7 +64,7 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
   const [savedSettings, setSavedSettings] = useState(() => JSON.stringify(initialSettings(restaurant)));
   const dirty = JSON.stringify(s) !== savedSettings;
   const [testResult, setTestResult] = useState<null | "ok" | "failed">(null);
-  const shop = { name: restaurant.name, address: restaurant.address, phone: restaurant.phone };
+  const shop = { name: restaurant.name, address: restaurant.address, phone: restaurant.phone, slug: restaurant.slug, customDomains: restaurant.config.customDomains };
   const testPrint = async () => {
     setTestResult(null);
     const ok = await printTickets(sampleOrder(), ["kitchen"], shop, s.config.printing.width, s.config.printing.kitchen);

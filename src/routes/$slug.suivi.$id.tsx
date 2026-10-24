@@ -45,7 +45,7 @@ function Tracking() {
   const { id, slug } = Route.useParams();
   const fn = useServerFn(getOrderStatus);
   const confirm = useServerFn(confirmOnlinePayment);
-  const { clear, track } = useCart();
+  const { clear, track, restaurant } = useCart();
   const cleared = useRef(false);
   // ?back= : lien simple vers le site du restaurant (https uniquement, jamais de redirection automatique)
   const [back, setBack] = useState<string | null>(null);
@@ -158,7 +158,7 @@ function Tracking() {
           {back
             ? <Button asChild variant="secondary"><a href={back} rel="noopener noreferrer">Retour sur le site du restaurant</a></Button>
             : <Button asChild variant="secondary"><Link to="/$slug" params={{ slug }}>Retour à la carte</Link></Button>}
-          <Button variant="outline" onClick={() => printTickets(data as unknown as TicketOrder, ["receipt"], "")}><Printer /> Imprimer le ticket</Button>
+          <Button variant="outline" onClick={() => printTickets(data as unknown as TicketOrder, ["receipt"], { name: restaurant.name, address: restaurant.address, phone: restaurant.phone, slug, customDomains: restaurant.config.customDomains })}><Printer /> Imprimer le ticket</Button>
         </div>
       </div>
     </div>

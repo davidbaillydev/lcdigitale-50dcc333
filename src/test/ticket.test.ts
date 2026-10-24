@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ticketEscpos } from "@/lib/escpos";
-import { isPaid, isPreorder, printingDefaults, ticketFields, ticketHtml, ticketOptions, ticketTotals, type TicketOrder } from "@/lib/ticket";
+import { isPaid, isPreorder, payLabel, printingDefaults, ticketCustomer, ticketFields, ticketHtml, ticketOptions, ticketTiming, ticketTotals, ticketWebsite, type TicketOrder } from "@/lib/ticket";
 
 const order: TicketOrder = {
   order_number: 12,
@@ -80,7 +80,7 @@ describe("ticket formatting", () => {
         expect(text).toContain("! REMARQUE CLIENT : L'oeuf");
         expect(text).toContain(String.fromCharCode(0x85)); // à in CP858
         expect(text).toContain("=".repeat(width === 80 ? 48 : 32));
-        expect(html.indexOf("Wok &amp; Sushi")).toBeGreaterThan(html.indexOf("TOTAL"));
+        expect(html.indexOf("WOK &amp; SUSHI")).toBeGreaterThan(html.indexOf("TOTAL"));
         expect(text.indexOf(shop.address)).toBeGreaterThan(text.indexOf("TOTAL"));
         expect(html).toContain("14,80 €");
       });
@@ -92,5 +92,31 @@ describe("ticket formatting", () => {
     expect(html).not.toContain("<img");
     expect(html).not.toContain("<script>");
     expect(html).toContain("&lt;b&gt;choix&lt;/b&gt;");
+  });
+
+  it("uses distinct first and last names, retaining the full name for old orders", () => {
+    expect(ticketCustomer({ ...order, first_name: "Prénom test", last_name: "Nom test" }).slice(0, 2)).toEqual([["Prénom:", "Prénom test"], ["Nom:", "Nom test"]]);
+    expect(ticketCustomer(order)[0]).toEqual(["Nom:", "Client test"]);
+  });
+
+  it("shows ASAP with the actual 15 minute estimate, never a fixed invented delay", () => {
+    expect(ticketTiming({ ...order, asap: true, created_at: "2026-10-21T12:15:00.000Z" })).toEqual({ label: "Dès que possible", value: "15 min" });
+    expect(ticketTiming({ ...order, asap: false }).label).toBe("Prévu pour");
+  });
+
+  it("uses the restaurant domain or its direct ordering URL", () => {
+    expect(ticketWebsite({ name: "Restaurant", slug: "woknsushi", customDomains: ["commande.woknsushi.com"] })).toBe("commande.woknsushi.com");
+    expect(ticketWebsite({ name: "Restaurant", slug: "woknsushi" })).toBe("restaurant.lcdigitale.fr/woknsushi");
+  });
+
+  it("labels an online payment as paid only when confirmed", () => {
+    expect(payLabel("online", true)).toBe("Payé en ligne");
+    expect(payLabel("online", false)).toBe("Paiement en ligne (en attente)");
+    expect(payLabel("card_terminal")).toBe("Carte bancaire (au comptoir)");
+  });
+
+  it("uses the stored subtotal when present and matches the model VAT", () => {
+    expect(ticketTotals({ ...order, total: 17.5, subtotal: 17.5 })).toEqual({ subtotal: 17.5, total: 17.5, vat: 1.59 });
+    expect(ticketTotals({ ...order, total: 17.5, subtotal: 20 })).toMatchObject({ subtotal: 20 });
   });
 });

@@ -100,7 +100,7 @@ function Kitchen() {
   const [openLog, setOpenLog] = useState<string | null>(null);
   const [preview, setPreview] = useState<{ order: Order; kinds: TicketKind[] } | null>(null);
   const doPrint = useCallback(async (o: Order, kinds: TicketKind[], auto = false) => {
-    const shop = { name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null };
+    const shop = { name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null, slug, customDomains: (restaurant?.config as Restaurant["config"] | null)?.customDomains };
     const ok = await printTickets(o, kinds, shop, printing.width, printing.kitchen);
     setPrintState((p) => ({ ...p, [o.id]: ok ? "ok" : "failed" }));
     if (rid) {
@@ -111,7 +111,7 @@ function Kitchen() {
       if (row) setLogs((p) => ({ ...p, [o.id]: [...(p[o.id] ?? []), row as PrintLog] }));
     }
     if (!ok) toast.error(`Impression du ticket n° ${o.order_number} échouée`);
-  }, [restaurant, rid, logs, printing.width, printing.kitchen]);
+  }, [restaurant, rid, logs, printing.width, printing.kitchen, slug]);
   const printRef = useRef({ auto: false, doPrint }); printRef.current = { auto: printing.auto, doPrint };
   const [sound, setSound] = useState(false);
   const [started, setStarted] = useState(false);
@@ -329,7 +329,7 @@ function Kitchen() {
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/statistiques" params={{ slug }}>Conversion & abandons</Link></Button>}
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/tableau-de-bord">Tableau de bord</Link></Button>}
         {rid && <StockDialog slug={slug} restaurantId={rid} />}
-        <PrinterSetup compact width={printing.width} shop={{ name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null }} />
+        <PrinterSetup compact width={printing.width} shop={{ name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null, slug, customDomains: (restaurant?.config as Restaurant["config"] | null)?.customDomains }} />
         <Button size="sm" variant="outline" onClick={() => setDeviceWidth(printing.width === 80 ? 58 : 80)} aria-label={`Rouleau ${printing.width} mm — basculer en ${printing.width === 80 ? 58 : 80} mm`} title="Changer le format de rouleau sur cet appareil">
           <Printer className="h-4 w-4" />{printing.width} mm · {printing.auto ? "auto" : "manuel"}
         </Button>
@@ -437,7 +437,7 @@ function Kitchen() {
       <TicketPreviewDialog
         order={preview?.order ?? null}
         kinds={preview?.kinds ?? ["kitchen"]}
-        shop={{ name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null }}
+        shop={{ name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null, slug, customDomains: (restaurant?.config as Restaurant["config"] | null)?.customDomains }}
         width={printing.width}
         kitchen={printing.kitchen}
         onClose={() => setPreview(null)}
