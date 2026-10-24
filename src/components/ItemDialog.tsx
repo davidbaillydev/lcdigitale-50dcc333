@@ -9,10 +9,15 @@ import { useCart } from "@/lib/cart";
 import { itemImage } from "@/lib/menu-images";
 import { AllergenInfo } from "@/components/Allergens";
 import { useOrdersPaused } from "@/hooks/use-orders-paused";
+import type { Catalog } from "@/lib/catalogs";
 
 export function ItemDialog({ item, onClose }: { item: MenuItem | null; onClose: () => void }) {
   const { add, catalog, restaurant } = useCart();
   const paused = useOrdersPaused(restaurant);
+  return <ItemConfigurator item={item} onClose={onClose} catalog={catalog} onAdd={add} paused={paused} />;
+}
+
+export function ItemConfigurator({ item, onClose, catalog, onAdd, paused = false }: { item: MenuItem | null; onClose: () => void; catalog: Catalog; onAdd: (id: string, selections: Selections, qty: number) => void; paused?: boolean }) {
   const [sel, setSel] = useState<Selections>({});
   const [qty, setQty] = useState(1);
   const [step, setStep] = useState(0);
@@ -57,7 +62,7 @@ export function ItemDialog({ item, onClose }: { item: MenuItem | null; onClose: 
       toast.error(err);
       return;
     }
-    add(item.id, sel, qty);
+    onAdd(item.id, sel, qty);
     toast.success(`${item.name} ajouté au panier`);
     onClose();
   };
