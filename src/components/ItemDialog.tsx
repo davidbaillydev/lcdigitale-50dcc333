@@ -122,6 +122,35 @@ export function ItemDialog({ item, onClose }: { item: MenuItem | null; onClose: 
           );
         })}
 
+        {removable.length > 0 && (!stepped || isLast) && (
+          <div className="space-y-3">
+            <div className="flex items-baseline justify-between gap-2">
+              <h3 className="text-xl">Retirer un ingrédient</h3>
+              <span className="text-xs text-muted-foreground">optionnel · les autres ingrédients ne sont pas modifiables</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {removable.map((c) => {
+                const on = removed.includes(c.id);
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => toggleRemove(c.id)}
+                    className={cn(
+                      "min-h-11 rounded-lg border px-3 py-2 text-sm transition-colors",
+                      on ? "border-destructive bg-destructive/15 line-through" : "border-border hover:border-primary/50",
+                    )}
+                  >
+                    {on ? `Sans ${c.label}` : c.label}
+                  </button>
+                );
+              })}
+            </div>
+            {removed.length > 0 && <p className="text-xs text-destructive">Sera préparé sans : {removable.filter((c) => removed.includes(c.id)).map((c) => c.label).join(", ")}</p>}
+          </div>
+        )}
+
         <div className="flex items-center justify-between gap-3 border-t border-border pt-4">
           <div className="flex items-center gap-2">
             <Button size="icon" variant="secondary" onClick={() => setQty(Math.max(1, qty - 1))} aria-label="Moins"><Minus /></Button>
