@@ -85,14 +85,25 @@ export function ticketFields(kind: TicketKind, fieldsIn?: TicketFieldsIn): Kitch
     ? { allergens: fields?.allergens === true, options: true, notes: true, customer: true, contact: true, prices: true, paid: true, qc: false }
     : { ...printingDefaults().kitchen, ...fields };
 }
+/** Retire tout préfixe résiduel « Supplément : » / « Supplement : » et les « + » en tête. */
+export function cleanOptionLabel(raw: string): string {
+  let s = String(raw ?? "").trim();
+  for (let prev = ""; prev !== s; ) {
+    prev = s;
+    s = s.replace(/^suppl[eéèê]ments?\s*:?\s*/iu, "").replace(/^\+\s*/, "").trim();
+  }
+  return s;
+}
 /** Options d'un article : choix inclus regroupés « Groupe: A, B », extras payants « + Nom (+1,50 €) ». */
 export function ticketOptions(it: TicketOrder["items"][number]): string[] {
   const groups = new Map<string, string[]>();
   const order: ({ g: string } | { s: string })[] = [];
-  const addChoice = (raw: string) => {
+  const addChoice = (input: string) => {
+    const raw = cleanOptionLabel(input);
+    if (!raw) return;
     const m = raw.match(/^([^:]+?)\s*:\s*(.+)$/);
-    if (!m) { order.push({ s: raw.trim() }); return; }
-    const g = (m[1] ?? "").trim(), v = (m[2] ?? "").trim();
+    if (!m) { order.push({ s: raw }); return; }
+    const g = (m[1] ?? "").trim(), v = cleanOptionLabel(m[2] ?? "");
     if (!groups.has(g)) { groups.set(g, []); order.push({ g }); }
     groups.get(g)!.push(v);
   };
@@ -100,8 +111,9 @@ export function ticketOptions(it: TicketOrder["items"][number]): string[] {
   for (const d of it.details ?? []) addChoice(d);
   for (const op of it.selected_options ?? []) {
     if (Number(op.price) > 0) {
-      const m = op.name.match(/^([^:]+?)\s*:\s*(.+)$/);
-      paid.push(m ? `${(m[1] ?? "").trim()}: ${(m[2] ?? "").trim()} (+${eur(op.price)})` : `+ ${op.name.trim()} (+${eur(op.price)})`);
+      const name = cleanOptionLabel(op.name);
+      const m = name.match(/^([^:]+?)\s*:\s*(.+)$/);
+      paid.push(m ? `${(m[1] ?? "").trim()}: ${cleanOptionLabel(m[2] ?? "")} (+${eur(op.price)})` : `+ ${name} (+${eur(op.price)})`);
     } else addChoice(op.name);
   }
   const choices = order.map((x) => ("g" in x ? `${x.g}: ${groups.get(x.g)!.join(", ")}` : x.s));
