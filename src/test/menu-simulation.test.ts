@@ -17,7 +17,7 @@ describe("isolated menu simulation", () => {
   });
   it("keeps previous orders unchanged when the draft changes", () => {
     const order = simulateOrder(catalog, [{ key: "x", itemId: "plat", qty: 1, sel: { extra: ["sauce"] } }], 1);
-    const changed = getCatalog({ menu_key: "vierge", menu: [{ ...menu[0], items: [{ id: "plat", name: "Autre nom", price: 30 }] }] });
+    const changed = getCatalog({ menu_key: "vierge", menu: [{ id: "plats", label: "Plats", items: [{ id: "plat", name: "Autre nom", price: 30 }] }] });
     expect(simulateOrder(changed, [{ key: "x", itemId: "plat", qty: 1, sel: {} }], 2).total).toBe(30);
     expect(order.total).toBe(11);
     expect(order.items[0]?.name).toBe("Plat modifié");
