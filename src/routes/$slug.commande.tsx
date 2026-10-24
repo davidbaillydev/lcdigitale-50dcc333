@@ -210,14 +210,14 @@ function Checkout() {
     <div className={`min-h-screen ${embed ? "pb-6" : "pb-16"}`}>
       {embed ? <EmbedBar hideCart /> : <SiteHeader hideCart />}
       {!table && <OrderingBanners state={ordering} />}
-      <div className={`mx-auto grid max-w-6xl gap-8 px-4 ${embed ? "py-4" : "py-8"} lg:grid-cols-[1fr_380px]`}>
-        <div className="space-y-8">
+      <div className={`mx-auto grid max-w-6xl gap-8 px-4 ${embed ? "py-4" : "py-8"} grid-cols-[minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_380px]`}>
+        <div className="min-w-0 space-y-8">
           {table ? <section className="rounded-xl border border-primary bg-primary/10 p-4"><h2 className="text-3xl">{onsiteTitle}</h2><p className="text-sm text-muted-foreground">{onsiteText}</p></section> : <>
           <section>
             <h2 className="text-3xl">1. Mode de retrait</h2>
-            <div className="mt-3 grid grid-cols-2 gap-3">
+            <div className="mt-3 grid grid-cols-[repeat(2,minmax(0,1fr))] gap-2 sm:gap-3">
               {([["pickup", "À emporter", "Click & collect", ShoppingBag], ["delivery", "Livraison", DELIVERY.zones.length || geoZones.length ? "Dans notre zone de livraison" : "Indisponible", Bike]] as const).filter(([v]) => modeEnabled(restaurant, v)).map(([v, t, s, Icon]) => (
-                <button key={v} onClick={() => setMode(v)} className={cn("rounded-xl border p-4 text-left", mode === v ? "border-primary bg-primary/10" : "border-border")}>
+                <button key={v} onClick={() => setMode(v)} className={cn("min-w-0 break-words rounded-xl border p-3 text-left sm:p-4", mode === v ? "border-primary bg-primary/10" : "border-border")}>
                   <Icon className="mb-2 h-6 w-6 text-primary" />
                   <p className="font-semibold">{t}</p>
                   <p className="text-xs text-muted-foreground">{s}</p>
@@ -229,16 +229,16 @@ function Checkout() {
           <section>
             <h2 className="text-3xl">2. Quand souhaitez-vous votre commande ?</h2>
             {(openNow || timing.scheduled) ? (
-              <div role="radiogroup" aria-label="Moment de la commande" className="mt-3 grid grid-cols-2 gap-3">
+              <div role="radiogroup" aria-label="Moment de la commande" className="mt-3 grid grid-cols-[repeat(2,minmax(0,1fr))] gap-2 sm:gap-3">
                 {openNow && !asapFull && (
-                  <button type="button" role="radio" aria-checked={when === "asap"} onClick={() => setWhen("asap")} className={cn("rounded-xl border p-4 text-left", when === "asap" ? "border-primary bg-primary/10" : "border-border")}>
+                  <button type="button" role="radio" aria-checked={when === "asap"} onClick={() => setWhen("asap")} className={cn("min-w-0 break-words rounded-xl border p-3 text-left sm:p-4", when === "asap" ? "border-primary bg-primary/10" : "border-border")}>
                     <Clock className="mb-2 h-6 w-6 text-primary" />
                     <p className="font-semibold">Dès que possible</p>
                     <p className="text-xs text-muted-foreground">Vers {fmtTime(asapSlot(restaurant, mode))} · heure confirmée par le restaurant</p>
                   </button>
                 )}
                 {timing.scheduled && (
-                  <button type="button" role="radio" aria-checked={when === "later"} onClick={() => setWhen("later")} className={cn("rounded-xl border p-4 text-left", when === "later" ? "border-primary bg-primary/10" : "border-border")}>
+                  <button type="button" role="radio" aria-checked={when === "later"} onClick={() => setWhen("later")} className={cn("min-w-0 break-words rounded-xl border p-3 text-left sm:p-4", when === "later" ? "border-primary bg-primary/10" : "border-border")}>
                     <CalendarClock className="mb-2 h-6 w-6 text-primary" />
                     <p className="font-semibold">Choisir un horaire</p>
                     <p className="text-xs text-muted-foreground">{slots.length ? `${slots.length} créneau(x) aujourd'hui` : "Aucun créneau restant"}</p>
@@ -297,8 +297,8 @@ function Checkout() {
               <div className="sm:col-span-2"><Label htmlFor="no">Remarques (allergies, digicode…)</Label><Textarea id="no" maxLength={500} value={f.notes} onChange={set("notes")} /></div>
               <div className="sm:col-span-2 rounded-lg border border-border p-3">
                 <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-medium">
-                  <span>Commande professionnelle <span className="block text-xs font-normal opacity-70">Facture au nom de votre société (SIREN)</span></span>
-                  <input type="checkbox" role="switch" aria-label="Commande professionnelle" className="h-6 w-6 accent-[var(--primary)]" checked={pro} onChange={(e) => setPro(e.target.checked)} />
+                  <span className="min-w-0">Commande professionnelle <span className="block text-xs font-normal opacity-70">Facture au nom de votre société (SIREN)</span></span>
+                  <input type="checkbox" role="switch" aria-label="Commande professionnelle" className="h-6 w-6 shrink-0 accent-[var(--primary)]" checked={pro} onChange={(e) => setPro(e.target.checked)} />
                 </label>
                 {pro && (
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -317,9 +317,9 @@ function Checkout() {
 
           <section>
             <h2 className="text-3xl">4. Paiement</h2>
-            <div className="mt-3 grid grid-cols-2 gap-3">
+            <div className="mt-3 grid grid-cols-[repeat(2,minmax(0,1fr))] gap-2 sm:gap-3">
               {options.map(({ v, Icon, t, s, ok }) => (
-                <button key={v} disabled={!ok || !!payment} onClick={() => setPay(v)} className={cn("rounded-xl border p-4 text-left", !ok && "cursor-not-allowed opacity-50", pay === v ? "border-primary bg-primary/10" : "border-border")}>
+                <button key={v} disabled={!ok || !!payment} onClick={() => setPay(v)} className={cn("min-w-0 break-words rounded-xl border p-3 text-left sm:p-4", !ok && "cursor-not-allowed opacity-50", pay === v ? "border-primary bg-primary/10" : "border-border")}>
                   <Icon className="mb-2 h-6 w-6 text-primary" />
                   <p className="font-semibold">{t}</p>
                   <p className="text-xs text-muted-foreground">{s}</p>
