@@ -25,6 +25,16 @@ export const Route = createFileRoute("/api/public/restaurant-banner/$id")({
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: file, error } = await supabaseAdmin.storage.from("restaurant-banners").download(path);
     if (error || !file) return new Response("Not found", { status: 404 });
-    return new Response(file, { headers: { "Content-Type": type, "Cache-Control": wantVideo ? "public, max-age=31536000, immutable" : "public, max-age=60", "X-Content-Type-Options": "nosniff" } });
+    const headers: Record<string, string> = { "Content-Type": type, "Cache-Control": wantVideo ? "public, max-age=31536000, immutable" : "public, max-age=60", "X-Content-Type-Options": "nosniff", "Accept-Ranges": "bytes" };
+    // Safari exige les requêtes partielles (Range) pour lire une vidéo.
+    const range = /^bytes=(\d*)-(\d*)$/.exec(request.headers.get("range") ?? "");
+    if (wantVideo && range && (range[1] || range[2])) {
+      const size = file.size;
+      const start = range[1] ? Number(range[1]) : Math.max(0, size - Number(range[2]));
+      const end = range[1] && range[2] ? Math.min(Number(range[2]), size - 1) : size - 1;
+      if (start >= size || start > end) return new Response(null, { status: 416, headers: { "Content-Range": `bytes */${size}` } });
+      return new Response(file.slice(start, end + 1), { status: 206, headers: { ...headers, "Content-Range": `bytes ${start}-${end}/${size}`, "Content-Length": String(end - start + 1) } });
+    }
+    return new Response(file, { headers });
   } } },
 });
