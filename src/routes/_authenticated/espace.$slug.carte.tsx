@@ -211,8 +211,8 @@ function MenuEditor() {
                               <option value="none">Aucun retrait possible</option>
                             </select>
                           </label>
-                          {it.removable !== undefined && it.removable.length > 0 && <Input value={it.removable.join(", ")} placeholder="Ex. Oignons, Ciboulette, Coriandre" onChange={(e) => setItem(ci, ii, { removable: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })} aria-label="Ingrédients retirables, séparés par des virgules" />}
-                          {it.removable !== undefined && it.removable.length === 0 && <p className="text-xs text-muted-foreground">Liste vide : le client ne pourra retirer aucun ingrédient. Ajoutez-en ci-dessus ou passez en mode automatique.</p>}
+                          {it.removable !== undefined && <Input value={it.removable.join(", ")} placeholder="Ex. Oignons, Ciboulette, Coriandre" onChange={(e) => setItem(ci, ii, { removable: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })} aria-label="Ingrédients retirables, séparés par des virgules" />}
+                          {it.removable !== undefined && it.removable.length === 0 && <p className="text-xs text-muted-foreground">Liste vide : le client ne pourra retirer aucun ingrédient. Tapez des ingrédients ci-dessus ou passez en mode automatique.</p>}
                           {it.removable === undefined && <p className="text-xs text-muted-foreground">Les ingrédients de la description seront proposés au retrait ; tout le reste du plat n'est pas modifiable.</p>}
                         </div>
                         <label className="flex items-center gap-2 text-xs font-semibold">TVA <select className="min-h-10 rounded-md border border-input bg-background px-2 text-sm" value={it.vatRate ?? ""} onChange={(e) => setItem(ci, ii, { vatRate: e.target.value ? (Number(e.target.value) as 5.5 | 10 | 20) : undefined })}><option value="">Taux par défaut</option><option value="5.5">5,5 % (vente à emporter différée)</option><option value="10">10 % (restauration)</option><option value="20">20 % (alcools)</option></select></label>
