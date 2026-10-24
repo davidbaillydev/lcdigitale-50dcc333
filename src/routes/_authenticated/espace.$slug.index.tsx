@@ -64,21 +64,36 @@ const COLS = [
   { s: "ready", label: "Prêtes", next: "done", action: "Terminée" },
 ] as const;
 
-/** Carillon « Ding-Dong » : deux notes de cloche (Mi5 puis Do5) avec harmoniques douces et longue résonance. */
+/** Carillon d'accueil original : accord majeur, attaque douce et résonance ronde. */
 function beep(ctx: AudioContext) {
-  const out = ctx.createGain(); out.gain.value = 0.9; out.connect(ctx.destination);
-  const bell = (freq: number, at: number) => {
-    [[1, 0.5], [2, 0.18], [3, 0.08], [4.2, 0.04]].forEach(([mult, amp]) => {
-      const o = ctx.createOscillator(); const g = ctx.createGain();
-      o.type = "sine"; o.frequency.value = freq * mult!;
-      const t = ctx.currentTime + at;
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(amp!, t + 0.015);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 1.6 / mult!);
-      o.connect(g).connect(out); o.start(t); o.stop(t + 1.7);
-    });
-  };
-  bell(659.25, 0); bell(523.25, 0.55);
+  const out = ctx.createGain();
+  out.gain.value = 0.55;
+  out.connect(ctx.destination);
+  const start = ctx.currentTime;
+  let remaining = 8;
+  // Do–Mi–Sol–Do : aucune harmonique métallique ou dissonante.
+  for (const [frequency, offset] of [[523.25, 0], [659.25, 0.3], [783.99, 0.6], [1046.5, 0.95]] as const) {
+    for (const [multiple, amplitude] of [[1, 0.22], [2, 0.025]] as const) {
+      const oscillator = ctx.createOscillator();
+      const envelope = ctx.createGain();
+      const at = start + offset;
+      oscillator.type = "sine";
+      oscillator.frequency.value = frequency * multiple;
+      envelope.gain.setValueAtTime(0, at);
+      envelope.gain.linearRampToValueAtTime(amplitude, at + 0.045);
+      envelope.gain.exponentialRampToValueAtTime(0.0001, at + 2.9);
+      envelope.gain.linearRampToValueAtTime(0, at + 3.1);
+      oscillator.connect(envelope).connect(out);
+      oscillator.onended = () => {
+        oscillator.disconnect();
+        envelope.disconnect();
+        remaining -= 1;
+        if (remaining === 0) out.disconnect();
+      };
+      oscillator.start(at);
+      oscillator.stop(at + 3.15);
+    }
+  }
 }
 
 function Kitchen() {
