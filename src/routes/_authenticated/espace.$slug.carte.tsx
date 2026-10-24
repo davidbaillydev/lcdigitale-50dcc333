@@ -3,7 +3,7 @@ import { Crumbs } from "@/components/Crumbs";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
-import { ArrowDown, ArrowUp, Copy, Eye, EyeOff, FileUp, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Copy, Eye, EyeOff, FileUp, FlaskConical, Plus, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useStaff } from "@/hooks/use-staff";
 import { loadMenu, saveMenu } from "@/lib/menu-admin.functions";
@@ -24,6 +24,7 @@ import { setSoldOut, useSoldOut } from "@/lib/stock";
 import { useOptionData } from "@/lib/menu-options-live";
 import { ItemOptionsEditor, OptionGroupsPanel } from "@/components/MenuOptionsEditor";
 import { PRESET_DRINKS } from "@/lib/drinks-preset";
+import { MenuSimulation } from "@/components/MenuSimulation";
 
 export const Route = createFileRoute("/_authenticated/espace/$slug/carte")({
   head: () => ({
@@ -63,6 +64,7 @@ function MenuEditor() {
   const [importing, setImporting] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [candidate, setCandidate] = useState<Category[] | null>(null);
+  const [simulation, setSimulation] = useState(false);
 
   useEffect(() => {
     if (!canManage || !r) return;
@@ -129,6 +131,8 @@ function MenuEditor() {
         <div className="flex items-center justify-between gap-3"><Crumbs slug={slug} page="Carte" /><ThemeToggle /></div>
       <RestaurantNav slug={slug} className="print:hidden" />
         <h1 className="mt-4 text-5xl">Carte · {r?.name}</h1>
+        <Button className="mt-3" variant="outline" onClick={() => setSimulation(true)}><FlaskConical /> Tester le menu sans payer</Button>
+        {r && <MenuSimulation key={r.id} open={simulation} onClose={() => setSimulation(false)} menu={menu} options={opt.data} soldOut={soldOut} name={r.name} dirty={dirty} />}
         <p className="text-sm text-muted-foreground">
           {!menu.length ? "Carte vierge : déposez votre menu ci-dessous ou ajoutez vos catégories à la main." : custom ? "Carte personnalisée de ce restaurant." : "Vous partez de la carte de base : elle deviendra propre à ce restaurant dès le premier enregistrement."} Les modifications n'affectent aucun autre établissement.
         </p>
