@@ -15,7 +15,7 @@ import { createKioskOrder } from "@/lib/orders.functions";
 import QRCode from "qrcode";
 import { abandonKioskQr, kioskQrAvailable, kioskQrStatus, startKioskQrPayment } from "@/lib/payments.functions";
 import { abandonKioskOrder, cancelKioskPayment, kioskPaymentStatus, kioskTerminalAvailable, startKioskCardPayment } from "@/lib/payments.functions";
-import { activeGroups, fromPrice, selectedExtras, describeSelections, euro, groupCost, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
+import { activeGroups, fromPrice, selectedExtras, describeSelections, euro, groupCost, REMOVE_KEY, removableChoices, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
 import { itemImage, menuImage } from "@/lib/menu-images";
 import { BrandLogo } from "@/lib/brand";
 import { ThemeToggle } from "@/lib/theme";
@@ -451,6 +451,9 @@ function KioskItem({ item, image, onClose, onAdd }: { item: MenuItem; image: str
     return { ...p, [g.id]: [...cur, id] };
   });
   const submit = () => { const e = validateSelections(item, sel); if (e) setErr(e); else onAdd(sel, qty); };
+  const removable = removableChoices(item);
+  const removed = sel[REMOVE_KEY] ?? [];
+  const toggleRemove = (id: string) => setSel((p) => { const cur = p[REMOVE_KEY] ?? []; return { ...p, [REMOVE_KEY]: cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id] }; });
 
   return (
     <div className="absolute inset-0 z-40 flex flex-col bg-background">
@@ -487,6 +490,26 @@ function KioskItem({ item, image, onClose, onAdd }: { item: MenuItem; image: str
             </section>
           );
         })}
+        {removable.length > 0 && (!stepped || isLast) && (
+          <section>
+            <div className="mb-3 flex items-baseline justify-between">
+              <h3 className="text-3xl font-semibold">Retirer un ingrédient</h3>
+              <span className="text-lg text-muted-foreground">optionnel · le reste du plat n'est pas modifiable</span>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {removable.map((c) => {
+                const on = removed.includes(c.id);
+                return (
+                  <button key={c.id} onClick={() => toggleRemove(c.id)} aria-pressed={on}
+                    className={cn("flex min-h-24 items-center justify-between gap-2 rounded-xl border-2 px-4 py-4 text-left text-xl", on ? "border-destructive bg-destructive/15 line-through" : "border-border bg-card")}>
+                    <span>{on ? `Sans ${c.label}` : c.label}</span>
+                    {on && <Check className="h-7 w-7 shrink-0 text-destructive" />}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
       </div>
       {err && <p className="px-6 text-xl text-destructive">{err}</p>}
       <div className="flex items-center justify-between gap-4 border-t border-border p-6">
