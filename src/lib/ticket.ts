@@ -51,7 +51,7 @@ export function autoPrintLabel(p: Pick<PrintingConfig, "autoKitchen" | "autoRece
   return p.autoKitchen && p.autoReceipt ? "auto : cuisine + caisse" : p.autoKitchen ? "auto : cuisine seule" : p.autoReceipt ? "auto : caisse seule" : "manuel";
 }
 /** Style + champs cuisine d'une configuration, prêt à passer aux rendus. */
-export const printingFields = (p: PrintingConfig): TicketFieldsIn => ({ ...p.kitchen, textSize: p.textSize, font: p.font });
+export const printingFields = (p: Pick<PrintingConfig, "kitchen" | "textSize" | "font">): TicketFieldsIn => ({ ...p.kitchen, textSize: p.textSize, font: p.font });
 export type TicketShop = { name: string; address?: string | null; phone?: string | null; slug?: string; customDomains?: string[] | undefined };
 export function ticketWebsite(shop: TicketShop) {
   const domain = shop.customDomains?.find((d) => /^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i.test(d));
