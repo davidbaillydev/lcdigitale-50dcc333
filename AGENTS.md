@@ -8,6 +8,7 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+- Menu simulation uses the manager-guarded editor draft, a shared pure item configurator and memory-only order snapshots; never mount the live cart provider or call order/payment/analytics services there. Why: tests must not affect customer carts, kitchen or sales.
 
 - HTML and ESC/POS tickets share presentation helpers in ticket.ts for field defaults, option lines, timing and totals; preserve kitchen visibility settings and non-fiscal pre-order warnings. Why: previews and physical tickets must agree without changing order/payment logic.
 
