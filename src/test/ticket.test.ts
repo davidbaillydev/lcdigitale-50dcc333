@@ -26,7 +26,9 @@ const order: TicketOrder = {
 
 describe("ticket formatting", () => {
   it("formats choices directly and adds the price only for paid options", () => {
-    expect(ticketOptions(order.items[0])).toEqual(["Base : Nouilles classiques", "+ Cordon bleu (+1,50 €)", "Sauces : Ketchup"]);
+    const item = order.items[0];
+    if (!item) throw new Error("Missing fixture item");
+    expect(ticketOptions(item)).toEqual(["Base : Nouilles classiques", "+ Cordon bleu (+1,50 €)", "Sauces : Ketchup"]);
   });
 
   it("hides allergens unless explicitly requested on both ticket kinds", () => {
@@ -65,7 +67,9 @@ describe("ticket formatting", () => {
         const bytes = ticketEscpos(order, kind, width, shop, fields);
         const text = Array.from(bytes).map((b) => String.fromCharCode(b)).join("");
         // Regression coverage of the requested output contract, not a visual snapshot.
-        for (const option of ticketOptions(order.items[0])) {
+        const item = order.items[0];
+        if (!item) throw new Error("Missing fixture item");
+        for (const option of ticketOptions(item)) {
           expect(html).toContain(option);
           expect(text).toContain(option.replace("€", String.fromCharCode(0xd5)));
         }
@@ -76,7 +80,7 @@ describe("ticket formatting", () => {
         expect(text).toContain("! REMARQUE CLIENT : L'oeuf");
         expect(text).toContain(String.fromCharCode(0x85)); // à in CP858
         expect(text).toContain("=".repeat(width === 80 ? 48 : 32));
-        expect(html.indexOf(shop.name)).toBeGreaterThan(html.indexOf("TOTAL"));
+        expect(html.indexOf("Wok &amp; Sushi")).toBeGreaterThan(html.indexOf("TOTAL"));
         expect(text.indexOf(shop.address)).toBeGreaterThan(text.indexOf("TOTAL"));
         expect(html).toContain("14,80 €");
       });

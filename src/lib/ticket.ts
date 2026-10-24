@@ -11,7 +11,7 @@ export type TicketOrder = {
   order_number: number; customer_name?: string | null; phone?: string | null; email?: string | null; mode: string;
   address?: string | null; city?: string | null; slot: string; created_at?: string;
   items: { name: string; qty: number; total?: number; category?: string; details?: string[]; allergens?: string[]; size?: { name: string } | null; selected_options?: { name: string; price: number }[] }[];
-  notes?: string | null; total: number | string; delivery_fee?: number | string | null; service_fee?: number | string | null;
+  notes?: string | null; total: number | string; subtotal?: number | string | null; delivery_fee?: number | string | null; service_fee?: number | string | null;
   discount?: number | string | null; promo_code?: string | null;
   payment_method: string; payment_status?: string | null; source?: string | null; table_label?: string | null; room_label?: string | null;
 };
@@ -51,7 +51,7 @@ export function ticketOptions(it: TicketOrder["items"][number]): string[] {
 }
 export function ticketTotals(o: TicketOrder) {
   const total = Number(o.total);
-  const subtotal = Math.round((total - Number(o.delivery_fee ?? 0) - Number(o.service_fee ?? 0) + Number(o.discount ?? 0)) * 100) / 100;
+  const subtotal = o.subtotal != null ? Number(o.subtotal) : Math.round((total - Number(o.delivery_fee ?? 0) - Number(o.service_fee ?? 0) + Number(o.discount ?? 0)) * 100) / 100;
   return { subtotal, vat: Math.round((total - total / 1.1) * 100) / 100, total };
 }
 export function ticketTiming(o: TicketOrder) {
