@@ -401,9 +401,10 @@ function Kitchen() {
                       <Button size="lg" className="min-h-14 flex-1 text-base font-semibold" onClick={() => (c.s === "new" ? accept(o) : move(o, c.next))}>{c.action}<ArrowRight aria-hidden="true" /></Button>
                       {c.s === "new" && <Button size="lg" variant="outline" className="min-h-14" onClick={() => confirm("Refuser cette commande ?") && move(o, "cancelled")}>Refuser</Button>}
                     </div>
-                    <div className="mt-2 flex gap-2">
+                    <div className="mt-2 flex flex-wrap gap-2">
                       <Button size="sm" variant="secondary" className="min-h-12 min-w-0 flex-1" onClick={() => setPreview({ order: o, kinds: ["kitchen"] })}><Printer /> {logs[o.id]?.length ? "Réimprimer cuisine" : "Cuisine"}</Button>
                       <Button size="sm" variant="secondary" className="min-h-12 min-w-0 flex-1" onClick={() => setPreview({ order: o, kinds: ["receipt"] })}><Printer /> Caisse</Button>
+                      <Button size="sm" variant="secondary" className="min-h-12 min-w-0 flex-1" onClick={() => setPreview({ order: o, kinds: ["kitchen", "receipt"] })}><Printer /> Cuisine + Caisse</Button>
                       <InvoiceButton orderId={o.id} />
                     </div>
                     <div className="mt-2 space-y-2"><RefundBadge o={o as never} /><RefundButton o={o as never} />{feat.pos_sync && <PosSyncStatus o={o as never} onDone={load} />}</div>

@@ -64,10 +64,11 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
   const [savedSettings, setSavedSettings] = useState(() => JSON.stringify(initialSettings(restaurant)));
   const dirty = JSON.stringify(s) !== savedSettings;
   const [testResult, setTestResult] = useState<null | "ok" | "failed">(null);
+  const [previewKind, setPreviewKind] = useState<"kitchen" | "receipt">("kitchen");
   const shop = { name: restaurant.name, address: restaurant.address, phone: restaurant.phone, slug: restaurant.slug, customDomains: restaurant.config.customDomains };
   const testPrint = async () => {
     setTestResult(null);
-    const ok = await printTickets(sampleOrder(), ["kitchen"], shop, s.config.printing.width, printingFields(s.config.printing));
+    const ok = await printTickets(sampleOrder(), [previewKind], shop, s.config.printing.width, printingFields(s.config.printing));
     setTestResult(ok ? "ok" : "failed");
   };
   const [cp, setCp] = useState(""); const [city, setCity] = useState("");
@@ -183,12 +184,17 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
         ))}
         </div>
         <div>
-          <p className="mb-2 text-sm font-semibold">Aperçu du ticket cuisine ({s.config.printing.width} mm)</p>
-          <iframe title="Aperçu du ticket cuisine" className="max-w-full rounded border border-border bg-card"
+          <div className="mb-2 flex gap-2" role="group" aria-label="Choix de l'aperçu">
+            {([["kitchen", "Ticket cuisine"], ["receipt", "Ticket caisse"]] as const).map(([k, l]) => (
+              <Button key={k} type="button" size="sm" variant={previewKind === k ? "default" : "secondary"} aria-pressed={previewKind === k} onClick={() => setPreviewKind(k)}>{l}</Button>
+            ))}
+          </div>
+          <p className="mb-2 text-sm font-semibold">Aperçu du {previewKind === "kitchen" ? "ticket cuisine" : "ticket caisse"} ({s.config.printing.width} mm)</p>
+          <iframe title={previewKind === "kitchen" ? "Aperçu du ticket cuisine" : "Aperçu du ticket caisse"} className="max-w-full rounded border border-border bg-card"
             style={{ width: `${s.config.printing.width === 80 ? 330 : 250}px`, height: 460 }}
-            srcDoc={ticketHtml(sampleOrder(), "kitchen", s.config.printing.width, shop, printingFields(s.config.printing))} />
+            srcDoc={ticketHtml(sampleOrder(), previewKind, s.config.printing.width, shop, printingFields(s.config.printing))} />
           <div className="mt-3"><PrinterSetup width={s.config.printing.width} shop={shop} /></div>
-          <Button type="button" variant="secondary" className="mt-3 w-full" onClick={testPrint}>Imprimer un ticket de test</Button>
+          <Button type="button" variant="secondary" className="mt-3 w-full" onClick={testPrint}>Imprimer un ticket de test ({previewKind === "kitchen" ? "cuisine" : "caisse"})</Button>
           {testResult === "ok" && <p role="status" className="mt-2 rounded bg-primary/15 p-2 text-sm">Ticket de test envoyé à l'imprimante. Vérifiez qu'il est bien sorti.</p>}
           {testResult === "failed" && <p role="alert" className="mt-2 rounded bg-destructive/20 p-2 text-sm">Échec : le ticket n'a pas pu être envoyé. Vérifiez l'imprimante et réessayez.</p>}
         </div>
