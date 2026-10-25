@@ -526,7 +526,7 @@ function KioskItem({ item, image, onClose, onAdd }: { item: MenuItem; image: str
           <span className="w-12 text-center font-display text-4xl">{qty}</span>
           <button onClick={() => setQ(qty + 1)} className="flex h-16 w-16 items-center justify-center rounded-xl bg-muted" aria-label="Plus"><Plus className="h-8 w-8" /></button>
         </div>
-        {isLast ? (
+        {unavailable || isLast ? (
           <Button disabled={unavailable} onClick={submit} className="h-auto rounded-2xl px-12 py-6 font-display text-4xl">{unavailable ? "Hors créneau" : `Ajouter · ${euro(price * qty)}`}</Button>
         ) : (
           <button disabled={(sel[groups[step]!.id] ?? []).length < groups[step]!.min} onClick={() => { setErr(null); setStep(step + 1); }}
