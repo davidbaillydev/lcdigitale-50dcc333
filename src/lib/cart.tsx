@@ -10,6 +10,8 @@ import { useQrMode, type QrMode } from "./table";
 import { isEmbedded, postToParent } from "./embed";
 import { useCartAnalytics } from "./cart-analytics";
 import type { CartStep } from "./analytics.functions";
+import { assertItemAvailable } from "./shop";
+import { toast } from "sonner";
 
 export type CartLine = { key: string; itemId: string; qty: number; sel: Selections; note?: string };
 type Ctx = {
@@ -72,13 +74,17 @@ export function CartProvider({ restaurant, children }: { restaurant: Restaurant;
       lines,
       count: lines.reduce((s, l) => s + l.qty, 0),
       subtotal: Math.round(subtotal * 100) / 100,
-      add: (itemId, sel, qty = 1) =>
+      add: (itemId, sel, qty = 1) => {
+        const item = catalog.itemsById[itemId];
+        if (!item) return;
+        try { assertItemAvailable(item); } catch (e) { toast.error(e instanceof Error ? e.message : "Plat indisponible"); return; }
         setLines((prev) => {
           const key = itemId + JSON.stringify(sel);
           const ex = prev.find((l) => l.key === key);
           if (ex) return prev.map((l) => (l.key === key ? { ...l, qty: l.qty + qty } : l));
           return [...prev, { key, itemId, sel, qty }];
-        }),
+        });
+      },
       setQty: (key, qty) =>
         setLines((prev) => (qty <= 0 ? prev.filter((l) => l.key !== key) : prev.map((l) => (l.key === key ? { ...l, qty } : l)))),
       clear: () => setLines([]),

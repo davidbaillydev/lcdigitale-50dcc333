@@ -6,6 +6,8 @@ import { euro, fromPrice, type MenuItem } from "@/lib/menu";
 import { useOrdersPaused } from "@/hooks/use-orders-paused";
 import { ItemDialog } from "@/components/ItemDialog";
 import { cn } from "@/lib/utils";
+import { isItemAvailable } from "@/lib/shop";
+import { useMenuClock } from "@/hooks/use-menu-clock";
 
 const KINDS: [string, RegExp][] = [
   ["drink", /boisson|drink|soda|bi[eè]re|vin|jus|eau|th[eé]|caf[eé]/i],
@@ -19,6 +21,7 @@ export const isSimple = (i: MenuItem) => !i.builder && !(i.options ?? []).some((
 
 /** Suggestions : boissons, desserts, sauces, accompagnements absents du panier (1 par famille puis complément). */
 export function useSuggestions(max = 4): MenuItem[] {
+  const now = useMenuClock();
   const { catalog, lines, restaurant } = useCart();
   const up = restaurant.config.upsell;
   return useMemo(() => {
@@ -26,7 +29,7 @@ export function useSuggestions(max = 4): MenuItem[] {
     const manual: MenuItem[] = [];
     if (up?.mode === "manual") {
       const ids = [...(up.itemIds ?? []), ...catalog.categories.filter((c) => up.categoryIds?.includes(c.id)).flatMap((c) => c.items.map((i) => i.id))];
-      for (const id of ids) { const it = catalog.itemsById[id]; if (it && !inCart.has(id) && !manual.includes(it)) manual.push(it); }
+      for (const id of ids) { const it = catalog.itemsById[id]; if (it && (!it.schedule || !!now && isItemAvailable(it, now)) && !inCart.has(id) && !manual.includes(it)) manual.push(it); }
       if (manual.length) return manual.slice(0, max);
     }
     const kindsInCart = new Set<string>();
@@ -35,7 +38,7 @@ export function useSuggestions(max = 4): MenuItem[] {
       const kind = KINDS.find(([, re]) => re.test(c.label))?.[0];
       if (!kind) continue;
       if (c.items.some((i) => inCart.has(i.id))) kindsInCart.add(kind);
-      byKind[kind] = [...(byKind[kind] ?? []), ...c.items.filter((i) => !inCart.has(i.id))];
+      byKind[kind] = [...(byKind[kind] ?? []), ...c.items.filter((i) => !inCart.has(i.id) && (!i.schedule || !!now && isItemAvailable(i, now)))];
     }
     // Familles absentes du panier d'abord, puis plats simples et moins chers en premier
     const order = KINDS.map(([k]) => k).sort((a, b) => Number(kindsInCart.has(a)) - Number(kindsInCart.has(b)));
@@ -45,7 +48,7 @@ export function useSuggestions(max = 4): MenuItem[] {
       for (const l of lists) { const it = l[round]; if (it && out.length < max) out.push(it); }
     }
     return out;
-  }, [catalog, lines, max, up]);
+  }, [catalog, lines, max, up, now]);
 }
 
 export function CartSuggestions({ className }: { className?: string }) {

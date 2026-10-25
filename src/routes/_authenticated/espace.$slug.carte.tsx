@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { AllergenBadges, AllergenPicker } from "@/components/Allergens";
 import { DishPhoto } from "@/components/DishPhoto";
+import { ItemScheduleEditor } from "@/components/ItemScheduleEditor";
 import { pretranslateMenu } from "@/lib/menu-translate.functions";
 import { FOREIGN_LANGS, LANG_NAMES, missingTranslations, type ForeignLang } from "@/lib/i18n";
 import { Languages, PackageX } from "lucide-react";
@@ -230,6 +231,7 @@ function MenuEditor() {
                         <DishPhoto restaurantId={r!.id} item={it} onChange={(image) => setItem(ci, ii, { image })} />
                         <Input value={it.name} onChange={(e) => setItem(ci, ii, { name: e.target.value })} aria-label="Nom du plat" />
                         <Textarea rows={2} value={it.desc ?? ""} placeholder="Description" onChange={(e) => setItem(ci, ii, { desc: e.target.value })} />
+                        <ItemScheduleEditor schedule={it.schedule} onChange={(schedule) => setItem(ci, ii, { schedule })} />
                         <div className="space-y-1">
                           <label className="flex flex-wrap items-center gap-2 text-xs font-semibold">Ingrédients retirables par le client
                             <select className="min-h-10 rounded-md border border-input bg-background px-2 text-sm" value={it.removable === undefined ? "auto" : it.removable.length ? "custom" : "none"} onChange={(e) => { const v = e.target.value; setItem(ci, ii, { removable: v === "auto" ? undefined : v === "none" ? [] : (it.removable?.length ? it.removable : removableChoices(it).map((c) => c.label)) }); }} aria-label="Mode de personnalisation des ingrédients">

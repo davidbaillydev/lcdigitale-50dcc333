@@ -23,6 +23,9 @@ import { RestaurantBanner } from "@/components/RestaurantBanner";
 import { PromoCodeField, type AppliedDiscount } from "@/components/PromoCodeField";
 import { announcementText } from "@/lib/promo";
 import { isSimple, useSuggestions } from "@/components/CartSuggestions";
+import { assertItemAvailable, isItemAvailable, itemScheduleLabel } from "@/lib/shop";
+import { useMenuClock } from "@/hooks/use-menu-clock";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/$slug/borne")({
   head: () => ({
@@ -44,6 +47,7 @@ type Step = "welcome" | "menu" | "cart" | "pay" | "terminal" | "qr" | "done";
 type Mode = "dine_in" | "pickup";
 
 function Kiosk() {
+  const now = useMenuClock();
   const { restaurant, catalog, lines, add, setQty, clear, count, subtotal, track, resetSession } = useCart();
   const suggestions = useSuggestions(4);
   const kioskPaused = useOrdersPaused(restaurant);
@@ -249,17 +253,18 @@ function Kiosk() {
             {excluded.length > 0 && category && !category.items.length && <p className="py-10 text-center text-2xl text-muted-foreground">Aucun plat de cette catégorie sans ces allergènes.</p>}
             <div className="grid grid-cols-2 gap-4 pb-32 lg:grid-cols-3 2xl:grid-cols-4 min-[2200px]:grid-cols-5">
               {category?.items.map((it) => (
-                <button key={it.id} disabled={kioskPaused} onClick={() => kioskPaused ? undefined : it.options?.length || it.allergens?.length ? setItem(it) : add(it.id, {}, 1)}
+                <button key={it.id} disabled={kioskPaused} onClick={() => kioskPaused ? undefined : !isItemAvailable(it) || it.options?.length || it.allergens?.length ? setItem(it) : add(it.id, {}, 1)}
                   className="flex min-h-40 flex-col justify-between overflow-hidden rounded-2xl border-2 border-border bg-card p-5 text-left active:border-primary">
                   {it.image && <img src={it.image} alt={it.name} loading="lazy" className="-mx-5 -mt-5 mb-3 aspect-[4/3] w-[calc(100%+2.5rem)] max-w-none object-cover" />}
                   <span>
                     <span className="block text-2xl font-semibold leading-tight">{it.name}</span>
                     {it.desc && <span className="mt-1 line-clamp-2 block text-base text-muted-foreground">{it.desc}</span>}
                     <AllergenBadges ids={it.allergens} className="mt-2" />
+                    {it.schedule && <span className="mt-2 block text-base font-semibold text-primary">{now && !isItemAvailable(it, now) ? "Disponible : " : ""}{itemScheduleLabel(it.schedule)}</span>}
                   </span>
                   <span className="mt-3 flex items-center justify-between">
                     <span className="font-display text-3xl text-primary">{fromPrice(it) != null ? `dès ${euro(fromPrice(it)!)}` : euro(it.price)}</span>
-                    <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground"><Plus className="h-8 w-8" /></span>
+                    <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground">{now && !isItemAvailable(it, now) ? <span className="text-xs">Horaires</span> : <Plus className="h-8 w-8" />}</span>
                   </span>
                 </button>
               ))}
@@ -433,6 +438,8 @@ function Kiosk() {
 }
 
 function KioskItem({ item, image, onClose, onAdd }: { item: MenuItem; image: string | undefined; onClose: () => void; onAdd: (sel: Selections, qty: number) => void }) {
+  const now = useMenuClock();
+  const unavailable = !!now && !isItemAvailable(item, now);
   const [sel, setSel] = useState<Selections>({});
   const [qty, setQ] = useState(1);
   const [step, setStep] = useState(0);
@@ -450,7 +457,7 @@ function KioskItem({ item, image, onClose, onAdd }: { item: MenuItem; image: str
     if (cur.length >= g.max) return p;
     return { ...p, [g.id]: [...cur, id] };
   });
-  const submit = () => { const e = validateSelections(item, sel); if (e) setErr(e); else onAdd(sel, qty); };
+  const submit = () => { try { assertItemAvailable(item); } catch (e) { setErr(e instanceof Error ? e.message : "Plat indisponible"); return; } const e = validateSelections(item, sel); if (e) setErr(e); else onAdd(sel, qty); };
   const removable = removableChoices(item);
   const removed = sel[REMOVE_KEY] ?? [];
   const toggleRemove = (id: string) => setSel((p) => { const cur = p[REMOVE_KEY] ?? []; return { ...p, [REMOVE_KEY]: cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id] }; });
@@ -462,6 +469,7 @@ function KioskItem({ item, image, onClose, onAdd }: { item: MenuItem; image: str
         <p className="font-display text-4xl">{item.name}</p>
         <span className="w-32" />
       </div>
+      {item.schedule && <p role="status" className="px-6 py-3 text-xl font-semibold text-primary">{unavailable ? "Indisponible actuellement. Disponible : " : "Disponible : "}{itemScheduleLabel(item.schedule)} (heure de Paris)</p>}
       {stepped && <div className="flex gap-2 px-6 pt-4">{groups.map((g, i) => <div key={g.id} className={cn("h-2 flex-1 rounded-full", i <= step ? "bg-primary" : "bg-muted")} />)}</div>}
       <div className="min-h-0 flex-1 space-y-8 overflow-y-auto p-6">
         {image && <div className="flex items-center gap-4"><img src={image} alt={`Illustration pour ${item.name}`} loading="lazy" width={1024} height={768} className="h-32 w-44 rounded-md object-cover" />{!item.image && <span className="text-base text-muted-foreground">Photo d’illustration</span>}</div>}
@@ -519,7 +527,7 @@ function KioskItem({ item, image, onClose, onAdd }: { item: MenuItem; image: str
           <button onClick={() => setQ(qty + 1)} className="flex h-16 w-16 items-center justify-center rounded-xl bg-muted" aria-label="Plus"><Plus className="h-8 w-8" /></button>
         </div>
         {isLast ? (
-          <button onClick={submit} className="rounded-2xl bg-primary px-12 py-6 font-display text-4xl text-primary-foreground">Ajouter · {euro(price * qty)}</button>
+          <Button disabled={unavailable} onClick={submit} className="h-auto rounded-2xl px-12 py-6 font-display text-4xl">{unavailable ? "Hors créneau" : `Ajouter · ${euro(price * qty)}`}</Button>
         ) : (
           <button disabled={(sel[groups[step]!.id] ?? []).length < groups[step]!.min} onClick={() => { setErr(null); setStep(step + 1); }}
             className="rounded-2xl bg-primary px-12 py-6 font-display text-4xl text-primary-foreground disabled:opacity-40">Suivant · {euro(price)}</button>
