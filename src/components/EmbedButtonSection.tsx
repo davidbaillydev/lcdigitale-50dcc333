@@ -95,9 +95,9 @@ export function EmbedButtonSection({ restaurant: r, onSaved }: { restaurant: R; 
       <p className="mt-2 text-xs text-muted-foreground">Collez ce code juste avant <code>&lt;/body&gt;</code> sur votre site (WordPress : extension « Insert Headers and Footers » ; Wix : Paramètres → Code personnalisé ; Shopify : theme.liquid).</p>
 
       <h3 className="mt-6 text-xl">Lien simple</h3>
-      <p className="text-sm text-muted-foreground">Si votre site n'accepte pas de code : un lien vers votre carte.</p>
+      <p className="text-sm text-muted-foreground">Si votre site n'accepte pas de code : un lien vers votre carte, qui s'ouvre dans le même onglet.</p>
       <CopyBox value={link} label="Lien copié" />
-      <CopyBox value={`<a href="${link}" target="_blank" rel="noopener">Commander en ligne</a>`} label="Code copié" />
+      <CopyBox value={`<a href="${link}">Commander en ligne</a>`} label="Code copié" />
 
       <h3 className="mt-6 text-xl">Page Facebook</h3>
       <CopyBox value={fb} label="Lien copié" />

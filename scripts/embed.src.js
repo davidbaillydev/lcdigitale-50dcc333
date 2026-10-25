@@ -15,7 +15,7 @@ fetch(ORIGIN+"/api/public/embed-status/"+encodeURIComponent(slug)).then(function
 }
 function lum(h){return[1,3,5].reduce(function(a,i,k){var c=parseInt(h.substr(i,2),16)/255;c=c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4);return a+c*[.2126,.7152,.0722][k]},0)}
 function contrast(h){var L=lum(h);return(L+.05)/.05>=1.05/(L+.05)?"#000":"#fff"}
-function fallback(slug){window.open(ORIGIN+"/"+encodeURIComponent(slug)+"?src=embed","_blank","noreferrer")}
+function fallback(slug){var u=ORIGIN+"/"+encodeURIComponent(slug)+"?src=embed";try{window.top.location=u}catch(_){location=u}}
 function buildOverlay(){
 var host=document.createElement("div");
 host.style.cssText="position:fixed;inset:0;z-index:2147483001;display:none";
