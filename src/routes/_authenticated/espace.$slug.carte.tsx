@@ -9,6 +9,7 @@ import { useStaff } from "@/hooks/use-staff";
 import { loadMenu, saveMenu } from "@/lib/menu-admin.functions";
 import { analyzeMenu } from "@/lib/menu-import.functions";
 import { readMenuFile } from "@/lib/menu-import";
+import { mergeMenu, menuMergeSummaryText } from "@/lib/menu-merge";
 import { baseCategories } from "@/lib/catalogs";
 import { removableChoices, type Category, type MenuItem } from "@/lib/menu";
 import { ThemeToggle } from "@/lib/theme";
@@ -25,6 +26,7 @@ import { useOptionData } from "@/lib/menu-options-live";
 import { ItemOptionsEditor, OptionGroupsPanel } from "@/components/MenuOptionsEditor";
 import { PRESET_DRINKS } from "@/lib/drinks-preset";
 import { MenuSimulation } from "@/components/MenuSimulation";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/espace/$slug/carte")({
   head: () => ({
@@ -64,6 +66,7 @@ function MenuEditor() {
   const [importing, setImporting] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [candidate, setCandidate] = useState<Category[] | null>(null);
+  const [importSummary, setImportSummary] = useState<string | null>(null);
   const [simulation, setSimulation] = useState(false);
 
   useEffect(() => {
@@ -113,10 +116,12 @@ function MenuEditor() {
     setItem(ci, ii, { translations: { ...it.translations, [l]: { ...cur, [k]: v || (k === "name" ? "" : undefined) } } });
   };
   const missing = missingTranslations(menu).items.length;
+  const mergedCandidate = candidate ? mergeMenu(menu, candidate) : null;
 
   const importFile = async (file?: File) => {
     if (!file || !r) return;
-    setImporting(true); setCandidate(null);
+    if (importing) return;
+    setImporting(true); setCandidate(null); setImportSummary(null);
     try {
       const pages = await readMenuFile(file);
       const result = await analyze({ data: { restaurantId: r.id, pages } });
@@ -143,18 +148,36 @@ function MenuEditor() {
             onDragOver={(e) => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={(e) => { e.preventDefault(); setDragging(false); void importFile(e.dataTransfer.files[0]); }}
             className={`cursor-pointer rounded-xl border-2 border-dashed text-center transition-colors ${menu.length ? "p-6" : "p-10"} ${dragging ? "border-primary bg-primary/10" : "border-border hover:border-primary"}`}>
             <FileUp className={`mx-auto mb-2 text-primary ${menu.length ? "h-7 w-7" : "h-12 w-12"}`} />
-            <p className={menu.length ? "font-semibold" : "font-display text-3xl"}>{importing ? "Analyse de la carte en cours…" : "Déposer votre menu (PDF ou photo) pour le créer avec l'IA"}</p>
+            <p className={menu.length ? "font-semibold" : "font-display text-3xl"}>{importing ? "Analyse de la carte en cours…" : "Déposer un menu complet ou de nouveaux plats à ajouter avec l’IA"}</p>
             {!importing && <span className="mt-3 inline-flex h-10 items-center rounded-md bg-primary px-5 font-semibold text-primary-foreground">Choisir un fichier</span>}
             <p className="text-sm text-muted-foreground">PDF, photo, TXT ou CSV · 8 Mo maximum · 8 pages maximum</p>
           </div>
-          {candidate && <div className="border border-primary bg-primary/5 p-4" aria-live="polite">
-            <h2 className="text-2xl">Carte proposée · {candidate.reduce((n, c) => n + c.items.length, 0)} plats</h2>
-            <p className="text-sm text-muted-foreground">Relisez les prix, intitulés, suppléments et allergènes détectés : l'analyse peut se tromper. Votre carte actuelle reste en ligne jusqu'à l'enregistrement.</p>
-            <div className="mt-3 max-h-64 overflow-auto border-y border-border py-2 text-sm">
+          {importSummary && <p role="status" className="border-l-4 border-primary bg-primary/5 p-4 text-sm">{importSummary} · Modifications non publiées : enregistrez la carte après vérification.</p>}
+          <Dialog open={Boolean(candidate)} onOpenChange={(isOpen) => { if (!isOpen) setCandidate(null); }}>
+          {candidate && mergedCandidate && <DialogContent className="flex max-h-[85dvh] flex-col overflow-y-auto sm:max-w-2xl">
+            <DialogHeader><DialogTitle>Carte proposée · {candidate.reduce((n, c) => n + c.items.length, 0)} plats</DialogTitle>
+            <DialogDescription>Relisez les prix, intitulés, suppléments et allergènes détectés : l'analyse peut se tromper. Votre carte actuelle reste en ligne jusqu'à l'enregistrement.</DialogDescription></DialogHeader>
+            <div className="mt-3 max-h-64 shrink-0 overflow-auto border-y border-border py-2 text-sm">
               {candidate.map((c) => <div key={c.id} className="mb-3"><strong>{c.label}</strong>{c.items.map((it) => <div key={it.id} className="flex justify-between gap-3 border-b border-border/50 py-1"><span>{it.name}<AllergenBadges ids={it.allergens} className="mt-1" /></span><span className="shrink-0">{it.price.toFixed(2)} €</span></div>)}</div>)}
             </div>
-            <div className="mt-3 flex flex-wrap gap-2"><Button onClick={() => { update(candidate); setCandidate(null); setOpen(candidate[0]?.id ?? null); toast.info("Carte proposée prête à corriger ; enregistrez-la après vérification"); }}>Reprendre et corriger</Button><Button variant="secondary" onClick={() => setCandidate(null)}>Annuler l'import</Button></div>
-          </div>}
+            <div className="space-y-2 border-l-4 border-primary bg-primary/5 p-3 text-sm">
+              <p className="font-semibold">Ajout sans écraser · {menuMergeSummaryText(mergedCandidate.summary)}</p>
+              <p>Les plats actuels gardent leurs prix et réglages. Les noms identiques, sans distinction de majuscules ni d’espaces autour, sont ignorés.</p>
+            </div>
+            <div className="grid gap-2">
+              <Button className="h-auto min-h-12 whitespace-normal" disabled={mergedCandidate.summary.addedItems === 0} onClick={() => {
+                update(mergedCandidate.menu); setImportSummary(menuMergeSummaryText(mergedCandidate.summary)); setCandidate(null);
+                toast.success("Nouveautés ajoutées au brouillon — pensez à enregistrer la carte");
+              }}><Plus /> Ajouter à la carte existante</Button>
+              <Button variant="outline" className="h-auto min-h-12 whitespace-normal" onClick={() => {
+                update(candidate); setCandidate(null); setImportSummary(null); setOpen(candidate[0]?.id ?? null);
+                toast.info("Carte remplacée dans le brouillon — vérifiez puis enregistrez");
+              }}>Remplacer toute la carte</Button>
+              <p className="text-center text-xs text-muted-foreground">Remplacer retire tous les catégories et plats actuels du brouillon.</p>
+              <Button variant="secondary" className="min-h-12" onClick={() => setCandidate(null)}>Annuler l'import</Button>
+            </div>
+          </DialogContent>}
+          </Dialog>
         </div>
 
         {menu.length > 0 && <div className="mt-6 flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-4">
