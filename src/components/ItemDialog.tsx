@@ -10,6 +10,8 @@ import { itemImage } from "@/lib/menu-images";
 import { AllergenInfo } from "@/components/Allergens";
 import { useOrdersPaused } from "@/hooks/use-orders-paused";
 import type { Catalog } from "@/lib/catalogs";
+import { assertItemAvailable, isItemAvailable, itemScheduleLabel } from "@/lib/shop";
+import { useMenuClock } from "@/hooks/use-menu-clock";
 
 export function ItemDialog({ item, onClose }: { item: MenuItem | null; onClose: () => void }) {
   const { add, catalog, restaurant } = useCart();
@@ -18,6 +20,7 @@ export function ItemDialog({ item, onClose }: { item: MenuItem | null; onClose: 
 }
 
 export function ItemConfigurator({ item, onClose, catalog, onAdd, paused = false }: { item: MenuItem | null; onClose: () => void; catalog: Catalog; onAdd: (id: string, selections: Selections, qty: number) => void; paused?: boolean }) {
+  const now = useMenuClock();
   const [sel, setSel] = useState<Selections>({});
   const [qty, setQty] = useState(1);
   const [step, setStep] = useState(0);
@@ -29,6 +32,7 @@ export function ItemConfigurator({ item, onClose, catalog, onAdd, paused = false
   }, [item?.id]);
 
   if (!item) return null;
+  const unavailable = !!now && !isItemAvailable(item, now);
   const groups = activeGroups(item, sel);
   const stepped = !!item.builder;
   const visible = stepped ? groups.slice(step, step + 1) : groups;
@@ -57,6 +61,7 @@ export function ItemConfigurator({ item, onClose, catalog, onAdd, paused = false
   const isLast = !stepped || step === groups.length - 1;
 
   const submit = () => {
+    try { assertItemAvailable(item); } catch (e) { toast.error(e instanceof Error ? e.message : "Plat indisponible"); return; }
     const err = validateSelections(item, sel);
     if (err) {
       toast.error(err);
@@ -73,6 +78,7 @@ export function ItemConfigurator({ item, onClose, catalog, onAdd, paused = false
         <DialogHeader>
           <DialogTitle className="font-display text-3xl">{item.name}</DialogTitle>
           {item.desc && <DialogDescription>{item.desc}</DialogDescription>}
+          {item.schedule && <p role="status" className="text-sm font-semibold text-primary">{unavailable ? "Indisponible actuellement. Disponible : " : "Disponible : "}{itemScheduleLabel(item.schedule)} (heure de Paris)</p>}
           <div className="pt-2"><AllergenInfo ids={item.allergens} /></div>
         </DialogHeader>
         {image && <div><img src={image.src} alt={image.real ? item.name : `Illustration pour ${item.name}`} loading="lazy" width={1024} height={768} className="h-36 w-full rounded-md object-cover sm:h-48" />{!image.real && <p className="mt-1 text-right text-xs text-muted-foreground">Photo d’illustration</p>}</div>}
@@ -164,8 +170,8 @@ export function ItemConfigurator({ item, onClose, catalog, onAdd, paused = false
           </div>
           <div className="flex gap-2">
             {stepped && step > 0 && <Button variant="ghost" onClick={() => setStep(step - 1)}>Retour</Button>}
-            {isLast ? (
-              <Button onClick={submit} disabled={paused} className="font-semibold">{paused ? "Le restaurant ne prend pas de commandes pour le moment" : `Ajouter · ${euro(price * qty)}`}</Button>
+            {unavailable || isLast ? (
+              <Button onClick={submit} disabled={paused || unavailable} className="font-semibold">{unavailable ? "Hors créneau" : paused ? "Le restaurant ne prend pas de commandes pour le moment" : `Ajouter · ${euro(price * qty)}`}</Button>
             ) : (
               <Button disabled={!groups[step] || !stepOk(groups[step]!)} onClick={() => setStep(step + 1)}>Suivant · {euro(price)}</Button>
             )}

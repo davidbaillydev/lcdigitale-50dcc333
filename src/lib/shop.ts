@@ -73,6 +73,39 @@ function parisParts(d: Date) {
   return { wd, minutes: (+g("hour") % 24) * 60 + +g("minute") };
 }
 
+/** Start inclusive, end exclusive. Overnight windows belong to their starting day. */
+export function isItemAvailable(item: import("./menu").MenuItem, date = new Date()): boolean {
+  const s = item.schedule;
+  if (!s) return true;
+  if (!Number.isFinite(date.getTime())) return false;
+  const { wd, minutes } = parisParts(date);
+  const parse = (t: string | undefined, fallback: number) => t === undefined ? fallback : /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(t) ? Number(t.slice(0, 2)) * 60 + Number(t.slice(3)) : NaN;
+  const start = parse(s.start, 0), end = parse(s.end, 1440);
+  if (!Number.isFinite(start) || !Number.isFinite(end) || start === end) return false;
+  const overnight = start > end;
+  const day = overnight && minutes < end ? (wd + 6) % 7 : wd;
+  return (!s.days || s.days.includes(day)) && (overnight ? minutes >= start || minutes < end : minutes >= start && minutes < end);
+}
+
+export function itemScheduleLabel(s: import("./menu").MenuItem["schedule"]): string {
+  if (!s) return "";
+  const days = s.days;
+  const labels = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+  const sorted = [...new Set(days ?? [0, 1, 2, 3, 4, 5, 6])].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7));
+  const dayLabel = sorted.length === 7 ? "Tous les jours" : sorted.join(",") === "1,2,3,4,5" ? "Lun–Ven" : sorted.join(",") === "6,0" ? "Week-end" : sorted.length ? sorted.map((d) => labels[d]).join(", ") : "Aucun jour";
+  const time = s.start && s.end ? `${s.start} – ${s.end}${s.start > s.end ? " (lendemain)" : ""}` : s.start ? `à partir de ${s.start}` : s.end ? `jusqu’à ${s.end}` : "Toute la journée";
+  return `${dayLabel} · ${time}`;
+}
+
+export function assertItemAvailable(item: import("./menu").MenuItem, date = new Date()): void {
+  if (!isItemAvailable(item, date)) throw new Error(`« ${item.name} » est indisponible à cet horaire. Disponible : ${itemScheduleLabel(item.schedule)} (heure de Paris).`);
+}
+
+/** Immediate uses now; a scheduled or capacity-rescheduled order uses its validated slot. */
+export function itemOrderDate(asap: boolean, slot: string, now = new Date()): Date {
+  return asap ? now : new Date(slot);
+}
+
 /** Créneaux disponibles aujourd'hui (ISO strings) */
 export function availableSlots(r: Restaurant, mode: "pickup" | "delivery", now = new Date()): string[] {
   const step = r.config.slotMinutes ?? 20;

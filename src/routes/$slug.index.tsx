@@ -21,6 +21,8 @@ import { useOrderingState } from "@/hooks/use-orders-paused";
 import { OrderingBanners } from "@/components/OrderingBanners";
 import { useEmbedMode } from "@/lib/embed";
 import { featuresOf } from "@/lib/features";
+import { isItemAvailable, itemScheduleLabel } from "@/lib/shop";
+import { useMenuClock } from "@/hooks/use-menu-clock";
 
 export const Route = createFileRoute("/$slug/")({
   loader: ({ params }) => getRestaurant({ data: { slug: params.slug } }),
@@ -36,6 +38,7 @@ export const Route = createFileRoute("/$slug/")({
 });
 
 function MenuPage() {
+  const now = useMenuClock();
   const [open, setOpen] = useState<MenuItem | null>(null);
   const { count, subtotal, restaurant, catalog, qr } = useCart();
   const { consent } = useConsent();
@@ -120,8 +123,9 @@ function MenuPage() {
                   </div>
                   {itemText(i, lang).desc && <p className="mt-1 text-sm text-muted-foreground">{itemText(i, lang).desc}</p>}
                   <AllergenBadges ids={i.allergens} className="mt-2" />
+                  {i.schedule && <span className="mt-2 flex items-center gap-2 text-sm font-semibold text-primary"><Clock className="h-4 w-4 shrink-0" />{now && !isItemAvailable(i, now) ? "Disponible : " : ""}{itemScheduleLabel(i.schedule)}</span>}
                   {!view && <span className="mt-auto pt-3 text-sm font-semibold text-primary opacity-80 group-hover:opacity-100">
-                    {i.builder ? ui.compose : i.options?.length ? ui.options : ui.add}
+                    {now && !isItemAvailable(i, now) ? "Indisponible actuellement · voir les horaires" : i.builder ? ui.compose : i.options?.length ? ui.options : ui.add}
                   </span>}
                 </button>
               ))}
