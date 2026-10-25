@@ -10,7 +10,7 @@
 <!-- LOVABLE:END -->
 - Menu simulation uses the manager-guarded editor draft, a shared pure item configurator and memory-only order snapshots; never mount the live cart provider or call order/payment/analytics services there. Why: tests must not affect customer carts, kitchen or sales.
 
-- HTML and ESC/POS tickets share presentation helpers in ticket.ts for field defaults, option lines, timing and totals; preserve kitchen visibility settings and non-fiscal pre-order warnings. Why: previews and physical tickets must agree without changing order/payment logic.
+- HTML and ESC/POS tickets share ticket.ts presentation helpers; optional catalog/group context restores missing option labels by stable IDs only, with snapshot-name fallback. Preserve kitchen visibility, prices and non-fiscal warnings. Why: previews and physical tickets must agree without changing orders/payments.
 
 - Hours/delivery/config use jsonb; public pages use `/$slug`. `getCatalog(restaurant)` resolves restaurants.menu over catalogs.ts/menu_key. Servers recompute totals, never trusting client prices.
 - Item schedules use shared Paris-time checks: now for immediate orders, validated slots for planned orders; end is exclusive, overnight belongs to its start day. Why: all channels agree.

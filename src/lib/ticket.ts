@@ -1,16 +1,18 @@
 // Impression de tickets thermiques (80 mm / 58 mm) via le dialogue d'impression du navigateur.
 import { useEffect, useState } from "react";
 import { allergenLabel } from "./allergens";
+import type { Catalog } from "./catalogs";
+import type { OptionData } from "./menu-options";
 
-/** Nom du plat suivi de sa taille en majuscules : PIZZA ROYALE [XL]. */
-export const itemTitle = (it: { name: string; size?: { name: string } | null }) => (it.size ? `${it.name.toUpperCase()} [${it.size.name.toUpperCase()}]` : it.name);
+/** Nom commercial inchangé ; la taille choisie reste visible. */
+export const itemTitle = (it: { name: string; size?: { name: string } | null }) => (it.size ? `${it.name} [${it.size.name}]` : it.name);
 
 export type TicketWidth = 80 | 58;
 export type TicketKind = "kitchen" | "receipt";
 export type TicketOrder = {
   order_number: number; customer_name?: string | null; phone?: string | null; email?: string | null; mode: string;
   address?: string | null; city?: string | null; slot: string; created_at?: string; asap?: boolean; first_name?: string | null; last_name?: string | null;
-  items: { name: string; qty: number; total?: number; category?: string; details?: string[]; allergens?: string[]; size?: { name: string } | null; selected_options?: { name: string; price: number }[] }[];
+  items: { id?: string; name: string; qty: number; total?: number; category?: string; details?: string[]; allergens?: string[]; size?: { id?: string; name: string } | null; selected_options?: { id?: string; name: string; price: number }[] }[];
   notes?: string | null; total: number | string; subtotal?: number | string | null; delivery_fee?: number | string | null; service_fee?: number | string | null;
   discount?: number | string | null; promo_code?: string | null;
   payment_method: string; payment_status?: string | null; source?: string | null; table_label?: string | null; room_label?: string | null;
@@ -52,7 +54,7 @@ export function autoPrintLabel(p: Pick<PrintingConfig, "autoKitchen" | "autoRece
 }
 /** Style + champs cuisine d'une configuration, prêt à passer aux rendus. */
 export const printingFields = (p: Pick<PrintingConfig, "kitchen" | "textSize" | "font">): TicketFieldsIn => ({ ...p.kitchen, textSize: p.textSize, font: p.font });
-export type TicketShop = { name: string; address?: string | null; phone?: string | null; slug?: string; customDomains?: string[] | undefined };
+export type TicketShop = { name: string; address?: string | null; phone?: string | null; slug?: string; customDomains?: string[] | undefined; optionData?: OptionData | undefined; catalog?: Catalog | undefined };
 export function ticketWebsite(shop: TicketShop) {
   const domain = shop.customDomains?.find((d) => /^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i.test(d));
   return domain ?? (shop.slug ? `restaurant.lcdigitale.fr/${shop.slug}` : "restaurant.lcdigitale.fr");
@@ -94,29 +96,45 @@ export function cleanOptionLabel(raw: string): string {
   }
   return s;
 }
-/** Options d'un article : choix inclus regroupés « Groupe: A, B », extras payants « + Nom (+1,50 €) ». */
-export function ticketOptions(it: TicketOrder["items"][number]): string[] {
-  const groups = new Map<string, string[]>();
-  const order: ({ g: string } | { s: string })[] = [];
+/** Retrouve uniquement un groupe non ambigu, par les identifiants figés ; jamais par le nom. */
+function optionGroupLabel(it: TicketOrder["items"][number], optionId: string | undefined, shop?: TicketShop): string | undefined {
+  if (!it.id || !optionId) return undefined;
+  const labels = new Set<string>();
+  for (const g of shop?.catalog?.itemsById[it.id]?.options ?? []) {
+    if (g.kind !== "size" && (!g.forSize || g.forSize === it.size?.id) && g.choices.some((c) => c.id === optionId)) labels.add(g.label);
+  }
+  const data = shop?.optionData;
+  if (data) for (const link of data.links) {
+    if (link.product_id !== it.id || (link.variant_id && link.variant_id !== it.size?.id)) continue;
+    if (!data.items.some((o) => o.id === optionId && o.group_id === link.group_id)) continue;
+    const group = data.groups.find((g) => g.id === link.group_id);
+    if (group) labels.add(group.name);
+  }
+  return labels.size === 1 ? [...labels][0] : undefined;
+}
+/** Un choix par ligne avec son groupe ; prix et noms figés restent inchangés. */
+export function ticketOptions(it: TicketOrder["items"][number], shop?: TicketShop): string[] {
+  const choices: string[] = [];
   const addChoice = (input: string) => {
     const raw = cleanOptionLabel(input);
     if (!raw) return;
     const m = raw.match(/^([^:]+?)\s*:\s*(.+)$/);
-    if (!m) { order.push({ s: raw }); return; }
+    if (!m) { choices.push(raw); return; }
     const g = (m[1] ?? "").trim(), v = cleanOptionLabel(m[2] ?? "");
-    if (!groups.has(g)) { groups.set(g, []); order.push({ g }); }
-    groups.get(g)!.push(v);
+    for (const value of v.split(/,\s*/).filter(Boolean)) choices.push(`${g}: ${value}`);
   };
   const paid: string[] = [];
   for (const d of it.details ?? []) addChoice(d);
   for (const op of it.selected_options ?? []) {
+    const original = cleanOptionLabel(op.name);
+    const group = original.includes(":") ? undefined : optionGroupLabel(it, op.id, shop);
+    const label = group ? `${cleanOptionLabel(group)}: ${original}` : original;
     if (Number(op.price) > 0) {
-      const name = cleanOptionLabel(op.name);
+      const name = label;
       const m = name.match(/^([^:]+?)\s*:\s*(.+)$/);
       paid.push(m ? `${(m[1] ?? "").trim()}: ${cleanOptionLabel(m[2] ?? "")} (+${eur(op.price)})` : `+ ${name} (+${eur(op.price)})`);
-    } else addChoice(op.name);
+    } else addChoice(label);
   }
-  const choices = order.map((x) => ("g" in x ? `${x.g}: ${groups.get(x.g)!.join(", ")}` : x.s));
   return [...paid.filter((p) => !p.startsWith("+ ")), ...choices, ...paid.filter((p) => p.startsWith("+ "))];
 }
 export function ticketTotals(o: TicketOrder) {
@@ -174,7 +192,7 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
   const font = TICKET_FONTS[fieldsIn?.font ?? "sans"];
   const items = o.items.map((it) => `
     <div class="row item"><b>${it.qty}x ${esc(itemTitle(it))}</b>${f.prices && it.total != null ? `<span>${eur(it.total)}</span>` : ""}</div>
-    ${(f.options ? ticketOptions(it) : []).map((d) => `<div class="det">${esc(d)}</div>`).join("")}
+    ${(f.options ? ticketOptions(it, shop) : []).map((d) => `<div class="det">${esc(d)}</div>`).join("")}
     ${f.allergens && it.allergens?.length ? `<div class="alg">⚠ ALLERGÈNES : ${it.allergens.map((a) => esc(allergenLabel(a)).toUpperCase()).join(", ")}</div>` : ""}`).join("");
   const allAlg = [...new Set(o.items.flatMap((i) => i.allergens ?? []))];
   return `<!doctype html><html><head><meta charset="utf-8"><title>Ticket ${o.order_number}</title><style>

@@ -38,7 +38,7 @@ describe("ticket formatting", () => {
       selected_options: [{ name: "Choix : Frites + Boisson", price: 2 }, { name: "Cordon bleu", price: 1.5 }],
     })).toEqual([
       "Choix: Frites + Boisson (+2,00 €)", "Boisson: Coca-Cola", "Sauce fromagère: Oui",
-      "Sauces: Biggy, Algerienne", "2 Viandes: Kebab, Tenders", "+ Cordon bleu (+1,50 €)",
+      "Sauces: Biggy", "Sauces: Algerienne", "2 Viandes: Kebab", "2 Viandes: Tenders", "+ Cordon bleu (+1,50 €)",
     ]);
   });
 
