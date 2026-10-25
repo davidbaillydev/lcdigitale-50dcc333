@@ -3,8 +3,8 @@ import { FeatureGate } from "@/components/FeatureGate";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { loadOptionData } from "@/lib/menu-options";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { EMPTY_OPTIONS, loadOptionData } from "@/lib/menu-options";
 import { ArrowLeft, ArrowRight, Bell, BellOff, Bike, Check, ChefHat, Lock, LogOut, Maximize, Minimize, MoonStar, PanelTopClose, PanelTopOpen, Phone, Printer, ShoppingBag, Sun, Users, Volume2, VolumeX } from "lucide-react";
 import { useKitchenFullscreen } from "@/hooks/use-kitchen-fullscreen";
 import { useWakeLock } from "@/hooks/use-wake-lock";
@@ -105,12 +105,13 @@ function Kitchen() {
   const isStaff = !!restaurant;
   const isAdmin = restaurant?.role === "agency" || restaurant?.role === "manager";
   const rid = restaurant?.id;
-  const { data: ticketOptionData } = useQuery({
+  const queryClient = useQueryClient();
+  const ticketOptionQuery = {
     queryKey: ["ticket-option-data", rid],
-    queryFn: () => rid ? loadOptionData(supabase, rid) : Promise.resolve(undefined),
-    enabled: !!rid,
+    queryFn: () => rid ? loadOptionData(supabase, rid) : Promise.resolve(EMPTY_OPTIONS),
     staleTime: 15 * 60 * 1000,
-  });
+  };
+  const { data: ticketOptionData } = useQuery({ ...ticketOptionQuery, enabled: !!rid });
   const feat = useRestaurantFeatures(rid).features;
   const posSync = useServerFn(retryPosSync);
   const navigate = useNavigate();
@@ -123,7 +124,8 @@ function Kitchen() {
   const [openLog, setOpenLog] = useState<string | null>(null);
   const [preview, setPreview] = useState<{ order: Order; kinds: TicketKind[] } | null>(null);
   const doPrint = useCallback(async (o: Order, kinds: TicketKind[], auto = false) => {
-    const shop = { name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null, slug, customDomains: (restaurant?.config as Restaurant["config"] | null)?.customDomains, optionData: ticketOptionData };
+    const optionData = rid ? await queryClient.ensureQueryData(ticketOptionQuery).catch(() => ticketOptionData) : ticketOptionData;
+    const shop = { name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null, slug, customDomains: (restaurant?.config as Restaurant["config"] | null)?.customDomains, optionData };
     const ok = await printTickets(o, kinds, shop, printing.width, printingFields(printing));
     setPrintState((p) => ({ ...p, [o.id]: ok ? "ok" : "failed" }));
     if (rid) {
@@ -134,7 +136,7 @@ function Kitchen() {
       if (row) setLogs((p) => ({ ...p, [o.id]: [...(p[o.id] ?? []), row as PrintLog] }));
     }
     if (!ok) toast.error(`Impression du ticket n° ${o.order_number} échouée`);
-  }, [restaurant, rid, logs, printing.width, printing.kitchen, printing.textSize, printing.font, slug, ticketOptionData]);
+  }, [restaurant, rid, logs, printing.width, printing.kitchen, printing.textSize, printing.font, slug, ticketOptionData, queryClient]);
   const printRef = useRef({ auto: false, kinds: [] as TicketKind[], doPrint }); printRef.current = { auto: autoPrintKinds(printing).length > 0, kinds: autoPrintKinds(printing), doPrint };
   const [sound, setSound] = useState(false);
   const [started, setStarted] = useState(false);
