@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ticketEscpos } from "@/lib/escpos";
-import { cleanOptionLabel, isPaid, isPreorder, payLabel, printingDefaults, ticketCustomer, ticketFields, ticketHtml, ticketOptions, ticketTiming, ticketTotals, ticketWebsite, autoPrintKinds, autoPrintLabel, ticketFontSize, TICKET_FONTS, type TicketOrder } from "@/lib/ticket";
+import { cleanOptionLabel, itemTitle, isPaid, isPreorder, payLabel, printingDefaults, ticketCustomer, ticketFields, ticketHtml, ticketOptions, ticketTiming, ticketTotals, ticketWebsite, autoPrintKinds, autoPrintLabel, ticketFontSize, TICKET_FONTS, type TicketOrder, type TicketShop } from "@/lib/ticket";
 
 const order: TicketOrder = {
   order_number: 12,
@@ -38,7 +38,7 @@ describe("ticket formatting", () => {
       selected_options: [{ name: "Choix : Frites + Boisson", price: 2 }, { name: "Cordon bleu", price: 1.5 }],
     })).toEqual([
       "Choix: Frites + Boisson (+2,00 €)", "Boisson: Coca-Cola", "Sauce fromagère: Oui",
-      "Sauces: Biggy, Algerienne", "2 Viandes: Kebab, Tenders", "+ Cordon bleu (+1,50 €)",
+      "Sauces: Biggy", "Sauces: Algerienne", "2 Viandes: Kebab", "2 Viandes: Tenders", "+ Cordon bleu (+1,50 €)",
     ]);
   });
 

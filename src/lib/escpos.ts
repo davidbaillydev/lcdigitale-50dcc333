@@ -81,7 +81,7 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
     names.forEach((name, i) => e.line(i === 0 ? lr(name, right, itemCols) : name));
     if (large) e.size(1, 1);
     e.bold(large);
-    if (f.options) for (const d of ticketOptions(it)) wrap(d, cols - 2).forEach((l) => e.line(`  ${l}`));
+    if (f.options) for (const d of ticketOptions(it, shop)) wrap(d, cols - 2).forEach((l) => e.line(`  ${l}`));
     e.bold(false);
     if (f.allergens && it.allergens?.length) { e.bold(true); wrap(`  ! ALLERGENES : ${it.allergens.map((a) => allergenLabel(a).toUpperCase()).join(", ")}`, cols).forEach((l) => e.line(l)); e.bold(false); }
   }
