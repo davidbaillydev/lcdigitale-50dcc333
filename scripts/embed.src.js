@@ -23,7 +23,7 @@ var root=host.attachShadow({mode:"open"});
 root.innerHTML="<style>.bg{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center}"+
 ".box{position:relative;width:440px;height:min(760px,90vh);background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4)}"+
 "iframe{border:0;width:100%;height:100%;display:block}"+
-".x{position:absolute;top:calc(8px + env(safe-area-inset-top,0px));right:calc(8px + env(safe-area-inset-right,0px));width:44px;height:44px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;font:22px/1 sans-serif;cursor:pointer;z-index:2}.x:focus-visible{outline:3px solid #fff;box-shadow:0 0 0 6px #000}"+
+".x{position:absolute;top:calc(8px + env(safe-area-inset-top,0px));left:calc(8px + env(safe-area-inset-left,0px));width:44px;height:44px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;font:22px/1 sans-serif;cursor:pointer;z-index:2}.x:focus-visible{outline:3px solid #fff;box-shadow:0 0 0 6px #000}"+
 ".bg{animation:f .2s}@keyframes f{from{opacity:0}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}"+
 "@media(max-width:639px){.box{width:100vw;height:100vh;height:100dvh;border-radius:0;box-sizing:border-box;padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0)}}</style>"+
 "<div class='bg'><div class='box' role='dialog' aria-modal='true' lang='fr'><button type='button' class='x' aria-label='Fermer'>×</button></div></div>";
