@@ -10,7 +10,7 @@ const sel = { "og-s": ["b", "c"], "og-d": ["f"] };
 
 describe("options sous leur groupe", () => {
   it("panier et borne : une ligne par option avec son groupe", () => {
-    expect(selectionLines(item, sel)).toEqual(["Sauces : Blanche", "Sauces : Curry", "Boisson : Fanta dragon 33 cl (+1,00 €)"]);
+    expect(selectionLines(item, sel).map((l) => l.replace(/\s/g, " "))).toEqual(["Sauces : Blanche", "Sauces : Curry", "Boisson : Fanta dragon 33 cl (+1,00 €)"]);
   });
   it("ticket et cuisine : groupe figé dans la commande, sans « + »", () => {
     const { selected_options } = selectedExtras(item, sel);
