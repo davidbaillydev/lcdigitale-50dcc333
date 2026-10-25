@@ -21,7 +21,7 @@ export type MenuItem = {
   options?: OptionGroup[];
   builder?: boolean; // configurateur étape par étape
   hidden?: boolean; // masqué (rupture / indisponible)
-  schedule?: { days?: number[]; start?: string; end?: string }; // 0 = dimanche, heure Europe/Paris
+  schedule?: { days?: number[] | undefined; start?: string | undefined; end?: string | undefined } | undefined; // 0 = dimanche, heure Europe/Paris
   allergens?: string[]; // ids des 14 allergènes INCO (src/lib/allergens.ts)
   vatRate?: 5.5 | 10 | 20 | undefined; // taux de TVA du plat (défaut : taux restauration de l'établissement)
   image?: string | undefined; // photo du plat (/api/public/menu-photo/...)
