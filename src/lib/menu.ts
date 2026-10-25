@@ -318,7 +318,7 @@ export function describeSelections(item: MenuItem, sel: Selections): string[] {
   return lines;
 }
 
-export type SelectedOption = { id: string; name: string; price: number };
+export type SelectedOption = { id: string; name: string; price: number; group?: string };
 /** Taille choisie et suppléments choisis, figés dans la commande. */
 export function selectedExtras(item: MenuItem, sel: Selections): { size: SelectedOption | null; selected_options: SelectedOption[] } {
   let size: SelectedOption | null = null;
@@ -328,10 +328,26 @@ export function selectedExtras(item: MenuItem, sel: Selections): { size: Selecte
       const c = g.choices.find((x) => x.id === id);
       if (!c) continue;
       if (g.kind === "size") size = { id: c.id, name: c.label, price: c.price ?? 0 };
-      else if (g.kind === "extra") selected_options.push({ id: c.id, name: c.label, price: c.price ?? 0 });
+      else if (g.kind === "extra") selected_options.push({ id: c.id, name: c.label, price: c.price ?? 0, group: g.label.replace(/^\d\.\s*/, "") });
     }
   }
   return { size, selected_options };
+}
+
+/** Toutes les options choisies, une par ligne sous le libellé de leur groupe (panier, borne, récapitulatif). */
+export function selectionLines(item: MenuItem, sel: Selections): string[] {
+  const lines: string[] = [];
+  for (const g of activeGroups(item, sel)) {
+    if (g.kind === "size") continue;
+    const label = g.label.replace(/^\d\.\s*/, "");
+    for (const id of sel[g.id] ?? []) {
+      const c = g.choices.find((x) => x.id === id);
+      if (c) lines.push(`${label} : ${c.label}${g.kind === "extra" && c.price ? ` (+${euro(c.price)})` : ""}`);
+    }
+  }
+  const removed = (sel[REMOVE_KEY] ?? []).map((id) => removableChoices(item).find((c) => c.id === id)?.label).filter((l): l is string => !!l);
+  if (removed.length) lines.push(`SANS : ${removed.join(", ")}`);
+  return lines;
 }
 
 /** Ligne de commande calculée côté serveur (prix jamais repris du navigateur). */
