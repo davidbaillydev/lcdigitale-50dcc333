@@ -7,7 +7,8 @@ vi.mock("@tanstack/react-start", () => ({ createServerFn: () => {
 vi.mock("@/integrations/supabase/auth-middleware", () => ({ requireSupabaseAuth: {} }));
 vi.mock("@/lib/menu-photos.functions", () => ({ MENU_PHOTO_RE: /^\/api\/public\/menu-photo\/([^/]+)\/.+$/ }));
 vi.mock("@/lib/menu-options", () => ({ loadOptionData: async () => ({}), withOptions: (c: unknown) => c }));
-vi.mock("@/lib/payments.functions", () => ({ stripeForRestaurant: async () => null }));
+vi.mock("@/lib/payments.functions", () => ({ stripeForRestaurant: async () => null, stripeCall: vi.fn(), startOnlinePayment: vi.fn() }));
+vi.mock("@/lib/promo.server", () => ({ resolveDiscount: async () => ({ error: "Availability checked" }) }));
 vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: { from: (table: string) => {
   const q = { select: () => q, eq: () => q, maybeSingle: async () => ({ data: restaurant }), then: (resolve: (d: unknown) => unknown) => Promise.resolve({ data: [], error: null }).then(resolve), insert: mocks.insert, update: mocks.update }; return q;
 } } }));
@@ -32,6 +33,12 @@ describe("availability in actual order handlers", () => {
   });
   it("rejects kiosk orders before lunchtime without inserting", async () => {
     await expect((createKioskOrder as unknown as Invoke)({ data: { restaurant: "fixture", mode: "pickup", payment_method: "counter", lines } })).rejects.toThrow("11:30");
+    expect(mocks.insert).not.toHaveBeenCalled();
+  });
+  it("checks planned web orders against their selected slot", async () => {
+    const data = { restaurant: "fixture", mode: "pickup", asap: false, first_name: "Test", last_name: "Test", phone: "0600000000", payment_method: "on_site", cgv: true, lines };
+    await expect((createOrder as unknown as Invoke)({ data: { ...data, slot: "2026-10-26T11:00:00Z" } })).rejects.toThrow("Availability checked");
+    await expect((createOrder as unknown as Invoke)({ data: { ...data, slot: "2026-10-26T14:00:00Z" } })).rejects.toThrow("11:30");
     expect(mocks.insert).not.toHaveBeenCalled();
   });
   it("persists schedule through saveMenu validation", async () => {
