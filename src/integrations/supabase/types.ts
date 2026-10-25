@@ -120,6 +120,38 @@ export type Database = {
           },
         ]
       }
+      menu_structure_templates: {
+        Row: {
+          id: string
+          name: string
+          restaurant_id: string
+          structure: Json
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          restaurant_id: string
+          structure?: Json
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          restaurant_id?: string
+          structure?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_structure_templates_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: true
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       option_groups: {
         Row: {
           created_at: string
