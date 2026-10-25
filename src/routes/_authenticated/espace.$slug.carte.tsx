@@ -146,6 +146,7 @@ function MenuEditor() {
       <RestaurantNav slug={slug} className="print:hidden" />
         <h1 className="mt-4 text-5xl">Carte · {r?.name}</h1>
         <Button className="mt-3" variant="outline" onClick={() => setSimulation(true)}><FlaskConical /> Tester le menu sans payer</Button>
+        <div className="mt-3"><MenuTemplatePicker templates={templates} menu={menu} onApply={(next, count) => { update(next); toast.success(`Structure appliquée à ${count} plat(s) dans le brouillon`); }} /></div>
         {r && <MenuSimulation key={r.id} open={simulation} onClose={() => setSimulation(false)} menu={menu} options={opt.data} soldOut={soldOut} name={r.name} dirty={dirty} />}
         {r?.role === "agency" && <MenuTemplatePanel restaurantId={r.id} name={r.name} onSaved={() => { void listTemplates({ data: { restaurantId: r.id } }).then(setTemplates).catch((e) => toast.error(e.message)); }} />}
         <p className="text-sm text-muted-foreground">

@@ -28,6 +28,7 @@ export function applyStructure(menu: Category[], template: Category[], mappings:
       const size = source.item.options?.find((x) => x.kind === "size");
       const sizeIndex = size?.choices.findIndex((x) => x.id === g.forSize) ?? -1;
       const sizeGroupIndex = source.item.options?.findIndex((x) => x.kind === "size") ?? -1;
+      if (g.forSize && sizeIndex < 0) throw new Error("Le modèle contient un choix lié à un format introuvable");
       return { ...g, id: `tpl-${gi}`, ...(g.forSize && sizeIndex >= 0 ? { forSize: `tpl-${sizeGroupIndex}-${sizeIndex}` } : {}),
         extraPrice: copyPrices ? g.extraPrice ?? 0 : 0,
         choices: g.choices.map((ch, ci) => ({ id: `tpl-${gi}-${ci}`, label: ch.label, price: copyPrices ? ch.price ?? 0 : g.kind === "size" ? i.price : 0 })) };
