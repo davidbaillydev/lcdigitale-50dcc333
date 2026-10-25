@@ -34,6 +34,7 @@
 - Kitchen: column scrolling, collapsible nav, fullscreen dialogs, safe-area insets.
 - Settings share themed navigation with mounted hidden sections and scoped save actions. Why: changing themes retains drafts without implying a global save.
 - Read subdirectory AGENTS.md before edits; they contain scoped rules.
+- Menu structure templates are agency-published detached snapshots; managers map imported items explicitly, inline size/extra groups remain draft-only until saveMenu. Why: reuse formats across restaurants without live links, source assets or unintended option-table writes.
 - The public directory reuses existing restaurant data and professional entry routes; presentation/search stay client-side and never infer opening status from an active listing. Why: redesigns must not invent availability or change access permissions.
 - Restaurant modules live in restaurants.enabled_features (missing key = enabled), agency-written, re-checked by server functions. Why: subscription gating must not rely on hidden UI.
 - Kiosk "Voie B" (config.kiosk.cardOnly, agency-only): server accepts only card_terminal with a configured terminal, inserts awaiting_payment and releases to kitchen/POS only after provider-confirmed payment; unpaid orders are cancelled. Why: BOI-TVA-DECLA-30-10-30 §37 ex.4 exemption requires no cash recorded.

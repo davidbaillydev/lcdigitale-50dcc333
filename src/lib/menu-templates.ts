@@ -9,7 +9,7 @@ export function captureStructure(menu: Category[], data: OptionData): Category[]
   return menu.map((c) => ({ id: c.id, label: c.label, items: c.items.map((i) => {
     const live = groupsFor(i.id, data);
     const options = [...live.filter((g) => g.kind === "size"), ...(i.options ?? []), ...live.filter((g) => g.kind !== "size")];
-    return { id: i.id, name: i.name, price: 0, builder: i.builder, options: options.map((g) => ({ ...g, choices: g.choices.map(({ soldOut: _soldOut, ...choice }) => choice) })) };
+    return { id: i.id, name: i.name, price: 0, builder: i.builder ?? false, options: options.map((g) => ({ ...g, choices: g.choices.map(({ soldOut: _soldOut, ...choice }) => choice) })) };
   }) }));
 }
 
@@ -29,10 +29,10 @@ export function applyStructure(menu: Category[], template: Category[], mappings:
       const sizeIndex = size?.choices.findIndex((x) => x.id === g.forSize) ?? -1;
       const sizeGroupIndex = source.item.options?.findIndex((x) => x.kind === "size") ?? -1;
       return { ...g, id: `tpl-${gi}`, ...(g.forSize && sizeIndex >= 0 ? { forSize: `tpl-${sizeGroupIndex}-${sizeIndex}` } : {}),
-        extraPrice: copyPrices ? g.extraPrice : 0,
-        choices: g.choices.map((ch, ci) => ({ id: `tpl-${gi}-${ci}`, label: ch.label, price: copyPrices ? ch.price : g.kind === "size" ? i.price : 0 })) };
+        extraPrice: copyPrices ? g.extraPrice ?? 0 : 0,
+        choices: g.choices.map((ch, ci) => ({ id: `tpl-${gi}-${ci}`, label: ch.label, price: copyPrices ? ch.price ?? 0 : g.kind === "size" ? i.price : 0 })) };
     });
-    const item = { ...i, options, builder: source.item.builder };
+    const item = { ...i, options, builder: source.item.builder ?? false };
     if (!organize) return [item];
     let target = targetCategories.get(source.category.id);
     if (!target) { target = { id: categoryId(), label: source.category.label, items: [] }; targetCategories.set(source.category.id, target); }

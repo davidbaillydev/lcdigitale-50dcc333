@@ -147,7 +147,7 @@ function MenuEditor() {
         <h1 className="mt-4 text-5xl">Carte · {r?.name}</h1>
         <Button className="mt-3" variant="outline" onClick={() => setSimulation(true)}><FlaskConical /> Tester le menu sans payer</Button>
         {r && <MenuSimulation key={r.id} open={simulation} onClose={() => setSimulation(false)} menu={menu} options={opt.data} soldOut={soldOut} name={r.name} dirty={dirty} />}
-        {r?.role === "agency" && <MenuTemplatePanel restaurantId={r.id} name={r.name} />}
+        {r?.role === "agency" && <MenuTemplatePanel restaurantId={r.id} name={r.name} onSaved={() => { void listTemplates({ data: { restaurantId: r.id } }).then(setTemplates).catch((e) => toast.error(e.message)); }} />}
         <p className="text-sm text-muted-foreground">
           {!menu.length ? "Carte vierge : déposez votre menu ci-dessous ou ajoutez vos catégories à la main." : custom ? "Carte personnalisée de ce restaurant." : "Vous partez de la carte de base : elle deviendra propre à ce restaurant dès le premier enregistrement."} Les modifications n'affectent aucun autre établissement.
         </p>

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { listMenuTemplates, publishMenuTemplate } from "@/lib/menu-templates.functions";
 
-export function MenuTemplatePanel({ restaurantId, name }: { restaurantId: string; name: string }) {
+export function MenuTemplatePanel({ restaurantId, name, onSaved }: { restaurantId: string; name: string; onSaved?: () => void }) {
   const list = useServerFn(listMenuTemplates);
   const publish = useServerFn(publishMenuTemplate);
   const [label, setLabel] = useState(name);
@@ -17,7 +17,7 @@ export function MenuTemplatePanel({ restaurantId, name }: { restaurantId: string
   const save = async (remove = false) => {
     if (remove && !confirm("Retirer ce restaurant des modèles ? Les cartes déjà configurées ne seront pas modifiées.")) return;
     setBusy(true);
-    try { await publish({ data: { restaurantId, name: label, remove } }); setExists(!remove); toast.success(remove ? "Modèle retiré" : "Structure enregistrée comme modèle"); }
+    try { await publish({ data: { restaurantId, name: label, remove } }); setExists(!remove); onSaved?.(); toast.success(remove ? "Modèle retiré" : "Structure enregistrée comme modèle"); }
     catch (e) { toast.error(e instanceof Error ? e.message : "Enregistrement impossible"); }
     finally { setBusy(false); }
   };

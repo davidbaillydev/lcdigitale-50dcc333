@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { applyStructure, captureStructure } from "@/lib/menu-templates";
 import { EMPTY_OPTIONS } from "@/lib/menu-options";
 import { mergeMenu } from "@/lib/menu-merge";
-import { lineUnitPrice } from "@/lib/menu";
+import { unitPrice } from "@/lib/menu";
 import type { Category } from "@/lib/menu";
 
 const template: Category[] = [{ id: "tacos", label: "Tacos", items: [{ id: "source", name: "Tacos modèle", price: 0, builder: true, options: [
@@ -31,7 +31,7 @@ describe("restaurant menu structures", () => {
     const item = applyStructure(imported, template, mapping, true).menu[0]?.items[0];
     expect(item?.price).toBe(10);
     if (!item) throw new Error("missing item");
-    expect(lineUnitPrice(item, { "tpl-0": ["tpl-0-1"] })).toBe(12);
+    expect(unitPrice(item, { "tpl-0": ["tpl-0-1"] })).toBe(12);
   });
   it("organizes selected dishes into model categories and keeps unmapped dishes", () => {
     const result = applyStructure(imported, template, mapping, false, true);
