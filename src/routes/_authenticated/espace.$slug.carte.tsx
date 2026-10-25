@@ -28,6 +28,11 @@ import { ItemOptionsEditor, OptionGroupsPanel } from "@/components/MenuOptionsEd
 import { PRESET_DRINKS } from "@/lib/drinks-preset";
 import { MenuSimulation } from "@/components/MenuSimulation";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { MenuTemplatePicker } from "@/components/MenuTemplatePicker";
+import { MenuTemplatePanel } from "@/components/MenuTemplatePanel";
+import { TemplateOptionsEditor } from "@/components/TemplateOptionsEditor";
+import { listMenuTemplates } from "@/lib/menu-templates.functions";
+import type { MenuTemplate } from "@/lib/menu-templates";
 
 export const Route = createFileRoute("/_authenticated/espace/$slug/carte")({
   head: () => ({
@@ -57,6 +62,8 @@ function MenuEditor() {
   const save = useServerFn(saveMenu);
   const analyze = useServerFn(analyzeMenu);
   const translate = useServerFn(pretranslateMenu);
+  const listTemplates = useServerFn(listMenuTemplates);
+  const [templates, setTemplates] = useState<MenuTemplate[]>([]);
   const [translating, setTranslating] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const [menu, setMenu] = useState<Category[] | null>(null);
@@ -72,6 +79,7 @@ function MenuEditor() {
 
   useEffect(() => {
     if (!canManage || !r) return;
+    listTemplates({ data: { restaurantId: r.id } }).then(setTemplates).catch((e) => toast.error(e.message));
     load({ data: { restaurantId: r.id } }).then((row) => {
       const m = row.menu as Category[] | null;
       setCustom(!!m?.length);
@@ -139,6 +147,7 @@ function MenuEditor() {
         <h1 className="mt-4 text-5xl">Carte · {r?.name}</h1>
         <Button className="mt-3" variant="outline" onClick={() => setSimulation(true)}><FlaskConical /> Tester le menu sans payer</Button>
         {r && <MenuSimulation key={r.id} open={simulation} onClose={() => setSimulation(false)} menu={menu} options={opt.data} soldOut={soldOut} name={r.name} dirty={dirty} />}
+        {r?.role === "agency" && <MenuTemplatePanel restaurantId={r.id} name={r.name} />}
         <p className="text-sm text-muted-foreground">
           {!menu.length ? "Carte vierge : déposez votre menu ci-dessous ou ajoutez vos catégories à la main." : custom ? "Carte personnalisée de ce restaurant." : "Vous partez de la carte de base : elle deviendra propre à ce restaurant dès le premier enregistrement."} Les modifications n'affectent aucun autre établissement.
         </p>
@@ -158,6 +167,8 @@ function MenuEditor() {
           {candidate && mergedCandidate && <DialogContent className="flex max-h-[85dvh] flex-col overflow-y-auto sm:max-w-2xl">
             <DialogHeader><DialogTitle>Carte proposée · {candidate.reduce((n, c) => n + c.items.length, 0)} plats</DialogTitle>
             <DialogDescription>Relisez les prix, intitulés, suppléments et allergènes détectés : l'analyse peut se tromper. Votre carte actuelle reste en ligne jusqu'à l'enregistrement.</DialogDescription></DialogHeader>
+            <MenuTemplatePicker templates={templates} menu={candidate} onApply={(next, count) => { setCandidate(next); toast.success(`Structure appliquée à ${count} plat(s) — vérifiez les choix et leurs prix`); }} />
+            {!templates.length && <p className="text-sm text-muted-foreground">Aucun modèle disponible. L’agence peut définir un restaurant comme modèle depuis sa fiche ou sa carte.</p>}
             <div className="mt-3 max-h-64 shrink-0 overflow-auto border-y border-border py-2 text-sm">
               {candidate.map((c) => <div key={c.id} className="mb-3"><strong>{c.label}</strong>{c.items.map((it) => <div key={it.id} className="flex justify-between gap-3 border-b border-border/50 py-1"><span>{it.name}<AllergenBadges ids={it.allergens} className="mt-1" /></span><span className="shrink-0">{it.price.toFixed(2)} €</span></div>)}</div>)}
             </div>
@@ -171,7 +182,8 @@ function MenuEditor() {
                 toast.success("Nouveautés ajoutées au brouillon — pensez à enregistrer la carte");
               }}><Plus /> Ajouter à la carte existante</Button>
               <Button variant="outline" className="h-auto min-h-12 whitespace-normal" onClick={() => {
-                update(candidate); setCandidate(null); setImportSummary(null); setOpen(candidate[0]?.id ?? null);
+                const replacement = candidate.map((c) => ({ ...c, id: crypto.randomUUID(), items: c.items.map((i) => ({ ...i, id: crypto.randomUUID() })) }));
+                update(replacement); setCandidate(null); setImportSummary(null); setOpen(replacement[0]?.id ?? null);
                 toast.info("Carte remplacée dans le brouillon — vérifiez puis enregistrez");
               }}>Remplacer toute la carte</Button>
               <p className="text-center text-xs text-muted-foreground">Remplacer retire tous les catégories et plats actuels du brouillon.</p>
@@ -252,6 +264,7 @@ function MenuEditor() {
                             {it.desc && <Textarea rows={2} value={it.translations?.[l]?.description ?? ""} placeholder={it.desc} onChange={(e) => setTr(ci, ii, l, "description", e.target.value)} aria-label={`Description en ${LANG_NAMES[l]}`} />}</div>)}</div>
                         </details>
                         <ItemOptionsEditor restaurantId={r!.id} productId={it.id} data={opt.data} reload={opt.reload} />
+                        {it.options?.some((g) => g.id.startsWith("tpl-")) && <TemplateOptionsEditor options={it.options} onChange={(options) => setItem(ci, ii, { options })} />}
                         {!!it.options?.length && <p className="text-xs text-muted-foreground">Options conservées : {it.options.map((o) => o.label).join(" · ")}</p>}
                       </div>
                       <div>
