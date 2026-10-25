@@ -120,6 +120,13 @@
       "when": 1792561127344,
       "tag": "0016_menu_ai_fallback_status",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792932196161,
+      "tag": "0017_menu_structure_templates",
+      "breakpoints": true
     }
   ]
 }

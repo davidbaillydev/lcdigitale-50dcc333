@@ -10,6 +10,7 @@ const choice = z.object({ id, label: z.string().max(120), price: z.number().min(
 const group = z.object({
   id, label: z.string().max(120), min: z.number().int().min(0).max(50), max: z.number().int().min(0).max(50),
   included: z.number().int().min(0).max(50).optional(), extraPrice: z.number().min(0).max(1000).optional(), choices: z.array(choice).max(100),
+  kind: z.enum(["size", "extra"]).optional(), forSize: id.optional(),
 });
 const tr = z.object({ name: z.string().trim().min(1).max(120), description: z.string().max(500).optional() });
 const translations = z.object({ en: tr.optional(), es: tr.optional(), de: tr.optional() }).optional();
@@ -18,6 +19,7 @@ const item = z.object({
   id, name: z.string().trim().min(1).max(120), desc: z.string().max(500).optional(), price: z.number().min(0).max(1000),
   tag: z.string().max(40).optional(), options: z.array(group).max(20).optional(), builder: z.boolean().optional(), hidden: z.boolean().optional(), allergens: z.array(z.enum(ALLERGEN_IDS)).max(14).optional(), vatRate: z.union([z.literal(5.5), z.literal(10), z.literal(20)]).optional(),
   image: z.string().max(200).regex(MENU_PHOTO_RE).optional(), translations, schedule: itemScheduleSchema.optional(),
+  removable: z.array(z.string().trim().min(2).max(40)).max(100).optional(),
 });
 const category = z.object({ id, label: z.string().trim().min(1).max(80), note: z.string().max(300).optional(), items: z.array(item).max(300), translations: labelTr });
 

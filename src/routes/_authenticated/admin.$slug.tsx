@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/lib/theme";
 import { BrandLogo } from "@/lib/brand";
 import { SettingsGroup, SettingsWorkspace } from "@/components/SettingsWorkspace";
+import { MenuTemplatePanel } from "@/components/MenuTemplatePanel";
 
 export const Route = createFileRoute("/_authenticated/admin/$slug")({
   head: () => ({
@@ -68,6 +69,7 @@ function Page() {
             <Button asChild variant="secondary"><a href={`/${slug}/borne`} target="_blank" rel="noreferrer"><Tablet /> Borne</a></Button>
           </div>
           <p className="text-sm text-muted-foreground">Identité, logo et couleurs se modifient depuis la console (bouton « Modifier »).</p>
+          <MenuTemplatePanel restaurantId={r.id} name={r.name} />
            <SettingsWorkspace agency>
              <RestaurantSettingsForm restaurant={r} onSaved={() => refetch()} />
              <SettingsGroup name="payments">
