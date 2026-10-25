@@ -85,5 +85,5 @@ export function MenuSimulation({ open, onClose, menu, options, soldOut, name, di
 }
 
 function OrderOptions({ item }: { item: SimulationOrder["items"][number] }) {
-  return <div className="text-sm text-muted-foreground">{item.details.map((detail, i) => <p key={i}>{detail}</p>)}{item.selected_options?.map((option) => <p key={option.id}>{option.name}{option.price ? ` (+${euro(option.price)})` : ""}</p>)}</div>;
+  return <div className="text-sm text-muted-foreground">{item.details.map((detail, i) => <p key={i}>{detail}</p>)}{item.selected_options?.map((option) => <p key={option.id}>{option.group ? `${option.group} : ` : ""}{option.name}{option.price ? ` (+${euro(option.price)})` : ""}</p>)}</div>;
 }

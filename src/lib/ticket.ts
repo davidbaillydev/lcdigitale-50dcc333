@@ -12,7 +12,7 @@ export type TicketKind = "kitchen" | "receipt";
 export type TicketOrder = {
   order_number: number; customer_name?: string | null; phone?: string | null; email?: string | null; mode: string;
   address?: string | null; city?: string | null; slot: string; created_at?: string; asap?: boolean; first_name?: string | null; last_name?: string | null;
-  items: { id?: string; name: string; qty: number; total?: number; category?: string; details?: string[]; allergens?: string[]; size?: { id?: string; name: string } | null; selected_options?: { id?: string; name: string; price: number }[] }[];
+  items: { id?: string; name: string; qty: number; total?: number; category?: string; details?: string[]; allergens?: string[]; size?: { id?: string; name: string } | null; selected_options?: { id?: string; name: string; price: number; group?: string }[] }[];
   notes?: string | null; total: number | string; subtotal?: number | string | null; delivery_fee?: number | string | null; service_fee?: number | string | null;
   discount?: number | string | null; promo_code?: string | null;
   payment_method: string; payment_status?: string | null; source?: string | null; table_label?: string | null; room_label?: string | null;
@@ -127,7 +127,7 @@ export function ticketOptions(it: TicketOrder["items"][number], shop?: TicketSho
   for (const d of it.details ?? []) addChoice(d);
   for (const op of it.selected_options ?? []) {
     const original = cleanOptionLabel(op.name);
-    const group = original.includes(":") ? undefined : optionGroupLabel(it, op.id, shop);
+    const group = original.includes(":") ? undefined : (op.group || optionGroupLabel(it, op.id, shop));
     const label = group ? `${cleanOptionLabel(group)}: ${original}` : original;
     if (Number(op.price) > 0) {
       const name = label;

@@ -15,7 +15,7 @@ import { createKioskOrder } from "@/lib/orders.functions";
 import QRCode from "qrcode";
 import { abandonKioskQr, kioskQrAvailable, kioskQrStatus, startKioskQrPayment } from "@/lib/payments.functions";
 import { abandonKioskOrder, cancelKioskPayment, kioskPaymentStatus, kioskTerminalAvailable, startKioskCardPayment } from "@/lib/payments.functions";
-import { activeGroups, fromPrice, selectedExtras, describeSelections, euro, groupCost, REMOVE_KEY, removableChoices, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
+import { activeGroups, fromPrice, selectedExtras, selectionLines, euro, groupCost, REMOVE_KEY, removableChoices, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
 import { itemImage, menuImage } from "@/lib/menu-images";
 import { BrandLogo } from "@/lib/brand";
 import { ThemeToggle } from "@/lib/theme";
@@ -293,8 +293,7 @@ function Kiosk() {
                 <div key={l.key} className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4">
                   <div className="min-w-0 flex-1">
                     <p className="text-2xl font-semibold">{it.name}{selectedExtras(it, l.sel).size ? ` — Taille ${selectedExtras(it, l.sel).size!.name}` : ""}</p>
-                    {describeSelections(it, l.sel).map((d) => <p key={d} className="text-base text-muted-foreground">{d}</p>)}
-                    {selectedExtras(it, l.sel).selected_options.map((o) => <p key={o.id} className="text-base font-semibold">+ {o.name}{o.price ? ` (+${euro(o.price)})` : ""}</p>)}
+                    {selectionLines(it, l.sel).map((d) => <p key={d} className="text-base text-muted-foreground">{d}</p>)}
                     <p className="text-lg text-primary">{euro(unitPrice(it, l.sel) * l.qty)}</p>
                   </div>
                   <button onClick={() => setQty(l.key, l.qty - 1)} className="flex h-16 w-16 items-center justify-center rounded-xl bg-muted" aria-label="Moins">{l.qty === 1 ? <Trash2 className="h-7 w-7" /> : <Minus className="h-8 w-8" />}</button>
