@@ -1,4 +1,5 @@
 import { featuresOf } from "./features";
+import { assertItemAvailable, itemOrderDate } from "./shop";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { validateSelections, orderLine } from "./menu";
@@ -102,9 +103,11 @@ export const createOrder = createServerFn({ method: "POST" })
 
     const { data: so } = await supabaseAdmin.from("menu_stock").select("item_id").eq("restaurant_id", r.id).eq("sold_out", true);
     const soldOut = new Set((so ?? []).map((x) => x.item_id));
+    const availabilityDate = itemOrderDate(dineIn || !!data.asap, data.slot);
     const items = data.lines.map((l) => {
       const item = catalog.itemsById[l.itemId];
       if (!item) throw new Error("Article inconnu");
+      assertItemAvailable(item, availabilityDate);
       if (soldOut.has(item.id)) throw new Error(`« ${item.name} » est momentanément épuisé. Retirez-le de votre panier.`);
       const err = validateSelections(item, l.sel);
       if (err) throw new Error(err);
@@ -261,9 +264,11 @@ export const createKioskOrder = createServerFn({ method: "POST" })
     const catalog = withOptions(getCatalog(r), await loadOptionData(supabaseAdmin, r.id));
     const { data: so } = await supabaseAdmin.from("menu_stock").select("item_id").eq("restaurant_id", r.id).eq("sold_out", true);
     const soldOut = new Set((so ?? []).map((x) => x.item_id));
+    const availabilityDate = new Date();
     const items = data.lines.map((l) => {
       const item = catalog.itemsById[l.itemId];
       if (!item) throw new Error("Article inconnu");
+      assertItemAvailable(item, availabilityDate);
       if (soldOut.has(item.id)) throw new Error(`« ${item.name} » est momentanément épuisé. Retirez-le de votre panier.`);
       const err = validateSelections(item, l.sel);
       if (err) throw new Error(err);
