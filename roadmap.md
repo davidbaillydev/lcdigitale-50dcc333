@@ -1,3 +1,4 @@
+- [ ] Disponibilités par plat : jours/heures Paris, réglage carte, badges site/borne, validation serveur immédiate/planifiée et tests.
 - [x] Import IA non destructif : ajouter/remplacer/annuler, bilan de fusion et 13 tests réussis ; import TXT réel vérifié connecté, 2 nouveautés ajoutées au brouillon dans une catégorie existante et une nouvelle. Aucun enregistrement ni changement de carte publiée ; compilation OK.
 - [x] Épurer les tickets HTML et ESC/POS : options sobres, allergènes sur demande, client, récapitulatif et établissement ; 15 tests passent, aperçu 58/80 mm sans débordement. Aucun essai sur imprimante physique.
 - [x] Reproduire la photo complète : bandeaux inversés paiement/délai/mode, prénom/nom alignés, quantité à gauche, encadré commande en ligne et pied centré ; aperçu intégré vérifié connecté aux réglages agence sans sauvegarde. Aucune commande réelle disponible dans le KDS pour ouvrir son aperçu.
