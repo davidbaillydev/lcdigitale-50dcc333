@@ -113,12 +113,16 @@ export function embedReturnTo(slug: string): { returnTo: string; ref: string } |
   } catch { return null; }
 }
 
-/** Ouvre une page de paiement hors de l'iframe (_top), repli nouvel onglet. Renvoie false si repli. */
+/** Ouvre une page de paiement hors de l'iframe, dans le même onglet (_top), repli onglet actuel. Renvoie false si repli. */
 export function openTop(url: string): boolean {
   try {
     const w = window.open(url, "_top");
     if (w) return true;
   } catch { /* navigation du parent bloquée */ }
+  try {
+    const t = window.top;
+    if (t) { t.location.href = url; return true; }
+  } catch { /* le parent bloque la navigation */ }
   window.open(url, "_blank", "noopener");
   return false;
 }
