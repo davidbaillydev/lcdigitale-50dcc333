@@ -54,7 +54,7 @@ export function autoPrintLabel(p: Pick<PrintingConfig, "autoKitchen" | "autoRece
 }
 /** Style + champs cuisine d'une configuration, prêt à passer aux rendus. */
 export const printingFields = (p: Pick<PrintingConfig, "kitchen" | "textSize" | "font">): TicketFieldsIn => ({ ...p.kitchen, textSize: p.textSize, font: p.font });
-export type TicketShop = { name: string; address?: string | null; phone?: string | null; slug?: string; customDomains?: string[] | undefined; optionData?: OptionData; catalog?: Catalog };
+export type TicketShop = { name: string; address?: string | null; phone?: string | null; slug?: string; customDomains?: string[] | undefined; optionData?: OptionData | undefined; catalog?: Catalog | undefined };
 export function ticketWebsite(shop: TicketShop) {
   const domain = shop.customDomains?.find((d) => /^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i.test(d));
   return domain ?? (shop.slug ? `restaurant.lcdigitale.fr/${shop.slug}` : "restaurant.lcdigitale.fr");
