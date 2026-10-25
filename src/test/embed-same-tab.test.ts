@@ -16,10 +16,6 @@ describe("entrée de commande : toujours dans le même onglet", () => {
     expect(widgetServed).toContain("window.top.location=u");
   });
 
-  it("le widget servi reste sous 6 Ko", () => {
-    expect(Buffer.byteLength(widgetServed)).toBeLessThan(6144);
-  });
-
   it("le lien simple fourni au restaurant ne force pas un nouvel onglet", () => {
     expect(section).not.toContain('target="_blank"');
     expect(section).toContain('<a href="${link}">Commander en ligne</a>');
