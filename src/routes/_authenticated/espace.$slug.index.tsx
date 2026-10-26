@@ -299,7 +299,7 @@ function Kitchen() {
           <DialogHeader><DialogTitle>Réglages & sections</DialogTitle></DialogHeader>
           <div className="min-h-0 space-y-6 overflow-y-auto overscroll-contain">
             <section className="space-y-3"><h2 className="text-lg font-semibold">Service & écran</h2>
-        <div className="col-span-2 flex shrink-0 items-center justify-end gap-2">
+        <div className="flex flex-wrap items-center gap-2">
         <Button variant={serviceMode ? "secondary" : "outline"} size="icon" aria-pressed={serviceMode} aria-label={serviceMode ? "Quitter le mode service" : "Activer le mode service"} title={serviceMode ? "Afficher la navigation" : "Mode service : replier la navigation"} onClick={() => setServiceMode((v) => !v)}>{serviceMode ? <PanelTopOpen /> : <PanelTopClose />}</Button>
         <Button variant="outline" size="icon" disabled={fullscreenBusy} aria-label={fullscreen ? "Quitter le plein écran" : "Passer en plein écran"} title={fullscreen ? "Quitter le plein écran" : "Plein écran"} onClick={() => void toggleFullscreen()}>{fullscreen ? <Minimize /> : <Maximize />}</Button>
         <Button variant={wake.active ? "default" : wake.wanted ? "destructive" : "outline"} aria-pressed={wake.wanted} disabled={!wake.supported}
@@ -310,7 +310,6 @@ function Kitchen() {
         {pinEnabled && <Button variant="secondary" onClick={() => setLock(true)}><Lock /> Verrouiller</Button>}
         <ThemeToggle />
         <Button variant="ghost" size="icon" className="text-foreground" onClick={() => supabase.auth.signOut()} aria-label="Déconnexion"><LogOut /></Button>
-        </div>
         </div>
             {restaurant && <OrdersPausedToggle restaurant={{ id: restaurant.id, config: (restaurant.config ?? {}) as Restaurant["config"] }} />}
             </section>
