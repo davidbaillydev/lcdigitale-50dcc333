@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { EMPTY_OPTIONS, loadOptionData } from "@/lib/menu-options";
-import { ArrowLeft, ArrowRight, Bell, BellOff, Bike, Check, ChefHat, Lock, LogOut, Maximize, Minimize, MoonStar, PanelTopClose, PanelTopOpen, Phone, Printer, ShoppingBag, Sun, Users, Volume2, VolumeX } from "lucide-react";
+import { ArrowLeft, ArrowRight, Bell, BellOff, Bike, Check, ChefHat, Lock, LogOut, Maximize, Minimize, MoonStar, PanelTopClose, PanelTopOpen, Phone, Printer, Settings, History, ShoppingBag, Sun, Users, Volume2, VolumeX } from "lucide-react";
 import { useKitchenFullscreen } from "@/hooks/use-kitchen-fullscreen";
 import { useWakeLock } from "@/hooks/use-wake-lock";
 import { ticketOptions, printTickets, printingDefaults, printingFields, autoPrintKinds, autoPrintLabel, useTicketWidth, type PrintingConfig, type TicketKind } from "@/lib/ticket";
@@ -36,6 +36,7 @@ import { BrandLogo } from "@/lib/brand";
 import { ThemeToggle } from "@/lib/theme";
 import { OrdersPausedToggle } from "@/components/OrdersPausedToggle";
 import { TicketPreviewDialog } from "@/components/TicketPreviewDialog";
+import { KitchenHistory } from "@/components/KitchenHistory";
 
 export const Route = createFileRoute("/_authenticated/espace/$slug/")({
   head: () => ({
@@ -140,7 +141,9 @@ function Kitchen() {
   const printRef = useRef({ auto: false, kinds: [] as TicketKind[], doPrint }); printRef.current = { auto: autoPrintKinds(printing).length > 0, kinds: autoPrintKinds(printing), doPrint };
   const [sound, setSound] = useState(false);
   const [started, setStarted] = useState(false);
-  const [serviceMode, setServiceMode] = useState(false);
+  const [serviceMode, setServiceMode] = useState(true);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const { fullscreen, busy: fullscreenBusy, helpOpen, setHelpOpen, toggleFullscreen } = useKitchenFullscreen();
   const wake = useWakeLock();
   const soundRef = useRef(false); soundRef.current = sound;
@@ -291,6 +294,47 @@ function Kitchen() {
           <Button onClick={() => setHelpOpen(false)}>Fermer</Button>
         </DialogContent>
       </Dialog>
+      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <DialogContent className="flex max-h-[92dvh] max-w-2xl flex-col">
+          <DialogHeader><DialogTitle>Réglages & sections</DialogTitle></DialogHeader>
+          <div className="min-h-0 space-y-6 overflow-y-auto overscroll-contain">
+            <section className="space-y-3"><h2 className="text-lg font-semibold">Service & écran</h2>
+        <div className="flex flex-wrap items-center gap-2">
+        <Button variant={serviceMode ? "secondary" : "outline"} size="icon" aria-pressed={serviceMode} aria-label={serviceMode ? "Quitter le mode service" : "Activer le mode service"} title={serviceMode ? "Afficher la navigation" : "Mode service : replier la navigation"} onClick={() => setServiceMode((v) => !v)}>{serviceMode ? <PanelTopOpen /> : <PanelTopClose />}</Button>
+        <Button variant="outline" size="icon" disabled={fullscreenBusy} aria-label={fullscreen ? "Quitter le plein écran" : "Passer en plein écran"} title={fullscreen ? "Quitter le plein écran" : "Plein écran"} onClick={() => void toggleFullscreen()}>{fullscreen ? <Minimize /> : <Maximize />}</Button>
+        <Button variant={wake.active ? "default" : wake.wanted ? "destructive" : "outline"} aria-pressed={wake.wanted} disabled={!wake.supported}
+          title={!wake.supported ? "Maintien de l'écran non pris en charge par ce navigateur" : wake.active ? "Écran maintenu allumé — cliquer pour désactiver" : wake.wanted ? "Maintien demandé mais inactif — touchez l'écran" : "Empêcher la mise en veille"}
+          aria-label={wake.active ? "Écran maintenu allumé, désactiver" : "Empêcher la mise en veille"} onClick={wake.toggle}>
+          {wake.active ? <Sun className="animate-pulse" /> : <MoonStar />}<span className="hidden md:inline">{wake.active ? "Écran actif" : wake.wanted ? "Veille non bloquée" : "Anti-veille"}</span>
+        </Button>
+        {pinEnabled && <Button variant="secondary" onClick={() => setLock(true)}><Lock /> Verrouiller</Button>}
+        <ThemeToggle />
+        <Button variant="ghost" size="icon" className="text-foreground" onClick={() => supabase.auth.signOut()} aria-label="Déconnexion"><LogOut /></Button>
+        </div>
+            {restaurant && <OrdersPausedToggle restaurant={{ id: restaurant.id, config: (restaurant.config ?? {}) as Restaurant["config"] }} />}
+            </section>
+            <section className="space-y-3"><h2 className="text-lg font-semibold">Sections & impression</h2>
+            <Button variant="secondary" className="min-h-12 w-full" onClick={() => { setSettingsOpen(false); setHistoryOpen(true); }}><History />Ventes & tickets</Button>
+        <nav aria-label="Gestion du restaurant" className="grid grid-cols-1 gap-2 sm:grid-cols-2 [&_button]:min-h-12 [&_button]:w-full">
+        {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/carte" params={{ slug }}>Carte</Link></Button>}
+        {feat.reservation && <Button asChild variant="secondary"><Link to="/espace/$slug/reservations" params={{ slug }}>Réservations</Link></Button>}
+        {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/reglages" params={{ slug }}>Réglages</Link></Button>}
+        {isAdmin && feat.qrcode && <Button asChild variant="secondary"><Link to="/espace/$slug/qr" params={{ slug }}>QR tables & avis</Link></Button>}
+        {isAdmin && feat.livraison && <Button asChild variant="secondary"><Link to="/espace/$slug/livraison" params={{ slug }}>Livraison & livreurs</Link></Button>}
+        {restaurant?.role === "agency" && <Button asChild variant="secondary"><Link to="/espace/$slug/equipe" params={{ slug }}><Users /> Équipe</Link></Button>}
+        {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/clients" params={{ slug }}>Clients</Link></Button>}
+        {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/statistiques" params={{ slug }}>Conversion & abandons</Link></Button>}
+        {isAdmin && <Button asChild variant="secondary"><Link to="/espace/tableau-de-bord">Tableau de bord</Link></Button>}
+        {rid && <StockDialog slug={slug} restaurantId={rid} />}
+        <PrinterSetup compact width={printing.width} shop={{ name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null, slug, customDomains: (restaurant?.config as Restaurant["config"] | null)?.customDomains }} />
+        <Button size="sm" variant="outline" onClick={() => setDeviceWidth(printing.width === 80 ? 58 : 80)} aria-label={`Rouleau ${printing.width} mm — basculer en ${printing.width === 80 ? 58 : 80} mm`} title="Changer le format de rouleau sur cet appareil">
+          <Printer className="h-4 w-4" />{printing.width} mm · {autoPrintLabel(printing)}
+        </Button>
+        </nav>
+            </section>
+          </div>
+        </DialogContent>
+      </Dialog>
       {!started && (
         <div role="dialog" aria-modal="true" aria-labelledby="kds-start" className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 p-6">
           <div className="max-w-md rounded-xl border border-border bg-card p-6 text-center">
@@ -328,37 +372,9 @@ function Kitchen() {
         <Button variant={sound ? "secondary" : "destructive"} size="lg" onClick={sound ? () => setSound(false) : enableSound} aria-pressed={sound} aria-label={sound ? "Son activé — couper" : "Son coupé — activer"} title={sound ? "Couper le son" : "Activer le son"} className="min-h-12 text-base">
           {sound ? <Volume2 /> : <VolumeX />} <span className="hidden sm:inline">{sound ? "Son activé — couper" : "Son coupé — activer"}</span>
         </Button>
-        {restaurant && <OrdersPausedToggle restaurant={{ id: restaurant.id, config: (restaurant.config ?? {}) as Restaurant["config"] }} className="col-span-2 sm:col-span-1" />}
-        <div className="col-span-2 flex shrink-0 items-center justify-end gap-2">
-        <Button variant={serviceMode ? "secondary" : "outline"} size="icon" aria-pressed={serviceMode} aria-label={serviceMode ? "Quitter le mode service" : "Activer le mode service"} title={serviceMode ? "Afficher la navigation" : "Mode service : replier la navigation"} onClick={() => setServiceMode((v) => !v)}>{serviceMode ? <PanelTopOpen /> : <PanelTopClose />}</Button>
-        <Button variant="outline" size="icon" disabled={fullscreenBusy} aria-label={fullscreen ? "Quitter le plein écran" : "Passer en plein écran"} title={fullscreen ? "Quitter le plein écran" : "Plein écran"} onClick={() => void toggleFullscreen()}>{fullscreen ? <Minimize /> : <Maximize />}</Button>
-        <Button variant={wake.active ? "default" : wake.wanted ? "destructive" : "outline"} aria-pressed={wake.wanted} disabled={!wake.supported}
-          title={!wake.supported ? "Maintien de l'écran non pris en charge par ce navigateur" : wake.active ? "Écran maintenu allumé — cliquer pour désactiver" : wake.wanted ? "Maintien demandé mais inactif — touchez l'écran" : "Empêcher la mise en veille"}
-          aria-label={wake.active ? "Écran maintenu allumé, désactiver" : "Empêcher la mise en veille"} onClick={wake.toggle}>
-          {wake.active ? <Sun className="animate-pulse" /> : <MoonStar />}<span className="hidden md:inline">{wake.active ? "Écran actif" : wake.wanted ? "Veille non bloquée" : "Anti-veille"}</span>
-        </Button>
-        {serviceMode && rid && <StockDialog slug={slug} restaurantId={rid} />}
-        {pinEnabled && <Button variant="secondary" onClick={() => setLock(true)}><Lock /> Verrouiller</Button>}
-        <ThemeToggle />
-        <Button variant="ghost" size="icon" className="text-foreground" onClick={() => supabase.auth.signOut()} aria-label="Déconnexion"><LogOut /></Button>
+        <Button variant="outline" className="min-h-12" onClick={() => setHistoryOpen(true)}><History /><span className="hidden sm:inline">Ventes & tickets</span><span className="sr-only sm:hidden">Ventes & tickets</span></Button>
+        <Button variant="outline" size="icon" className="min-h-12 min-w-12" aria-label="Réglages et sections" title="Réglages et sections" onClick={() => setSettingsOpen(true)}><Settings /></Button>
         </div>
-        </div>
-        <nav hidden={serviceMode} aria-label="Gestion du restaurant" className="kds-navigation mt-3 flex items-center gap-2 overflow-x-auto border-t border-border pt-3">
-        {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/carte" params={{ slug }}>Carte</Link></Button>}
-        {feat.reservation && <Button asChild variant="secondary"><Link to="/espace/$slug/reservations" params={{ slug }}>Réservations</Link></Button>}
-        {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/reglages" params={{ slug }}>Réglages</Link></Button>}
-        {isAdmin && feat.qrcode && <Button asChild variant="secondary"><Link to="/espace/$slug/qr" params={{ slug }}>QR tables & avis</Link></Button>}
-        {isAdmin && feat.livraison && <Button asChild variant="secondary"><Link to="/espace/$slug/livraison" params={{ slug }}>Livraison & livreurs</Link></Button>}
-        {restaurant?.role === "agency" && <Button asChild variant="secondary"><Link to="/espace/$slug/equipe" params={{ slug }}><Users /> Équipe</Link></Button>}
-        {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/clients" params={{ slug }}>Clients</Link></Button>}
-        {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/statistiques" params={{ slug }}>Conversion & abandons</Link></Button>}
-        {isAdmin && <Button asChild variant="secondary"><Link to="/espace/tableau-de-bord">Tableau de bord</Link></Button>}
-        {rid && <StockDialog slug={slug} restaurantId={rid} />}
-        <PrinterSetup compact width={printing.width} shop={{ name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null, slug, customDomains: (restaurant?.config as Restaurant["config"] | null)?.customDomains }} />
-        <Button size="sm" variant="outline" onClick={() => setDeviceWidth(printing.width === 80 ? 58 : 80)} aria-label={`Rouleau ${printing.width} mm — basculer en ${printing.width === 80 ? 58 : 80} mm`} title="Changer le format de rouleau sur cet appareil">
-          <Printer className="h-4 w-4" />{printing.width} mm · {autoPrintLabel(printing)}
-        </Button>
-        </nav>
       </header>
       <div className="kds-service flex flex-wrap items-center justify-between gap-4 bg-primary px-6 py-5 text-primary-foreground">
         <p className="flex items-center gap-3 font-display text-2xl font-semibold"><ChefHat aria-hidden="true" /> Le service<span aria-hidden="true">.</span></p>
@@ -458,6 +474,7 @@ function Kitchen() {
           );
         })}
       </div>
+      {rid && <KitchenHistory restaurantId={rid} open={historyOpen && !locked} onClose={() => setHistoryOpen(false)} shop={{ name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null, slug, customDomains: (restaurant?.config as Restaurant["config"] | null)?.customDomains, optionData: ticketOptionData }} width={printing.width} fields={printingFields(printing)} onPrint={(order, kinds) => doPrint(order as Order, kinds)} />}
       {locked && rid && <KitchenLock restaurantId={rid} name={restaurant?.name ?? ""} onUnlock={() => setLock(false)} />}
       <TicketPreviewDialog
         order={preview?.order ?? null}
