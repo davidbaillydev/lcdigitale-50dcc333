@@ -24,7 +24,7 @@ export function TicketPreviewDialog({ order, kinds, shop, width, kitchen, onClos
   );
   return (
     <Dialog open={!!order} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="flex max-h-[92vh] w-[min(96vw,560px)] flex-col">
+      <DialogContent className="kds-touch-dialog flex max-h-[92dvh] w-[min(96vw,560px)] flex-col">
         <DialogHeader>
           <DialogTitle>Aperçu du ticket n° {order?.order_number}</DialogTitle>
           <DialogDescription>

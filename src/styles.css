@@ -539,6 +539,18 @@ html:has(.admin-kitchen), body:has(.admin-kitchen) { height: 100%; overflow: hid
 .kds-column-scroll:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
 .kds-column-heading > span:first-child { min-width: 0; }
 .kds-column-heading svg { flex-shrink: 0; }
+/* Touch-oriented kitchen overlays keep search, close and footer outside the scrolling list. */
+:root:has(.admin-kitchen) .kds-touch-dialog { overflow: hidden; min-height: 0; }
+:root:has(.admin-kitchen) .kds-touch-dialog > [data-console-dialog-header] { flex-shrink: 0; padding-right: 3rem; text-align: left; }
+:root:has(.admin-kitchen) .kds-touch-dialog [data-console-close-bar] { flex-shrink: 0; }
+:root:has(.admin-kitchen) .kds-touch-dialog [data-console-close-bar] button { width: 3.5rem; height: 3.5rem; min-height: 3.5rem; }
+@media (min-width: 768px) and (max-width: 1366px) {
+  :root:has(.admin-kitchen) .kds-touch-dialog { height: calc(100dvh - 3rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); padding: 1.5rem; }
+  :root:has(.admin-kitchen) .kds-touch-dialog [data-console-close-bar] button { top: 0.75rem; right: 0.75rem; }
+  :root:has(.admin-kitchen) .kds-touch-dialog button { min-height: 3.5rem; touch-action: manipulation; }
+  :root:has(.admin-kitchen) .kds-touch-dialog input { min-height: 3.5rem; font-size: 1rem; }
+  :root:has(.admin-kitchen) .kds-touch-dialog [data-console-dialog-footer] { flex-shrink: 0; gap: 0.75rem; }
+}
 .admin-workspace:has(.admin-kitchen) {
   --kds-safe-top: env(safe-area-inset-top, 0px);
   --kds-safe-right: env(safe-area-inset-right, 0px);

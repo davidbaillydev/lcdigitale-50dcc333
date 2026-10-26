@@ -295,27 +295,27 @@ function Kitchen() {
         </DialogContent>
       </Dialog>
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-        <DialogContent className="flex max-h-[92dvh] max-w-2xl flex-col">
+        <DialogContent className="kds-touch-dialog flex max-h-[92dvh] max-w-3xl flex-col">
           <DialogHeader><DialogTitle>Réglages & sections</DialogTitle></DialogHeader>
           <div className="min-h-0 space-y-6 overflow-y-auto overscroll-contain">
             <section className="space-y-3"><h2 className="text-lg font-semibold">Service & écran</h2>
-        <div className="flex flex-wrap items-center gap-2">
-        <Button variant={serviceMode ? "secondary" : "outline"} size="icon" aria-pressed={serviceMode} aria-label={serviceMode ? "Quitter le mode service" : "Activer le mode service"} title={serviceMode ? "Afficher la navigation" : "Mode service : replier la navigation"} onClick={() => setServiceMode((v) => !v)}>{serviceMode ? <PanelTopOpen /> : <PanelTopClose />}</Button>
-        <Button variant="outline" size="icon" disabled={fullscreenBusy} aria-label={fullscreen ? "Quitter le plein écran" : "Passer en plein écran"} title={fullscreen ? "Quitter le plein écran" : "Plein écran"} onClick={() => void toggleFullscreen()}>{fullscreen ? <Minimize /> : <Maximize />}</Button>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 [&_button]:min-h-14 [&_button]:w-full">
+        <Button variant={serviceMode ? "secondary" : "outline"} aria-pressed={serviceMode} aria-label={serviceMode ? "Quitter le mode service" : "Activer le mode service"} title={serviceMode ? "Afficher la navigation" : "Mode service : replier la navigation"} onClick={() => setServiceMode((v) => !v)}>{serviceMode ? <PanelTopOpen /> : <PanelTopClose />}Mode service</Button>
+        <Button variant="outline" disabled={fullscreenBusy} aria-label={fullscreen ? "Quitter le plein écran" : "Passer en plein écran"} title={fullscreen ? "Quitter le plein écran" : "Plein écran"} onClick={() => void toggleFullscreen()}>{fullscreen ? <Minimize /> : <Maximize />}Plein écran</Button>
         <Button variant={wake.active ? "default" : wake.wanted ? "destructive" : "outline"} aria-pressed={wake.wanted} disabled={!wake.supported}
           title={!wake.supported ? "Maintien de l'écran non pris en charge par ce navigateur" : wake.active ? "Écran maintenu allumé — cliquer pour désactiver" : wake.wanted ? "Maintien demandé mais inactif — touchez l'écran" : "Empêcher la mise en veille"}
           aria-label={wake.active ? "Écran maintenu allumé, désactiver" : "Empêcher la mise en veille"} onClick={wake.toggle}>
-          {wake.active ? <Sun className="animate-pulse" /> : <MoonStar />}<span className="hidden md:inline">{wake.active ? "Écran actif" : wake.wanted ? "Veille non bloquée" : "Anti-veille"}</span>
+          {wake.active ? <Sun className="animate-pulse" /> : <MoonStar />}<span>{wake.active ? "Écran actif" : wake.wanted ? "Veille non bloquée" : "Anti-veille"}</span>
         </Button>
         {pinEnabled && <Button variant="secondary" onClick={() => setLock(true)}><Lock /> Verrouiller</Button>}
-        <ThemeToggle />
-        <Button variant="ghost" size="icon" className="text-foreground" onClick={() => supabase.auth.signOut()} aria-label="Déconnexion"><LogOut /></Button>
+        <div className="flex min-h-14 items-center justify-center gap-2 rounded-md border border-border"><ThemeToggle className="!w-14" /><span className="text-sm">Affichage</span></div>
+        <Button variant="ghost" className="text-foreground" onClick={() => supabase.auth.signOut()} aria-label="Déconnexion"><LogOut />Déconnexion</Button>
         </div>
             {restaurant && <OrdersPausedToggle restaurant={{ id: restaurant.id, config: (restaurant.config ?? {}) as Restaurant["config"] }} />}
             </section>
             <section className="space-y-3"><h2 className="text-lg font-semibold">Sections & impression</h2>
             <Button variant="secondary" className="min-h-12 w-full" onClick={() => { setSettingsOpen(false); setHistoryOpen(true); }}><History />Ventes & tickets</Button>
-        <nav aria-label="Gestion du restaurant" className="grid grid-cols-1 gap-2 sm:grid-cols-2 [&_button]:min-h-12 [&_button]:w-full">
+        <nav aria-label="Gestion du restaurant" className="grid grid-cols-1 gap-3 sm:grid-cols-2 [&_button]:min-h-14 [&_button]:w-full [&_button]:whitespace-normal">
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/carte" params={{ slug }}>Carte</Link></Button>}
         {feat.reservation && <Button asChild variant="secondary"><Link to="/espace/$slug/reservations" params={{ slug }}>Réservations</Link></Button>}
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/reglages" params={{ slug }}>Réglages</Link></Button>}
@@ -363,7 +363,7 @@ function Kitchen() {
         </DialogContent>
       </Dialog>
       <header className="kds-header border-b border-border">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:flex-wrap">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
         <div className="kds-identity flex min-w-0 items-center gap-3">
         {restaurants.length > 1 && <Button asChild variant="ghost" size="icon" className="text-foreground" aria-label="Mes restaurants"><Link to="/espace"><ArrowLeft /></Link></Button>}
         <BrandLogo src={restaurant?.logo_url} name={restaurant?.name ?? ""} />
