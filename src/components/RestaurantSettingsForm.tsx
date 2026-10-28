@@ -210,7 +210,7 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
             <p className="mb-2 text-sm font-semibold">Site de commande en ligne</p>
             <div className="space-y-1 rounded-lg border border-border p-3">
               <Toggle label="Paiement à la remise de la commande" hint="Le client commande sur le site et paie en mains propres au retrait ou à la livraison (espèces, carte ou tickets restaurant)." checked={s.config.payments.on_site} onChange={(v) => cfg({ payments: { ...s.config.payments, on_site: v } })} />
-              <Toggle label="Paiement en ligne par carte" hint="Le client paie sur le site via le prestataire connecté par l'agence. Le désactiver conserve la connexion : la réactivation est immédiate." checked={s.config.payments.online !== false} onChange={(v) => { if (v) cfg({ payments: { ...s.config.payments, online: true } }); else setConfirmOnlineOff(true); }} />
+              <Toggle label="Paiement en ligne par carte" hint="Le client paie sur le site via le prestataire connecté par l'agence. Le désactiver conserve la connexion : la réactivation est immédiate." checked={s.config.payments.online !== false} onChange={(v) => { if (v && s.config.modes.delivery === false) setConfirmOnlineOn(true); else if (v) cfg({ payments: { ...s.config.payments, online: true } }); else setConfirmOnlineOff(true); }} />
               <p className="pt-1 text-sm text-muted-foreground">Le paiement en ligne par carte sur le site s'active en connectant un prestataire (Stripe, Mollie, PayPal ou Lyra) dans la section « Prestataires de paiement » ci-dessous.</p>
             </div>
           </div>
