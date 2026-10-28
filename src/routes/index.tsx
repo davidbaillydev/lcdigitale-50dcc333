@@ -5,6 +5,7 @@ import { listRestaurants } from "@/lib/restaurants.functions";
 import { ThemeToggle } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import logoUrl from "@/assets/lc-digitale-logo.png";
 
 function BannerCarousel({ covers }: { covers: string[] }) {
   const [index, setIndex] = useState(0);
