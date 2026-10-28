@@ -139,7 +139,7 @@ export const fmtTime = (iso: string) =>
   new Date(iso).toLocaleTimeString("fr-FR", { timeZone: TZ, hour: "2-digit", minute: "2-digit" });
 
 /** Un mode/paiement est actif sauf s'il a été explicitement désactivé */
-export const modeEnabled = (r: Restaurant, m: "pickup" | "delivery" | "dine_in") => r.config.modes?.[m] !== false;
+export const modeEnabled = (r: Restaurant, m: "pickup" | "delivery" | "dine_in") => r.config.modes?.[m] !== false && (m !== "delivery" || r.config.payments?.online !== false);
 /** Borne en paiement exclusif par carte bancaire (dispense de logiciel de caisse sécurisé). */
 export const kioskCardOnly = (r: Restaurant) => r.config.kiosk?.cardOnly === true;
 /** Paiement en ligne par carte sur le site (absent = actif). Désactivé, il coupe aussi la livraison. */
