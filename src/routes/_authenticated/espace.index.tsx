@@ -6,6 +6,7 @@ import { useStaff } from "@/hooks/use-staff";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/lib/theme";
 import { BrandLogo } from "@/lib/brand";
+import { getLastRestaurant } from "@/lib/last-restaurant";
 
 export const Route = createFileRoute("/_authenticated/espace/")({
   head: () => ({
@@ -28,7 +29,13 @@ function Picker() {
   const navigate = useNavigate();
   useEffect(() => { if (!loading && !user) navigate({ to: "/connexion" }); }, [loading, user, navigate]);
   useEffect(() => {
-    if (!loading && !isAgency && restaurants.length === 1) navigate({ to: "/espace/$slug", params: { slug: restaurants[0]!.slug }, replace: true });
+    if (loading || !restaurants.length) return;
+    // Dernier restaurant consulté : on y retourne directement s'il est toujours accessible.
+    const remembered = getLastRestaurant();
+    const target = remembered ? restaurants.find((r) => r.slug === remembered) : undefined;
+    const fallback = !isAgency && restaurants.length === 1 ? restaurants[0] : undefined;
+    const chosen = target ?? fallback;
+    if (chosen) navigate({ to: "/espace/$slug", params: { slug: chosen.slug }, replace: true });
   }, [loading, isAgency, restaurants, navigate]);
 
   if (loading || !user) return <p className="p-10 text-center text-muted-foreground">Chargement…</p>;
