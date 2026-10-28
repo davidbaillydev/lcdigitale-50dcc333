@@ -32,7 +32,7 @@ export type Restaurant = {
     ordersPaused?: boolean;
     printing?: Partial<import("./ticket").PrintingConfig>;
     modes?: { pickup?: boolean; delivery?: boolean; dine_in?: boolean };
-    payments?: { on_site?: boolean; counter?: boolean; card_terminal?: boolean; qr?: boolean };
+    payments?: { online?: boolean; on_site?: boolean; counter?: boolean; card_terminal?: boolean; qr?: boolean };
     /** Voie B (BOI-TVA-DECLA-30-10-30 § 37 ex. 4) : borne 100 % carte bancaire, aucun encaissement espèces. */
     kiosk?: { cardOnly?: boolean };
     marketing?: import("./promo").Marketing;
@@ -142,6 +142,8 @@ export const fmtTime = (iso: string) =>
 export const modeEnabled = (r: Restaurant, m: "pickup" | "delivery" | "dine_in") => r.config.modes?.[m] !== false;
 /** Borne en paiement exclusif par carte bancaire (dispense de logiciel de caisse sécurisé). */
 export const kioskCardOnly = (r: Restaurant) => r.config.kiosk?.cardOnly === true;
+/** Paiement en ligne par carte sur le site (absent = actif). Désactivé, il coupe aussi la livraison. */
+export const onlinePaymentEnabled = (r: Restaurant) => r.config.payments?.online !== false;
 export const paymentEnabled = (r: Restaurant, p: "on_site" | "counter" | "card_terminal") => r.config.payments?.[p] !== false;
 
 /* ---------- Capacité de livraison par créneau ---------- */

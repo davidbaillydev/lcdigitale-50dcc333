@@ -30,7 +30,7 @@ export function initialSettings(r: Restaurant): Settings {
       ordersPaused: c.ordersPaused === true,
       timing: timingOf(r),
       modes: { pickup: c.modes?.pickup !== false, delivery: c.modes?.delivery !== false, dine_in: c.modes?.dine_in !== false },
-      payments: { on_site: c.payments?.on_site !== false, counter: c.payments?.counter !== false, card_terminal: c.payments?.card_terminal !== false, qr: c.payments?.qr === true },
+      payments: { online: c.payments?.online !== false, on_site: c.payments?.on_site !== false, counter: c.payments?.counter !== false, card_terminal: c.payments?.card_terminal !== false, qr: c.payments?.qr === true },
       kiosk: { cardOnly: c.kiosk?.cardOnly === true },
       printing: printingDefaults(c.printing),
       serviceFee: serviceFeeDefaults(c.serviceFee),
@@ -60,6 +60,7 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
   const save = useServerFn(saveRestaurantSettings);
   const [s, setS] = useState<Settings>(() => initialSettings(restaurant));
   const [busy, setBusy] = useState(false);
+  const [confirmOnlineOff, setConfirmOnlineOff] = useState(false);
   const activeGroup = useSettingsGroup();
   const [savedSettings, setSavedSettings] = useState(() => JSON.stringify(initialSettings(restaurant)));
   const dirty = JSON.stringify(s) !== savedSettings;
@@ -116,7 +117,7 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
           <OrdersPausedToggle restaurant={restaurant} />
         </div>
         <Toggle label="À emporter (site)" checked={s.config.modes.pickup} onChange={(v) => cfg({ modes: { ...s.config.modes, pickup: v } })} />
-        <Toggle label="Livraison (site)" checked={s.config.modes.delivery} onChange={(v) => cfg({ modes: { ...s.config.modes, delivery: v } })} />
+        <Toggle label="Livraison (site)" hint={s.config.payments.online === false ? "Indisponible : la livraison nécessite le paiement en ligne (Paiements acceptés)." : undefined} checked={s.config.modes.delivery && s.config.payments.online !== false} onChange={(v) => { if (s.config.payments.online !== false) cfg({ modes: { ...s.config.modes, delivery: v } }); }} />
         <Toggle label="Sur place (borne)" checked={s.config.modes.dine_in} onChange={(v) => cfg({ modes: { ...s.config.modes, dine_in: v } })} />
         <Toggle label="Acceptation automatique" hint="Sinon, chaque commande doit être acceptée en cuisine." checked={s.config.autoAccept} onChange={(v) => cfg({ autoAccept: v })} />
         <p className="mt-4 text-sm font-semibold">Moment de la commande</p>
@@ -208,6 +209,7 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
             <p className="mb-2 text-sm font-semibold">Site de commande en ligne</p>
             <div className="space-y-1 rounded-lg border border-border p-3">
               <Toggle label="Paiement à la remise de la commande" hint="Le client commande sur le site et paie en mains propres au retrait ou à la livraison (espèces, carte ou tickets restaurant)." checked={s.config.payments.on_site} onChange={(v) => cfg({ payments: { ...s.config.payments, on_site: v } })} />
+              <Toggle label="Paiement en ligne par carte" hint="Le client paie sur le site via le prestataire connecté par l'agence. Le désactiver conserve la connexion : la réactivation est immédiate." checked={s.config.payments.online !== false} onChange={(v) => { if (v) cfg({ payments: { ...s.config.payments, online: true } }); else setConfirmOnlineOff(true); }} />
               <p className="pt-1 text-sm text-muted-foreground">Le paiement en ligne par carte sur le site s'active en connectant un prestataire (Stripe, Mollie, PayPal ou Lyra) dans la section « Prestataires de paiement » ci-dessous.</p>
             </div>
           </div>

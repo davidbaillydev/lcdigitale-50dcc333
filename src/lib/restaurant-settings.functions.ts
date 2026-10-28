@@ -21,7 +21,7 @@ export const settingsSchema = z.object({
     ordersPaused: z.boolean().optional(),
     timing: z.object({ asap: z.boolean(), scheduled: z.boolean(), prepMode: z.enum(["auto", "manual"]), defaultPrep: z.number().int().min(5).max(180) }),
     modes: z.object({ pickup: z.boolean(), delivery: z.boolean(), dine_in: z.boolean() }),
-    payments: z.object({ on_site: z.boolean(), counter: z.boolean(), card_terminal: z.boolean(), qr: z.boolean().optional() }),
+    payments: z.object({ online: z.boolean().optional(), on_site: z.boolean(), counter: z.boolean(), card_terminal: z.boolean(), qr: z.boolean().optional() }),
     kiosk: z.object({ cardOnly: z.boolean() }).optional(),
     serviceFee: z.object({
       enabled: z.boolean(), kind: z.enum(["fixed", "percent"]), value: z.number().min(0).max(100),
@@ -78,6 +78,7 @@ export const saveRestaurantSettings = createServerFn({ method: "POST" })
     if (!isAgency && printing) s.config.printing = printing as typeof s.config.printing;
     // Voie B (borne 100 % CB) : choix fiscal réservé à l'agence.
     if (!isAgency) { const k = (cur?.config as { kiosk?: { cardOnly?: boolean } } | null)?.kiosk; if (k) s.config.kiosk = { cardOnly: k.cardOnly === true }; else delete s.config.kiosk; }
+    if (s.config.payments.online === false) s.config.modes.delivery = false;
     if (s.config.kiosk?.cardOnly) { s.config.payments.counter = false; s.config.payments.card_terminal = true; }
     const { error } = await supabaseAdmin.from("restaurants").update({ opening: s.opening, delivery: { ...s.delivery, ...(geoZones ? { geoZones } : {}), ...(origin ? { origin } : {}), ...(capacity ? { capacity } : {}) } as never, config: { ...s.config, ordersPaused: (cur?.config as { ordersPaused?: boolean } | null)?.ordersPaused === true, ...(marketing ? { marketing } : {}), ...(qr ? { qr } : {}), ...(reservations ? { reservations } : {}), ...(customDomains ? { customDomains } : {}), ...((cur?.config as { notifications?: unknown } | null)?.notifications ? { notifications: (cur?.config as { notifications?: unknown }).notifications } : {}), ...((cur?.config as { upsell?: unknown } | null)?.upsell ? { upsell: (cur?.config as { upsell?: unknown }).upsell } : {}) } as never }).eq("id", data.restaurantId);
     if (error) throw new Error(error.message);
