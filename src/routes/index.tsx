@@ -5,7 +5,6 @@ import { listRestaurants } from "@/lib/restaurants.functions";
 import { ThemeToggle } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import logoUrl from "@/assets/lc-digitale-logo.png";
 
 function BannerCarousel({ covers }: { covers: string[] }) {
   const [index, setIndex] = useState(0);
@@ -79,7 +78,7 @@ function Home() {
     <div className="restaurant-directory foodcourt-directory min-h-screen bg-background text-foreground">
       <div className="foodcourt-shell">
         <nav aria-label="Navigation principale" className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-5 sm:flex sm:justify-between">
-          <Link to="/" className="flex min-w-0 items-center gap-2 font-display text-xl font-bold"><img src={logoUrl} alt="" className="h-9 w-9 shrink-0 object-contain" width={36} height={36} /><span className="truncate">LC Digitale<span className="text-primary">.</span></span><span className="directory-french-flag shrink-0" role="img" aria-label="France"><span /><span /><span /></span></Link>
+          <Link to="/" className="flex min-w-0 items-center gap-2 font-display text-xl font-bold"><span className="truncate">LC Digitale<span className="text-primary">.</span></span><span className="directory-french-flag shrink-0" role="img" aria-label="France"><span /><span /><span /></span></Link>
           <div className="flex shrink-0 items-center gap-2"><Button asChild variant="ghost" className="h-11 gap-2 px-2 sm:px-3"><a href="#espaces-professionnels"><LogIn aria-hidden="true" /><span>Accès pro</span></a></Button><ThemeToggle /></div>
         </nav>
         <header className={`foodcourt-welcome relative overflow-hidden ${covers.length ? "has-cover" : ""}`}>
