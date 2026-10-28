@@ -73,16 +73,16 @@ function Home() {
   const [search, setSearch] = useState("");
   const query = search.trim().toLocaleLowerCase("fr");
   const shown = restaurants.filter((r) => `${r.name} ${r.city}`.toLocaleLowerCase("fr").includes(query));
-  const cover = restaurants.find((r) => r.brand?.coverUrl)?.brand?.coverUrl;
+  const covers = [...new Set(restaurants.map((r) => r.brand?.coverUrl).filter((u): u is string => Boolean(u)))];
   return (
     <div className="restaurant-directory foodcourt-directory min-h-screen bg-background text-foreground">
       <div className="foodcourt-shell">
         <nav aria-label="Navigation principale" className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-5 sm:flex sm:justify-between">
-          <Link to="/" className="flex min-w-0 items-center gap-2 font-display text-xl font-bold"><span className="truncate">LC Digitale<span className="text-primary">.</span></span><span className="directory-french-flag shrink-0" role="img" aria-label="France"><span /><span /><span /></span></Link>
+          <Link to="/" className="flex min-w-0 items-center gap-2 font-display text-xl font-bold"><img src={logoUrl} alt="" className="h-9 w-9 shrink-0 object-contain" width={36} height={36} /><span className="truncate">LC Digitale<span className="text-primary">.</span></span><span className="directory-french-flag shrink-0" role="img" aria-label="France"><span /><span /><span /></span></Link>
           <div className="flex shrink-0 items-center gap-2"><Button asChild variant="ghost" className="h-11 gap-2 px-2 sm:px-3"><a href="#espaces-professionnels"><LogIn aria-hidden="true" /><span>Accès pro</span></a></Button><ThemeToggle /></div>
         </nav>
-        <header className={`foodcourt-welcome relative overflow-hidden ${cover ? "has-cover" : ""}`}>
-          {cover && <img src={cover} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+        <header className={`foodcourt-welcome relative overflow-hidden ${covers.length ? "has-cover" : ""}`}>
+          <BannerCarousel covers={covers} />
           <div className="foodcourt-welcome-content relative">
             <p className="mb-4 flex items-center gap-2 text-sm font-semibold"><UtensilsCrossed className="h-4 w-4 shrink-0" /> Les établissements partenaires</p>
             <h1 className="font-display text-4xl font-bold leading-tight sm:text-6xl">Nos restaurants<span className="text-primary">.</span></h1>
