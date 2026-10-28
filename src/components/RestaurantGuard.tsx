@@ -1,9 +1,10 @@
-import { type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { Link, Navigate, useParams, useRouterState } from "@tanstack/react-router";
 import { Loader2, ShieldAlert } from "lucide-react";
 import { useStaff, type StaffRestaurant } from "@/hooks/use-staff";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { rememberLastRestaurant } from "@/lib/last-restaurant";
 
 type Level = "kitchen" | "manager" | "agency";
 const RANK: Record<StaffRestaurant["role"], number> = { kitchen: 0, manager: 1, agency: 2 };
@@ -26,6 +27,10 @@ const Loading = () => <div className="flex min-h-[60dvh] items-center justify-ce
 export function RestaurantGuard({ level, children }: { level: Level; children: ReactNode }) {
   const { slug } = useParams({ strict: false }) as { slug?: string };
   const { loading, user, restaurants } = useStaff();
+  const granted = !loading && !!user && !!slug && restaurants.some((x) => x.slug === slug);
+  useEffect(() => {
+    if (granted && slug) rememberLastRestaurant(slug);
+  }, [granted, slug]);
   if (loading) return <Loading />;
   if (!user) return <Navigate to="/connexion" replace />;
   const r = restaurants.find((x) => x.slug === slug);
