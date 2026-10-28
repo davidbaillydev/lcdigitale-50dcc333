@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { RestaurantBannerUpload } from "@/components/RestaurantBannerUpload";
 import { RestaurantCoverUpload } from "@/components/RestaurantCoverUpload";
 import { PrinterSetup } from "@/components/PrinterSetup";
@@ -43,7 +44,7 @@ import { printingDefaults, printingFields, printTickets, sampleOrder, ticketHtml
 function Section({ title, group, children }: { title: string; group: SettingsGroupKey; children: React.ReactNode }) {
   return <SettingsGroup name={group}><section className="border-t border-border py-6"><h2 className="mb-4 text-2xl">{title}</h2>{children}</section></SettingsGroup>;
 }
-function Toggle({ label, hint, checked, onChange }: { label: string; hint?: string; checked: boolean; onChange: (v: boolean) => void }) {
+function Toggle({ label, hint, checked, onChange }: { label: string; hint?: string | undefined; checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <label className="flex items-center justify-between gap-4 py-2">
       <span><span className="font-medium">{label}</span>{hint && <span className="block text-sm text-muted-foreground">{hint}</span>}</span>
@@ -255,6 +256,18 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
         <span role="status" className="text-sm text-muted-foreground">{dirty ? "Modifications non enregistrées" : "Réglages enregistrés"}</span>
         <Button size="lg" className="w-full sm:w-auto" onClick={submit} disabled={busy || !dirty}><Save aria-hidden="true" />{busy ? "Enregistrement…" : "Enregistrer les réglages"}</Button>
       </div>}
+      <AlertDialog open={confirmOnlineOff} onOpenChange={setConfirmOnlineOff}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Désactiver le paiement en ligne ?</AlertDialogTitle>
+            <AlertDialogDescription>Attention : la désactivation du paiement en ligne désactive également la livraison à domicile. Les commandes en livraison nécessitent obligatoirement le paiement en ligne sécurisé pour couvrir les frais de service et garantir le règlement avant le départ du livreur. Votre site fonctionnera alors exclusivement en retrait sur place (Click &amp; Collect).</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="min-h-12">Annuler</AlertDialogCancel>
+            <AlertDialogAction className="min-h-12 bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => cfg({ payments: { ...s.config.payments, online: false }, modes: { ...s.config.modes, delivery: false } })}>Confirmer et désactiver les livraisons</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
