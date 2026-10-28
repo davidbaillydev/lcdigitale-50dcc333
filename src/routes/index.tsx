@@ -1,10 +1,48 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowUpRight, ArrowRight, MapPin, Search, Store, ChefHat, Bike, UtensilsCrossed, LogIn } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { listRestaurants } from "@/lib/restaurants.functions";
 import { ThemeToggle } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
+function BannerCarousel({ covers }: { covers: string[] }) {
+  const [index, setIndex] = useState(0);
+  useEffect(() => {
+    if (covers.length < 2) return;
+    const timer = setInterval(() => setIndex((i) => (i + 1) % covers.length), 5000);
+    return () => clearInterval(timer);
+  }, [covers.length]);
+  if (!covers.length) return null;
+  return (
+    <>
+      {covers.map((src, i) => (
+        <img
+          key={src}
+          src={src}
+          alt=""
+          aria-hidden={i !== index}
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${i === index ? "opacity-100" : "opacity-0"}`}
+        />
+      ))}
+      {covers.length > 1 && (
+        <div className="absolute bottom-3 left-1/2 z-[2] flex -translate-x-1/2 gap-1.5" role="tablist" aria-label="Photos du bandeau">
+          {covers.map((src, i) => (
+            <button
+              key={src}
+              type="button"
+              role="tab"
+              aria-selected={i === index}
+              aria-label={`Photo ${i + 1}`}
+              onClick={() => setIndex(i)}
+              className={`h-2.5 w-2.5 rounded-full transition-colors ${i === index ? "bg-white" : "bg-white/40 hover:bg-white/70"}`}
+            />
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
 
 export const Route = createFileRoute("/")({
   head: ({ loaderData }) => {
