@@ -87,7 +87,7 @@ function Page() {
               <p className="mt-1 text-4xl font-semibold">{fmt(data.serviceFees)}</p>
             </div>
             <div className="rounded-xl border bg-card p-5">
-              <p className="text-sm text-muted-foreground">Commandes avec frais</p>
+              <p className="text-sm text-muted-foreground">Commandes validées</p>
               <p className="mt-1 text-4xl font-semibold">{data.orders}</p>
             </div>
             <div className="rounded-xl border bg-card p-5">
