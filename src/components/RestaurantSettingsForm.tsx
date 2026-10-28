@@ -62,6 +62,7 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
   const [s, setS] = useState<Settings>(() => initialSettings(restaurant));
   const [busy, setBusy] = useState(false);
   const [confirmOnlineOff, setConfirmOnlineOff] = useState(false);
+  const [confirmOnlineOn, setConfirmOnlineOn] = useState(false);
   const activeGroup = useSettingsGroup();
   const [savedSettings, setSavedSettings] = useState(() => JSON.stringify(initialSettings(restaurant)));
   const dirty = JSON.stringify(s) !== savedSettings;
