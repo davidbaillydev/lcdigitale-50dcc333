@@ -1,10 +1,49 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowUpRight, ArrowRight, MapPin, Search, Store, ChefHat, Bike, UtensilsCrossed, LogIn } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { listRestaurants } from "@/lib/restaurants.functions";
 import { ThemeToggle } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import logoUrl from "@/assets/lc-digitale-logo.png";
+
+function BannerCarousel({ covers }: { covers: string[] }) {
+  const [index, setIndex] = useState(0);
+  useEffect(() => {
+    if (covers.length < 2) return;
+    const timer = setInterval(() => setIndex((i) => (i + 1) % covers.length), 5000);
+    return () => clearInterval(timer);
+  }, [covers.length]);
+  if (!covers.length) return null;
+  return (
+    <>
+      {covers.map((src, i) => (
+        <img
+          key={src}
+          src={src}
+          alt=""
+          aria-hidden={i !== index}
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${i === index ? "opacity-100" : "opacity-0"}`}
+        />
+      ))}
+      {covers.length > 1 && (
+        <div className="absolute bottom-3 left-1/2 z-[2] flex -translate-x-1/2 gap-1.5" role="tablist" aria-label="Photos du bandeau">
+          {covers.map((src, i) => (
+            <button
+              key={src}
+              type="button"
+              role="tab"
+              aria-selected={i === index}
+              aria-label={`Photo ${i + 1}`}
+              onClick={() => setIndex(i)}
+              className={`h-2.5 w-2.5 rounded-full transition-colors ${i === index ? "bg-primary-foreground" : "bg-primary-foreground/40 hover:bg-primary-foreground/70"}`}
+            />
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
 
 export const Route = createFileRoute("/")({
   head: ({ loaderData }) => {
@@ -35,16 +74,16 @@ function Home() {
   const [search, setSearch] = useState("");
   const query = search.trim().toLocaleLowerCase("fr");
   const shown = restaurants.filter((r) => `${r.name} ${r.city}`.toLocaleLowerCase("fr").includes(query));
-  const cover = restaurants.find((r) => r.brand?.coverUrl)?.brand?.coverUrl;
+  const covers = [...new Set(restaurants.map((r) => r.brand?.coverUrl).filter((u): u is string => Boolean(u)))];
   return (
     <div className="restaurant-directory foodcourt-directory min-h-screen bg-background text-foreground">
       <div className="foodcourt-shell">
         <nav aria-label="Navigation principale" className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-5 sm:flex sm:justify-between">
-          <Link to="/" className="flex min-w-0 items-center gap-2 font-display text-xl font-bold"><span className="truncate">LC Digitale<span className="text-primary">.</span></span><span className="directory-french-flag shrink-0" role="img" aria-label="France"><span /><span /><span /></span></Link>
+          <Link to="/" className="flex min-w-0 items-center gap-2 font-display text-xl font-bold"><img src={logoUrl} alt="" className="h-9 w-9 shrink-0 object-contain" width={36} height={36} /><span className="truncate">LC Digitale<span className="text-primary">.</span></span><span className="directory-french-flag shrink-0" role="img" aria-label="France"><span /><span /><span /></span></Link>
           <div className="flex shrink-0 items-center gap-2"><Button asChild variant="ghost" className="h-11 gap-2 px-2 sm:px-3"><a href="#espaces-professionnels"><LogIn aria-hidden="true" /><span>Accès pro</span></a></Button><ThemeToggle /></div>
         </nav>
-        <header className={`foodcourt-welcome relative overflow-hidden ${cover ? "has-cover" : ""}`}>
-          {cover && <img src={cover} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+        <header className={`foodcourt-welcome relative overflow-hidden ${covers.length ? "has-cover" : ""}`}>
+          <BannerCarousel covers={covers} />
           <div className="foodcourt-welcome-content relative">
             <p className="mb-4 flex items-center gap-2 text-sm font-semibold"><UtensilsCrossed className="h-4 w-4 shrink-0" /> Les établissements partenaires</p>
             <h1 className="font-display text-4xl font-bold leading-tight sm:text-6xl">Nos restaurants<span className="text-primary">.</span></h1>
