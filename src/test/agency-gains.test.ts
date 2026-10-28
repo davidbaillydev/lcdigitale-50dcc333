@@ -1,0 +1,56 @@
+import { describe, expect, it } from "vitest";
+import { aggregateGains, gainsByDay, type GainOrderRow } from "@/lib/agency-gains";
+
+const row = (over: Partial<GainOrderRow>): GainOrderRow => ({
+  restaurant_id: "r1",
+  service_fee: 0.5,
+  total: 20,
+  status: "done",
+  created_at: "2026-10-20T12:00:00.000Z",
+  ...over,
+});
+
+describe("aggregateGains", () => {
+  it("exclut les commandes annulées et en attente de paiement", () => {
+    const g = aggregateGains([
+      row({}),
+      row({ status: "cancelled", service_fee: 0.5, total: 20 }),
+      row({ status: "awaiting_payment", service_fee: 0.5, total: 20 }),
+    ]);
+    expect(g.orders).toBe(1);
+    expect(g.serviceFees).toBe(0.5);
+    expect(g.revenue).toBe(20);
+  });
+
+  it("agrège par restaurant et trie par frais décroissants", () => {
+    const g = aggregateGains([
+      row({ restaurant_id: "r1", service_fee: 0.5 }),
+      row({ restaurant_id: "r2", service_fee: 1.2, total: 30 }),
+      row({ restaurant_id: "r2", service_fee: 0.8, total: 10 }),
+    ]);
+    expect(g.perRestaurant.map((r) => r.restaurantId)).toEqual(["r2", "r1"]);
+    expect(g.perRestaurant[0]).toMatchObject({ orders: 2, serviceFees: 2, revenue: 40 });
+    expect(g.serviceFees).toBe(2.5);
+  });
+
+  it("tolère les frais nuls ou absents", () => {
+    const g = aggregateGains([row({ service_fee: null }), row({ service_fee: 0 })]);
+    expect(g.serviceFees).toBe(0);
+    expect(g.orders).toBe(2);
+  });
+});
+
+describe("gainsByDay", () => {
+  it("regroupe par jour et trie chronologiquement", () => {
+    const days = gainsByDay([
+      row({ created_at: "2026-10-21T10:00:00.000Z", service_fee: 0.5 }),
+      row({ created_at: "2026-10-20T09:00:00.000Z", service_fee: 1 }),
+      row({ created_at: "2026-10-21T18:00:00.000Z", service_fee: 0.5 }),
+      row({ created_at: "2026-10-21T19:00:00.000Z", service_fee: 9, status: "cancelled" }),
+    ]);
+    expect(days).toEqual([
+      { day: "2026-10-20", serviceFees: 1 },
+      { day: "2026-10-21", serviceFees: 1 },
+    ]);
+  });
+});
