@@ -36,7 +36,7 @@ function BannerCarousel({ covers }: { covers: string[] }) {
               aria-selected={i === index}
               aria-label={`Photo ${i + 1}`}
               onClick={() => setIndex(i)}
-              className={`h-2.5 w-2.5 rounded-full transition-colors ${i === index ? "bg-white" : "bg-white/40 hover:bg-white/70"}`}
+              className={`h-2.5 w-2.5 rounded-full transition-colors ${i === index ? "bg-primary-foreground" : "bg-primary-foreground/40 hover:bg-primary-foreground/70"}`}
             />
           ))}
         </div>
