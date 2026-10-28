@@ -269,6 +269,19 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <AlertDialog open={confirmOnlineOn} onOpenChange={setConfirmOnlineOn}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Réactiver le paiement en ligne ?</AlertDialogTitle>
+            <AlertDialogDescription>La livraison à domicile est actuellement désactivée. Confirmez-vous la réactivation du paiement en ligne par carte ? Les livraisons restent coupées si vous choisissez de les laisser désactivées ; votre site fonctionnera alors en retrait sur place (Click &amp; Collect). Vous pourrez réactiver la livraison à tout moment dans « Modes de commande ».</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
+            <AlertDialogAction className="min-h-12 w-full" onClick={() => cfg({ payments: { ...s.config.payments, online: true }, modes: { ...s.config.modes, delivery: true } })}>Confirmer et réactiver les livraisons</AlertDialogAction>
+            <AlertDialogAction className="min-h-12 w-full bg-secondary text-secondary-foreground hover:bg-secondary/80" onClick={() => cfg({ payments: { ...s.config.payments, online: true }, modes: { ...s.config.modes, delivery: false } })}>Activer le paiement seulement (livraisons désactivées)</AlertDialogAction>
+            <AlertDialogCancel className="min-h-12 w-full">Annuler</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
