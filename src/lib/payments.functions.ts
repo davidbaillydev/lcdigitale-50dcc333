@@ -251,8 +251,8 @@ export const kioskTerminalAvailable = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ slug: z.string().max(40) }).parse(d))
   .handler(async ({ data }) => {
     const db = await admin();
-    const { data: r } = await db.from("restaurants").select("id").eq("slug", data.slug).eq("active", true).maybeSingle();
-    if (!r) return { available: false };
+    const { data: r } = await db.from("restaurants").select("id, config").eq("slug", data.slug).eq("active", true).maybeSingle();
+    if (!r || (r.config as { payments?: { online?: boolean } } | null)?.payments?.online === false) return { available: false };
     return { available: !!(await terminalForRestaurant(r.id)) };
   });
 

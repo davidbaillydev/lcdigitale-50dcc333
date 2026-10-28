@@ -6,7 +6,7 @@ import { validateSelections, orderLine } from "./menu";
 import { loadOptionData, withOptions } from "./menu-options";
 import { getCatalog } from "./catalogs";
 import { computeServiceFee, type ServiceFeeChannel } from "./service-fee";
-import { ORDERS_PAUSED_MSG, ordersPaused, RESTAURANT_COLUMNS, deliveryFee, isValidSlot, isOpenNow, asapSlot, timingOf, modeEnabled, paymentEnabled, availableSlots, DELIVERY_FULL_MSG, kioskCardOnly, type Restaurant } from "./shop";
+import { ORDERS_PAUSED_MSG, ordersPaused, RESTAURANT_COLUMNS, deliveryFee, isValidSlot, isOpenNow, asapSlot, timingOf, modeEnabled, paymentEnabled, onlinePaymentEnabled, availableSlots, DELIVERY_FULL_MSG, kioskCardOnly, type Restaurant } from "./shop";
 import { cgvVersion } from "./legal";
 
 const orderSchema = z.object({
@@ -99,6 +99,8 @@ export const createOrder = createServerFn({ method: "POST" })
     if (provider === "stripe" && !stripe) throw new Error("Le paiement en ligne n'est pas disponible pour ce restaurant.");
     if ((provider === "paypal" || provider === "lyra" || provider === "mollie") && !data.origin) throw new Error("Paiement en ligne indisponible.");
     if (!dineIn && !modeEnabled(r, data.mode)) throw new Error(data.mode === "delivery" ? "La livraison n'est pas proposée par ce restaurant." : "La vente à emporter n'est pas proposée.");
+    if (data.payment_method === "online" && !onlinePaymentEnabled(r)) throw new Error("Le paiement en ligne est désactivé par ce restaurant.");
+    if (!dineIn && data.mode === "delivery" && !onlinePaymentEnabled(r)) throw new Error("La livraison n'est pas proposée par ce restaurant.");
     if (data.payment_method === "on_site" && !paymentEnabled(r, "on_site")) throw new Error("Ce mode de paiement n'est pas accepté.");
 
     const { data: so } = await supabaseAdmin.from("menu_stock").select("item_id").eq("restaurant_id", r.id).eq("sold_out", true);
