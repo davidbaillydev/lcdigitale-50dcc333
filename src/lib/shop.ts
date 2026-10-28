@@ -144,6 +144,11 @@ export const modeEnabled = (r: Restaurant, m: "pickup" | "delivery" | "dine_in")
 export const kioskCardOnly = (r: Restaurant) => r.config.kiosk?.cardOnly === true;
 /** Paiement en ligne par carte sur le site (absent = actif). Désactivé, il coupe aussi la livraison. */
 export const onlinePaymentEnabled = (r: Restaurant) => r.config.payments?.online !== false;
+/** Réactivation du paiement en ligne : si la livraison est coupée (désactivée ensemble), demander une confirmation explicite. */
+export const onlineReactivateChoices = (r: Pick<Restaurant, "config">) =>
+  r.config.modes?.delivery === false
+    ? ["restore_delivery", "keep_delivery_off"] as const
+    : [] as const;
 export const paymentEnabled = (r: Restaurant, p: "on_site" | "counter" | "card_terminal") => r.config.payments?.[p] !== false;
 
 /* ---------- Capacité de livraison par créneau ---------- */
