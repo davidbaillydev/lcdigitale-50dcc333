@@ -252,7 +252,11 @@ function Kitchen() {
   const confirmAccept = (minutes?: number) => {
     const o = acceptFor; if (!o) return;
     let slot: string;
-    if (minutes) slot = new Date(Date.now() + minutes * 60000).toISOString();
+    if (minutes) {
+      const ready = Date.now() + minutes * 60000;
+      // A scheduled order is never moved earlier than the time the customer chose.
+      slot = new Date(o.asap ? ready : Math.max(ready, new Date(o.slot).getTime())).toISOString();
+    }
     else {
       const [h, m] = customTime.split(":").map(Number); const d = new Date(); d.setHours(h ?? 0, m ?? 0, 0, 0);
       if (d.getTime() < Date.now()) { toast.error("Choisissez une heure à venir"); return; }
@@ -352,10 +356,11 @@ function Kitchen() {
             <DialogTitle>Accepter la commande n° {acceptFor?.order_number}</DialogTitle>
             <DialogDescription>Quand sera-t-elle prête ? Le client sera informé de cette heure.{acceptFor && !acceptFor.asap ? ` Heure demandée : ${fmtTime(acceptFor.slot)}.` : ""}</DialogDescription>
           </DialogHeader>
+          {acceptFor && !acceptFor.asap && <Button size="lg" className="min-h-14 text-lg" onClick={() => { const o = acceptFor; setAcceptFor(null); void move(o, "accepted"); }}>Garder l'heure demandée ({fmtTime(acceptFor.slot)})</Button>}
+          {acceptFor && !acceptFor.asap && <p className="text-sm text-muted-foreground">Commande programmée : les délais ci-dessous ne l'avanceront jamais avant {fmtTime(acceptFor.slot)}.</p>}
           <div className="grid grid-cols-3 gap-2">
             {[15, 30, 45].map((m) => <Button key={m} size="lg" className="min-h-14 text-lg" onClick={() => confirmAccept(m)}>+{m} min</Button>)}
           </div>
-          {acceptFor && !acceptFor.asap && <Button variant="secondary" className="min-h-12" onClick={() => { const o = acceptFor; setAcceptFor(null); void move(o, "accepted"); }}>Garder l'heure demandée ({fmtTime(acceptFor.slot)})</Button>}
           <div className="flex items-end gap-2">
             <div className="flex-1"><Label htmlFor="accept-time">Ou une heure précise</Label><Input id="accept-time" type="time" className="h-12" value={customTime} onChange={(e) => setCustomTime(e.target.value)} /></div>
             <Button size="lg" className="min-h-12" disabled={!customTime} onClick={() => confirmAccept()}><Check /> Valider</Button>
