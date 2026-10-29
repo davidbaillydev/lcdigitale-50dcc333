@@ -485,7 +485,7 @@ function KioskItem({ item, image, onClose, onAdd }: { item: MenuItem; image: str
             <section key={g.id}>
               <div className="mb-3 flex items-baseline justify-between">
                 <h3 className="text-3xl font-semibold">{g.label}</h3>
-                <span className="text-lg text-muted-foreground">{g.min === g.max ? `${g.min} choix` : `${g.min ? `min ${g.min} · ` : ""}max ${g.max}`}{extra > 0 ? ` · +${euro(extra)}` : ""}</span>
+                <span className="text-lg text-muted-foreground">{g.min === g.max ? `${g.min} choix` : `${g.min ? `min ${g.min} · ` : ""}max ${g.max}`}{g.included !== undefined && g.extraPrice ? ` · ${g.included} compris, +${euro(g.extraPrice)} le supplément` : ""}{extra > 0 ? ` · +${euro(extra)}` : ""}</span>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 {g.choices.map((c) => {
