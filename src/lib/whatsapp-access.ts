@@ -10,7 +10,14 @@ export type WhatsAppRestaurant = {
 };
 
 // Shared public origin, never the temporary preview or a restaurant-only domain.
-const PUBLIC_ORIGIN = "https://restaurant.lcdigitale.fr";
+// The agency can override it in settings; every WhatsApp link uses this base.
+export const DEFAULT_PUBLIC_ORIGIN = "https://restaurant.lcdigitale.fr";
+
+/** Accepts only a bare https origin (no path, query or trailing slash); anything else falls back to the default. */
+export function normalizePublicOrigin(value?: string | null): string {
+  const trimmed = (value ?? "").trim().replace(/\/+$/, "");
+  return /^https:\/\/[a-z0-9.-]+(:\d{2,5})?$/i.test(trimmed) ? trimmed : DEFAULT_PUBLIC_ORIGIN;
+}
 
 const euros = (value: number) => `${value.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
 export function configuredDeliveryRates(delivery?: DeliveryConfig | null) {
@@ -54,9 +61,10 @@ export function deliveryServiceFeeSummary(config?: Partial<ServiceFeeConfig>) {
   return `Frais de service appliqués sur la livraison : ${amount}, distincts des frais de livraison et affichés au client avant le paiement.`;
 }
 
-export function buildWhatsAppOnboarding(restaurant: WhatsAppRestaurant) {
+export function buildWhatsAppOnboarding(restaurant: WhatsAppRestaurant, origin?: string | null) {
+  const base = normalizePublicOrigin(origin);
   const slug = encodeURIComponent(restaurant.slug);
-  const workspace = `${PUBLIC_ORIGIN}/espace/${slug}`;
+  const workspace = `${base}/espace/${slug}`;
   return `Bonjour ${restaurant.name} !
 
 Voici vos accès à la plateforme LC Digitale pour ${restaurant.name} (/${restaurant.slug}). Connectez-vous avec votre compte invité ; chaque membre conserve les accès autorisés pour son rôle.
@@ -89,10 +97,10 @@ Lorsqu’ils sont activés, ces frais accompagnent la sécurisation du paiement 
 4. Communiquez le PIN séparément aux livreurs autorisés. Ils ouvrent le lien ci-dessous, saisissent le PIN et sélectionnent leur nom.
 
 📲 Lien direct livreur
-${PUBLIC_ORIGIN}/livreur?r=${slug}
+${base}/livreur?r=${slug}
 
 🛍️ Lien de commande client à partager
-${PUBLIC_ORIGIN}/${slug}
+${base}/${slug}
 
 L’équipe LC Digitale`;
 }

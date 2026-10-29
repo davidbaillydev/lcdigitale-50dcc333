@@ -5,7 +5,7 @@ import { ArrowDown, ArrowUp, ChefHat, GripVertical, ExternalLink, LogOut, Pencil
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useStaff } from "@/hooks/use-staff";
-import { listAgencyRestaurants, reorderRestaurants, saveRestaurant, setRestaurantActive, type AgencyRestaurant } from "@/lib/agency.functions";
+import { getAgencyPublicDomain, listAgencyRestaurants, reorderRestaurants, saveAgencyPublicDomain, saveRestaurant, setRestaurantActive, type AgencyRestaurant } from "@/lib/agency.functions";
 import { MENU_KEYS, MENU_LABELS } from "@/lib/catalogs";
 import { inviteMember } from "@/lib/staff.functions";
 import { brandVars, BrandLogo, fileToLogo } from "@/lib/brand";
@@ -47,6 +47,21 @@ function Console() {
   const [q, setQ] = useState("");
   const reorder = useServerFn(reorderRestaurants);
   const [dragId, setDragId] = useState<string | null>(null);
+  const loadDomain = useServerFn(getAgencyPublicDomain);
+  const saveDomain = useServerFn(saveAgencyPublicDomain);
+  const [publicDomain, setPublicDomain] = useState<string | null>(null);
+  const [domainDraft, setDomainDraft] = useState("");
+  const [savingDomain, setSavingDomain] = useState(false);
+  const submitDomain = async () => {
+    setSavingDomain(true);
+    try {
+      const { domain } = await saveDomain({ data: { domain: domainDraft } });
+      setPublicDomain(domain);
+      setDomainDraft(domain);
+      toast.success("Domaine public enregistré");
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setSavingDomain(false); }
+  };
   const move = async (from: string, to: string | number) => {
     if (!rows) return;
     const list = [...rows];
@@ -61,6 +76,10 @@ function Console() {
 
   const load = useCallback(() => list().then(setRows).catch((e) => toast.error(e.message)), [list]);
   useEffect(() => { if (isAgency) load(); }, [isAgency, load]);
+  useEffect(() => {
+    if (!isAgency) return;
+    loadDomain().then((domain) => { setPublicDomain(domain); setDomainDraft(domain); }).catch(() => {});
+  }, [isAgency, loadDomain]);
 
   if (loading || !user) return <p className="p-10 text-center text-muted-foreground">Chargement…</p>;
   if (!isAgency) return (
@@ -143,7 +162,7 @@ function Console() {
                 <Button size="sm" variant="secondary" asChild><Link to="/espace/$slug/clients" params={{ slug: r.slug }}>Clients</Link></Button>
                 <Button size="sm" variant="secondary" asChild><Link to="/admin/$slug" params={{ slug: r.slug }}><Settings /> Réglages</Link></Button>
                 <Button size="sm" onClick={() => setForm({ ...r })}><Pencil /> Modifier</Button>
-                <WhatsAppAccess restaurant={r} compact />
+                <WhatsAppAccess restaurant={r} compact origin={publicDomain} />
               </div>
             </article>
           ))}

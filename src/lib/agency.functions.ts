@@ -1,12 +1,33 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { normalizePublicOrigin } from "./whatsapp-access";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function assertAgency(supabase: any, userId: string) {
   const { data } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
   if (!data) throw new Error("Réservé à l'agence");
 }
+
+/** Public domain used for WhatsApp links; agency-only, defaults to the stable origin. */
+export const getAgencyPublicDomain = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAgency(context.supabase, context.userId);
+    const { data } = await context.supabase.from("agency_settings").select("value").eq("key", "public_domain").maybeSingle();
+    return normalizePublicOrigin(typeof data?.value === "string" ? data.value : null);
+  });
+
+export const saveAgencyPublicDomain = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ domain: z.string().trim().max(200) }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAgency(context.supabase, context.userId);
+    const domain = normalizePublicOrigin(data.domain);
+    const { error } = await context.supabase.from("agency_settings").upsert({ key: "public_domain", value: domain, updated_at: new Date().toISOString() });
+    if (error) throw new Error(error.message);
+    return { domain };
+  });
 
 export type AgencyRestaurant = {
   id: string; slug: string; name: string; city: string | null; address: string | null; phone: string | null; email: string | null;

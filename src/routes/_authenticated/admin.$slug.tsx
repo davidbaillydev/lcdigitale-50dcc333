@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Check, ChefHat, ExternalLink, Tablet, Users, UtensilsCrossed } from "lucide-react";
 import { loadRestaurantAdmin } from "@/lib/restaurant-settings.functions";
+import { getAgencyPublicDomain } from "@/lib/agency.functions";
 import { RestaurantSettingsForm } from "@/components/RestaurantSettingsForm";
 import { MarketingPanel } from "@/components/MarketingPanel";
 import { PaymentProvidersPanel } from "@/components/PaymentProvidersPanel";
@@ -38,7 +39,9 @@ export const Route = createFileRoute("/_authenticated/admin/$slug")({
 function Page() {
   const { slug } = Route.useParams();
   const load = useServerFn(loadRestaurantAdmin);
+  const loadDomain = useServerFn(getAgencyPublicDomain);
   const { data: r, error, refetch } = useQuery({ queryKey: ["restaurant-admin", slug], queryFn: () => load({ data: { slug } }), retry: false });
+  const { data: publicDomain } = useQuery({ queryKey: ["agency-public-domain"], queryFn: () => loadDomain(), retry: false, staleTime: 60_000 });
   const steps = r ? [
     ["Identité & marque", !!(r.address && r.phone)],
     ["Horaires", Object.values(r.opening ?? {}).some((x) => x.length)],
@@ -68,7 +71,7 @@ function Page() {
             <Button asChild variant="secondary"><Link to="/espace/$slug" params={{ slug }}><ChefHat /> Cuisine</Link></Button>
             <Button asChild variant="secondary"><a href={`/${slug}`} target="_blank" rel="noreferrer"><ExternalLink /> Site</a></Button>
             <Button asChild variant="secondary"><a href={`/${slug}/borne`} target="_blank" rel="noreferrer"><Tablet /> Borne</a></Button>
-            <WhatsAppAccess restaurant={r} />
+            <WhatsAppAccess restaurant={r} origin={publicDomain} />
           </div>
           <p className="text-sm text-muted-foreground">Identité, logo et couleurs se modifient depuis la console (bouton « Modifier »).</p>
           <MenuTemplatePanel restaurantId={r.id} name={r.name} />
