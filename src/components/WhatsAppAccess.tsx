@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 
-export function WhatsAppAccess({ restaurant, compact = false, origin }: { restaurant: WhatsAppRestaurant; compact?: boolean; origin?: string | null }) {
+export function WhatsAppAccess({ restaurant, compact = false, origin }: { restaurant: WhatsAppRestaurant; compact?: boolean; origin?: string | null | undefined }) {
   const [open, setOpen] = useState(false);
   const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
