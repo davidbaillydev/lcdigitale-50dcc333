@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { euro } from "@/lib/menu";
 import { cn } from "@/lib/utils";
 import { listCreditNotes, refundOrder, REFUND_REASONS, type RefundReason } from "@/lib/refunds.functions";
-import { downloadInvoice } from "@/lib/invoice";
 
 type O = { id: string; total: number | string; payment_method: string; payment_status?: string | null; payment_ref?: string | null; refunded_amount?: number | string | null; items: { name: string; qty: number; total?: number }[] };
 
@@ -62,7 +61,7 @@ export function RefundButton({ o, onDone, actionClassName }: { o: O; onDone?: ()
         </Button>
         {done > 0 && (
           <Button size="sm" variant="secondary" className={cn("min-h-12 flex-1", actionClassName)} onClick={async () => {
-            try { const notes = await list({ data: { orderId: o.id } }); for (const n of notes) await downloadInvoice(n); if (!notes.length) toast.error("Aucun avoir"); }
+            try { const notes = await list({ data: { orderId: o.id } }); const { downloadInvoice } = await import("@/lib/invoice"); for (const n of notes) await downloadInvoice(n); if (!notes.length) toast.error("Aucun avoir"); }
             catch (e) { toast.error(e instanceof Error ? e.message : "Avoir indisponible"); }
           }}><FileText /> Avoir PDF</Button>
         )}

@@ -1,13 +1,14 @@
 import { FeatureOff } from "@/components/FeatureGate";
 import { featuresOf } from "@/lib/features";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { CalendarCheck, ShieldCheck } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
-import { StripePayment } from "@/components/StripePayment";
+// Stripe Elements chargé seulement à l'étape de paiement (allège l'ouverture mobile)
+const StripePayment = lazy(() => import("@/components/StripePayment").then((m) => ({ default: m.StripePayment })));
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

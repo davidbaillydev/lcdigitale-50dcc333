@@ -15,7 +15,6 @@ import { AllergenBadges, AllergenInfo, AllergenPicker } from "@/components/Aller
 import { safeFor } from "@/lib/allergens";
 import { useCart } from "@/lib/cart";
 import { createKioskOrder } from "@/lib/orders.functions";
-import QRCode from "qrcode";
 import { abandonKioskQr, kioskQrAvailable, kioskQrStatus, startKioskQrPayment } from "@/lib/payments.functions";
 import { abandonKioskOrder, cancelKioskPayment, kioskPaymentStatus, kioskTerminalAvailable, startKioskCardPayment } from "@/lib/payments.functions";
 import { activeGroups, fromPrice, selectedExtras, selectionLines, euro, groupCost, REMOVE_KEY, removableChoices, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
@@ -156,6 +155,7 @@ function Kiosk() {
       const row = await send({ data: { restaurant: restaurant.slug, mode, payment_method: "qr", ...(promo.code ? { promo_code: promo.code } : {}), lines: lines.map((l) => ({ itemId: l.itemId, qty: l.qty, sel: l.sel })) } });
       try {
         const { url } = await startQr({ data: { orderId: row.id, origin: window.location.origin } });
+        const { default: QRCode } = await import("qrcode");
         const img = await QRCode.toDataURL(url, { width: 520, margin: 1, errorCorrectionLevel: "M" });
         track("payment_pending", "Paiement QR");
         clear(); last.current = Date.now(); setQrFailed(false);

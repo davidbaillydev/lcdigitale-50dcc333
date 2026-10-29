@@ -1,6 +1,6 @@
 import { safeSession } from "@/lib/safe-storage";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Bike, CalendarClock, Clock, ShoppingBag, CreditCard, Store, Wallet, Landmark, MapPin, LocateFixed, CheckCircle2, XCircle } from "lucide-react";
@@ -24,7 +24,8 @@ import { createOrder } from "@/lib/orders.functions";
 import { deliverySlotLoad } from "@/lib/delivery.functions";
 import { capacityBucket } from "@/lib/shop";
 import { onlinePaymentInfo } from "@/lib/payments.functions";
-import { StripePayment } from "@/components/StripePayment";
+// Stripe Elements chargé seulement à l'étape de paiement (allège l'ouverture mobile)
+const StripePayment = lazy(() => import("@/components/StripePayment").then((m) => ({ default: m.StripePayment })));
 import { cn } from "@/lib/utils";
 import { PromoCodeField, type AppliedDiscount } from "@/components/PromoCodeField";
 import { EmbedBar } from "@/components/EmbedBar";
