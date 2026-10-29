@@ -10,9 +10,7 @@
 <!-- LOVABLE:END -->
 - Menu simulation uses the manager-guarded editor draft, a shared pure item configurator and memory-only order snapshots; never mount the live cart provider or call order/payment/analytics services there. Why: tests must not affect customer carts, kitchen or sales.
 - Admin card tests use a separate authenticated agency-only endpoint sharing createOrder calculations, immutable orders.is_test audit and simulated paid state; retain kitchen/courier/tickets but exclude revenue, invoices, refunds, promo usage, emails and POS. Why: operational testing cannot impersonate a bank settlement or alter commercial records.
-
 - HTML and ESC/POS tickets share ticket.ts presentation helpers; optional catalog/group context restores missing option labels by stable IDs only, with snapshot-name fallback. Preserve kitchen visibility, prices and non-fiscal warnings. Why: previews and physical tickets must agree without changing orders/payments.
-
 - Hours/delivery/config use jsonb; public pages use `/$slug`. `getCatalog(restaurant)` resolves restaurants.menu over catalogs.ts/menu_key. Servers recompute totals, never trusting client prices.
 - Item schedules use shared Paris-time checks: now for immediate orders, validated slots for planned orders; end is exclusive, overnight belongs to its start day. Why: all channels agree.
 - Customer orders are inserted by a public server function with the admin client; staff read/update orders via RLS (`can_access_restaurant`) and Realtime filtered by restaurant_id.
@@ -32,8 +30,6 @@
 - Public restaurant data: Query cache 15 min, Realtime for live data. Why: fewer reads, fresh data.
 - Kitchen and courier PINs: hashed in service-role-only tables (`restaurant_kitchen_pins`, `restaurant_courier_pins`) with attempt lockout; courier sessions are HMAC tokens keyed on the PIN hash. Why: no extra accounts, PIN change revokes sessions.
 - Invoice transmission stays disabled pending provider and compliance validation; PDFs alone are not fiscal compliance.
-- Kitchen: column scrolling, collapsible nav, safe-area insets; touch dialogs separate fixed header/search/footer from scrolling content. Why: retain access to closing and navigation during service.
-- Kitchen secondary controls and role-filtered section links live in the settings dialog; history uses restaurant-scoped browser RLS, bounded pagination, shared tickets and existing manager-checked refund controls, invalidating restaurant history after refund success. Why: keep service uncluttered without widening payment permissions or showing stale refunds.
 - Settings share themed navigation with mounted hidden sections and scoped save actions. Why: changing themes retains drafts without implying a global save.
 - Read subdirectory AGENTS.md before edits; they contain scoped rules.
 - Agency WhatsApp onboarding shares a presentation-only dialog and pure URL/message helpers; load config and delivery, display saved base/zone tariffs separately from the live edited-text preview, use the agency-configurable public origin (agency_settings.public_domain, admin-only, default https://restaurant.lcdigitale.fr via normalizePublicOrigin) and ephemeral edits, never send or persist automatically. Why: both agency views agree without altering pricing or exposing PINs, and links survive a domain change.
@@ -43,4 +39,3 @@
 - Kiosk "Voie B" (config.kiosk.cardOnly, agency-only): server accepts only card_terminal with a configured terminal, inserts awaiting_payment and releases to kitchen/POS only after provider-confirmed payment; unpaid orders are cancelled. Why: BOI-TVA-DECLA-30-10-30 §37 ex.4 exemption requires no cash recorded.
 - Kiosk QR payment (config.payments.qr, opt-in per restaurant): order stored as payment_method online + awaiting_payment, Mollie preferred else Stripe Checkout; kitchen release only via provider-verified markPaid. Why: no unpaid QR order reaches the kitchen.
 - Address autocomplete uses the free official BAN API (api-adresse.data.gouv.fr), debounced client-side with pure helpers in address-autocomplete.ts; selection fills fields and validates the delivery zone immediately. Why: official French addresses at zero cost, no key, no server proxy.
-- Kitchen offline mode: pure helpers in src/lib/kitchen-offline.ts (day snapshot + last-status-per-order outbox in localStorage, flushed on online/Realtime resubscribe; server-rejected changes dropped, network failures retried). Why: kitchen screen never empties during outages and status changes are not lost.
