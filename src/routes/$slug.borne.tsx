@@ -45,7 +45,6 @@ export const Route = createFileRoute("/$slug/borne")({
   component: PublicGate,
 });
 
-const IDLE_MS = 60_000;
 type Step = "welcome" | "menu" | "cart" | "pay" | "terminal" | "qr" | "done";
 type Mode = "dine_in" | "pickup";
 
