@@ -7,8 +7,8 @@ function item(id: string): MenuItem {
   if (!found) throw new Error(`Missing item ${id}`);
   return found;
 }
-describe("Chick'N Co PDF pricing", () => {
-  it.each([["import-item-2", 7, 9.5, 12.5], ["import-item-34", 9, 11.5, 14.5]])("prices tacos sizes for %s", (id, m, l, xl) => {
+describe("Chick'N Co FoodBooking prices and PDF options", () => {
+  it.each([["import-item-2", 7, 9.5, 14], ["import-item-34", 9, 11.5, 16.5]])("prices tacos sizes for %s", (id, m, l, xl) => {
     const taco = item(String(id));
     expect([0, 1, 2].map((n) => unitPrice(taco, { "cnc-taille": [`cnc-taille-${n}`] }))).toEqual([m, l, xl]);
   });
@@ -30,7 +30,7 @@ describe("Chick'N Co PDF pricing", () => {
   it("charges sandwich meat 2 and chef salad 1", () => {
     expect(unitPrice(item("import-item-4"), { "cnc-viande-extra": ["cnc-viande-extra-0"], "cnc-crudites": ["cnc-crudites-5"] })).toBe(10);
   });
-  it.each([["import-item-7", 7], ["import-item-24", 9.9], ["import-item-8", 9], ["import-item-25", 12], ["import-item-9", 7], ["import-item-26", 9.9], ["import-item-10", 12], ["import-item-28", 14.9], ["import-item-12", 14.5], ["import-item-30", 17.9]])("preserves the PDF burger price for %s", (id, price) => {
+  it.each([["import-item-7", 7], ["import-item-24", 9.9], ["import-item-8", 9], ["import-item-25", 12], ["import-item-9", 7], ["import-item-26", 9.9], ["import-item-10", 12], ["import-item-28", 14.9], ["import-item-11", 12], ["import-item-29", 14.9], ["import-item-12", 14.5], ["import-item-30", 17.9], ["import-item-13", 12], ["import-item-31", 14.9], ["import-item-14", 12], ["import-item-32", 14.9]])("preserves the FoodBooking burger price for %s", (id, price) => {
     expect(unitPrice(item(String(id)), {})).toBe(price);
   });
   it("charges classic burger meat 2.50 and egg 1", () => {
