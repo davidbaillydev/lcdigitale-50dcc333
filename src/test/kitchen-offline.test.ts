@@ -5,6 +5,17 @@ const mem = (): KvStorage => { const m = new Map<string, string>(); return { get
 const o = (id: string, status = "new") => ({ id, status, slot: "2026-10-29T12:00:00.000Z" });
 
 describe("kitchen offline", () => {
+  it("persiste le départ et la remise hors-ligne puis synchronise les deux statuts ensemble", async () => {
+    const s = mem();
+    enqueueChange(s, "r1", { orderId: "a", status: "ready", courier_status: "en_route", courier_at: "1", at: "1" });
+    expect(applyOutbox([o("a", "ready")], readOutbox(s, "r1"))[0]).toMatchObject({ status: "ready", courier_status: "en_route" });
+    enqueueChange(s, "r1", { orderId: "a", status: "done", courier_status: "delivered", courier_at: "2", at: "2" });
+    expect(applyOutbox([o("a", "ready")], readOutbox(s, "r1"))[0]).toMatchObject({ status: "done", courier_status: "delivered" });
+    const sent: unknown[] = [];
+    await flushOutbox(s, "r1", async (c) => { sent.push(c); return "ok"; });
+    expect(sent).toEqual([{ orderId: "a", status: "done", courier_status: "delivered", courier_at: "2", at: "2" }]);
+    expect(readOutbox(s, "r1")).toEqual([]);
+  });
   it("restaure les commandes et logs du jour après rechargement", () => {
     const s = mem(); const now = new Date(2026, 9, 29, 12);
     saveSnapshot(s, "r1", [o("a")], { a: [{ id: "l1" }] }, now);

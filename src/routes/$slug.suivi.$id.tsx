@@ -2,7 +2,8 @@ import { safeSession, safeLocal } from "@/lib/safe-storage";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { CheckCircle2, ChefHat, PackageCheck, Clock, Printer } from "lucide-react";
+import { CheckCircle2, ChefHat, PackageCheck, Clock, Printer, Bike } from "lucide-react";
+import { customerOrderStage } from "@/lib/kitchen-status";
 import { printTickets, type TicketOrder } from "@/lib/ticket";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
@@ -106,7 +107,12 @@ function Tracking() {
     );
   }
 
-  const idx = STEPS.findIndex((x) => x.s === data.status);
+  const steps = data.mode === "delivery" ? [
+    ...STEPS.slice(0, 3),
+    { s: "en_route", label: "En livraison", Icon: Bike },
+    { s: "done", label: "Livrée", Icon: CheckCircle2 },
+  ] : STEPS;
+  const idx = steps.findIndex((x) => x.s === customerOrderStage(data));
   const items = data.items as { name: string; qty: number; total: number; details: string[] }[];
   return (
     <div className="min-h-screen">
@@ -123,8 +129,8 @@ function Tracking() {
         ) : data.status === "cancelled" ? (
           <p className="mt-6 rounded-lg bg-destructive/20 p-4">Cette commande a été annulée. Contactez le restaurant pour plus d'informations.</p>
         ) : (
-          <div className="mt-8 grid grid-cols-4 gap-2">
-            {STEPS.map(({ s, label, Icon }, i) => (
+          <div className={cn("mt-8 grid gap-2", data.mode === "delivery" ? "grid-cols-5" : "grid-cols-4")}>
+            {steps.map(({ s, label, Icon }, i) => (
               <div key={s} className="text-center">
                 <div className={cn("mx-auto grid h-12 w-12 place-items-center rounded-full", i <= idx ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
                   <Icon className="h-6 w-6" />

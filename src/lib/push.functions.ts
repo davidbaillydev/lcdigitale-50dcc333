@@ -1,13 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { customerOrderStage } from "@/lib/kitchen-status";
 
 const endpoint = z.string().url().max(1000).refine((u) => u.startsWith("https://"), "Adresse invalide");
 
 const STATUS_MSG: Record<string, (n: number, mode: string) => string> = {
   accepted: (n) => `Commande n° ${n} confirmée, elle part en préparation.`,
   preparing: (n) => `Commande n° ${n} en préparation.`,
-  ready: (n, mode) => mode === "delivery" ? `Commande n° ${n} prête, elle part en livraison.` : `Commande n° ${n} prête ! Vous pouvez venir la récupérer.`,
+  ready: (n, mode) => mode === "delivery" ? `Commande n° ${n} prête, en attente du départ en livraison.` : `Commande n° ${n} prête ! Vous pouvez venir la récupérer.`,
+  en_route: (n) => `Commande n° ${n} : votre livreur est en route !`,
   delivering: (n) => `Commande n° ${n} en cours de livraison.`,
   done: (n, mode) => mode === "delivery" ? `Commande n° ${n} livrée. Bon appétit !` : `Commande n° ${n} remise. Bon appétit !`,
   cancelled: (n) => `Commande n° ${n} annulée. Contactez le restaurant pour plus d'informations.`,
@@ -30,9 +32,9 @@ export const notifyOrderStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid(), origin: z.string().url().max(200).regex(/^https?:\/\/[^/]+$/).optional() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { data: o } = await context.supabase.from("orders").select("id, is_test, order_number, status, mode, restaurants(slug, name)").eq("id", data.orderId).maybeSingle();
+    const { data: o } = await context.supabase.from("orders").select("id, is_test, order_number, status, courier_status, mode, restaurants(slug, name)").eq("id", data.orderId).maybeSingle();
     if (!o || o.is_test) return { sent: 0 };
-    const text = STATUS_MSG[o.status];
+    const text = STATUS_MSG[customerOrderStage(o)];
     if (!text) return { sent: 0 };
     {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
