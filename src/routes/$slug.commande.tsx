@@ -399,8 +399,9 @@ function Checkout() {
           {belowMin && <p className="mt-3 text-sm text-destructive">Minimum {geoZones.length ? (geo?.zone?.minOrder ?? 0) : DELIVERY.minOrder} € en livraison.</p>}
           {payment && online.stripe ? (
             <div className="mt-4">
+              <Suspense fallback={<p className="py-6 text-center text-sm text-muted-foreground">Chargement du paiement sécurisé…</p>}>
               <StripePayment publishableKey={online.stripe} clientSecret={payment.clientSecret} label={`Payer ${euro(total)}`}
-                returnUrl={`${window.location.origin}/${restaurant.slug}/suivi/${payment.id}${payment.back ? `?back=${encodeURIComponent(payment.back)}` : ""}`} onCancel={() => setPayment(null)} />
+                returnUrl={`${window.location.origin}/${restaurant.slug}/suivi/${payment.id}${payment.back ? `?back=${encodeURIComponent(payment.back)}` : ""}`} onCancel={() => setPayment(null)} /></Suspense>
             </div>
           ) : (<>
             <label className="mt-4 flex min-h-11 items-start gap-3 text-sm">

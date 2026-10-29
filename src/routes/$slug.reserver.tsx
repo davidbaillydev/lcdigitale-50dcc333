@@ -79,8 +79,9 @@ function Page() {
     if (card && info.data.publishableKey) return (
       <div className="space-y-4">
         <p className="flex items-start gap-2 rounded-lg bg-card p-3 text-sm"><ShieldCheck className="h-5 w-5 shrink-0 text-primary" /> Empreinte bancaire : rien n'est débité maintenant. {euro(info.data.noShowFee)} seulement en cas d'absence.</p>
+        <Suspense fallback={<p className="py-6 text-center text-sm text-muted-foreground">Chargement du paiement sécurisé…</p>}>
         <StripePayment setup publishableKey={info.data.publishableKey} clientSecret={card.clientSecret} label="Garantir ma réservation"
-          returnUrl={`${window.location.origin}/${restaurant.slug}/reserver?r=${card.id}`} onCancel={() => setCard(null)} />
+          returnUrl={`${window.location.origin}/${restaurant.slug}/reserver?r=${card.id}`} onCancel={() => setCard(null)} /></Suspense>
       </div>
     );
     const ok = f.customer_name.trim().length > 1 && f.phone.trim().length >= 8 && f.date && f.time;
