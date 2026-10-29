@@ -32,14 +32,14 @@ describe("livraison : paiement en ligne obligatoire", () => {
   it("accepte une livraison payée en ligne", async () => {
     await (createOrder as unknown as Invoke)({ data: { ...base, mode: "delivery", payment_method: "online", address: "1 rue de Test", postal_code: "31770" } });
     expect(mocks.insert).toHaveBeenCalled();
-    expect(mocks.insert.mock.calls[0][0]).toMatchObject({ mode: "delivery", payment_method: "online" });
+    expect(mocks.insert.mock.calls[0]?.[0]).toMatchObject({ mode: "delivery", payment_method: "online" });
   });
 });
 describe("paiement en mains propres : retrait uniquement", () => {
   it("accepte un retrait payé en mains propres", async () => {
     await (createOrder as unknown as Invoke)({ data: { ...base, mode: "pickup", payment_method: "on_site" } });
     expect(mocks.insert).toHaveBeenCalled();
-    expect(mocks.insert.mock.calls[0][0]).toMatchObject({ mode: "pickup", payment_method: "on_site" });
+    expect(mocks.insert.mock.calls[0]?.[0]).toMatchObject({ mode: "pickup", payment_method: "on_site" });
   });
   it("refuse le paiement en mains propres quand le restaurant l'a désactivé", async () => {
     restaurant.config = { payments: { on_site: false } };
