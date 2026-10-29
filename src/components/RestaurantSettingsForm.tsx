@@ -143,7 +143,7 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
         </div>
       </Section>
 
-      <Section group="payments" title="Frais de service">
+      {agency && <Section group="payments" title="Frais de service">
         {(() => { const sf = serviceFeeDefaults(s.config.serviceFee); const set = (p: Partial<typeof sf>) => cfg({ serviceFee: { ...sf, ...p } }); return (<>
         <Toggle label="Appliquer des frais de service" hint="Ajoutés automatiquement au panier, aux tickets et aux factures (TVA au taux par défaut de l'établissement)." checked={sf.enabled} onChange={(v) => set({ enabled: v })} />
         {sf.enabled && <>
@@ -159,7 +159,7 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
           ))}
         </>}
         </>); })()}
-      </Section>
+      </Section>}
 
       {agency && <Section group="appearance" title="Impression des tickets">
         <div className="grid gap-6 lg:grid-cols-[1fr_auto]">
