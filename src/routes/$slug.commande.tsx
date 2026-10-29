@@ -121,7 +121,19 @@ function Checkout() {
   const geoFn = useServerFn(geocodeAddress);
   const [geo, setGeo] = useState<{ lat: number; lng: number; zone: GeoZone | null; label?: string | undefined } | null>(null);
   const [geoBusy, setGeoBusy] = useState(false);
+  const [cpCheck, setCpCheck] = useState<{ ok: boolean; label: string } | null>(null);
   const checkPoint = (lat: number, lng: number, label?: string) => setGeo({ lat, lng, zone: findZone([lat, lng], geoZones), label });
+  // Adresse choisie dans les suggestions : champs remplis + zone validée immédiatement, sans bouton.
+  const selectAddress = (a: BanAddress) => {
+    if (geoZones.length) {
+      setF({ ...f, address: a.address, postal_code: `${a.postcode} ${a.city}`.trim() });
+      checkPoint(a.lat, a.lng, a.label);
+    } else {
+      const zone = matchCpZone(DELIVERY.zones, a.postcode);
+      setF({ ...f, address: a.address, postal_code: zone?.cp ?? "" });
+      setCpCheck(zone ? { ok: true, label: a.label } : { ok: false, label: a.label });
+    }
+  };
   const checkAddress = async () => {
     setGeoBusy(true);
     try { const r = await geoFn({ data: { q: `${f.address} ${f.postal_code}`.trim() } }); if (!r) toast.error("Adresse introuvable, précisez la rue et la ville."); else checkPoint(r.lat, r.lng, r.label); }
