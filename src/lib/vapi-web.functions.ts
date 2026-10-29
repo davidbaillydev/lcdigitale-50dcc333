@@ -17,8 +17,8 @@ export const saveVapiWebSettings = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { data: ok } = await context.supabase.rpc("is_restaurant_manager", { _user_id: context.userId, _restaurant_id: data.restaurantId });
-    if (!ok) throw new Error("Réservé au gérant ou à l'agence");
+    const { data: ok } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    if (!ok) throw new Error("Réservé à l'agence");
     if (data.enabled && (!data.assistantId || !data.publicKey)) throw new Error("Renseignez l'ID d'assistant et la clé publique Vapi pour activer le widget");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("restaurants").update({

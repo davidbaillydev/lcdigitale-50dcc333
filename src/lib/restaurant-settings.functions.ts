@@ -142,8 +142,8 @@ export const saveNotifications = createServerFn({ method: "POST" })
     notifications: z.object({ received: z.boolean(), confirmed: z.boolean(), restaurant: z.boolean(), email: z.string().trim().email().max(255).optional().or(z.literal("")) }),
   }).parse(d))
   .handler(async ({ data, context }) => {
-    const { data: ok } = await context.supabase.rpc("is_restaurant_manager", { _user_id: context.userId, _restaurant_id: data.restaurantId });
-    if (!ok) throw new Error("Accès refusé");
+    const { data: ok } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    if (!ok) throw new Error("Réservé à l'agence");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: cur, error: e1 } = await supabaseAdmin.from("restaurants").select("config").eq("id", data.restaurantId).single();
     if (e1 || !cur) throw new Error("Restaurant introuvable");
