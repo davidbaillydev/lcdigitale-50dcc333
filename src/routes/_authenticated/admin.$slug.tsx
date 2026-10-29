@@ -1,6 +1,7 @@
 import { UpsellPanel } from "@/components/UpsellPanel";
 import { CustomDomainPanel } from "@/components/CustomDomainPanel";
 import { FeaturesPanel } from "@/components/FeaturesPanel";
+import { PlatformFeePanel } from "@/components/PlatformFeePanel";
 import { Crumbs } from "@/components/Crumbs";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -92,6 +93,7 @@ function Page() {
              </SettingsGroup>
              <SettingsGroup name="agency">
                <FeaturesPanel restaurantId={r.id} initial={r.enabled_features} onSaved={() => refetch()} />
+               <PlatformFeePanel key={`pf-${r.id}`} restaurantId={r.id} initial={(r.config as { platformFee?: unknown }).platformFee} onSaved={() => refetch()} />
                <LegalPanel key={`legal-${r.id}-${r.legal?.updatedAt ?? ""}`} restaurant={r} onSaved={() => refetch()} />
              </SettingsGroup>
            </SettingsWorkspace>
