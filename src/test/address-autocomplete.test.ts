@@ -10,7 +10,7 @@ describe("autocomplétion d'adresse (Base Adresse Nationale)", () => {
     expect(a).toEqual({ address: "12 rue des Lilas", postcode: "31770", city: "Colomiers", lat: 43.61, lng: 1.31, label: "12 rue des Lilas 31770 Colomiers" });
   });
   it("retombe sur la première ligne du libellé quand la rue seule est absente", () => {
-    const a = banFeatureToAddress({ properties: { label: "Place du Marché 31770 Colomiers", postcode: "31770", city: "Colomiers" }, geometry: { coordinates: [1.3, 43.6] } });
+    const a = banFeatureToAddress({ properties: { label: "Place du Marché, 31770 Colomiers", postcode: "31770", city: "Colomiers" }, geometry: { coordinates: [1.3, 43.6] } });
     expect(a.address).toBe("Place du Marché");
     expect(a.postcode).toBe("31770");
   });
