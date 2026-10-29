@@ -15,10 +15,10 @@ describe("accès WhatsApp", () => {
     expect(configuredServiceFee({ enabled: false, value: 5 }).activeChannels).toEqual([]);
   });
   it("conserve le texte ajusté tout en identifiant uniquement les liens HTTP(S)", () => {
-    const text = 'Bonjour\nhttps://lcdigitale.lovable.app/livreur?r=resto\njavascript:alert(1) <b>non HTML</b>';
+    const text = 'Bonjour\nhttps://restaurant.lcdigitale.fr/livreur?r=resto\njavascript:alert(1) <b>non HTML</b>';
     const parts = whatsappMessageParts(text);
     expect(parts.map((part) => part.text).join("")).toBe(text);
-    expect(parts.filter((part) => part.href).map((part) => part.href)).toEqual(["https://lcdigitale.lovable.app/livreur?r=resto"]);
+    expect(parts.filter((part) => part.href).map((part) => part.href)).toEqual(["https://restaurant.lcdigitale.fr/livreur?r=resto"]);
   });
   it("normalise un numéro français local", () => {
     expect(normalizeWhatsAppPhone("06 12 34 56 78")).toBe("33612345678");
