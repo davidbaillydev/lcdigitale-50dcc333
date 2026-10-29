@@ -398,6 +398,7 @@ export type Database = {
           email: string | null
           first_name: string | null
           id: string
+          is_test: boolean
           items: Json
           last_name: string | null
           mode: string
@@ -428,6 +429,8 @@ export type Database = {
           status: string
           subtotal: number
           table_label: string | null
+          test_created_at: string | null
+          test_created_by: string | null
           total: number
           updated_at: string
           zone_name: string | null
@@ -453,6 +456,7 @@ export type Database = {
           email?: string | null
           first_name?: string | null
           id?: string
+          is_test?: boolean
           items: Json
           last_name?: string | null
           mode: string
@@ -483,6 +487,8 @@ export type Database = {
           status?: string
           subtotal: number
           table_label?: string | null
+          test_created_at?: string | null
+          test_created_by?: string | null
           total: number
           updated_at?: string
           zone_name?: string | null
@@ -508,6 +514,7 @@ export type Database = {
           email?: string | null
           first_name?: string | null
           id?: string
+          is_test?: boolean
           items?: Json
           last_name?: string | null
           mode?: string
@@ -538,6 +545,8 @@ export type Database = {
           status?: string
           subtotal?: number
           table_label?: string | null
+          test_created_at?: string | null
+          test_created_by?: string | null
           total?: number
           updated_at?: string
           zone_name?: string | null
