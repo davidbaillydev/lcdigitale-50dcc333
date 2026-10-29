@@ -38,6 +38,24 @@ export type Database = {
         }
         Relationships: []
       }
+      agency_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       cart_sessions: {
         Row: {
           cart_items: Json
