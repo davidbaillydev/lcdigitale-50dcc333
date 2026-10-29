@@ -223,7 +223,7 @@ function Kitchen() {
   const sync = useCallback(async () => {
     if (!rid || !navigator.onLine) return;
     const res = await flushOutbox(localStorage, rid, async (c) => {
-      let update = supabase.from("orders").update({ status: c.status, ...(c.slot ? { slot: c.slot } : {}), ...(c.courier_status ? { courier_status: c.courier_status, courier_at: c.courier_at } : {}), updated_at: new Date().toISOString() }).eq("id", c.orderId).eq("restaurant_id", rid);
+      let update = supabase.from("orders").update({ status: c.status, ...(c.slot ? { slot: c.slot } : {}), ...(c.courier_status ? { courier_status: c.courier_status, courier_at: c.courier_at ?? c.at } : {}), updated_at: new Date().toISOString() }).eq("id", c.orderId).eq("restaurant_id", rid);
       if (c.courier_status) update = update.eq("mode", "delivery").eq("status", "ready").or("courier_status.is.null,courier_status.in.(assigned,en_route)");
       const { data: rows, error } = await update.select("id");
       if (!error && rows?.length) { notifyRef.current({ data: { orderId: c.orderId, origin: window.location.origin } }).catch(() => {}); return "ok"; }
