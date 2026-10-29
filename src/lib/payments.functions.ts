@@ -426,7 +426,7 @@ export const startKioskQrPayment = createServerFn({ method: "POST" })
     const returnBase = `${origin}/${r!.slug}/suivi/${o.id}`;
     const provider = await qrProvider(o.restaurant_id);
     if (provider === "mollie") {
-      const res = await startOnlinePayment("mollie", o, r!.name, returnBase) as { redirectUrl: string };
+      const res = await startOnlinePayment("mollie", o, r!.name, returnBase, "kiosk") as { redirectUrl: string };
       return { url: res.redirectUrl };
     }
     if (provider === "stripe") {
@@ -583,6 +583,7 @@ const mollieOauthTestTokens = new Set<string>();
 export const MOLLIE_PLATFORM_FEE_RATE = 0.07;
 /** Commission plateforme en euros (arrondie au centime) pour un montant en centimes. */
 export const mollieApplicationFee = (amountCents: number) => Math.round(amountCents * MOLLIE_PLATFORM_FEE_RATE) / 100;
+import { platformFeeFor, type PlatformFeeChannel } from "./platform-fee";
 
 async function mollieTokenRequest(params: Record<string, string>) {
   const id = process.env["MOLLIE_CLIENT_ID"], secret = process.env["MOLLIE_CLIENT_SECRET"];
@@ -810,7 +811,7 @@ async function assertOrdersOpen(restaurantId: string) {
 }
 
 /** Prépare le paiement en ligne choisi pour une commande déjà enregistrée (appelé par createOrder). */
-export async function startOnlinePayment(provider: "paypal" | "lyra" | "mollie", o: { id: string; order_number: number; total: number; restaurant_id: string; email?: string | null }, restaurantName: string, returnBase: string) {
+export async function startOnlinePayment(provider: "paypal" | "lyra" | "mollie", o: { id: string; order_number: number; total: number; restaurant_id: string; email?: string | null }, restaurantName: string, returnBase: string, channel: PlatformFeeChannel) {
   await assertOrdersOpen(o.restaurant_id);
   const db = await admin();
   const amount = Math.round(Number(o.total) * 100);
@@ -831,6 +832,8 @@ export async function startOnlinePayment(provider: "paypal" | "lyra" | "mollie",
     const m = await mollieForRestaurant(o.restaurant_id);
     if (!m) throw new Error("Mollie n'est pas disponible pour ce restaurant.");
     const origin = new URL(returnBase).origin;
+    const { data: rc } = await db.from("restaurants").select("config").eq("id", o.restaurant_id).maybeSingle();
+    const fee = m.oauth ? platformFeeFor(amount, (rc?.config as { platformFee?: unknown } | null)?.platformFee, channel) : 0;
     const publicHook = !/localhost|127\.0\.0\.1/.test(origin);
     const res = await mollieCall(m.key, "/payments", {
       amount: { currency: "EUR", value: (amount / 100).toFixed(2) },
@@ -840,11 +843,11 @@ export async function startOnlinePayment(provider: "paypal" | "lyra" | "mollie",
       locale: "fr_FR", metadata: { order_id: o.id },
       ...(m.profileId ? { profileId: m.profileId } : {}),
       // Commission plateforme (uniquement pour les comptes reliés via Mollie Connect)
-      ...(m.oauth ? { applicationFee: { amount: { currency: "EUR", value: mollieApplicationFee(amount).toFixed(2) }, description: "Commission plateforme LCDIGITALE" } } : {}),
+      ...(fee > 0 ? { applicationFee: { amount: { currency: "EUR", value: fee.toFixed(2) }, description: "Commission plateforme LCDIGITALE" } } : {}),
     }, `pay_${o.id}`) as { id: string; _links?: { checkout?: { href?: string } } };
     const url = res._links?.checkout?.href;
     if (!url) throw new Error("Mollie : lien de paiement manquant");
-    await db.from("orders").update({ payment_ref: `mollie:${res.id}`, platform_fee: m.oauth ? mollieApplicationFee(amount) : 0 }).eq("id", o.id);
+    await db.from("orders").update({ payment_ref: `mollie:${res.id}`, platform_fee: fee }).eq("id", o.id);
     return { redirectUrl: url };
   }
   const l = await lyraForRestaurant(o.restaurant_id);

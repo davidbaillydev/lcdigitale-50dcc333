@@ -141,6 +141,24 @@ export const saveRestaurantFeatures = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/** Canaux soumis à la commission Mollie 7 % (agence uniquement, stockés dans config.platformFee). */
+export const savePlatformFeeChannels = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    id: z.string().uuid(),
+    modes: z.object({ delivery: z.boolean(), pickup: z.boolean(), dine_in: z.boolean(), kiosk: z.boolean() }).strict(),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAgency(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: cur, error: e1 } = await supabaseAdmin.from("restaurants").select("config").eq("id", data.id).single();
+    if (e1) throw new Error(e1.message);
+    const config = { ...((cur.config as Record<string, unknown>) ?? {}), platformFee: { modes: data.modes } };
+    const { error } = await supabaseAdmin.from("restaurants").update({ config: config as never }).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 /** Ordre d'affichage des restaurants (agence uniquement). */
 export const reorderRestaurants = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
