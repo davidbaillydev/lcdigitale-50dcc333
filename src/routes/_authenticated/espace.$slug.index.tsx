@@ -9,6 +9,7 @@ import { EMPTY_OPTIONS, loadOptionData } from "@/lib/menu-options";
 import { ArrowLeft, ArrowRight, Bell, BellOff, Bike, Check, ChefHat, Lock, LogOut, Maximize, Minimize, MoonStar, PanelTopClose, PanelTopOpen, Phone, Printer, Settings, History, ShoppingBag, Sun, Users, Volume2, VolumeX, WifiOff } from "lucide-react";
 import { useKitchenFullscreen } from "@/hooks/use-kitchen-fullscreen";
 import { useWakeLock } from "@/hooks/use-wake-lock";
+import { useKioskLock } from "@/hooks/use-kiosk-lock";
 import { ticketOptions, printTickets, printingDefaults, printingFields, autoPrintKinds, autoPrintLabel, useTicketWidth, type PrintingConfig, type TicketKind } from "@/lib/ticket";
 import { hasKitchenPin } from "@/lib/kitchen-pin.functions";
 import { KitchenLock } from "@/components/KitchenLock";
@@ -150,6 +151,7 @@ function Kitchen() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const { fullscreen, busy: fullscreenBusy, helpOpen, setHelpOpen, toggleFullscreen } = useKitchenFullscreen();
   const wake = useWakeLock();
+  useKioskLock();
   const soundRef = useRef(false); soundRef.current = sound;
   const [acceptFor, setAcceptFor] = useState<Order | null>(null);
   const [customTime, setCustomTime] = useState("");

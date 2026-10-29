@@ -584,3 +584,8 @@ html:has(.admin-kitchen), body:has(.admin-kitchen) { height: 100%; overflow: hid
   .admin-kitchen .kds-service > div { gap: 0.5rem 1rem; font-size: 0.75rem; }
   .admin-kitchen .kds-service strong { font-size: 1rem; }
 }
+
+/* Mode kiosque (tablette cuisine, borne) : pas de zoom ni de pull-to-refresh */
+html.kiosk-lock, html.kiosk-lock body { overscroll-behavior: none; touch-action: pan-x pan-y; -webkit-text-size-adjust: 100%; }
+html.kiosk-lock body { -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+html.kiosk-lock :is(button, a, [role="button"]) { touch-action: manipulation; -webkit-user-select: none; user-select: none; }
