@@ -3,7 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Bike, CalendarClock, Clock, ShoppingBag, CreditCard, Store, Wallet, Landmark, MapPin, LocateFixed } from "lucide-react";
+import { Bike, CalendarClock, Clock, ShoppingBag, CreditCard, Store, Wallet, Landmark, MapPin, LocateFixed, CheckCircle2, XCircle } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { CartLines } from "@/components/CartSheet";
 import { CartSuggestions } from "@/components/CartSuggestions";
@@ -15,6 +15,8 @@ import { useCart } from "@/lib/cart";
 import { euro } from "@/lib/menu";
 import { useTable } from "@/lib/table";
 import { findZone, zoneFee, type GeoZone } from "@/lib/geo";
+import { AddressAutocomplete } from "@/components/AddressAutocomplete";
+import { matchCpZone, type BanAddress } from "@/lib/address-autocomplete";
 import { geocodeAddress } from "@/lib/delivery.functions";
 import { computeServiceFee, serviceFeeLabel, type ServiceFeeChannel } from "@/lib/service-fee";
 import { asapSlot, availableSlots, deliveryFee, fmtTime, isOpenNow, modeEnabled, timingOf } from "@/lib/shop";
@@ -119,7 +121,19 @@ function Checkout() {
   const geoFn = useServerFn(geocodeAddress);
   const [geo, setGeo] = useState<{ lat: number; lng: number; zone: GeoZone | null; label?: string | undefined } | null>(null);
   const [geoBusy, setGeoBusy] = useState(false);
+  const [cpCheck, setCpCheck] = useState<{ ok: boolean; label: string } | null>(null);
   const checkPoint = (lat: number, lng: number, label?: string) => setGeo({ lat, lng, zone: findZone([lat, lng], geoZones), label });
+  // Adresse choisie dans les suggestions : champs remplis + zone validée immédiatement, sans bouton.
+  const selectAddress = (a: BanAddress) => {
+    if (geoZones.length) {
+      setF({ ...f, address: a.address, postal_code: `${a.postcode} ${a.city}`.trim() });
+      checkPoint(a.lat, a.lng, a.label);
+    } else {
+      const zone = matchCpZone(DELIVERY.zones, a.postcode);
+      setF({ ...f, address: a.address, postal_code: zone?.cp ?? "" });
+      setCpCheck(zone ? { ok: true, label: a.label } : { ok: false, label: a.label });
+    }
+  };
   const checkAddress = async () => {
     setGeoBusy(true);
     try { const r = await geoFn({ data: { q: `${f.address} ${f.postal_code}`.trim() } }); if (!r) toast.error("Adresse introuvable, précisez la rue et la ville."); else checkPoint(r.lat, r.lng, r.label); }
@@ -275,26 +289,59 @@ function Checkout() {
               <div className="sm:col-span-2"><Label htmlFor="e">Email (pour la confirmation)</Label><Input id="e" type="email" maxLength={255} value={f.email} onChange={set("email")} /></div>
               {mode === "delivery" && !table && (
                 <>
-                  <div className="sm:col-span-2"><Label htmlFor="a">Adresse *</Label><Input id="a" maxLength={200} placeholder="N°, rue, bâtiment, étage…" value={f.address} onChange={(e) => { setGeo(null); set("address")(e); }} /></div>
+                  <div className="sm:col-span-2">
+                    <Label htmlFor="a">Adresse *</Label>
+                    <AddressAutocomplete id="a" placeholder="Commencez à taper votre adresse…" value={f.address}
+                      onChange={(v) => { setGeo(null); setCpCheck(null); setF({ ...f, address: v }); }}
+                      onSelect={selectAddress} />
+                    <p className="mt-1 text-xs text-muted-foreground">Suggestions officielles dès la saisie : touchez une adresse pour vérifier automatiquement la livraison.</p>
+                  </div>
                   {geoZones.length > 0 ? (
                   <div className="space-y-2 sm:col-span-2">
                     <Label htmlFor="cp">Code postal et ville *</Label>
                     <Input id="cp" maxLength={80} placeholder="31770 Colomiers" value={f.postal_code} onChange={(e) => { setGeo(null); set("postal_code")(e); }} />
                     <div className="flex flex-wrap gap-2">
-                      <Button type="button" variant="secondary" className="min-h-11" disabled={geoBusy || f.address.trim().length < 5} onClick={checkAddress}><MapPin /> Vérifier mon adresse</Button>
-                      <Button type="button" variant="ghost" className="min-h-11" disabled={geoBusy} onClick={locateMe}><LocateFixed /> Me géolocaliser</Button>
+                      <Button type="button" variant="secondary" className="min-h-12 flex-1 sm:flex-none" disabled={geoBusy || f.address.trim().length < 5} onClick={checkAddress}><MapPin /> Vérifier mon adresse</Button>
+                      <Button type="button" variant="ghost" className="min-h-12 flex-1 sm:flex-none" disabled={geoBusy} onClick={locateMe}><LocateFixed /> Me géolocaliser</Button>
                     </div>
                     {geo && (geo.zone
-                      ? <p role="status" className="rounded-lg border border-primary bg-primary/10 p-3 text-sm">✓ Livrable — {geo.zone.name} · minimum {geo.zone.minOrder} € · frais {zoneFee(geo.zone, subtotal) ? `${zoneFee(geo.zone, subtotal).toFixed(2)} €` : "offerts"}</p>
-                      : <p role="alert" className="rounded-lg border border-destructive bg-destructive/10 p-3 text-sm">Désolé, cette adresse est hors de notre zone de livraison.</p>)}
+                      ? <div role="status" className="flex items-start gap-3 rounded-xl border-2 border-primary bg-primary/10 p-4">
+                          <CheckCircle2 className="mt-0.5 h-6 w-6 shrink-0 text-primary" />
+                          <div>
+                            <p className="font-semibold">Bonne nouvelle : nous livrons à cette adresse !</p>
+                            <p className="text-sm text-muted-foreground">{geo.zone.name} · minimum {geo.zone.minOrder} € · frais {zoneFee(geo.zone, subtotal) ? `${zoneFee(geo.zone, subtotal).toFixed(2)} €` : "offerts"}</p>
+                          </div>
+                        </div>
+                      : <div role="alert" className="flex items-start gap-3 rounded-xl border-2 border-destructive bg-destructive/10 p-4">
+                          <XCircle className="mt-0.5 h-6 w-6 shrink-0 text-destructive" />
+                          <div>
+                            <p className="font-semibold">Adresse hors zone de livraison</p>
+                            <p className="text-sm text-muted-foreground">Désolé, nous ne livrons pas à cette adresse. Choisissez « À emporter » ou essayez une autre adresse.</p>
+                          </div>
+                        </div>)}
                   </div>
                   ) : (
-                  <div className="sm:col-span-2">
+                  <div className="space-y-2 sm:col-span-2">
                     <Label htmlFor="cp">Ville *</Label>
-                    <select id="cp" value={f.postal_code} onChange={set("postal_code")} className="mt-1 h-9 w-full rounded-md border border-input bg-background px-3 text-sm">
+                    <select id="cp" value={f.postal_code} onChange={(e) => { setCpCheck(null); set("postal_code")(e); }} className="mt-1 h-12 w-full rounded-md border border-input bg-background px-3 text-sm">
                       <option value="">Choisir votre commune…</option>
                       {DELIVERY.zones.map((z) => <option key={z.cp} value={z.cp}>{z.cp} — {z.city}</option>)}
                     </select>
+                    {cpCheck && (cpCheck.ok
+                      ? <div role="status" className="flex items-start gap-3 rounded-xl border-2 border-primary bg-primary/10 p-4">
+                          <CheckCircle2 className="mt-0.5 h-6 w-6 shrink-0 text-primary" />
+                          <div>
+                            <p className="font-semibold">Bonne nouvelle : nous livrons à cette adresse !</p>
+                            <p className="text-sm text-muted-foreground">Minimum {DELIVERY.minOrder} € · frais {deliveryFee(restaurant, subtotal) ? `${deliveryFee(restaurant, subtotal).toFixed(2)} €` : "offerts"}</p>
+                          </div>
+                        </div>
+                      : <div role="alert" className="flex items-start gap-3 rounded-xl border-2 border-destructive bg-destructive/10 p-4">
+                          <XCircle className="mt-0.5 h-6 w-6 shrink-0 text-destructive" />
+                          <div>
+                            <p className="font-semibold">Adresse hors zone de livraison</p>
+                            <p className="text-sm text-muted-foreground">Désolé, nous ne livrons pas {cpCheck.label}. Choisissez « À emporter » ou une commune desservie.</p>
+                          </div>
+                        </div>)}
                   </div>
                   )}
                 </>
@@ -348,7 +395,7 @@ function Checkout() {
             {mode === "delivery" && <div className="flex justify-between"><span>Livraison</span><span>{fee ? euro(fee) : "Offerte"}</span></div>}
             <div className="flex justify-between pt-2 text-lg font-bold"><span>Total</span><span className="text-primary">{euro(total)}</span></div>
           </div>
-          {belowMin && <p className="mt-3 text-sm text-destructive">Minimum {DELIVERY.minOrder} € en livraison.</p>}
+          {belowMin && <p className="mt-3 text-sm text-destructive">Minimum {geoZones.length ? (geo?.zone?.minOrder ?? 0) : DELIVERY.minOrder} € en livraison.</p>}
           {payment && online.stripe ? (
             <div className="mt-4">
               <StripePayment publishableKey={online.stripe} clientSecret={payment.clientSecret} label={`Payer ${euro(total)}`}
