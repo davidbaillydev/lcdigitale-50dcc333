@@ -18,7 +18,8 @@ import { findZone, zoneFee, type GeoZone } from "@/lib/geo";
 import { geocodeAddress } from "@/lib/delivery.functions";
 import { computeServiceFee, serviceFeeLabel, type ServiceFeeChannel } from "@/lib/service-fee";
 import { asapSlot, availableSlots, deliveryFee, fmtTime, isOpenNow, modeEnabled, timingOf } from "@/lib/shop";
-import { createOrder } from "@/lib/orders.functions";
+import { createOrder, createAdminTestOrder } from "@/lib/orders.functions";
+import { useStaff } from "@/hooks/use-staff";
 import { deliverySlotLoad } from "@/lib/delivery.functions";
 import { capacityBucket } from "@/lib/shop";
 import { onlinePaymentInfo } from "@/lib/payments.functions";
@@ -50,6 +51,8 @@ function Checkout() {
   const DELIVERY = restaurant.delivery;
   const navigate = useNavigate();
   const submitFn = useServerFn(createOrder);
+  const testSubmitFn = useServerFn(createAdminTestOrder);
+  const { isAgency } = useStaff();
   const ordering = useOrderingState(restaurant);
   const [mode, setMode] = useState<"pickup" | "delivery">(modeEnabled(restaurant, "pickup") ? "pickup" : "delivery");
   const tableNo = useTable(restaurant.slug, restaurant.config.qr?.tables ?? 0);
@@ -63,7 +66,8 @@ function Checkout() {
   const [openNow, setOpenNow] = useState(false);
   const [when, setWhen] = useState<"asap" | "later">(timing.asap ? "asap" : "later");
   const [f, setF] = useState({ first_name: "", last_name: "", phone: "", email: "", address: "", postal_code: "", notes: "" });
-  const [pay, setPay] = useState<"on_site" | "stripe" | "paypal" | "lyra" | "mollie">("on_site");
+  const [pay, setPay] = useState<"on_site" | "stripe" | "paypal" | "lyra" | "mollie" | "admin_test">("on_site");
+  useEffect(() => { if (!isAgency && pay === "admin_test") setPay("on_site"); }, [isAgency, pay]);
   const [busy, setBusy] = useState(false);
   const [cgv, setCgv] = useState(false);
   const [pro, setPro] = useState(false);
@@ -139,13 +143,14 @@ function Checkout() {
   );
 
   const submit = async () => {
+    if (pay === "admin_test" && (!isAgency || !window.confirm("Créer une commande CB Test (Admin) ? Elle apparaîtra dans la cuisine et chez les livreurs. Aucun encaissement, aucune facture, aucun chiffre d’affaires. Prévenez l’équipe avant de poursuivre."))) return;
     setBusy(true);
     const embedded = isEmbedded();
     const back = embedded ? embedReturnTo(restaurant.slug) : null;
     let leaving = false;
-    track(pay === "on_site" ? "checkout_started" : "payment_pending", pay === "on_site" ? "Validation (paiement sur place)" : `Paiement en ligne (${pay})`);
+    if (pay !== "admin_test") track(pay === "on_site" ? "checkout_started" : "payment_pending", pay === "on_site" ? "Validation (paiement sur place)" : `Paiement en ligne (${pay})`);
     try {
-      const res = await submitFn({
+      const res = await (pay === "admin_test" ? testSubmitFn : submitFn)({
         data: {
           ...f, restaurant: restaurant.slug, ...(table ? { mode: "dine_in" as const, ...(tableNo ? { table: tableNo } : {}), ...(qr.room ? { room: qr.room } : {}), ...(qr.self ? { qr: "self" as const } : {}), slot: new Date().toISOString(), address: "", postal_code: "" } : { mode, slot: asap ? new Date().toISOString() : slot, asap, ...(mode === "delivery" && geo ? { lat: geo.lat, lng: geo.lng } : {}) }), ...(promo.code ? { promo_code: promo.code } : {}),
           payment_method: pay === "on_site" ? "on_site" : "online", cgv: true as const,
@@ -153,7 +158,7 @@ function Checkout() {
           origin: window.location.origin,
           ...orderSource(restaurant.slug),
           ...(embedded && back ? back : {}),
-          ...(pay !== "on_site" ? { provider: pay } : {}),
+          ...(pay !== "on_site" && pay !== "admin_test" ? { provider: pay } : {}),
           lines: lines.map((l) => ({ itemId: l.itemId, qty: l.qty, sel: l.sel })),
         },
       });
@@ -178,7 +183,7 @@ function Checkout() {
         try { form.submit(); } catch { form.target = "_blank"; form.submit(); toast.info("La page de paiement s'est ouverte dans un nouvel onglet"); }
         return;
       }
-      track("completed", "Commande validée", res.id);
+      if (pay !== "admin_test") track("completed", "Commande validée", res.id);
       clear();
       navigate({ to: "/$slug/suivi/$id", params: { slug: restaurant.slug, id: res.id } });
     } catch (e) {
@@ -189,6 +194,7 @@ function Checkout() {
   };
 
   const options = [
+    ...(isAgency ? [{ v: "admin_test" as const, Icon: CreditCard, t: "CB Test (Admin)", s: "Paiement simulé · aucun encaissement", ok: true }] : []),
     ...(onSiteOk ? [{ v: "on_site" as const, Icon: Store, t: table ? "À table / au comptoir" : mode === "delivery" ? "À la livraison" : "Au retrait", s: "Espèces, CB ou tickets resto", ok: true }] : []),
     { v: "stripe" as const, Icon: CreditCard, t: "Carte bancaire", s: online.stripe ? "Carte, Apple Pay, Google Pay" : "Non proposé par ce restaurant", ok: !!online.stripe },
     ...(online.mollie ? [{ v: "mollie" as const, Icon: CreditCard, t: "Carte · Bancontact · Apple Pay", s: "Page de paiement sécurisée Mollie", ok: true }] : []),
@@ -319,11 +325,11 @@ function Checkout() {
             <h2 className="text-3xl">4. Paiement</h2>
             <div className="mt-3 grid grid-cols-[repeat(2,minmax(0,1fr))] gap-2 sm:gap-3">
               {options.map(({ v, Icon, t, s, ok }) => (
-                <button key={v} disabled={!ok || !!payment} onClick={() => setPay(v)} className={cn("min-w-0 break-words rounded-xl border p-3 text-left sm:p-4", !ok && "cursor-not-allowed opacity-50", pay === v ? "border-primary bg-primary/10" : "border-border")}>
+                <Button variant="outline" key={v} disabled={!ok || !!payment} onClick={() => setPay(v)} className={cn("h-auto min-w-0 flex-col items-start whitespace-normal break-words rounded-lg border p-3 text-left sm:p-4", !ok && "cursor-not-allowed opacity-50", pay === v ? "border-primary bg-primary/10" : "border-border")}>
                   <Icon className="mb-2 h-6 w-6 text-primary" />
                   <p className="font-semibold">{t}</p>
                   <p className="text-xs text-muted-foreground">{s}</p>
-                </button>
+                </Button>
               ))}
             </div>
             {(pay === "paypal" || pay === "lyra" || pay === "mollie") && <p className="mt-2 text-xs text-muted-foreground">Vous serez redirigé vers la page de paiement sécurisée, puis ramené au suivi de votre commande.</p>}
@@ -356,7 +362,7 @@ function Checkout() {
             {paused && <p role="alert" className="mt-3 rounded-lg bg-destructive/10 p-2 text-sm font-semibold text-destructive">{ordering.paused ? "Le restaurant ne prend pas de commandes pour le moment" : ordering.onlineOff ? "Commandes en ligne désactivées pour le moment" : "Restaurant actuellement fermé"}</p>}
             {embed && pay !== "on_site" && <p className="mt-3 rounded-lg bg-muted p-2 text-xs text-muted-foreground">Vous allez être redirigé vers la page de paiement sécurisée.</p>}
             <Button size="lg" className="mt-4 w-full font-semibold" disabled={paused || !canSubmit || !proOk || !cgv || busy || (pay === "on_site" && !onSiteOk)} onClick={submit}>
-              {busy ? "Envoi…" : pay === "on_site" ? `Valider la commande · ${euro(total)}` : pay === "paypal" ? `Payer avec PayPal · ${euro(total)}` : `Continuer vers le paiement · ${euro(total)}`}
+              {busy ? "Envoi…" : pay === "admin_test" ? `Valider CB Test (Admin) · ${euro(total)}` : pay === "on_site" ? `Valider la commande · ${euro(total)}` : pay === "paypal" ? `Payer avec PayPal · ${euro(total)}` : `Continuer vers le paiement · ${euro(total)}`}
             </Button>
           </>)}
         </aside>

@@ -8,6 +8,7 @@ import { getCatalog } from "./catalogs";
 import { computeServiceFee, type ServiceFeeChannel } from "./service-fee";
 import { ORDERS_PAUSED_MSG, ordersPaused, RESTAURANT_COLUMNS, deliveryFee, isValidSlot, isOpenNow, asapSlot, timingOf, modeEnabled, paymentEnabled, onlinePaymentEnabled, availableSlots, DELIVERY_FULL_MSG, kioskCardOnly, type Restaurant } from "./shop";
 import { cgvVersion } from "./legal";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const orderSchema = z.object({
   restaurant: z.string().max(40),
@@ -59,6 +60,21 @@ export const createOrder = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => orderSchema.parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    return createCalculatedOrder(supabaseAdmin, data);
+  });
+
+/** Only the authenticated agency endpoint can supply the test audit. */
+export const createAdminTestOrder = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => orderSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: allowed, error } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    if (error || allowed !== true) throw new Error("CB Test (Admin) réservé aux administrateurs agence connectés.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    return createCalculatedOrder(supabaseAdmin, { ...data, payment_method: "online" }, context.userId);
+  });
+
+async function createCalculatedOrder(supabaseAdmin: Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"], data: z.infer<typeof orderSchema>, testUserId?: string) {
     const { data: rRow } = await supabaseAdmin.from("restaurants").select(RESTAURANT_COLUMNS).eq("slug", data.restaurant).eq("active", true).maybeSingle();
     const r = rRow as unknown as Restaurant | null;
     if (!r) throw new Error("Restaurant introuvable");
@@ -94,7 +110,7 @@ export const createOrder = createServerFn({ method: "POST" })
       }
     }
     const { stripeForRestaurant, stripeCall, startOnlinePayment } = await import("./payments.functions");
-    const provider = data.payment_method === "online" ? (data.provider ?? "stripe") : null;
+    const provider = !testUserId && data.payment_method === "online" ? (data.provider ?? "stripe") : null;
     const stripe = provider === "stripe" ? await stripeForRestaurant(r.id) : null;
     if (provider === "stripe" && !stripe) throw new Error("Le paiement en ligne n'est pas disponible pour ce restaurant.");
     if ((provider === "paypal" || provider === "lyra" || provider === "mollie") && !data.origin) throw new Error("Paiement en ligne indisponible.");
@@ -174,6 +190,7 @@ export const createOrder = createServerFn({ method: "POST" })
         promo_code: promo.discount ? promo.code : null,
         total: Math.round((subtotal - promo.discount + fee + serviceFee) * 100) / 100,
         payment_method: data.payment_method,
+        ...(testUserId ? { is_test: true, test_created_by: testUserId, test_created_at: new Date().toISOString(), payment_status: "paid", payment_ref: `admin-test:${crypto.randomUUID()}` } : {}),
         source: dineIn && (data.table || data.room || data.qr) ? "qr" : (data.source ?? "web"),
         source_ref: data.source === "embed" && data.ref ? data.ref.toLowerCase().slice(0, 253) : null,
         cgv_accepted_at: new Date().toISOString(),
@@ -186,12 +203,12 @@ export const createOrder = createServerFn({ method: "POST" })
       console.error(error);
       throw new Error("Impossible d'enregistrer la commande.");
     }
-    if (promo.discount && promo.code && promo.code !== "PREMIERE-COMMANDE") {
+    if (!testUserId && promo.discount && promo.code && promo.code !== "PREMIERE-COMMANDE") {
       const { data: pc } = await supabaseAdmin.from("restaurant_promo_codes").select("id, uses").eq("restaurant_id", r.id).eq("code", promo.code).maybeSingle();
       if (pc) await supabaseAdmin.from("restaurant_promo_codes").update({ uses: pc.uses + 1 }).eq("id", pc.id);
     }
-    if (!provider) { const { syncOrderToPos } = await import("./pos.server"); await syncOrderToPos(row.id); }
-    if (!provider) {
+    if (!provider && !testUserId) { const { syncOrderToPos } = await import("./pos.server"); await syncOrderToPos(row.id); }
+    if (!provider && !testUserId) {
       const { notifyNewOrder } = await import("./order-email.server");
       await notifyNewOrder(supabaseAdmin, row.id, data.origin).catch((e) => console.error(e));
     }
@@ -211,7 +228,7 @@ export const createOrder = createServerFn({ method: "POST" })
     }) as { id: string; client_secret: string };
     await supabaseAdmin.from("orders").update({ payment_ref: pi.id }).eq("id", row.id);
     return { ...base, clientSecret: pi.client_secret };
-  });
+  }
 
 export const getOrderStatus = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
@@ -219,7 +236,7 @@ export const getOrderStatus = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("orders")
-      .select("id, order_number, status, mode, slot, total, items, payment_method, payment_status, customer_name, discount, promo_code, delivery_fee, service_fee, table_label, restaurants(slug, config)")
+      .select("id, is_test, order_number, status, mode, slot, total, items, payment_method, payment_status, customer_name, discount, promo_code, delivery_fee, service_fee, table_label, restaurants(slug, config)")
       .eq("id", data.id)
       .maybeSingle();
     if (!row) return row;

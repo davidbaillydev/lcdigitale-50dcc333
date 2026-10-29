@@ -61,7 +61,7 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
   (isPreorder(kind, o) ? e.bold(true).line("BON DE PRE-COMMANDE").line("A REGLER EN CAISSE").bold(false) : e.line(kind === "kitchen" ? "TICKET CUISINE" : "TICKET CLIENT")).line(hr);
   e.bold(true).size(2, 2).line(`N° ${o.order_number}`).size(1, 1).align(0);
   e.inverse(true);
-  wrap(payLabel(o.payment_method, isPaid(o)), cols).forEach((l) => e.line(l.padEnd(cols)));
+  wrap(payLabel(o.payment_method, isPaid(o), o.is_test), cols).forEach((l) => e.line(l.padEnd(cols)));
   e.inverse(false).line().inverse(true).line(lr(timing.label, timing.value, cols)).inverse(false).line().inverse(true);
   wrap(modeLabel(o.mode) + (o.source === "kiosk" ? " - BORNE" : o.source === "phone" ? " - TEL IA" : "") + (o.table_label ? ` - TABLE ${o.table_label}` : "") + (o.room_label ? ` - CHAMBRE ${o.room_label}` : ""), cols).forEach((l) => e.line(l.padEnd(cols)));
   e.inverse(false).bold(false).line();

@@ -10,6 +10,7 @@ export const itemTitle = (it: { name: string; size?: { name: string } | null }) 
 export type TicketWidth = 80 | 58;
 export type TicketKind = "kitchen" | "receipt";
 export type TicketOrder = {
+  is_test?: boolean;
   order_number: number; customer_name?: string | null; phone?: string | null; email?: string | null; mode: string;
   address?: string | null; city?: string | null; slot: string; created_at?: string; asap?: boolean; first_name?: string | null; last_name?: string | null;
   items: { id?: string; name: string; qty: number; total?: number; category?: string; details?: string[]; allergens?: string[]; size?: { id?: string; name: string } | null; selected_options?: { id?: string; name: string; price: number; group?: string }[] }[];
@@ -25,11 +26,11 @@ export const modeLabel = (m: string) => (m === "delivery" ? "LIVRAISON" : m === 
 /** Ticket client d'une commande non encore réglée : bon de commande à régler au comptoir. */
 export const isPreorder = (kind: TicketKind, o: { payment_method: string; payment_status?: string | null }) => kind === "receipt" && !isPaid(o);
 export const isPaid = (o: { payment_method: string; payment_status?: string | null }) => o.payment_status ? o.payment_status === "paid" : o.payment_method === "online";
-export const payLabel = (p: string, paid = false) =>
-  p === "online" ? paid ? "Payé en ligne" : "Paiement en ligne (en attente)" : p === "card_terminal" ? "Carte bancaire (au comptoir)" : p === "counter" ? "Paiement au comptoir" : "Paiement à la remise";
+export const payLabel = (p: string, paid = false, test = false) =>
+  test ? "CB Test (Admin) - Aucun encaissement" : p === "online" ? paid ? "Payé en ligne" : "Paiement en ligne (en attente)" : p === "card_terminal" ? "Carte bancaire (au comptoir)" : p === "counter" ? "Paiement au comptoir" : "Paiement à la remise";
 /** Mention de règlement du ticket client, selon le mode et l'état de paiement (sans mention « non fiscal »). */
-export const settlementNote = (o: { payment_method: string; payment_status?: string | null }) =>
-  isPaid(o)
+export const settlementNote = (o: { payment_method: string; payment_status?: string | null; is_test?: boolean }) =>
+  o.is_test ? "CB Test (Admin) — Paiement simulé, aucun encaissement, aucune facture" : isPaid(o)
     ? o.payment_method === "online"
       ? "Payé en ligne — Facture envoyée par email et accessible sur votre lien de suivi"
       : "Reçu de paiement — Facture disponible sur demande"
@@ -228,7 +229,7 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
   </style></head><body>
     <div class="c">${kind === "kitchen" ? "TICKET CUISINE" : isPreorder(kind, o) ? "BON DE PRÉ-COMMANDE - À RÉGLER EN CAISSE" : "TICKET CLIENT"}</div>
     <hr><div class="c xl">N° ${o.order_number}</div>
-    <div class="band">${payLabel(o.payment_method, isPaid(o))}</div>
+    <div class="band">${payLabel(o.payment_method, isPaid(o), o.is_test)}</div>
     <div class="band row"><span>${esc(timing.label)}</span><span>${esc(timing.value)}</span></div>
     <div class="band">${modeLabel(o.mode)}${o.source === "kiosk" ? " · BORNE" : o.source === "phone" ? " · TÉL IA" : ""}${o.table_label ? ` · TABLE ${esc(o.table_label)}` : ""}${o.room_label ? ` · CHAMBRE ${esc(o.room_label)}` : ""}</div>
     ${f.customer && ticketCustomer(o).length ? `<div class="section">Informations clients:</div><div class="customer">${ticketCustomer(o).map(([label, value]) => `<span>${label}</span><span class="value">${esc(value)}</span>`).join("")}</div>` : ""}
