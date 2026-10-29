@@ -11,6 +11,11 @@ const row = (over: Partial<GainOrderRow>): GainOrderRow => ({
 });
 
 describe("aggregateGains", () => {
+  it("exclut les paiements CB Test des gains et du graphique", () => {
+    const rows = [row({}), row({ is_test: true, total: 999, service_fee: 50 })];
+    expect(aggregateGains(rows)).toMatchObject({ orders: 1, revenue: 20, serviceFees: 0.5 });
+    expect(gainsByDay(rows)).toEqual([{ day: "2026-10-20", serviceFees: 0.5 }]);
+  });
   it("exclut les commandes annulées et en attente de paiement", () => {
     const g = aggregateGains([
       row({}),

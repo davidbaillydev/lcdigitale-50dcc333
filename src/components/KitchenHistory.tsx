@@ -49,14 +49,14 @@ export function KitchenHistory({ restaurantId, open, onClose, shop, width, field
           {history.isError && <div role="alert" className="py-6 text-center"><p>Impossible de charger les commandes.</p><Button variant="outline" onClick={() => void history.refetch()}>Réessayer</Button></div>}
           {history.data?.orders.map((o) => <article key={o.id} className="rounded-lg border border-border p-4">
             <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3"><h2 className="min-w-0 break-words text-xl font-semibold">N° {o.order_number} · {o.customer_name}</h2><strong className="shrink-0 whitespace-nowrap text-lg">{euro(Number(o.total))}</strong></div>
-            <p className="mt-1 text-sm text-muted-foreground">{new Date(o.created_at).toLocaleString("fr-FR", { timeZone: "Europe/Paris" })} · {statuses[o.status] ?? o.status} · {modeLabel(o.mode)} · {isPaid(o) ? "Payée" : "Non réglée"}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{new Date(o.created_at).toLocaleString("fr-FR", { timeZone: "Europe/Paris" })} · {statuses[o.status] ?? o.status} · {modeLabel(o.mode)} · {o.is_test ? "CB Test (Admin) · Aucun encaissement" : isPaid(o) ? "Payée" : "Non réglée"}</p>
             <div className="mt-2"><RefundBadge o={o} /></div>
             <p className="mt-2 break-words text-sm">{o.items.map((i) => `${i.qty}× ${i.name}`).join(" · ")}</p>
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Button variant="secondary" className="min-h-14 whitespace-normal" onClick={() => setPreview({ order: o, kinds: ["kitchen"] })}><Printer /> Ticket cuisine</Button>
               <Button variant="secondary" className="min-h-14 whitespace-normal" onClick={() => setPreview({ order: o, kinds: ["receipt"] })}><Printer /> Ticket client</Button>
               <Button variant="outline" className="min-h-14 whitespace-normal" onClick={() => setPreview({ order: o, kinds: ["kitchen", "receipt"] })}><Printer /> Les deux tickets</Button>
-              <RefundButton o={o} actionClassName="min-h-14 whitespace-normal text-sm" onDone={() => { void queryClient.invalidateQueries({ queryKey: ["kitchen-history", restaurantId] }); }} />
+              {!o.is_test && <RefundButton o={o} actionClassName="min-h-14 whitespace-normal text-sm" onDone={() => { void queryClient.invalidateQueries({ queryKey: ["kitchen-history", restaurantId] }); }} />}
             </div>
           </article>)}
           {history.data?.count === 0 && <p className="py-8 text-center text-muted-foreground">Aucune commande trouvée.</p>}
