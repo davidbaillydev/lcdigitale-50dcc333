@@ -13,7 +13,7 @@ import { useCart } from "@/lib/cart";
 import { Button } from "@/components/ui/button";
 import { menuImage } from "@/lib/menu-images";
 import { AllergenBadges, AllergenPicker } from "@/components/Allergens";
-import { safeFor } from "@/lib/allergens";
+import { safeFor, allergensOnRequest } from "@/lib/allergens";
 import { useTable } from "@/lib/table";
 import { catLabel, itemText, LANG_LABELS, UI, useMenuLang, type Lang } from "@/lib/i18n";
 import { EmbedBar } from "@/components/EmbedBar";
@@ -97,6 +97,7 @@ function MenuPage() {
       </nav>
 
       <main className="mx-auto max-w-6xl space-y-14 px-4 py-10">
+        {allergensOnRequest(catalog.categories) && <p className="rounded-xl border-2 border-primary/40 bg-card p-4 text-center font-semibold">Carte des allergènes disponible sur demande auprès du restaurant.</p>}
         <details className="rounded-xl border border-border bg-card p-4" open={excluded.length > 0}>
           <summary className="cursor-pointer font-semibold">{ui.allergies} {excluded.length > 0 && <span className="text-primary">({excluded.length} exclu{excluded.length > 1 ? "s" : ""})</span>}</summary>
           <div className="mt-3"><AllergenPicker value={excluded} onChange={setExcluded} /></div>

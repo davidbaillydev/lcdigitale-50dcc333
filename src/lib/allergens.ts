@@ -25,3 +25,9 @@ export const cleanAllergens = (ids: unknown): AllergenId[] =>
 /** true si le plat ne contient aucun des allergènes exclus. Un plat non renseigné est masqué dès qu'un filtre est actif (prudence). */
 export const safeFor = (item: { allergens?: string[] | undefined }, excluded: string[]) =>
   !excluded.length || (Array.isArray(item.allergens) && !item.allergens.some((a) => excluded.includes(a)));
+
+/** Vrai quand aucun plat ne déclare ses allergènes : la carte affiche « disponible sur demande ». */
+export function allergensOnRequest(categories: { items: { allergens?: string[] | undefined }[] }[]): boolean {
+  const items = categories.flatMap((c) => c.items);
+  return items.length > 0 && items.every((i) => i.allergens === undefined);
+}
