@@ -2,11 +2,12 @@ import { describe, expect, it } from "vitest";
 import { ticketEscpos } from "@/lib/escpos";
 import { cleanOptionLabel, isPaid, isPreorder, payLabel, printingDefaults, settlementNote, ticketCustomer, ticketFields, ticketHtml, ticketOptions, ticketTiming, ticketTotals, ticketWebsite, autoPrintKinds, autoPrintLabel, ticketFontSize, TICKET_FONTS, type TicketOrder } from "@/lib/ticket";
 
-/** Décode les octets ESC/POS (CP858) en texte lisible pour les assertions. */
+/** Décode les octets ESC/POS (CP858) en texte lisible pour les assertions (retours à la ligne aplatis). */
 const decodeEscpos = (bytes: Uint8Array) =>
   Array.from(bytes)
     .map((b) => ({ 0x82: "é", 0x90: "É", 0x85: "à", 0x8a: "è", 0x87: "ç", 0xd5: "€", 0x0a: "\n" })[b] ?? (b >= 32 && b < 127 ? String.fromCharCode(b) : ""))
-    .join("");
+    .join("")
+    .replace(/\s+/g, " ");
 
 const order: TicketOrder = {
   order_number: 12,
