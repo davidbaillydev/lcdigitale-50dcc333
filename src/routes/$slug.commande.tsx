@@ -323,6 +323,7 @@ function Checkout() {
           <section>
             <h2 className="text-3xl">4. Paiement</h2>
             <div className="mt-3 grid grid-cols-[repeat(2,minmax(0,1fr))] gap-2 sm:gap-3">
+              {isDelivery && <p className="rounded-lg bg-muted p-2 text-xs text-muted-foreground">Livraison : paiement en ligne uniquement (aucun paiement à la remise).</p>}
               {options.map(({ v, Icon, t, s, ok }) => (
                 <Button variant="outline" key={v} disabled={!ok || !!payment} onClick={() => setPay(v)} className={cn("h-auto min-w-0 flex-col items-start whitespace-normal break-words rounded-lg border p-3 text-left sm:p-4", !ok && "cursor-not-allowed opacity-50", pay === v ? "border-primary bg-primary/10" : "border-border")}>
                   <Icon className="mb-2 h-6 w-6 text-primary" />
