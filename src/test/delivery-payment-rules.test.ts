@@ -16,7 +16,7 @@ vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: { from:
 import { createOrder } from "@/lib/orders.functions";
 const id = "00000000-0000-4000-8000-000000000001";
 const menu = [{ id: "plats", label: "Plats", items: [{ id: "wok", name: "Wok poulet", price: 10 }] }];
-const restaurant = { id, slug: "fixture", menu_key: "vierge", menu, config: {}, opening: { "1": [[0, 1440]] }, delivery: { fee: 0, freeFrom: 0, zones: [], minOrder: 0 } };
+const restaurant = { id, slug: "fixture", menu_key: "vierge", menu, config: {}, opening: { "1": [[0, 1440]] }, delivery: { fee: 0, freeFrom: 0, zones: [{ cp: "31770", fee: 0 }], minOrder: 0 } };
 type Invoke = (args: { data: unknown; context?: unknown }) => Promise<unknown>;
 const base = { restaurant: "fixture", asap: false, slot: "2026-10-26T11:00:00Z", first_name: "Test", last_name: "Test", phone: "0600000000", cgv: true, lines: [{ itemId: "wok", qty: 1, sel: {} }] };
 beforeEach(() => {
