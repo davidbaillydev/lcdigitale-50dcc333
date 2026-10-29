@@ -1,4 +1,7 @@
 import { useOrdersPaused } from "@/hooks/use-orders-paused";
+import { useWakeLock } from "@/hooks/use-wake-lock";
+import { useKioskLock } from "@/hooks/use-kiosk-lock";
+import { kioskIdleAction } from "@/lib/kiosk-idle";
 import { OrderingBanners } from "@/components/OrderingBanners";
 import { FeatureOff } from "@/components/FeatureGate";
 import { featuresOf } from "@/lib/features";
@@ -42,7 +45,6 @@ export const Route = createFileRoute("/$slug/borne")({
   component: PublicGate,
 });
 
-const IDLE_MS = 60_000;
 type Step = "welcome" | "menu" | "cart" | "pay" | "terminal" | "qr" | "done";
 type Mode = "dine_in" | "pickup";
 
@@ -115,6 +117,9 @@ function Kiosk() {
     return () => clearInterval(t);
   }, [step, pending, cardState, pollCard]);
 
+  // Borne : écran toujours allumé et verrouillé (zoom, pull-to-refresh)
+  useWakeLock({ always: true });
+  useKioskLock();
   const reset = useCallback(() => {
     clear(); setItem(null); setResult(null); setError(null); setWarn(false); setPromo({ d: null });
     setCat(catalog.categories[0]?.id ?? ""); setExcluded([]); setAllergyOpen(false); setStep("welcome");
@@ -123,7 +128,8 @@ function Kiosk() {
   // Remise à zéro après inactivité
   useEffect(() => {
     const touch = () => { last.current = Date.now(); setWarn(false); };
-    window.addEventListener("pointerdown", touch);
+    const evs = ["pointerdown", "keydown", "touchstart", "wheel"] as const;
+    evs.forEach((e) => window.addEventListener(e, touch, { passive: true }));
     const t = setInterval(() => {
       if (step === "welcome") return;
       if (step === "qr") {
@@ -134,12 +140,11 @@ function Kiosk() {
         if (cardState === "failed" && pending && Date.now() - last.current > 60_000) { void abandon({ data: { orderId: pending.id } }).catch(() => {}); setPending(null); reset(); }
         return;
       }
-      const idle = Date.now() - last.current;
-      const limit = step === "done" ? 15_000 : IDLE_MS;
-      if (idle > limit) reset();
-      else if (step !== "done" && idle > limit - 15_000) setWarn(true);
+      const action = kioskIdleAction(step, Date.now() - last.current);
+      if (action === "reset") reset();
+      else if (action === "warn") setWarn(true);
     }, 1000);
-    return () => { window.removeEventListener("pointerdown", touch); clearInterval(t); };
+    return () => { evs.forEach((e) => window.removeEventListener(e, touch)); clearInterval(t); };
   }, [step, reset, cardState, pending, abandon, qr, cancelQr]);
 
   // Vide un éventuel panier resté sur la borne au démarrage
