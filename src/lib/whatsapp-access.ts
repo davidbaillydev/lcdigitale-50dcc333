@@ -10,7 +10,7 @@ export type WhatsAppRestaurant = {
 };
 
 // Shared public origin, never the temporary preview or a restaurant-only domain.
-const PUBLIC_ORIGIN = "https://lcdigitale.lovable.app";
+const PUBLIC_ORIGIN = "https://restaurant.lcdigitale.fr";
 
 const euros = (value: number) => `${value.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
 export function configuredDeliveryRates(delivery?: DeliveryConfig | null) {
