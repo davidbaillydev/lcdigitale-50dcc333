@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import menu from "./fixtures/chick-n-co-menu.json";
-import { unitPrice, validateSelections, type MenuItem, type Selections } from "@/lib/menu";
+import { unitPrice, validateSelections, type Category, type MenuItem, type Selections } from "@/lib/menu";
 
 function item(id: string): MenuItem {
-  const found = menu.flatMap((c) => c.items).find((i) => i.id === id);
+  const found = (menu as Category[]).flatMap((c) => c.items).find((i) => i.id === id);
   if (!found) throw new Error(`Missing item ${id}`);
-  return found as MenuItem;
+  return found;
 }
 describe("Chick'N Co PDF pricing", () => {
   it.each([["import-item-2", 7, 9.5, 12.5], ["import-item-34", 9, 11.5, 14.5]])("prices tacos sizes for %s", (id, m, l, xl) => {
