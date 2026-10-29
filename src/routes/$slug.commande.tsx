@@ -1,6 +1,6 @@
 import { safeSession } from "@/lib/safe-storage";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Bike, CalendarClock, Clock, ShoppingBag, CreditCard, Store, Wallet, Landmark, MapPin, LocateFixed, CheckCircle2, XCircle } from "lucide-react";
@@ -24,7 +24,8 @@ import { createOrder } from "@/lib/orders.functions";
 import { deliverySlotLoad } from "@/lib/delivery.functions";
 import { capacityBucket } from "@/lib/shop";
 import { onlinePaymentInfo } from "@/lib/payments.functions";
-import { StripePayment } from "@/components/StripePayment";
+// Stripe Elements chargé seulement à l'étape de paiement (allège l'ouverture mobile)
+const StripePayment = lazy(() => import("@/components/StripePayment").then((m) => ({ default: m.StripePayment })));
 import { cn } from "@/lib/utils";
 import { PromoCodeField, type AppliedDiscount } from "@/components/PromoCodeField";
 import { EmbedBar } from "@/components/EmbedBar";
@@ -398,8 +399,9 @@ function Checkout() {
           {belowMin && <p className="mt-3 text-sm text-destructive">Minimum {geoZones.length ? (geo?.zone?.minOrder ?? 0) : DELIVERY.minOrder} € en livraison.</p>}
           {payment && online.stripe ? (
             <div className="mt-4">
+              <Suspense fallback={<p className="py-6 text-center text-sm text-muted-foreground">Chargement du paiement sécurisé…</p>}>
               <StripePayment publishableKey={online.stripe} clientSecret={payment.clientSecret} label={`Payer ${euro(total)}`}
-                returnUrl={`${window.location.origin}/${restaurant.slug}/suivi/${payment.id}${payment.back ? `?back=${encodeURIComponent(payment.back)}` : ""}`} onCancel={() => setPayment(null)} />
+                returnUrl={`${window.location.origin}/${restaurant.slug}/suivi/${payment.id}${payment.back ? `?back=${encodeURIComponent(payment.back)}` : ""}`} onCancel={() => setPayment(null)} /></Suspense>
             </div>
           ) : (<>
             <label className="mt-4 flex min-h-11 items-start gap-3 text-sm">

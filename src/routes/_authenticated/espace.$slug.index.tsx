@@ -18,7 +18,6 @@ import { StockDialog } from "@/components/StockDialog";
 import { issueInvoice } from "@/lib/invoice.functions";
 import { notifyOrderStatus } from "@/lib/push.functions";
 import { DriverSelect, useDrivers } from "@/components/DriverSelect";
-import { downloadInvoice } from "@/lib/invoice";
 import { FileText } from "lucide-react";
 import { RefundBadge, RefundButton } from "@/components/RefundButton";
 import { PosSyncStatus } from "@/components/PosSyncStatus";
@@ -567,7 +566,7 @@ function InvoiceButton({ orderId }: { orderId: string }) {
   return (
     <Button size="sm" variant="secondary" className="min-h-12 min-w-0 flex-1" disabled={busy} onClick={async () => {
       setBusy(true);
-      try { const inv = await issue({ data: { orderId } }); await downloadInvoice(inv); toast.success(`Facture ${inv.number} téléchargée`); }
+      try { const inv = await issue({ data: { orderId } }); const { downloadInvoice } = await import("@/lib/invoice"); await downloadInvoice(inv); toast.success(`Facture ${inv.number} téléchargée`); }
       catch (e) { toast.error(e instanceof Error ? e.message : "Facture impossible"); }
       finally { setBusy(false); }
     }}><FileText /> Facture</Button>
