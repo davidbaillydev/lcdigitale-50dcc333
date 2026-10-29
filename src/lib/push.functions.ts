@@ -30,8 +30,8 @@ export const notifyOrderStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid(), origin: z.string().url().max(200).regex(/^https?:\/\/[^/]+$/).optional() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { data: o } = await context.supabase.from("orders").select("id, order_number, status, mode, restaurants(slug, name)").eq("id", data.orderId).maybeSingle();
-    if (!o) return { sent: 0 };
+    const { data: o } = await context.supabase.from("orders").select("id, is_test, order_number, status, mode, restaurants(slug, name)").eq("id", data.orderId).maybeSingle();
+    if (!o || o.is_test) return { sent: 0 };
     const text = STATUS_MSG[o.status];
     if (!text) return { sent: 0 };
     {

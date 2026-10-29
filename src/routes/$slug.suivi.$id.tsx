@@ -71,11 +71,11 @@ function Tracking() {
     refetchInterval: (q) => (q.state.data?.status === "awaiting_payment" ? 3000 : 15000),
   });
   useEffect(() => {
-    if (!cleared.current && data && data.payment_method === "online" && data.payment_status === "paid") { cleared.current = true; if (safeSession.get(`lc-cart-session-${slug}`)) track("completed", "Paiement en ligne confirmé", id); clear(); }
+    if (!cleared.current && data && data.payment_method === "online" && data.payment_status === "paid") { cleared.current = true; if (!data.is_test && safeSession.get(`lc-cart-session-${slug}`)) track("completed", "Paiement en ligne confirmé", id); clear(); }
   }, [data, clear]);
   // Mode intégré : signale au site parent que la commande est confirmée (une seule fois par commande)
   useEffect(() => {
-    if (!data || data.status === "awaiting_payment" || data.status === "cancelled") return;
+    if (!data || data.is_test || data.status === "awaiting_payment" || data.status === "cancelled") return;
     const confirmed = data.payment_method === "on_site" || data.payment_status === "paid";
     if (!confirmed) return;
     const key = `lc-order-sent-${data.id}`;
@@ -116,7 +116,7 @@ function Tracking() {
         <h1 className="mt-3 text-5xl">Commande n° {data.order_number}</h1>
         <p className="text-muted-foreground">
           {data.mode === "dine_in" ? <>Sur place{data.table_label ? <> · <strong className="text-foreground">Table {data.table_label}</strong></> : null}</> : <>{data.mode === "delivery" ? "Livraison" : "Retrait"} prévu à <strong className="text-foreground">{fmtTime(data.slot)}</strong></>}
-          {" · "}{data.payment_method === "on_site" ? `paiement ${data.mode === "delivery" ? "à la livraison" : data.mode === "dine_in" ? "à table ou au comptoir" : "au retrait"}` : data.payment_status === "paid" ? "payé en ligne ✓" : "paiement en ligne"}
+          {" · "}{data.is_test ? "CB Test (Admin) · Paiement simulé · Aucun encaissement" : data.payment_method === "on_site" ? `paiement ${data.mode === "delivery" ? "à la livraison" : data.mode === "dine_in" ? "à table ou au comptoir" : "au retrait"}` : data.payment_status === "paid" ? "payé en ligne ✓" : "paiement en ligne"}
         </p>
         {data.status === "pending_approval" ? (
           <p role="status" className="mt-6 animate-pulse rounded-lg border border-primary bg-primary/10 p-4 font-semibold">Commande transmise à l'équipe, en attente de confirmation.</p>
@@ -134,9 +134,9 @@ function Tracking() {
             ))}
           </div>
         )}
-        {!["done", "cancelled"].includes(data.status) && <PushOptIn orderId={data.id} />}
-        {["accepted", "preparing", "ready", "delivering", "done"].includes(data.status) && <InvoiceDownload orderId={data.id} />}
-        {data.review_url && (data.status === "ready" || data.status === "done") && (
+        {!data.is_test && !["done", "cancelled"].includes(data.status) && <PushOptIn orderId={data.id} />}
+        {!data.is_test && ["accepted", "preparing", "ready", "delivering", "done"].includes(data.status) && <InvoiceDownload orderId={data.id} />}
+        {!data.is_test && data.review_url && (data.status === "ready" || data.status === "done") && (
           <div className="mt-8 rounded-xl border border-primary bg-primary/10 p-4 text-center">
             <p className="font-semibold">Vous avez aimé ? Votre avis nous aide énormément ★★★★★</p>
             <Button asChild className="mt-3"><a href={data.review_url} target="_blank" rel="noopener noreferrer">Laisser un avis Google</a></Button>

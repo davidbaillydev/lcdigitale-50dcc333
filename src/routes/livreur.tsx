@@ -132,7 +132,7 @@ function Board({ s, onLogout }: { s: Session; onLogout: () => void }) {
               </div>
               <p className="mt-1">{o.address}{o.postal_code ? `, ${o.postal_code}` : ""}{o.city ? `, ${o.city}` : ""}</p>
               {o.notes && <p className="mt-1 text-sm text-muted-foreground">« {o.notes} »</p>}
-              <p className="mt-1 text-sm">{Number(o.total).toFixed(2)} € · {o.payment_status === "paid" ? "Payée" : "À encaisser"}</p>
+              <p className="mt-1 text-sm">{Number(o.total).toFixed(2)} € · {o.is_test ? "CB Test (Admin) · Aucun encaissement" : o.payment_status === "paid" ? "Payée" : "À encaisser"}</p>
               <div className="mt-3 grid grid-cols-3 gap-2">
                 <Button asChild variant="secondary" className="min-h-12"><a href={`https://www.google.com/maps/dir/?api=1&destination=${dest(o)}`} target="_blank" rel="noreferrer"><Navigation /> Maps</a></Button>
                 <Button asChild variant="secondary" className="min-h-12"><a href={o.delivery_lat != null ? `https://waze.com/ul?ll=${dest(o)}&navigate=yes` : `https://waze.com/ul?q=${dest(o)}&navigate=yes`} target="_blank" rel="noreferrer"><Navigation /> Waze</a></Button>

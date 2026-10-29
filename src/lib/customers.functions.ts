@@ -17,7 +17,7 @@ export const customerActivity = createServerFn({ method: "POST" })
     const orders: O[] = [];
     for (let i = 0; ; i += 1000) {
       const { data: o, error } = await db.from("orders").select("id, email, phone, created_at, first_name, last_name, customer_name")
-        .eq("restaurant_id", data.restaurantId).not("status", "in", "(awaiting_payment,cancelled)").order("created_at", { ascending: false }).range(i, i + 999);
+        .eq("restaurant_id", data.restaurantId).eq("is_test", false).not("status", "in", "(awaiting_payment,cancelled)").order("created_at", { ascending: false }).range(i, i + 999);
       if (error) throw new Error(error.message);
       orders.push(...((o ?? []) as O[]));
       if (!o || o.length < 1000) break;

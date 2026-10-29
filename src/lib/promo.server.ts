@@ -21,7 +21,7 @@ export async function resolveDiscount(db: any, r: { id: string; config: { market
   const email = opts.email?.trim().toLowerCase();
   const phone = opts.phone?.replace(/\D/g, "");
   if (!email && (!phone || phone.length < 8)) return { discount: 0, code: null, label: "" };
-  const { data: past } = await db.from("orders").select("email, phone").eq("restaurant_id", r.id).not("status", "in", "(awaiting_payment,cancelled)").limit(5000);
+  const { data: past } = await db.from("orders").select("email, phone").eq("restaurant_id", r.id).eq("is_test", false).not("status", "in", "(awaiting_payment,cancelled)").limit(5000);
   const seen = (past ?? []).some((o: { email: string | null; phone: string }) =>
     (email && o.email?.toLowerCase() === email) || (phone && phone.length >= 8 && o.phone.replace(/\D/g, "") === phone));
   if (seen) return { discount: 0, code: null, label: "" };

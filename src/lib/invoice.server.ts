@@ -8,8 +8,9 @@ const PAY: Record<string, string> = { online: "Carte bancaire en ligne (Stripe/P
 export async function issueForOrder(admin: Admin, orderId: string) {
   const { data: existing } = await admin.from("restaurant_invoices").select("number, issued_at, data, buyer_b2b, buyer_b2b_updated_at").eq("order_id", orderId).maybeSingle();
   if (existing) return existing as unknown as import("./invoice").Invoice;
-  const { data: o } = await admin.from("orders").select("id, order_number, restaurant_id, customer_name, email, address, postal_code, city, table_label, room_label, items, delivery_fee, service_fee, discount, promo_code, total, payment_method, payment_status, payment_ref, status, created_at, slot, billing").eq("id", orderId).maybeSingle();
+  const { data: o } = await admin.from("orders").select("id, is_test, order_number, restaurant_id, customer_name, email, address, postal_code, city, table_label, room_label, items, delivery_fee, service_fee, discount, promo_code, total, payment_method, payment_status, payment_ref, status, created_at, slot, billing").eq("id", orderId).maybeSingle();
   if (!o) throw new Error("Commande introuvable");
+  if (o.is_test) throw new Error("CB Test (Admin) : aucune facture, aucun encaissement.");
   if (o.payment_status !== "paid" && ["awaiting_payment", "cancelled", "pending_approval", "new"].includes(o.status)) throw new Error("Facture disponible une fois la commande confirmée.");
   const { data: r } = await admin.from("restaurants").select("name, address, city, phone, email, legal, logo_url").eq("id", o.restaurant_id).single();
   if (!r) throw new Error("Restaurant introuvable");

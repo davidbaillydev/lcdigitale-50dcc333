@@ -3,7 +3,7 @@ import type { supabase } from "@/integrations/supabase/client";
 /** Historical reads remain scoped to the selected restaurant and existing RLS. */
 export function queryKitchenHistory(client: typeof supabase, restaurantId: string, filters: { search: string; date: string }, page: number) {
   if (!restaurantId) throw new Error("Restaurant requis");
-  let query = client.from("orders").select("id,restaurant_id,status,created_at,order_number,customer_name,phone,email,mode,address,city,slot,asap,first_name,last_name,items,notes,total,subtotal,delivery_fee,service_fee,discount,promo_code,payment_method,payment_status,payment_ref,refund_status,refunded_amount,source,table_label,room_label", { count: "exact" }).eq("restaurant_id", restaurantId).neq("status", "awaiting_payment");
+  let query = client.from("orders").select("id,is_test,restaurant_id,status,created_at,order_number,customer_name,phone,email,mode,address,city,slot,asap,first_name,last_name,items,notes,total,subtotal,delivery_fee,service_fee,discount,promo_code,payment_method,payment_status,payment_ref,refund_status,refunded_amount,source,table_label,room_label", { count: "exact" }).eq("restaurant_id", restaurantId).neq("status", "awaiting_payment");
   if (filters.date) {
     const start = new Date(`${filters.date}T00:00:00`);
     const end = new Date(start); end.setDate(end.getDate() + 1);

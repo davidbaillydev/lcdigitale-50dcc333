@@ -48,7 +48,7 @@ async function fetchOrders(ids: string[], from: string, to: string) {
   for (let i = 0; ; i += 1000) {
     const { data, error } = await supabase.from("orders")
       .select("id, order_number, restaurant_id, created_at, status, mode, source, payment_method, payment_ref, subtotal, discount, delivery_fee, total, customer_name, items")
-      .in("restaurant_id", ids).neq("status", "awaiting_payment")
+      .in("restaurant_id", ids).eq("is_test", false).neq("status", "awaiting_payment")
       .gte("created_at", `${from}T00:00:00`).lte("created_at", `${to}T23:59:59.999`)
       .order("created_at").range(i, i + 999);
     if (error) throw error;

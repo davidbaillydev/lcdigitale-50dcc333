@@ -149,7 +149,7 @@ async function sendHiboutik(o: Order, p: PosRow): Promise<string> {
 export async function syncOrderToPos(orderId: string, opts: { force?: boolean } = {}): Promise<{ status: "synced" | "error" | "skipped"; ref?: string; error?: string }> {
   const d = await db();
   const { data: o } = await d.from("orders").select("*").eq("id", orderId).maybeSingle();
-  if (!o) return { status: "skipped" };
+  if (!o || o.is_test) return { status: "skipped" };
   if (["awaiting_payment", "pending_approval", "cancelled"].includes(o.status)) return { status: "skipped" };
   if (o.pos_status === "synced" && !opts.force) return { status: "synced", ref: o.pos_ref };
   const { data: r } = await d.from("restaurants").select("enabled_features").eq("id", o.restaurant_id).maybeSingle();
