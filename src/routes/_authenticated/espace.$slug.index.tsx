@@ -3,7 +3,8 @@ import { FeatureGate } from "@/components/FeatureGate";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { applyOutbox, enqueueChange, flushOutbox, isNetworkError, loadSnapshot, readOutbox, saveSnapshot } from "@/lib/kitchen-offline";
+import { applyOutbox, enqueueChange, flushOutbox, isNetworkError, loadSnapshot, readOutbox, saveSnapshot, type StatusChange } from "@/lib/kitchen-offline";
+import { deliveryStatusPatch, startKitchenReminder, type DeliveryStep } from "@/lib/kitchen-status";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { EMPTY_OPTIONS, loadOptionData } from "@/lib/menu-options";
 import { ArrowLeft, ArrowRight, Bell, BellOff, Bike, Check, ChefHat, Lock, LogOut, Maximize, Minimize, MoonStar, PanelTopClose, PanelTopOpen, Phone, Printer, Settings, History, ShoppingBag, Sun, Users, Volume2, VolumeX, WifiOff } from "lucide-react";
@@ -119,6 +120,7 @@ function Kitchen() {
   const posSync = useServerFn(retryPosSync);
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
+  const [moving, setMoving] = useState<string | null>(null);
   const printingBase = printingDefaults((restaurant?.config as { printing?: Partial<PrintingConfig> } | null)?.printing);
   const [deviceWidth, setDeviceWidth] = useTicketWidth(printingBase.width);
   const printing = { ...printingBase, width: deviceWidth };
@@ -221,8 +223,11 @@ function Kitchen() {
   const sync = useCallback(async () => {
     if (!rid || !navigator.onLine) return;
     const res = await flushOutbox(localStorage, rid, async (c) => {
-      const { error } = await supabase.from("orders").update({ status: c.status, ...(c.slot ? { slot: c.slot } : {}), updated_at: new Date().toISOString() }).eq("id", c.orderId);
-      if (!error) { notifyRef.current({ data: { orderId: c.orderId, origin: window.location.origin } }).catch(() => {}); return "ok"; }
+      let update = supabase.from("orders").update({ status: c.status, ...(c.slot ? { slot: c.slot } : {}), ...(c.courier_status ? { courier_status: c.courier_status, courier_at: c.courier_at } : {}), updated_at: new Date().toISOString() }).eq("id", c.orderId).eq("restaurant_id", rid);
+      if (c.courier_status) update = update.eq("mode", "delivery").eq("status", "ready").or("courier_status.is.null,courier_status.in.(assigned,en_route)");
+      const { data: rows, error } = await update.select("id");
+      if (!error && rows?.length) { notifyRef.current({ data: { orderId: c.orderId, origin: window.location.origin } }).catch(() => {}); return "ok"; }
+      if (!error) return "rejected";
       return isNetworkError(error) ? "network" : "rejected";
     });
     setQueued(res.remaining);
@@ -281,14 +286,18 @@ function Kitchen() {
   // Rappel sonore tant qu'il reste des commandes non acceptées
   const pending = orders.filter((o) => o.status === "new" || o.status === "pending_approval").length;
   useEffect(() => {
-    if (!sound || !pending) return;
-    const t = setInterval(() => audio.current && beep(audio.current), 10000);
-    return () => clearInterval(t);
+    return startKitchenReminder(sound, ordersRef.current, () => {
+      const ctx = audio.current;
+      if (ctx) void ctx.resume().then(() => beep(ctx)).catch(() => {});
+    });
   }, [sound, pending]);
 
-  const enableSound = () => {
-    if (!audio.current) audio.current = new AudioContext();
-    audio.current.resume(); beep(audio.current); setSound(true); setStarted(true);
+  useEffect(() => () => { void audio.current?.close().catch(() => {}); }, []);
+  const enableSound = async () => {
+    try {
+      if (!audio.current) audio.current = new AudioContext();
+      await audio.current.resume(); beep(audio.current); setSound(true); setStarted(true);
+    } catch { setSound(false); toast.error("Son indisponible : vérifiez le volume et réessayez d’activer le son."); }
   };
 
   /** Accepter : heure prévue fixée par le délai par défaut, ou choisie dans la modale (mode manuel). */
@@ -314,9 +323,10 @@ function Kitchen() {
 
   const notify = useServerFn(notifyOrderStatus);
   const notifyRef = useRef(notify); notifyRef.current = notify;
-  const queue = (o: Order, status: string, slot?: string) => {
+  const queue = (o: Order, status: string, slot?: string, delivery?: ReturnType<typeof deliveryStatusPatch>) => {
     if (!rid) return;
-    setQueued(enqueueChange(localStorage, rid, { orderId: o.id, status, slot, at: new Date().toISOString() }).length);
+    const change: StatusChange = { orderId: o.id, status, slot, ...(delivery ?? {}), at: new Date().toISOString() };
+    setQueued(enqueueChange(localStorage, rid, change).length);
     toast.info("Hors-ligne : changement enregistré, il sera synchronisé au retour du réseau");
   };
   const move = async (o: Order, status: string, slot?: string) => {
@@ -328,6 +338,33 @@ function Kitchen() {
     notify({ data: { orderId: o.id, origin: window.location.origin } }).catch(() => {});
     // Commande validée en cuisine (ex. QR libre-service) : envoi à la caisse si pas encore fait
     if (feat.pos_sync && (status === "accepted" || status === "new") && !(o as { pos_status?: string | null }).pos_status) posSync({ data: { orderId: o.id } }).then(() => load()).catch(() => load());
+  };
+
+  const moveDelivery = async (o: Order, step: DeliveryStep) => {
+    if (!rid || moving || o.mode !== "delivery" || o.status !== "ready") return;
+    if (step === "delivered" && o.courier_status !== "en_route") return;
+    const patch = deliveryStatusPatch(step);
+    setMoving(o.id);
+    try {
+      if (!navigator.onLine) {
+        setOrders((prev) => prev.map((x) => x.id === o.id ? { ...x, ...patch } : x));
+        queue(o, patch.status, undefined, patch); return;
+      }
+      const { data: rows, error } = await supabase.from("orders").update(patch)
+        .eq("id", o.id).eq("restaurant_id", rid).eq("mode", "delivery").eq("status", "ready")
+        .or(step === "delivered" ? "courier_status.eq.en_route" : "courier_status.is.null,courier_status.eq.assigned")
+        .select("id");
+      if (error) throw error;
+      if (!rows?.length) { toast.error("La commande a déjà changé : affichage actualisé."); await load(); return; }
+      setOrders((prev) => prev.map((x) => x.id === o.id ? { ...x, ...patch } : x));
+      void notify({ data: { orderId: o.id, origin: window.location.origin } }).catch(() => {});
+      toast.success(step === "en_route" ? "Commande en livraison" : "Commande livrée");
+    } catch (error) {
+      if (isNetworkError(error as { message?: string })) {
+        setOrders((prev) => prev.map((x) => x.id === o.id ? { ...x, ...patch } : x));
+        queue(o, patch.status, undefined, patch);
+      } else { toast.error("Mise à jour de la livraison impossible"); await load(); }
+    } finally { setMoving(null); }
   };
 
   if (loading) return <p className="p-10 text-center text-muted-foreground">Chargement…</p>;
@@ -503,13 +540,17 @@ function Kitchen() {
                       ))}
                     </ul>
                     {o.notes && <p className="mt-2 rounded border-l-4 border-primary bg-accent p-3 text-sm font-medium">⚠ {o.notes}</p>}
-                    {o.mode === "delivery" && <div className="mt-2 space-y-2"><p className="text-sm">{o.address}{o.city ? `, ${o.city}` : ""}</p><DriverSelect orderId={o.id} driverId={o.driver_id ?? null} drivers={drivers} courierStatus={o.courier_status ?? null} /></div>}
+                    {o.mode === "delivery" && <div className="mt-2 space-y-2"><p className="text-sm">{o.address}{o.city ? `, ${o.city}` : ""}</p>{o.courier_status === "en_route" && <p role="status" className="flex items-center gap-2 rounded-md bg-accent p-3 font-semibold text-accent-foreground"><Bike className="h-5 w-5" />En livraison</p>}<DriverSelect orderId={o.id} driverId={o.driver_id ?? null} drivers={drivers} courierStatus={o.courier_status ?? null} /></div>}
                     <div className="mt-2 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-start gap-2 break-words text-sm text-muted-foreground">
                       {o.source === "kiosk" ? <span /> : <a href={`tel:${o.phone}`} className="flex items-center gap-1"><Phone className="h-3 w-3" />{o.phone}</a>}
                       <span>{euro(Number(o.total))} · {o.is_test ? "CB Test (Admin) · Aucun encaissement" : o.payment_method === "online" && o.payment_status === "paid" ? `Payé en ligne (${String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("mollie:") ? "Mollie" : String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("paypal:") ? "PayPal" : String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("lyra:") ? "Lyra" : "Stripe"})` : o.payment_status === "paid" ? "payé (terminal)" : o.payment_method === "online" ? "payé" : o.payment_method === "card_terminal" ? "CB au comptoir" : o.payment_method === "counter" ? "espèces/TR au comptoir" : "à encaisser"}</span>
                     </div>
                     <div className="mt-3 flex gap-2">
-                      <Button size="lg" className="min-h-14 flex-1 text-base font-semibold" onClick={() => (c.s === "new" ? accept(o) : move(o, c.next))}>{c.action}<ArrowRight aria-hidden="true" /></Button>
+                      {c.s === "ready" && o.mode === "delivery" ? (
+                        <Button size="lg" disabled={moving !== null} className="min-h-14 flex-1 text-base font-semibold" onClick={() => void moveDelivery(o, o.courier_status === "en_route" ? "delivered" : "en_route")}>
+                          {o.courier_status === "en_route" ? <Check /> : <Bike />}{o.courier_status === "en_route" ? "Livrée" : "En livraison"}
+                        </Button>
+                      ) : <Button size="lg" className="min-h-14 flex-1 text-base font-semibold" onClick={() => (c.s === "new" ? accept(o) : move(o, c.next))}>{c.action}<ArrowRight aria-hidden="true" /></Button>}
                       {c.s === "new" && <Button size="lg" variant="outline" className="min-h-14" onClick={() => confirm("Refuser cette commande ?") && move(o, "cancelled")}>Refuser</Button>}
                     </div>
                     <div className="mt-2 flex flex-wrap gap-2">

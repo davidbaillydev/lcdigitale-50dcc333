@@ -237,7 +237,7 @@ export const getOrderStatus = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("orders")
-      .select("id, is_test, order_number, status, mode, slot, total, items, payment_method, payment_status, customer_name, discount, promo_code, delivery_fee, service_fee, table_label, restaurants(slug, config)")
+      .select("id, is_test, order_number, status, courier_status, mode, slot, total, items, payment_method, payment_status, customer_name, discount, promo_code, delivery_fee, service_fee, table_label, restaurants(slug, config)")
       .eq("id", data.id)
       .maybeSingle();
     if (!row) return row;

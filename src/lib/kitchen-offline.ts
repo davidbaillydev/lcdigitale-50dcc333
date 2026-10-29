@@ -1,7 +1,7 @@
 // Mode hors-ligne de l'écran cuisine : instantané local des commandes du jour + file d'attente
 // (outbox) des changements de statut faits pendant une coupure. Fonctions pures, stockage injecté.
 export type KvStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
-export type StatusChange = { orderId: string; status: string; slot?: string | undefined; at: string };
+export type StatusChange = { orderId: string; status: string; slot?: string | undefined; courier_status?: "en_route" | "delivered" | undefined; courier_at?: string | undefined; at: string };
 export type KitchenSnapshot<O, L> = { day: string; savedAt: string; orders: O[]; logs: Record<string, L[]> };
 
 const snapKey = (rid: string) => `kitchen-offline:snapshot:${rid}`;
@@ -38,7 +38,7 @@ export function applyOutbox<O extends { id: string; status: string; slot: string
   if (!outbox.length) return orders;
   return orders.map((o) => {
     const c = outbox.find((x) => x.orderId === o.id);
-    return c ? { ...o, status: c.status, ...(c.slot ? { slot: c.slot } : {}) } : o;
+    return c ? { ...o, status: c.status, ...(c.slot ? { slot: c.slot } : {}), ...(c.courier_status ? { courier_status: c.courier_status, courier_at: c.courier_at } : {}) } : o;
   });
 }
 
@@ -48,7 +48,9 @@ export async function flushOutbox(s: KvStorage, rid: string, send: (c: StatusCha
   const list = readOutbox(s, rid);
   let sent = 0, rejected = 0, i = 0;
   for (; i < list.length; i++) {
-    const r = await send(list[i]!).catch((): SendResult => "network");
+    const change = list[i];
+    if (!change) continue;
+    const r = await send(change).catch((): SendResult => "network");
     if (r === "network") break;
     if (r === "ok") sent++; else rejected++;
   }
