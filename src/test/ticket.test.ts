@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ticketEscpos } from "@/lib/escpos";
-import { cleanOptionLabel, isPaid, isPreorder, payLabel, printingDefaults, ticketCustomer, ticketFields, ticketHtml, ticketOptions, ticketTiming, ticketTotals, ticketWebsite, autoPrintKinds, autoPrintLabel, ticketFontSize, TICKET_FONTS, type TicketOrder } from "@/lib/ticket";
+import { cleanOptionLabel, isPaid, isPreorder, payLabel, printingDefaults, settlementNote, ticketCustomer, ticketFields, ticketHtml, ticketOptions, ticketTiming, ticketTotals, ticketWebsite, autoPrintKinds, autoPrintLabel, ticketFontSize, TICKET_FONTS, type TicketOrder } from "@/lib/ticket";
 
 const order: TicketOrder = {
   order_number: 12,
@@ -131,6 +131,25 @@ describe("ticket formatting", () => {
     expect(payLabel("online", true)).toBe("Payé en ligne");
     expect(payLabel("online", false)).toBe("Paiement en ligne (en attente)");
     expect(payLabel("card_terminal")).toBe("Carte bancaire (au comptoir)");
+  });
+
+  it("labels the settlement note by payment mode and state, without the non-fiscal wording", () => {
+    expect(settlementNote(order)).toBe("Payé en ligne — Facture envoyée par email et accessible sur votre lien de suivi");
+    expect(settlementNote({ ...order, payment_method: "counter", payment_status: "paid" })).toBe("Reçu de paiement — Facture disponible sur demande");
+    expect(settlementNote({ ...order, payment_method: "card_terminal", payment_status: "paid" })).toBe("Reçu de paiement — Facture disponible sur demande");
+    expect(settlementNote({ ...order, payment_status: "unpaid" })).toBe("Bon de commande — À régler au comptoir avant remise");
+  });
+
+  it("prints the settlement note on the customer ticket, never the non-fiscal notice", () => {
+    for (const html of [ticketHtml(order, "receipt", 80, { name: "W" }), ticketHtml({ ...order, payment_status: "unpaid" }, "receipt", 80, { name: "W" })]) {
+      expect(html).not.toContain("non fiscal");
+      expect(html).toContain("Merci de votre commande !");
+    }
+    expect(ticketHtml(order, "receipt", 80, { name: "W" })).toContain("Payé en ligne — Facture envoyée par email et accessible sur votre lien de suivi");
+    expect(ticketHtml({ ...order, payment_status: "unpaid" }, "receipt", 80, { name: "W" })).toContain("Bon de commande — À régler au comptoir avant remise");
+    const text = Array.from(ticketEscpos({ ...order, payment_method: "counter", payment_status: "paid" }, "receipt", 80, { name: "W" })).map((b) => String.fromCharCode(b)).join("");
+    expect(text).toContain("Reçu de paiement — Facture disponible sur demande");
+    expect(text).not.toContain("non fiscal");
   });
 
   it("uses the stored subtotal when present and matches the model VAT", () => {
