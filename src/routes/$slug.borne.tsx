@@ -1,6 +1,7 @@
 import { useOrdersPaused } from "@/hooks/use-orders-paused";
 import { useWakeLock } from "@/hooks/use-wake-lock";
 import { useKioskLock } from "@/hooks/use-kiosk-lock";
+import { kioskIdleAction } from "@/lib/kiosk-idle";
 import { OrderingBanners } from "@/components/OrderingBanners";
 import { FeatureOff } from "@/components/FeatureGate";
 import { featuresOf } from "@/lib/features";
@@ -140,10 +141,9 @@ function Kiosk() {
         if (cardState === "failed" && pending && Date.now() - last.current > 60_000) { void abandon({ data: { orderId: pending.id } }).catch(() => {}); setPending(null); reset(); }
         return;
       }
-      const idle = Date.now() - last.current;
-      const limit = step === "done" ? 15_000 : IDLE_MS;
-      if (idle > limit) reset();
-      else if (step !== "done" && idle > limit - 15_000) setWarn(true);
+      const action = kioskIdleAction(step, Date.now() - last.current);
+      if (action === "reset") reset();
+      else if (action === "warn") setWarn(true);
     }, 1000);
     return () => { evs.forEach((e) => window.removeEventListener(e, touch)); clearInterval(t); };
   }, [step, reset, cardState, pending, abandon, qr, cancelQr]);
