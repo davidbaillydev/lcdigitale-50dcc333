@@ -8,7 +8,7 @@ describe("kitchen offline", () => {
   it("restaure les commandes et logs du jour après rechargement", () => {
     const s = mem(); const now = new Date(2026, 9, 29, 12);
     saveSnapshot(s, "r1", [o("a")], { a: [{ id: "l1" }] }, now);
-    const snap = loadSnapshot(s, "r1", new Date(2026, 9, 29, 20));
+    const snap = loadSnapshot<ReturnType<typeof o>, { id: string }>(s, "r1", new Date(2026, 9, 29, 20));
     expect(snap?.orders.map((x) => x.id)).toEqual(["a"]);
     expect(snap?.logs["a"]).toHaveLength(1);
   });
