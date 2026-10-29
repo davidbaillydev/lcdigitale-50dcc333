@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { listCreditNotes, refundOrder, REFUND_REASONS, type RefundReason } from "@/lib/refunds.functions";
 import { downloadInvoice } from "@/lib/invoice";
 
-type O = { id: string; total: number | string; payment_method: string; payment_status?: string; payment_ref?: string | null; refunded_amount?: number | string | null; items: { name: string; qty: number; total: number }[] };
+type O = { id: string; total: number | string; payment_method: string; payment_status?: string | null; payment_ref?: string | null; refunded_amount?: number | string | null; items: { name: string; qty: number; total?: number }[] };
 
 const providerName = (ref?: string | null) => (ref?.startsWith("pi_") ? "Stripe" : ref?.startsWith("mollie:") ? "Mollie" : null);
 
@@ -24,7 +24,7 @@ export function RefundBadge({ o }: { o: O }) {
 }
 
 /** Bouton « Rembourser » + modale (total, partiel par montant ou par article) et accès aux avoirs. */
-export function RefundButton({ o, onDone }: { o: O; onDone?: () => void }) {
+export function RefundButton({ o, onDone, actionClassName }: { o: O; onDone?: () => void; actionClassName?: string }) {
   const provider = providerName(o.payment_ref);
   const refund = useServerFn(refundOrder);
   const list = useServerFn(listCreditNotes);
@@ -56,12 +56,12 @@ export function RefundButton({ o, onDone }: { o: O; onDone?: () => void }) {
   return (
     <>
       <div className="flex gap-2">
-        <Button size="sm" variant="destructive" className="min-h-12 flex-1" disabled={remaining <= 0}
+        <Button size="sm" variant="destructive" className={cn("min-h-12 flex-1", actionClassName)} disabled={remaining <= 0}
           onClick={() => { setKey(crypto.randomUUID()); setKind("full"); setAmount(""); setItems([]); setErr(""); setOpen(true); }}>
           <Undo2 /> {remaining <= 0 ? "Remboursée" : "Rembourser"}
         </Button>
         {done > 0 && (
-          <Button size="sm" variant="secondary" className="min-h-12 flex-1" onClick={async () => {
+          <Button size="sm" variant="secondary" className={cn("min-h-12 flex-1", actionClassName)} onClick={async () => {
             try { const notes = await list({ data: { orderId: o.id } }); for (const n of notes) await downloadInvoice(n); if (!notes.length) toast.error("Aucun avoir"); }
             catch (e) { toast.error(e instanceof Error ? e.message : "Avoir indisponible"); }
           }}><FileText /> Avoir PDF</Button>
