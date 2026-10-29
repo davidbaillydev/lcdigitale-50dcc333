@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 
-export function WhatsAppAccess({ restaurant, compact = false }: { restaurant: WhatsAppRestaurant; compact?: boolean }) {
+export function WhatsAppAccess({ restaurant, compact = false, origin }: { restaurant: WhatsAppRestaurant; compact?: boolean; origin?: string | null | undefined }) {
   const [open, setOpen] = useState(false);
   const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
@@ -32,7 +32,7 @@ export function WhatsAppAccess({ restaurant, compact = false }: { restaurant: Wh
     <>
       <Button size={compact ? "sm" : "default"} variant="secondary" onClick={() => {
         setPhone(restaurant.phone ?? "");
-        setMessage(buildWhatsAppOnboarding(restaurant));
+        setMessage(buildWhatsAppOnboarding(restaurant, origin));
         setView("preview");
         setOpen(true);
       }}><MessageCircle /> Accès WhatsApp</Button>

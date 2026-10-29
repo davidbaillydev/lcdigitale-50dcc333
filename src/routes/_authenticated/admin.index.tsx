@@ -5,7 +5,7 @@ import { ArrowDown, ArrowUp, ChefHat, GripVertical, ExternalLink, LogOut, Pencil
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useStaff } from "@/hooks/use-staff";
-import { listAgencyRestaurants, reorderRestaurants, saveRestaurant, setRestaurantActive, type AgencyRestaurant } from "@/lib/agency.functions";
+import { getAgencyPublicDomain, listAgencyRestaurants, reorderRestaurants, saveAgencyPublicDomain, saveRestaurant, setRestaurantActive, type AgencyRestaurant } from "@/lib/agency.functions";
 import { MENU_KEYS, MENU_LABELS } from "@/lib/catalogs";
 import { inviteMember } from "@/lib/staff.functions";
 import { brandVars, BrandLogo, fileToLogo } from "@/lib/brand";
@@ -47,6 +47,21 @@ function Console() {
   const [q, setQ] = useState("");
   const reorder = useServerFn(reorderRestaurants);
   const [dragId, setDragId] = useState<string | null>(null);
+  const loadDomain = useServerFn(getAgencyPublicDomain);
+  const saveDomain = useServerFn(saveAgencyPublicDomain);
+  const [publicDomain, setPublicDomain] = useState<string | null>(null);
+  const [domainDraft, setDomainDraft] = useState("");
+  const [savingDomain, setSavingDomain] = useState(false);
+  const submitDomain = async () => {
+    setSavingDomain(true);
+    try {
+      const { domain } = await saveDomain({ data: { domain: domainDraft } });
+      setPublicDomain(domain);
+      setDomainDraft(domain);
+      toast.success("Domaine public enregistré");
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setSavingDomain(false); }
+  };
   const move = async (from: string, to: string | number) => {
     if (!rows) return;
     const list = [...rows];
@@ -61,6 +76,10 @@ function Console() {
 
   const load = useCallback(() => list().then(setRows).catch((e) => toast.error(e.message)), [list]);
   useEffect(() => { if (isAgency) load(); }, [isAgency, load]);
+  useEffect(() => {
+    if (!isAgency) return;
+    loadDomain().then((domain) => { setPublicDomain(domain); setDomainDraft(domain); }).catch(() => {});
+  }, [isAgency, loadDomain]);
 
   if (loading || !user) return <p className="p-10 text-center text-muted-foreground">Chargement…</p>;
   if (!isAgency) return (
@@ -92,6 +111,19 @@ function Console() {
         <Button variant="ghost" size="icon" onClick={async () => { await supabase.auth.signOut(); navigate({ to: "/connexion", replace: true }); }} aria-label="Déconnexion"><LogOut /></Button>
       </header>
       <Input className="mt-6" placeholder="Rechercher un restaurant (nom, ville, adresse web)…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher" />
+
+      <section className="mt-6 rounded-lg border border-border bg-card p-4 sm:p-6" aria-label="Domaine public">
+        <h2 className="font-display text-2xl font-semibold">Domaine public</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Base des liens partagés (messages WhatsApp, accès livreurs et clients). Elle doit rester identique au domaine publié.</p>
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
+          <div className="flex-1 space-y-1">
+            <Label htmlFor="public-domain">Adresse du site public</Label>
+            <Input id="public-domain" type="url" inputMode="url" placeholder="https://restaurant.lcdigitale.fr" value={domainDraft} onChange={(e) => setDomainDraft(e.target.value)} />
+          </div>
+          <Button className="min-h-12" disabled={savingDomain || !domainDraft.trim()} onClick={submitDomain}>{savingDomain ? "Enregistrement…" : "Enregistrer"}</Button>
+        </div>
+        {publicDomain && <p className="mt-2 text-sm text-muted-foreground">Liens générés actuellement sur : <span className="font-medium text-foreground">{publicDomain}</span></p>}
+      </section>
 
       <div className="admin-metrics mt-8 grid grid-cols-1 gap-6 sm:grid-cols-3">
         {[["Restaurants", rows?.length ?? 0], ["En ligne", active], ["Commandes aujourd'hui", today]].map(([l, v]) => (
@@ -143,7 +175,7 @@ function Console() {
                 <Button size="sm" variant="secondary" asChild><Link to="/espace/$slug/clients" params={{ slug: r.slug }}>Clients</Link></Button>
                 <Button size="sm" variant="secondary" asChild><Link to="/admin/$slug" params={{ slug: r.slug }}><Settings /> Réglages</Link></Button>
                 <Button size="sm" onClick={() => setForm({ ...r })}><Pencil /> Modifier</Button>
-                <WhatsAppAccess restaurant={r} compact />
+                <WhatsAppAccess restaurant={r} compact origin={publicDomain} />
               </div>
             </article>
           ))}

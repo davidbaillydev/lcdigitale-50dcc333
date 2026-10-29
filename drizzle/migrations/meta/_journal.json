@@ -127,6 +127,13 @@
       "when": 1792932196161,
       "tag": "0017_menu_structure_templates",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1793271378369,
+      "tag": "0018_agency_settings_public_domain",
+      "breakpoints": true
     }
   ]
 }
