@@ -2,6 +2,12 @@ import { describe, expect, it } from "vitest";
 import { ticketEscpos } from "@/lib/escpos";
 import { cleanOptionLabel, isPaid, isPreorder, payLabel, printingDefaults, settlementNote, ticketCustomer, ticketFields, ticketHtml, ticketOptions, ticketTiming, ticketTotals, ticketWebsite, autoPrintKinds, autoPrintLabel, ticketFontSize, TICKET_FONTS, type TicketOrder } from "@/lib/ticket";
 
+/** Décode les octets ESC/POS (CP858) en texte lisible pour les assertions. */
+const decodeEscpos = (bytes: Uint8Array) =>
+  Array.from(bytes)
+    .map((b) => ({ 0x82: "é", 0x90: "É", 0x85: "à", 0x8a: "è", 0x87: "ç", 0xd5: "€", 0x0a: "\n" })[b] ?? (b >= 32 && b < 127 ? String.fromCharCode(b) : ""))
+    .join("");
+
 const order: TicketOrder = {
   order_number: 12,
   customer_name: "Client test",
@@ -147,8 +153,8 @@ describe("ticket formatting", () => {
     }
     expect(ticketHtml(order, "receipt", 80, { name: "W" })).toContain("Payé en ligne — Facture envoyée par email et accessible sur votre lien de suivi");
     expect(ticketHtml({ ...order, payment_status: "unpaid" }, "receipt", 80, { name: "W" })).toContain("Bon de commande — À régler au comptoir avant remise");
-    const text = Array.from(ticketEscpos({ ...order, payment_method: "counter", payment_status: "paid" }, "receipt", 80, { name: "W" })).map((b) => String.fromCharCode(b)).join("");
-    expect(text).toContain("Reçu de paiement — Facture disponible sur demande");
+    const text = decodeEscpos(ticketEscpos({ ...order, payment_method: "counter", payment_status: "paid" }, "receipt", 80, { name: "W" }));
+    expect(text).toContain("Reçu de paiement - Facture disponible sur demande");
     expect(text).not.toContain("non fiscal");
   });
 
@@ -187,8 +193,8 @@ describe("receipt aligned with kitchen format", () => {
       for (const s of ["14,80 €", "Livraison", "Frais de service", "Remise BIENVENUE", "TVA (10 % incluse)", "TOTAL", "16,80 €", "Payé", "WOK &amp; SUSHI", "1 rue Test", "05 00 00 00 00", "restaurant.lcdigitale.fr/woknsushi", "Payé en ligne — Facture envoyée par email et accessible sur votre lien de suivi"]) expect(html).toContain(s);
       expect(html).toContain("+ Cordon bleu (+1,50 €)");
     }
-    const text = Array.from(ticketEscpos(full, "receipt", 80, shop, { prices: false })).map((b) => String.fromCharCode(b)).join("");
-    for (const s of ["Livraison", "Frais de service", "Remise BIENVENUE", "TOTAL", "Payé en ligne — Facture envoyée par email et accessible sur votre lien de suivi", "restaurant.lcdigitale.fr/woknsushi", "WOK & SUSHI"]) expect(text).toContain(s);
+    const text = decodeEscpos(ticketEscpos(full, "receipt", 80, shop, { prices: false }));
+    for (const s of ["Livraison", "Frais de service", "Remise BIENVENUE", "TOTAL", "Payé en ligne - Facture envoyée par email et accessible sur votre lien de suivi", "restaurant.lcdigitale.fr/woknsushi", "WOK & SUSHI"]) expect(text).toContain(s);
   });
   it("applies text size and font to the receipt too", () => {
     expect(ticketHtml(order, "receipt", 80, "W", { textSize: "large", font: "condensed" })).toContain(`${ticketFontSize(80, "large")}px`);

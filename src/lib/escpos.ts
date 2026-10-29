@@ -102,7 +102,7 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
   if (f.prices) e.bold(true).size(1, 2).line(lr("TOTAL", eur(totals.total), cols)).size(1, 1).bold(false);
   if (f.paid) { const p = isPaid(o); e.line(hr).align(1).bold(true).size(1, 2).line(`[${p ? "X" : " "}] PAYE    [${p ? " " : "X"}] IMPAYE`).size(1, 1).bold(false).line(hr).align(0); }
   if (f.qc && kind === "kitchen") { e.line(hr).bold(true).line("CONTROLE EMBALLAGE").bold(false).line("[ ] Articles conformes").line("[ ] Tous les articles").line("[ ] Couverts / sauces").line("").line("Visa : " + ".".repeat(Math.max(4, cols - 7))); }
-  if (kind === "receipt") { e.line(hr).align(1).bold(true); wrap(settlementNote(o), cols).forEach((l) => e.line(l)); e.bold(false).line("Merci de votre commande !"); }
+  if (kind === "receipt") { e.line(hr).align(1).bold(true); wrap(settlementNote(o).replace(/—/g, "-"), cols).forEach((l) => e.line(l)); e.bold(false).line("Merci de votre commande !"); }
   e.line(hr).align(1).bold(true).line("Commande en ligne:");
   wrap(ticketWebsite(shop), cols).forEach((l) => e.line(l));
   e.line(hr).line().size(1, 2);
