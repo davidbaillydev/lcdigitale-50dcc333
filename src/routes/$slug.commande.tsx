@@ -77,12 +77,17 @@ function Checkout() {
   const onSiteOk = restaurant.config.payments?.on_site !== false;
   const embed = useEmbedMode(restaurant.slug, featuresOf(restaurant.enabled_features).embed);
 
+  const isDelivery = mode === "delivery" && !table;
+  const firstOnline = (r: typeof online) => (r.mollie ? "mollie" : r.stripe ? "stripe" : r.paypal ? "paypal" : r.lyra ? "lyra" : null);
   useEffect(() => {
     infoFn({ data: { slug: restaurant.slug } }).then((r) => {
       setOnline(r);
-      if (!onSiteOk) setPay(r.stripe ? "stripe" : r.mollie ? "mollie" : r.paypal ? "paypal" : r.lyra ? "lyra" : "on_site");
+      if (!onSiteOk) setPay((r.stripe ? "stripe" : firstOnline(r)) ?? "on_site");
     }).catch(() => {});
   }, [restaurant.slug, infoFn, onSiteOk]);
+  useEffect(() => {
+    if (isDelivery && pay === "on_site") { const f = firstOnline(online); if (f) setPay(f); }
+  }, [isDelivery, pay, online]);
 
   useEffect(() => {
     const s = availableSlots(restaurant, mode);
@@ -189,7 +194,7 @@ function Checkout() {
   };
 
   const options = [
-    ...(onSiteOk ? [{ v: "on_site" as const, Icon: Store, t: table ? "À table / au comptoir" : mode === "delivery" ? "À la livraison" : "Au retrait", s: "Espèces, CB ou tickets resto", ok: true }] : []),
+    ...(onSiteOk && !isDelivery ? [{ v: "on_site" as const, Icon: Store, t: table ? "À table / au comptoir" : "Au retrait", s: "Espèces, CB ou tickets resto", ok: true }] : []),
     { v: "stripe" as const, Icon: CreditCard, t: "Carte bancaire", s: online.stripe ? "Carte, Apple Pay, Google Pay" : "Non proposé par ce restaurant", ok: !!online.stripe },
     ...(online.mollie ? [{ v: "mollie" as const, Icon: CreditCard, t: "Carte · Bancontact · Apple Pay", s: "Page de paiement sécurisée Mollie", ok: true }] : []),
     ...(online.paypal ? [{ v: "paypal" as const, Icon: Wallet, t: "PayPal", s: "Compte PayPal ou carte via PayPal", ok: true }] : []),
