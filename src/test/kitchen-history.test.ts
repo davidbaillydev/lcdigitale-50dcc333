@@ -9,6 +9,12 @@ function mockClient() {
   return { client: { from } as unknown as typeof supabase, query, from };
 }
 describe("Kitchen ticket history", () => {
+  it("selects online payment and refund data for historical orders", () => {
+    const { client, query } = mockClient();
+    queryKitchenHistory(client, "restaurant-cuisine", { search: "", date: "" }, 0);
+    const columns = String(query.select.mock.calls[0]?.[0]).split(",");
+    for (const column of ["payment_method", "payment_status", "payment_ref", "refund_status", "refunded_amount"]) expect(columns).toContain(column);
+  });
   it("always limits history to the selected restaurant", () => {
     const { client, query } = mockClient();
     queryKitchenHistory(client, "restaurant-cuisine", { search: "", date: "" }, 0);

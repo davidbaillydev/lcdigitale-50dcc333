@@ -32,7 +32,7 @@
 - Kitchen and courier PINs: hashed in service-role-only tables (`restaurant_kitchen_pins`, `restaurant_courier_pins`) with attempt lockout; courier sessions are HMAC tokens keyed on the PIN hash. Why: no extra accounts, PIN change revokes sessions.
 - Invoice transmission stays disabled pending provider and compliance validation; PDFs alone are not fiscal compliance.
 - Kitchen: column scrolling, collapsible nav, safe-area insets; touch dialogs separate fixed header/search/footer from scrolling content. Why: retain access to closing and navigation during service.
-- Kitchen secondary controls and role-filtered section links live in the settings dialog; historical order lookup uses restaurant-scoped browser RLS, bounded pagination and shared ticket printing without sales-management privileges. Why: keep service uncluttered while allowing staff to retrieve their own tickets.
+- Kitchen secondary controls and role-filtered section links live in the settings dialog; history uses restaurant-scoped browser RLS, bounded pagination, shared tickets and existing manager-checked refund controls, invalidating restaurant history after refund success. Why: keep service uncluttered without widening payment permissions or showing stale refunds.
 - Settings share themed navigation with mounted hidden sections and scoped save actions. Why: changing themes retains drafts without implying a global save.
 - Read subdirectory AGENTS.md before edits; they contain scoped rules.
 - Menu structure templates are agency-published detached snapshots; managers map imported items explicitly, inline size/extra groups remain draft-only until saveMenu. Why: reuse formats across restaurants without live links, source assets or unintended option-table writes.
