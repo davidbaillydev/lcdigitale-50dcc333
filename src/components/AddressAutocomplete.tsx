@@ -19,11 +19,13 @@ export function AddressAutocomplete({ id, value, onChange, onSelect, placeholder
   const [items, setItems] = useState<BanAddress[]>([]);
   const [hi, setHi] = useState(-1);
   const seq = useRef(0);
+  const skip = useRef<string | null>(null);
   const box = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const q = value.trim();
-    if (q.length < 4) { setItems([]); setOpen(false); return; }
+    if (q.length < 4 || q === skip.current) { setItems([]); setOpen(false); return; }
+    skip.current = null;
     const n = ++seq.current;
     const t = setTimeout(async () => {
       try {
@@ -48,6 +50,7 @@ export function AddressAutocomplete({ id, value, onChange, onSelect, placeholder
 
   const pick = (a: BanAddress) => {
     seq.current++; // bloque la réouverture par la requête en cours
+    skip.current = a.address; // ne pas relancer une recherche sur l'adresse choisie
     setOpen(false);
     setItems([]);
     onSelect(a);
