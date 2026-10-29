@@ -25,7 +25,7 @@ describe("Historical refunds", () => {
     mocks.query.mockResolvedValueOnce({ data: [order], count: 1 }).mockResolvedValue({ data: [{ ...order, payment_status: "partially_refunded", refund_status: "partial", refunded_amount: 5 }], count: 1 });
     mocks.refund.mockResolvedValue({ amount: 5, creditNote: "AV-2026-00001" });
     const client = mount();
-    fireEvent.click(await screen.findByRole("button", { name: "Rembourser", exact: true }));
+    fireEvent.click(await screen.findByRole("button", { name: /^Rembourser$/ }));
     fireEvent.click(screen.getByRole("radio", { name: "Montant libre" }));
     fireEvent.change(screen.getByLabelText("Montant (€)"), { target: { value: "5" } });
     fireEvent.click(screen.getByRole("button", { name: /Rembourser 5/ }));
@@ -39,7 +39,7 @@ describe("Historical refunds", () => {
     mocks.query.mockResolvedValue({ data: [{ ...order, payment_status: "unpaid" }], count: 1 });
     mount();
     await screen.findByText("N° 123 · Test");
-    expect(screen.queryByRole("button", { name: "Rembourser", exact: true })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Rembourser$/ })).toBeNull();
     expect(mocks.refund).not.toHaveBeenCalled();
   });
 });
