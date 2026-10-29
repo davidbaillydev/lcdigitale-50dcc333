@@ -25,7 +25,7 @@ const restaurant = {
 type Invoke = (args: { data: unknown }) => Promise<unknown>;
 // Lundi 26/10/2026 12:00 Paris
 const order = (qty: number, postal_code = "81600", payment_method = "online") => (createOrder as unknown as Invoke)({ data: {
-  restaurant: "chick-n-co", asap: false, slot: "2026-10-26T11:00:00Z", first_name: "A", last_name: "B", phone: "0600000000", cgv: true,
+  restaurant: "chick-n-co", asap: false, slot: "2026-10-26T11:10:00Z", first_name: "A", last_name: "B", phone: "0600000000", cgv: true,
   mode: "delivery", payment_method, provider: "mollie", origin: "https://restaurant.lcdigitale.fr", address: "1 place de la Libération", postal_code,
   lines: [{ itemId: "assiette", qty, sel: {} }],
 } });
