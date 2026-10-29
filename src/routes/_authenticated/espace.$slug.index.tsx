@@ -3,6 +3,7 @@ import { FeatureGate } from "@/components/FeatureGate";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { applyOutbox, enqueueChange, flushOutbox, isNetworkError, loadSnapshot, readOutbox, saveSnapshot } from "@/lib/kitchen-offline";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { EMPTY_OPTIONS, loadOptionData } from "@/lib/menu-options";
 import { ArrowLeft, ArrowRight, Bell, BellOff, Bike, Check, ChefHat, Lock, LogOut, Maximize, Minimize, MoonStar, PanelTopClose, PanelTopOpen, Phone, Printer, Settings, History, ShoppingBag, Sun, Users, Volume2, VolumeX } from "lucide-react";
@@ -135,7 +136,9 @@ function Kitchen() {
       const { data: row } = await supabase.from("order_print_logs")
         .insert({ order_id: o.id, restaurant_id: rid, kinds: kinds.join(","), status: ok ? "ok" : "failed", reprint, auto })
         .select("id, kinds, status, reprint, auto, created_at").single();
-      if (row) setLogs((p) => ({ ...p, [o.id]: [...(p[o.id] ?? []), row as PrintLog] }));
+      // Hors-ligne : le journal est conservé localement pour rester visible
+      const entry = (row as PrintLog | null) ?? { id: `local-${Date.now()}`, kinds: kinds.join(","), status: ok ? "ok" : "failed", reprint, auto, created_at: new Date().toISOString() };
+      setLogs((p) => ({ ...p, [o.id]: [...(p[o.id] ?? []), entry] }));
     }
     if (!ok) toast.error(`Impression du ticket n° ${o.order_number} échouée`);
   }, [restaurant, rid, logs, printing.width, printing.kitchen, printing.textSize, printing.font, slug, ticketOptionData, queryClient]);
@@ -181,9 +184,10 @@ function Kitchen() {
 
   const load = useCallback(async () => {
     const since = new Date(); since.setHours(0, 0, 0, 0);
-    const { data } = await supabase.from("orders").select("*").eq("restaurant_id", rid ?? "").gte("created_at", since.toISOString()).order("slot");
+    const { data, error } = await supabase.from("orders").select("*").eq("restaurant_id", rid ?? "").gte("created_at", since.toISOString()).order("slot");
+    if (error || !data) return; // coupure : on garde l'affichage actuel (instantané local)
     const list = ((data ?? []) as unknown as Order[]).filter((o) => o.status !== "awaiting_payment");
-    setOrders(list);
+    setOrders(rid ? applyOutbox(list, readOutbox(localStorage, rid)) : list);
     const ids = (data ?? []).map((o) => o.id);
     if (ids.length) {
       const { data: l } = await supabase.from("order_print_logs").select("id, order_id, kinds, status, reprint, auto, created_at").in("order_id", ids).order("created_at");
@@ -197,9 +201,47 @@ function Kitchen() {
   const deferred = useRef(new Set<string>());
   ordersRef.current = orders;
   const drivers = useDrivers(rid);
+  // ── Mode hors-ligne : instantané local, état réseau et canal temps réel, file de synchronisation
+  const [online, setOnline] = useState(true);
+  const [live, setLive] = useState(true);
+  const [queued, setQueued] = useState(0);
+  const [savedAt, setSavedAt] = useState<string | null>(null);
+  useEffect(() => {
+    if (!rid) return;
+    const snap = loadSnapshot<Order, PrintLog>(localStorage, rid);
+    if (snap) { setOrders((cur) => (cur.length ? cur : applyOutbox(snap.orders, readOutbox(localStorage, rid)))); setLogs((cur) => (Object.keys(cur).length ? cur : snap.logs)); setSavedAt(snap.savedAt); }
+    setQueued(readOutbox(localStorage, rid).length);
+  }, [rid]);
+  useEffect(() => {
+    if (!rid || !orders.length) return;
+    saveSnapshot(localStorage, rid, orders, logs);
+    setSavedAt(new Date().toISOString());
+  }, [rid, orders, logs]);
+  const sync = useCallback(async () => {
+    if (!rid || !navigator.onLine) return;
+    const res = await flushOutbox(localStorage, rid, async (c) => {
+      const { error } = await supabase.from("orders").update({ status: c.status, ...(c.slot ? { slot: c.slot } : {}), updated_at: new Date().toISOString() }).eq("id", c.orderId);
+      if (!error) { notifyRef.current({ data: { orderId: c.orderId, origin: window.location.origin } }).catch(() => {}); return "ok"; }
+      return isNetworkError(error) ? "network" : "rejected";
+    });
+    setQueued(res.remaining);
+    if (res.sent) toast.success(`${res.sent} changement${res.sent > 1 ? "s" : ""} synchronisé${res.sent > 1 ? "s" : ""}`);
+    if (res.rejected) toast.error(`${res.rejected} changement${res.rejected > 1 ? "s" : ""} refusé${res.rejected > 1 ? "s" : ""} par le serveur`);
+    await load();
+  }, [rid, load]);
+  useEffect(() => {
+    setOnline(navigator.onLine);
+    const up = () => { setOnline(true); void sync(); };
+    const down = () => setOnline(false);
+    window.addEventListener("online", up); window.addEventListener("offline", down);
+    return () => { window.removeEventListener("online", up); window.removeEventListener("offline", down); };
+  }, [sync]);
+  const syncRef = useRef(sync); syncRef.current = sync;
+
   useEffect(() => {
     if (!isStaff || !rid) return;
     load();
+    let wasDown = false;
     const ch = supabase
       .channel(`orders-kitchen-${rid}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `restaurant_id=eq.${rid}` }, (p) => {
@@ -228,7 +270,10 @@ function Kitchen() {
         }
         load();
       })
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") { setLive(true); if (wasDown) { wasDown = false; void syncRef.current(); } }
+        else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") { setLive(false); wasDown = true; }
+      });
     return () => { supabase.removeChannel(ch); };
   }, [isStaff, rid, load]);
 
@@ -267,9 +312,17 @@ function Kitchen() {
   };
 
   const notify = useServerFn(notifyOrderStatus);
+  const notifyRef = useRef(notify); notifyRef.current = notify;
+  const queue = (o: Order, status: string, slot?: string) => {
+    if (!rid) return;
+    setQueued(enqueueChange(localStorage, rid, { orderId: o.id, status, slot, at: new Date().toISOString() }).length);
+    toast.info("Hors-ligne : changement enregistré, il sera synchronisé au retour du réseau");
+  };
   const move = async (o: Order, status: string, slot?: string) => {
     setOrders((prev) => prev.map((x) => (x.id === o.id ? { ...x, status, ...(slot ? { slot } : {}) } : x)));
+    if (!navigator.onLine) { queue(o, status, slot); return; }
     const { error } = await supabase.from("orders").update({ status, ...(slot ? { slot } : {}), updated_at: new Date().toISOString() }).eq("id", o.id);
+    if (error && isNetworkError(error)) { queue(o, status, slot); return; }
     if (error) { toast.error("Mise à jour impossible"); load(); return; }
     notify({ data: { orderId: o.id, origin: window.location.origin } }).catch(() => {});
     // Commande validée en cuisine (ex. QR libre-service) : envoi à la caisse si pas encore fait
