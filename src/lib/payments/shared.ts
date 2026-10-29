@@ -37,8 +37,8 @@ export async function markPaid(o: { id: string; restaurant_id: string; status: s
   const next = (r?.config as { autoAccept?: boolean } | null)?.autoAccept ? "accepted" : "new";
   await db.from("orders").update({ payment_status: "paid", status: o.status === "awaiting_payment" ? next : o.status, updated_at: new Date().toISOString() }).eq("id", o.id);
   // Email de confirmation Brevo (envoyé une seule fois, seulement si la commande est acceptée)
-  const { notifyNewOrder } = await import("./order-email.server");
+  const { notifyNewOrder } = await import("../order-email.server");
   await notifyNewOrder(db, o.id).catch((e) => console.error(e));
-  const { syncOrderToPos } = await import("./pos.server");
+  const { syncOrderToPos } = await import("../pos.server");
   await syncOrderToPos(o.id);
 }

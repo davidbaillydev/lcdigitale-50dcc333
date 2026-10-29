@@ -1,7 +1,8 @@
 // QR code de paiement sur la borne (paiement sur le téléphone du client).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { admin, assertOrdersOpen } from "./shared";
+import { admin, assertOrdersOpen, markPaid } from "./shared";
+import { startOnlinePayment } from "./online";
 import { handleStripeSession, stripeCall, stripeForRestaurant } from "./stripe";
 import { handleMolliePayment, mollieCall, mollieForRestaurant } from "./mollie";
 
@@ -62,17 +63,6 @@ export const startKioskQrPayment = createServerFn({ method: "POST" })
     }
     throw new Error("Aucun paiement en ligne n'est configuré pour ce restaurant.");
   });
-
-/** Vérifie une Checkout Session Stripe et valide la commande si elle est payée. */
-export async function handleStripeSession(o: { id: string; restaurant_id: string; status: string; total: number | string; payment_ref: string | null }): Promise<"paid" | "failed" | "pending"> {
-  const s = await stripeForRestaurant(o.restaurant_id);
-  if (!s || !o.payment_ref) return "pending";
-  const cs = await stripeCall(`/checkout/sessions/${encodeURIComponent(o.payment_ref.slice(9))}`, s.secret) as { status?: string; payment_status?: string; amount_total?: number; currency?: string; metadata?: { order_id?: string } };
-  if (cs.metadata?.order_id !== o.id) throw new Error("Paiement non reconnu");
-  if (cs.payment_status === "paid" && cs.currency === "eur" && cs.amount_total === Math.round(Number(o.total) * 100)) { await markPaid(o); return "paid"; }
-  if (cs.status === "expired") return "failed";
-  return "pending";
-}
 
 /** Interrogée par la borne toutes les 2 s : la commande part en cuisine dès que le paiement est confirmé. */
 export const kioskQrStatus = createServerFn({ method: "POST" })

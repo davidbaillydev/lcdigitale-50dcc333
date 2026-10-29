@@ -108,7 +108,7 @@ export async function releaseKioskOrder(db: Awaited<ReturnType<typeof admin>>, o
   const cfg = (o.restaurants as unknown as { config: { autoAccept?: boolean } | null } | null)?.config;
   const { data: upd } = await db.from("orders").update({ status: cfg?.autoAccept ? "accepted" : "new", updated_at: new Date().toISOString() }).eq("id", orderId).eq("status", "awaiting_payment").select("id");
   if (!upd?.length) return;
-  try { const { syncOrderToPos } = await import("./pos.server"); await syncOrderToPos(orderId); } catch (e) { console.error(e); }
+  try { const { syncOrderToPos } = await import("../pos.server"); await syncOrderToPos(orderId); } catch (e) { console.error(e); }
 }
 
 export async function kioskOrder(orderId: string) {
