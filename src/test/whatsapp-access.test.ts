@@ -1,8 +1,25 @@
 import { describe, expect, it } from "vitest";
-import { normalizeWhatsAppPhone, whatsappUrl } from "@/lib/whatsapp-access";
+import { configuredDeliveryRates, configuredServiceFee, whatsappMessageParts, normalizeWhatsAppPhone, whatsappUrl } from "@/lib/whatsapp-access";
 import { computeServiceFee } from "@/lib/service-fee";
 
 describe("accès WhatsApp", () => {
+  it("conserve les frais réels, le franco et le minimum sans valeur inventée", () => {
+    expect(configuredDeliveryRates({ fee: 3.5, freeFrom: 40, minOrder: 20, zones: [] })).toEqual([{ name: "Livraison", fee: 3.5, freeFrom: 40, minOrder: 20, tiers: [] }]);
+    expect(configuredDeliveryRates(null)).toEqual([]);
+  });
+  it("utilise les tarifs par zone plutôt que le tarif de base", () => {
+    expect(configuredDeliveryRates({ fee: 99, freeFrom: 99, minOrder: 99, zones: [], geoZones: [{ id: "z", name: "Centre", type: "circle", fee: 2, freeFrom: 0, minOrder: 15, tiers: [{ from: 25, fee: 1 }] }] })).toEqual([{ name: "Centre", fee: 2, freeFrom: null, minOrder: 15, tiers: [{ from: 25, fee: 1 }] }]);
+  });
+  it("détecte seulement les canaux de frais réellement activés", () => {
+    expect(configuredServiceFee({ enabled: true, kind: "percent", value: 5, modes: { delivery: false, pickup: true, dine_in: false, kiosk: false } }).activeChannels).toEqual(["pickup"]);
+    expect(configuredServiceFee({ enabled: false, value: 5 }).activeChannels).toEqual([]);
+  });
+  it("conserve le texte ajusté tout en identifiant uniquement les liens HTTP(S)", () => {
+    const text = 'Bonjour\nhttps://lcdigitale.lovable.app/livreur?r=resto\njavascript:alert(1) <b>non HTML</b>';
+    const parts = whatsappMessageParts(text);
+    expect(parts.map((part) => part.text).join("")).toBe(text);
+    expect(parts.filter((part) => part.href).map((part) => part.href)).toEqual(["https://lcdigitale.lovable.app/livreur?r=resto"]);
+  });
   it("normalise un numéro français local", () => {
     expect(normalizeWhatsAppPhone("06 12 34 56 78")).toBe("33612345678");
   });

@@ -1,14 +1,47 @@
 import { serviceFeeDefaults, type ServiceFeeConfig } from "./service-fee";
+import type { DeliveryConfig } from "./shop";
 
 export type WhatsAppRestaurant = {
   name: string;
   slug: string;
   phone: string | null;
   config: { ordersPaused?: boolean; serviceFee?: Partial<ServiceFeeConfig> };
+  delivery?: DeliveryConfig | null;
 };
 
 // Shared public origin, never the temporary preview or a restaurant-only domain.
 const PUBLIC_ORIGIN = "https://lcdigitale.lovable.app";
+
+const euros = (value: number) => `${value.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
+export function configuredDeliveryRates(delivery?: DeliveryConfig | null) {
+  if (!delivery) return [];
+  const zones = delivery.geoZones ?? [];
+  return zones.length
+    ? zones.map((zone) => ({ name: zone.name, fee: zone.fee, freeFrom: zone.freeFrom > 0 ? zone.freeFrom : null, minOrder: zone.minOrder, tiers: zone.tiers ?? [] }))
+    : [{ name: "Livraison", fee: delivery.fee, freeFrom: delivery.freeFrom, minOrder: delivery.minOrder, tiers: [] }];
+}
+
+export function deliveryRateLabels(delivery?: DeliveryConfig | null) {
+  return configuredDeliveryRates(delivery).map((rate) => `${rate.name} : ${euros(rate.fee)} de livraison, ${rate.freeFrom === null ? "sans seuil de gratuité" : `offerte dès ${euros(rate.freeFrom)}`}, minimum ${euros(rate.minOrder)}${rate.tiers.map((tier) => ` ; dès ${euros(tier.from)}, livraison ${euros(tier.fee)}`).join("")}`);
+}
+
+export function configuredServiceFee(config?: Partial<ServiceFeeConfig>) {
+  const fee = serviceFeeDefaults(config);
+  return { ...fee, activeChannels: fee.enabled && fee.value > 0 ? (Object.keys(fee.modes) as Array<keyof typeof fee.modes>).filter((channel) => fee.modes[channel]) : [] };
+}
+
+export function serviceFeeRateLabel(config?: Partial<ServiceFeeConfig>) {
+  const fee = configuredServiceFee(config);
+  if (!fee.activeChannels.length) return "Frais de service : désactivés";
+  const channels = { delivery: "livraison", pickup: "retrait", dine_in: "sur place", kiosk: "borne" };
+  const amount = fee.kind === "percent" ? `${fee.value.toLocaleString("fr-FR")} % du sous-total` : `${euros(fee.value)} par commande`;
+  return `Frais de service : ${amount} · ${fee.activeChannels.map((channel) => channels[channel]).join(", ")}`;
+}
+
+/** Plain text only; clickable preview recognizes HTTP(S), never HTML or script URLs. */
+export function whatsappMessageParts(message: string) {
+  return message.split(/(https?:\/\/[^\s<>]+)/g).filter(Boolean).map((text) => ({ text, href: /^https?:\/\/[^\s<>]+$/.test(text) ? text : null }));
+}
 
 export function deliveryServiceFeeSummary(config?: Partial<ServiceFeeConfig>) {
   const fee = serviceFeeDefaults(config);
@@ -40,7 +73,12 @@ ${workspace}/carte
 ⚙️ Réglages
 ${workspace}/reglages
 
-💳 Frais de service sur la livraison
+🚚 Tarifs de livraison configurés
+${deliveryRateLabels(restaurant.delivery).join("\n") || "Tarifs de livraison non renseignés."}
+${restaurant.delivery?.geoZones?.length ? "Le tarif dépend de l’adresse et de la zone de livraison." : ""}
+
+💳 Frais de service configurés
+${serviceFeeRateLabel(restaurant.config.serviceFee)}
 ${deliveryServiceFeeSummary(restaurant.config.serviceFee)}
 Lorsqu’ils sont activés, ces frais accompagnent la sécurisation du paiement par carte bancaire (CB) et la protection des données.
 
