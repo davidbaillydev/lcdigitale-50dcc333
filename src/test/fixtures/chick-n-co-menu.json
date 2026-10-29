@@ -1,0 +1,3570 @@
+[
+  {
+    "id": "import-cat-1",
+    "items": [
+      {
+        "allergens": [
+          "gluten"
+        ],
+        "builder": false,
+        "desc": "Une, deux ou trois viandes au choix selon la taille. XL : double galette. Tacos seul.",
+        "id": "import-item-2",
+        "name": "Tacos — seul",
+        "options": [
+          {
+            "id": "cnc-taille",
+            "label": "Taille",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-taille-0",
+                "label": "M — 1 viande",
+                "price": 7
+              },
+              {
+                "id": "cnc-taille-1",
+                "label": "L — 2 viandes",
+                "price": 9.5
+              },
+              {
+                "id": "cnc-taille-2",
+                "label": "XL — 3 viandes, double galette",
+                "price": 12.5
+              }
+            ],
+            "kind": "size"
+          },
+          {
+            "id": "cnc-viandes-1",
+            "label": "1 viande au choix",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-viandes-1-0",
+                "label": "Kebab",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-1-1",
+                "label": "Poulet tikka",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-1-2",
+                "label": "Poulet tandoori",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-1-3",
+                "label": "Tenders",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-1-4",
+                "label": "Cordon bleu",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-1-5",
+                "label": "Keema",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-1-6",
+                "label": "Kefta",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-1-7",
+                "label": "Steak haché",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-1-8",
+                "label": "Falafel",
+                "price": 0
+              }
+            ],
+            "forSize": "cnc-taille-0"
+          },
+          {
+            "id": "cnc-viandes-2",
+            "label": "2 viandes au choix",
+            "min": 2,
+            "max": 2,
+            "choices": [
+              {
+                "id": "cnc-viandes-2-0",
+                "label": "Kebab",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-2-1",
+                "label": "Poulet tikka",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-2-2",
+                "label": "Poulet tandoori",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-2-3",
+                "label": "Tenders",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-2-4",
+                "label": "Cordon bleu",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-2-5",
+                "label": "Keema",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-2-6",
+                "label": "Kefta",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-2-7",
+                "label": "Steak haché",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-2-8",
+                "label": "Falafel",
+                "price": 0
+              }
+            ],
+            "forSize": "cnc-taille-1"
+          },
+          {
+            "id": "cnc-viandes-3",
+            "label": "3 viandes au choix",
+            "min": 3,
+            "max": 3,
+            "choices": [
+              {
+                "id": "cnc-viandes-3-0",
+                "label": "Kebab",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-3-1",
+                "label": "Poulet tikka",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-3-2",
+                "label": "Poulet tandoori",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-3-3",
+                "label": "Tenders",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-3-4",
+                "label": "Cordon bleu",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-3-5",
+                "label": "Keema",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-3-6",
+                "label": "Kefta",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-3-7",
+                "label": "Steak haché",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-3-8",
+                "label": "Falafel",
+                "price": 0
+              }
+            ],
+            "forSize": "cnc-taille-2"
+          },
+          {
+            "id": "cnc-sauces",
+            "label": "Sauces au choix",
+            "min": 0,
+            "max": 11,
+            "choices": [
+              {
+                "id": "cnc-sauces-0",
+                "label": "Blanche",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-1",
+                "label": "Spicy",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-2",
+                "label": "Golden",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-3",
+                "label": "Green",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-4",
+                "label": "Cocktail",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-5",
+                "label": "Bengal",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-6",
+                "label": "Algérienne",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-7",
+                "label": "Samouraï",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-8",
+                "label": "Barbecue",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-9",
+                "label": "Harissa",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-10",
+                "label": "Biggy",
+                "price": 0
+              }
+            ],
+            "included": 2,
+            "extraPrice": 0.5
+          },
+          {
+            "id": "cnc-tacos-extra",
+            "label": "Suppléments",
+            "min": 0,
+            "max": 4,
+            "choices": [
+              {
+                "id": "cnc-tacos-extra-0",
+                "label": "Cheddar",
+                "price": 1
+              },
+              {
+                "id": "cnc-tacos-extra-1",
+                "label": "Vache qui rit",
+                "price": 1
+              },
+              {
+                "id": "cnc-tacos-extra-2",
+                "label": "Boursin",
+                "price": 1
+              },
+              {
+                "id": "cnc-tacos-extra-3",
+                "label": "Salade",
+                "price": 1
+              }
+            ]
+          },
+          {
+            "id": "cnc-gratine",
+            "label": "Gratiné",
+            "min": 0,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-gratine-0",
+                "label": "Gratiné",
+                "price": 2.5
+              }
+            ]
+          }
+        ],
+        "price": 7
+      },
+      {
+        "allergens": [
+          "gluten"
+        ],
+        "desc": "Une, deux ou trois viandes au choix selon la taille. XL : double galette. Menu avec frites et soft 33 cl.",
+        "id": "import-item-34",
+        "name": "Tacos — menu",
+        "price": 9,
+        "options": [
+          {
+            "id": "cnc-taille",
+            "label": "Taille",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-taille-0",
+                "label": "M — 1 viande",
+                "price": 9
+              },
+              {
+                "id": "cnc-taille-1",
+                "label": "L — 2 viandes",
+                "price": 11.5
+              },
+              {
+                "id": "cnc-taille-2",
+                "label": "XL — 3 viandes, double galette",
+                "price": 14.5
+              }
+            ],
+            "kind": "size"
+          },
+          {
+            "id": "cnc-viandes-1",
+            "label": "1 viande au choix",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-viandes-1-0",
+                "label": "Kebab",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-1-1",
+                "label": "Poulet tikka",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-1-2",
+                "label": "Poulet tandoori",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-1-3",
+                "label": "Tenders",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-1-4",
+                "label": "Cordon bleu",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-1-5",
+                "label": "Keema",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-1-6",
+                "label": "Kefta",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-1-7",
+                "label": "Steak haché",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-1-8",
+                "label": "Falafel",
+                "price": 0
+              }
+            ],
+            "forSize": "cnc-taille-0"
+          },
+          {
+            "id": "cnc-viandes-2",
+            "label": "2 viandes au choix",
+            "min": 2,
+            "max": 2,
+            "choices": [
+              {
+                "id": "cnc-viandes-2-0",
+                "label": "Kebab",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-2-1",
+                "label": "Poulet tikka",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-2-2",
+                "label": "Poulet tandoori",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-2-3",
+                "label": "Tenders",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-2-4",
+                "label": "Cordon bleu",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-2-5",
+                "label": "Keema",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-2-6",
+                "label": "Kefta",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-2-7",
+                "label": "Steak haché",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-2-8",
+                "label": "Falafel",
+                "price": 0
+              }
+            ],
+            "forSize": "cnc-taille-1"
+          },
+          {
+            "id": "cnc-viandes-3",
+            "label": "3 viandes au choix",
+            "min": 3,
+            "max": 3,
+            "choices": [
+              {
+                "id": "cnc-viandes-3-0",
+                "label": "Kebab",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-3-1",
+                "label": "Poulet tikka",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-3-2",
+                "label": "Poulet tandoori",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-3-3",
+                "label": "Tenders",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-3-4",
+                "label": "Cordon bleu",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-3-5",
+                "label": "Keema",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-3-6",
+                "label": "Kefta",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-3-7",
+                "label": "Steak haché",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-3-8",
+                "label": "Falafel",
+                "price": 0
+              }
+            ],
+            "forSize": "cnc-taille-2"
+          },
+          {
+            "id": "cnc-sauces",
+            "label": "Sauces au choix",
+            "min": 0,
+            "max": 11,
+            "choices": [
+              {
+                "id": "cnc-sauces-0",
+                "label": "Blanche",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-1",
+                "label": "Spicy",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-2",
+                "label": "Golden",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-3",
+                "label": "Green",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-4",
+                "label": "Cocktail",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-5",
+                "label": "Bengal",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-6",
+                "label": "Algérienne",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-7",
+                "label": "Samouraï",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-8",
+                "label": "Barbecue",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-9",
+                "label": "Harissa",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-10",
+                "label": "Biggy",
+                "price": 0
+              }
+            ],
+            "included": 2,
+            "extraPrice": 0.5
+          },
+          {
+            "id": "cnc-tacos-extra",
+            "label": "Suppléments",
+            "min": 0,
+            "max": 4,
+            "choices": [
+              {
+                "id": "cnc-tacos-extra-0",
+                "label": "Cheddar",
+                "price": 1
+              },
+              {
+                "id": "cnc-tacos-extra-1",
+                "label": "Vache qui rit",
+                "price": 1
+              },
+              {
+                "id": "cnc-tacos-extra-2",
+                "label": "Boursin",
+                "price": 1
+              },
+              {
+                "id": "cnc-tacos-extra-3",
+                "label": "Salade",
+                "price": 1
+              }
+            ]
+          },
+          {
+            "id": "cnc-gratine",
+            "label": "Gratiné",
+            "min": 0,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-gratine-0",
+                "label": "Gratiné",
+                "price": 2.5
+              }
+            ]
+          },
+          {
+            "id": "cnc-frites",
+            "label": "Frites du menu",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-frites-0",
+                "label": "Frites",
+                "price": 0
+              },
+              {
+                "id": "cnc-frites-1",
+                "label": "Patates douces",
+                "price": 1
+              }
+            ]
+          },
+          {
+            "id": "cnc-boisson",
+            "label": "Boisson du menu",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-boisson-0",
+                "label": "Soft 33 cl",
+                "price": 0
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "label": "Tacos"
+  },
+  {
+    "id": "import-cat-3",
+    "items": [
+      {
+        "allergens": [
+          "gluten",
+          "lait"
+        ],
+        "builder": false,
+        "desc": "Pain au choix : naan fromage, pain rond ou galette. Viande, crudités et sauces au choix ; deux sauces maximum.",
+        "id": "import-item-4",
+        "name": "Sandwich seul",
+        "options": [
+          {
+            "id": "cnc-pain",
+            "label": "Pain",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-pain-0",
+                "label": "Naan fromage",
+                "price": 0
+              },
+              {
+                "id": "cnc-pain-1",
+                "label": "Pain rond",
+                "price": 0
+              },
+              {
+                "id": "cnc-pain-2",
+                "label": "Galette",
+                "price": 0
+              }
+            ]
+          },
+          {
+            "id": "cnc-viandes",
+            "label": "1 viande au choix",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-viandes-0",
+                "label": "Kebab",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-1",
+                "label": "Poulet tikka",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-2",
+                "label": "Poulet tandoori",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-3",
+                "label": "Tenders",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-4",
+                "label": "Cordon bleu",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-5",
+                "label": "Keema",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-6",
+                "label": "Kefta",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-7",
+                "label": "Steak haché",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-8",
+                "label": "Falafel",
+                "price": 0
+              }
+            ]
+          },
+          {
+            "id": "cnc-crudites",
+            "label": "Crudités",
+            "min": 0,
+            "max": 8,
+            "choices": [
+              {
+                "id": "cnc-crudites-0",
+                "label": "Salade",
+                "price": 0
+              },
+              {
+                "id": "cnc-crudites-1",
+                "label": "Tomates",
+                "price": 0
+              },
+              {
+                "id": "cnc-crudites-2",
+                "label": "Oignons",
+                "price": 0
+              },
+              {
+                "id": "cnc-crudites-3",
+                "label": "Olives",
+                "price": 0
+              },
+              {
+                "id": "cnc-crudites-4",
+                "label": "Piments",
+                "price": 0
+              },
+              {
+                "id": "cnc-crudites-5",
+                "label": "Salade du chef",
+                "price": 1
+              },
+              {
+                "id": "cnc-crudites-6",
+                "label": "Légumes sautés",
+                "price": 1
+              },
+              {
+                "id": "cnc-crudites-7",
+                "label": "Champignons",
+                "price": 1
+              }
+            ]
+          },
+          {
+            "id": "cnc-sauces",
+            "label": "Sauces au choix",
+            "min": 0,
+            "max": 11,
+            "choices": [
+              {
+                "id": "cnc-sauces-0",
+                "label": "Blanche",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-1",
+                "label": "Spicy",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-2",
+                "label": "Golden",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-3",
+                "label": "Green",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-4",
+                "label": "Cocktail",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-5",
+                "label": "Bengal",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-6",
+                "label": "Algérienne",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-7",
+                "label": "Samouraï",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-8",
+                "label": "Barbecue",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-9",
+                "label": "Harissa",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-10",
+                "label": "Biggy",
+                "price": 0
+              }
+            ],
+            "included": 2,
+            "extraPrice": 0.5
+          },
+          {
+            "id": "cnc-sandwich-extra",
+            "label": "Suppléments",
+            "min": 0,
+            "max": 5,
+            "choices": [
+              {
+                "id": "cnc-sandwich-extra-0",
+                "label": "Boursin",
+                "price": 1
+              },
+              {
+                "id": "cnc-sandwich-extra-1",
+                "label": "Cheddar",
+                "price": 1
+              },
+              {
+                "id": "cnc-sandwich-extra-2",
+                "label": "Oignons frits",
+                "price": 1
+              },
+              {
+                "id": "cnc-sandwich-extra-3",
+                "label": "Oignons caramélisés",
+                "price": 1
+              },
+              {
+                "id": "cnc-sandwich-extra-4",
+                "label": "Poivrons caramélisés",
+                "price": 1
+              }
+            ]
+          },
+          {
+            "id": "cnc-viande-extra",
+            "label": "Viande supplémentaire",
+            "min": 0,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-viande-extra-0",
+                "label": "Kebab",
+                "price": 2
+              },
+              {
+                "id": "cnc-viande-extra-1",
+                "label": "Poulet tikka",
+                "price": 2
+              },
+              {
+                "id": "cnc-viande-extra-2",
+                "label": "Poulet tandoori",
+                "price": 2
+              },
+              {
+                "id": "cnc-viande-extra-3",
+                "label": "Tenders",
+                "price": 2
+              },
+              {
+                "id": "cnc-viande-extra-4",
+                "label": "Cordon bleu",
+                "price": 2
+              },
+              {
+                "id": "cnc-viande-extra-5",
+                "label": "Keema",
+                "price": 2
+              },
+              {
+                "id": "cnc-viande-extra-6",
+                "label": "Kefta",
+                "price": 2
+              },
+              {
+                "id": "cnc-viande-extra-7",
+                "label": "Steak haché",
+                "price": 2
+              },
+              {
+                "id": "cnc-viande-extra-8",
+                "label": "Falafel",
+                "price": 2
+              }
+            ]
+          }
+        ],
+        "price": 7
+      },
+      {
+        "allergens": [
+          "gluten",
+          "lait"
+        ],
+        "builder": false,
+        "desc": "Pain au choix : naan fromage, pain rond ou galette. Viande, crudités et sauces au choix ; deux sauces maximum.",
+        "id": "import-item-5",
+        "name": "Sandwich en menu",
+        "options": [
+          {
+            "id": "cnc-pain",
+            "label": "Pain",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-pain-0",
+                "label": "Naan fromage",
+                "price": 0
+              },
+              {
+                "id": "cnc-pain-1",
+                "label": "Pain rond",
+                "price": 0
+              },
+              {
+                "id": "cnc-pain-2",
+                "label": "Galette",
+                "price": 0
+              }
+            ]
+          },
+          {
+            "id": "cnc-viandes",
+            "label": "1 viande au choix",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-viandes-0",
+                "label": "Kebab",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-1",
+                "label": "Poulet tikka",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-2",
+                "label": "Poulet tandoori",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-3",
+                "label": "Tenders",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-4",
+                "label": "Cordon bleu",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-5",
+                "label": "Keema",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-6",
+                "label": "Kefta",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-7",
+                "label": "Steak haché",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-8",
+                "label": "Falafel",
+                "price": 0
+              }
+            ]
+          },
+          {
+            "id": "cnc-crudites",
+            "label": "Crudités",
+            "min": 0,
+            "max": 8,
+            "choices": [
+              {
+                "id": "cnc-crudites-0",
+                "label": "Salade",
+                "price": 0
+              },
+              {
+                "id": "cnc-crudites-1",
+                "label": "Tomates",
+                "price": 0
+              },
+              {
+                "id": "cnc-crudites-2",
+                "label": "Oignons",
+                "price": 0
+              },
+              {
+                "id": "cnc-crudites-3",
+                "label": "Olives",
+                "price": 0
+              },
+              {
+                "id": "cnc-crudites-4",
+                "label": "Piments",
+                "price": 0
+              },
+              {
+                "id": "cnc-crudites-5",
+                "label": "Salade du chef",
+                "price": 1
+              },
+              {
+                "id": "cnc-crudites-6",
+                "label": "Légumes sautés",
+                "price": 1
+              },
+              {
+                "id": "cnc-crudites-7",
+                "label": "Champignons",
+                "price": 1
+              }
+            ]
+          },
+          {
+            "id": "cnc-sauces",
+            "label": "Sauces au choix",
+            "min": 0,
+            "max": 11,
+            "choices": [
+              {
+                "id": "cnc-sauces-0",
+                "label": "Blanche",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-1",
+                "label": "Spicy",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-2",
+                "label": "Golden",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-3",
+                "label": "Green",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-4",
+                "label": "Cocktail",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-5",
+                "label": "Bengal",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-6",
+                "label": "Algérienne",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-7",
+                "label": "Samouraï",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-8",
+                "label": "Barbecue",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-9",
+                "label": "Harissa",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-10",
+                "label": "Biggy",
+                "price": 0
+              }
+            ],
+            "included": 2,
+            "extraPrice": 0.5
+          },
+          {
+            "id": "cnc-sandwich-extra",
+            "label": "Suppléments",
+            "min": 0,
+            "max": 5,
+            "choices": [
+              {
+                "id": "cnc-sandwich-extra-0",
+                "label": "Boursin",
+                "price": 1
+              },
+              {
+                "id": "cnc-sandwich-extra-1",
+                "label": "Cheddar",
+                "price": 1
+              },
+              {
+                "id": "cnc-sandwich-extra-2",
+                "label": "Oignons frits",
+                "price": 1
+              },
+              {
+                "id": "cnc-sandwich-extra-3",
+                "label": "Oignons caramélisés",
+                "price": 1
+              },
+              {
+                "id": "cnc-sandwich-extra-4",
+                "label": "Poivrons caramélisés",
+                "price": 1
+              }
+            ]
+          },
+          {
+            "id": "cnc-viande-extra",
+            "label": "Viande supplémentaire",
+            "min": 0,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-viande-extra-0",
+                "label": "Kebab",
+                "price": 2
+              },
+              {
+                "id": "cnc-viande-extra-1",
+                "label": "Poulet tikka",
+                "price": 2
+              },
+              {
+                "id": "cnc-viande-extra-2",
+                "label": "Poulet tandoori",
+                "price": 2
+              },
+              {
+                "id": "cnc-viande-extra-3",
+                "label": "Tenders",
+                "price": 2
+              },
+              {
+                "id": "cnc-viande-extra-4",
+                "label": "Cordon bleu",
+                "price": 2
+              },
+              {
+                "id": "cnc-viande-extra-5",
+                "label": "Keema",
+                "price": 2
+              },
+              {
+                "id": "cnc-viande-extra-6",
+                "label": "Kefta",
+                "price": 2
+              },
+              {
+                "id": "cnc-viande-extra-7",
+                "label": "Steak haché",
+                "price": 2
+              },
+              {
+                "id": "cnc-viande-extra-8",
+                "label": "Falafel",
+                "price": 2
+              }
+            ]
+          },
+          {
+            "id": "cnc-frites",
+            "label": "Frites du menu",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-frites-0",
+                "label": "Frites",
+                "price": 0
+              },
+              {
+                "id": "cnc-frites-1",
+                "label": "Patates douces",
+                "price": 1
+              }
+            ]
+          },
+          {
+            "id": "cnc-boisson",
+            "label": "Boisson du menu",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-boisson-0",
+                "label": "Soft 33 cl",
+                "price": 0
+              }
+            ]
+          }
+        ],
+        "price": 9
+      }
+    ],
+    "label": "Sandwichs"
+  },
+  {
+    "id": "import-cat-6",
+    "items": [
+      {
+        "allergens": [
+          "gluten",
+          "lait"
+        ],
+        "builder": false,
+        "desc": "Pain boulanger, steak haché, crudités, cheddar, sauce au choix.",
+        "id": "import-item-7",
+        "name": "Cheese burger — seul",
+        "options": [
+          {
+            "id": "cnc-sauces",
+            "label": "Sauces au choix",
+            "min": 0,
+            "max": 11,
+            "choices": [
+              {
+                "id": "cnc-sauces-0",
+                "label": "Blanche",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-1",
+                "label": "Spicy",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-2",
+                "label": "Golden",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-3",
+                "label": "Green",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-4",
+                "label": "Cocktail",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-5",
+                "label": "Bengal",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-6",
+                "label": "Algérienne",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-7",
+                "label": "Samouraï",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-8",
+                "label": "Barbecue",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-9",
+                "label": "Harissa",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-10",
+                "label": "Biggy",
+                "price": 0
+              }
+            ],
+            "included": 2,
+            "extraPrice": 0.5
+          },
+          {
+            "id": "cnc-burger-extra",
+            "label": "Suppléments",
+            "min": 0,
+            "max": 3,
+            "choices": [
+              {
+                "id": "cnc-burger-extra-0",
+                "label": "Œuf",
+                "price": 1
+              },
+              {
+                "id": "cnc-burger-extra-1",
+                "label": "Bacon",
+                "price": 1
+              },
+              {
+                "id": "cnc-burger-extra-2",
+                "label": "Crème cheddar",
+                "price": 1
+              }
+            ]
+          },
+          {
+            "id": "cnc-burger-viande",
+            "label": "Supplément viande ou légumes",
+            "min": 0,
+            "max": 3,
+            "choices": [
+              {
+                "id": "cnc-burger-viande-0",
+                "label": "Tenders",
+                "price": 2.5
+              },
+              {
+                "id": "cnc-burger-viande-1",
+                "label": "Steak haché",
+                "price": 2.5
+              },
+              {
+                "id": "cnc-burger-viande-2",
+                "label": "Galette de légumes",
+                "price": 2.5
+              }
+            ]
+          }
+        ],
+        "price": 7
+      },
+      {
+        "allergens": [
+          "gluten",
+          "lait"
+        ],
+        "desc": "Pain boulanger, steak haché, crudités, cheddar, sauce au choix.",
+        "id": "import-item-24",
+        "name": "Cheese burger — menu",
+        "price": 9.9,
+        "options": [
+          {
+            "id": "cnc-sauces",
+            "label": "Sauces au choix",
+            "min": 0,
+            "max": 11,
+            "choices": [
+              {
+                "id": "cnc-sauces-0",
+                "label": "Blanche",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-1",
+                "label": "Spicy",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-2",
+                "label": "Golden",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-3",
+                "label": "Green",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-4",
+                "label": "Cocktail",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-5",
+                "label": "Bengal",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-6",
+                "label": "Algérienne",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-7",
+                "label": "Samouraï",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-8",
+                "label": "Barbecue",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-9",
+                "label": "Harissa",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-10",
+                "label": "Biggy",
+                "price": 0
+              }
+            ],
+            "included": 2,
+            "extraPrice": 0.5
+          },
+          {
+            "id": "cnc-burger-extra",
+            "label": "Suppléments",
+            "min": 0,
+            "max": 3,
+            "choices": [
+              {
+                "id": "cnc-burger-extra-0",
+                "label": "Œuf",
+                "price": 1
+              },
+              {
+                "id": "cnc-burger-extra-1",
+                "label": "Bacon",
+                "price": 1
+              },
+              {
+                "id": "cnc-burger-extra-2",
+                "label": "Crème cheddar",
+                "price": 1
+              }
+            ]
+          },
+          {
+            "id": "cnc-burger-viande",
+            "label": "Supplément viande ou légumes",
+            "min": 0,
+            "max": 3,
+            "choices": [
+              {
+                "id": "cnc-burger-viande-0",
+                "label": "Tenders",
+                "price": 2.5
+              },
+              {
+                "id": "cnc-burger-viande-1",
+                "label": "Steak haché",
+                "price": 2.5
+              },
+              {
+                "id": "cnc-burger-viande-2",
+                "label": "Galette de légumes",
+                "price": 2.5
+              }
+            ]
+          },
+          {
+            "id": "cnc-frites",
+            "label": "Frites du menu",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-frites-0",
+                "label": "Frites",
+                "price": 0
+              },
+              {
+                "id": "cnc-frites-1",
+                "label": "Patates douces",
+                "price": 1
+              }
+            ]
+          },
+          {
+            "id": "cnc-boisson",
+            "label": "Boisson du menu",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-boisson-0",
+                "label": "Soft 33 cl",
+                "price": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "allergens": [
+          "gluten",
+          "lait"
+        ],
+        "builder": false,
+        "desc": "Pain boulanger, double steak haché, crudités, double cheddar, sauce.",
+        "id": "import-item-8",
+        "name": "Double cheese — seul",
+        "options": [
+          {
+            "id": "cnc-sauces",
+            "label": "Sauces au choix",
+            "min": 0,
+            "max": 11,
+            "choices": [
+              {
+                "id": "cnc-sauces-0",
+                "label": "Blanche",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-1",
+                "label": "Spicy",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-2",
+                "label": "Golden",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-3",
+                "label": "Green",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-4",
+                "label": "Cocktail",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-5",
+                "label": "Bengal",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-6",
+                "label": "Algérienne",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-7",
+                "label": "Samouraï",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-8",
+                "label": "Barbecue",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-9",
+                "label": "Harissa",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-10",
+                "label": "Biggy",
+                "price": 0
+              }
+            ],
+            "included": 2,
+            "extraPrice": 0.5
+          },
+          {
+            "id": "cnc-burger-extra",
+            "label": "Suppléments",
+            "min": 0,
+            "max": 3,
+            "choices": [
+              {
+                "id": "cnc-burger-extra-0",
+                "label": "Œuf",
+                "price": 1
+              },
+              {
+                "id": "cnc-burger-extra-1",
+                "label": "Bacon",
+                "price": 1
+              },
+              {
+                "id": "cnc-burger-extra-2",
+                "label": "Crème cheddar",
+                "price": 1
+              }
+            ]
+          },
+          {
+            "id": "cnc-burger-viande",
+            "label": "Supplément viande ou légumes",
+            "min": 0,
+            "max": 3,
+            "choices": [
+              {
+                "id": "cnc-burger-viande-0",
+                "label": "Tenders",
+                "price": 2.5
+              },
+              {
+                "id": "cnc-burger-viande-1",
+                "label": "Steak haché",
+                "price": 2.5
+              },
+              {
+                "id": "cnc-burger-viande-2",
+                "label": "Galette de légumes",
+                "price": 2.5
+              }
+            ]
+          }
+        ],
+        "price": 9
+      },
+      {
+        "allergens": [
+          "gluten",
+          "lait"
+        ],
+        "desc": "Pain boulanger, double steak haché, crudités, double cheddar, sauce.",
+        "id": "import-item-25",
+        "name": "Double cheese — menu",
+        "price": 12,
+        "options": [
+          {
+            "id": "cnc-sauces",
+            "label": "Sauces au choix",
+            "min": 0,
+            "max": 11,
+            "choices": [
+              {
+                "id": "cnc-sauces-0",
+                "label": "Blanche",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-1",
+                "label": "Spicy",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-2",
+                "label": "Golden",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-3",
+                "label": "Green",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-4",
+                "label": "Cocktail",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-5",
+                "label": "Bengal",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-6",
+                "label": "Algérienne",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-7",
+                "label": "Samouraï",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-8",
+                "label": "Barbecue",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-9",
+                "label": "Harissa",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-10",
+                "label": "Biggy",
+                "price": 0
+              }
+            ],
+            "included": 2,
+            "extraPrice": 0.5
+          },
+          {
+            "id": "cnc-burger-extra",
+            "label": "Suppléments",
+            "min": 0,
+            "max": 3,
+            "choices": [
+              {
+                "id": "cnc-burger-extra-0",
+                "label": "Œuf",
+                "price": 1
+              },
+              {
+                "id": "cnc-burger-extra-1",
+                "label": "Bacon",
+                "price": 1
+              },
+              {
+                "id": "cnc-burger-extra-2",
+                "label": "Crème cheddar",
+                "price": 1
+              }
+            ]
+          },
+          {
+            "id": "cnc-burger-viande",
+            "label": "Supplément viande ou légumes",
+            "min": 0,
+            "max": 3,
+            "choices": [
+              {
+                "id": "cnc-burger-viande-0",
+                "label": "Tenders",
+                "price": 2.5
+              },
+              {
+                "id": "cnc-burger-viande-1",
+                "label": "Steak haché",
+                "price": 2.5
+              },
+              {
+                "id": "cnc-burger-viande-2",
+                "label": "Galette de légumes",
+                "price": 2.5
+              }
+            ]
+          },
+          {
+            "id": "cnc-frites",
+            "label": "Frites du menu",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-frites-0",
+                "label": "Frites",
+                "price": 0
+              },
+              {
+                "id": "cnc-frites-1",
+                "label": "Patates douces",
+                "price": 1
+              }
+            ]
+          },
+          {
+            "id": "cnc-boisson",
+            "label": "Boisson du menu",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-boisson-0",
+                "label": "Soft 33 cl",
+                "price": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "allergens": [
+          "gluten",
+          "lait"
+        ],
+        "builder": false,
+        "desc": "Pain boulanger, tenders, sauce spicy, cheddar, crudités.",
+        "id": "import-item-9",
+        "name": "Crunchy burger — seul",
+        "options": [
+          {
+            "id": "cnc-burger-extra",
+            "label": "Suppléments",
+            "min": 0,
+            "max": 3,
+            "choices": [
+              {
+                "id": "cnc-burger-extra-0",
+                "label": "Œuf",
+                "price": 1
+              },
+              {
+                "id": "cnc-burger-extra-1",
+                "label": "Bacon",
+                "price": 1
+              },
+              {
+                "id": "cnc-burger-extra-2",
+                "label": "Crème cheddar",
+                "price": 1
+              }
+            ]
+          },
+          {
+            "id": "cnc-burger-viande",
+            "label": "Supplément viande ou légumes",
+            "min": 0,
+            "max": 3,
+            "choices": [
+              {
+                "id": "cnc-burger-viande-0",
+                "label": "Tenders",
+                "price": 2.5
+              },
+              {
+                "id": "cnc-burger-viande-1",
+                "label": "Steak haché",
+                "price": 2.5
+              },
+              {
+                "id": "cnc-burger-viande-2",
+                "label": "Galette de légumes",
+                "price": 2.5
+              }
+            ]
+          }
+        ],
+        "price": 7
+      },
+      {
+        "allergens": [
+          "gluten",
+          "lait"
+        ],
+        "desc": "Pain boulanger, tenders, sauce spicy, cheddar, crudités.",
+        "id": "import-item-26",
+        "name": "Crunchy burger — menu",
+        "price": 9.9,
+        "options": [
+          {
+            "id": "cnc-burger-extra",
+            "label": "Suppléments",
+            "min": 0,
+            "max": 3,
+            "choices": [
+              {
+                "id": "cnc-burger-extra-0",
+                "label": "Œuf",
+                "price": 1
+              },
+              {
+                "id": "cnc-burger-extra-1",
+                "label": "Bacon",
+                "price": 1
+              },
+              {
+                "id": "cnc-burger-extra-2",
+                "label": "Crème cheddar",
+                "price": 1
+              }
+            ]
+          },
+          {
+            "id": "cnc-burger-viande",
+            "label": "Supplément viande ou légumes",
+            "min": 0,
+            "max": 3,
+            "choices": [
+              {
+                "id": "cnc-burger-viande-0",
+                "label": "Tenders",
+                "price": 2.5
+              },
+              {
+                "id": "cnc-burger-viande-1",
+                "label": "Steak haché",
+                "price": 2.5
+              },
+              {
+                "id": "cnc-burger-viande-2",
+                "label": "Galette de légumes",
+                "price": 2.5
+              }
+            ]
+          },
+          {
+            "id": "cnc-frites",
+            "label": "Frites du menu",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-frites-0",
+                "label": "Frites",
+                "price": 0
+              },
+              {
+                "id": "cnc-frites-1",
+                "label": "Patates douces",
+                "price": 1
+              }
+            ]
+          },
+          {
+            "id": "cnc-boisson",
+            "label": "Boisson du menu",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-boisson-0",
+                "label": "Soft 33 cl",
+                "price": 0
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "label": "Burgers"
+  },
+  {
+    "id": "import-cat-15",
+    "items": [
+      {
+        "allergens": [
+          "gluten",
+          "lait"
+        ],
+        "builder": false,
+        "desc": "Salade mixte, une viande au choix. Accompagnement indiqué : riz parfumé, frites, naan fromage.",
+        "id": "import-item-16",
+        "name": "Classique",
+        "options": [
+          {
+            "id": "cnc-viandes",
+            "label": "1 viande au choix",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-viandes-0",
+                "label": "Kebab",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-1",
+                "label": "Poulet tikka",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-2",
+                "label": "Poulet tandoori",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-3",
+                "label": "Tenders",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-4",
+                "label": "Cordon bleu",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-5",
+                "label": "Keema",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-6",
+                "label": "Kefta",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-7",
+                "label": "Steak haché",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-8",
+                "label": "Falafel",
+                "price": 0
+              }
+            ]
+          },
+          {
+            "id": "cnc-accompagnement",
+            "label": "Accompagnement",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-accompagnement-0",
+                "label": "Riz parfumé",
+                "price": 0
+              },
+              {
+                "id": "cnc-accompagnement-1",
+                "label": "Frites",
+                "price": 0
+              },
+              {
+                "id": "cnc-accompagnement-2",
+                "label": "Naan fromage",
+                "price": 0
+              }
+            ]
+          }
+        ],
+        "price": 12.5
+      },
+      {
+        "id": "cnc-assiette-veggie",
+        "name": "Veggie",
+        "price": 11.5,
+        "desc": "Salade mixte, falafel, aubergine panée. Accompagnement au choix.",
+        "options": [
+          {
+            "id": "cnc-accompagnement",
+            "label": "Accompagnement",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-accompagnement-0",
+                "label": "Riz parfumé",
+                "price": 0
+              },
+              {
+                "id": "cnc-accompagnement-1",
+                "label": "Frites",
+                "price": 0
+              },
+              {
+                "id": "cnc-accompagnement-2",
+                "label": "Naan fromage",
+                "price": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "allergens": [
+          "gluten",
+          "lait"
+        ],
+        "builder": false,
+        "desc": "Salade mixte, trois viandes au choix. Accompagnement indiqué : riz parfumé, frites, naan fromage.",
+        "id": "import-item-17",
+        "name": "Mixte",
+        "options": [
+          {
+            "id": "cnc-viandes",
+            "label": "3 viandes au choix",
+            "min": 3,
+            "max": 3,
+            "choices": [
+              {
+                "id": "cnc-viandes-0",
+                "label": "Kebab",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-1",
+                "label": "Poulet tikka",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-2",
+                "label": "Poulet tandoori",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-3",
+                "label": "Tenders",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-4",
+                "label": "Cordon bleu",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-5",
+                "label": "Keema",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-6",
+                "label": "Kefta",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-7",
+                "label": "Steak haché",
+                "price": 0
+              },
+              {
+                "id": "cnc-viandes-8",
+                "label": "Falafel",
+                "price": 0
+              }
+            ]
+          },
+          {
+            "id": "cnc-accompagnement",
+            "label": "Accompagnement",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-accompagnement-0",
+                "label": "Riz parfumé",
+                "price": 0
+              },
+              {
+                "id": "cnc-accompagnement-1",
+                "label": "Frites",
+                "price": 0
+              },
+              {
+                "id": "cnc-accompagnement-2",
+                "label": "Naan fromage",
+                "price": 0
+              }
+            ]
+          }
+        ],
+        "price": 15.9
+      }
+    ],
+    "label": "Assiettes"
+  },
+  {
+    "id": "import-cat-18",
+    "items": [
+      {
+        "allergens": [
+          "gluten",
+          "lait"
+        ],
+        "desc": "Naan fromage ou galette, salade du chef, champignons, chicken tikka, sauce golden.",
+        "id": "import-item-19",
+        "name": "Delhi",
+        "price": 10.9,
+        "options": [
+          {
+            "id": "cnc-pain-signature",
+            "label": "Pain",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-pain-signature-0",
+                "label": "Naan fromage",
+                "price": 0
+              },
+              {
+                "id": "cnc-pain-signature-1",
+                "label": "Galette",
+                "price": 0
+              }
+            ]
+          },
+          {
+            "id": "cnc-patates-signature",
+            "label": "Patates douces",
+            "min": 0,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-patates-signature-0",
+                "label": "Patates douces",
+                "price": 1
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "allergens": [
+          "gluten",
+          "lait"
+        ],
+        "desc": "Naan fromage ou galette, salade du chef, chicken tandoori, sauce algérienne.",
+        "id": "import-item-20",
+        "name": "Bombay",
+        "price": 10.9,
+        "options": [
+          {
+            "id": "cnc-pain-signature",
+            "label": "Pain",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-pain-signature-0",
+                "label": "Naan fromage",
+                "price": 0
+              },
+              {
+                "id": "cnc-pain-signature-1",
+                "label": "Galette",
+                "price": 0
+              }
+            ]
+          },
+          {
+            "id": "cnc-patates-signature",
+            "label": "Patates douces",
+            "min": 0,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-patates-signature-0",
+                "label": "Patates douces",
+                "price": 1
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "allergens": [
+          "gluten",
+          "lait"
+        ],
+        "desc": "Naan fromage ou galette, salade du chef, légumes sautés, keema, sauce green.",
+        "id": "import-item-21",
+        "name": "Green",
+        "price": 10.9,
+        "options": [
+          {
+            "id": "cnc-pain-signature",
+            "label": "Pain",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-pain-signature-0",
+                "label": "Naan fromage",
+                "price": 0
+              },
+              {
+                "id": "cnc-pain-signature-1",
+                "label": "Galette",
+                "price": 0
+              }
+            ]
+          },
+          {
+            "id": "cnc-patates-signature",
+            "label": "Patates douces",
+            "min": 0,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-patates-signature-0",
+                "label": "Patates douces",
+                "price": 1
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "allergens": [
+          "gluten",
+          "lait"
+        ],
+        "desc": "Naan fromage ou galette, salade du chef, tenders, oignons caramélisés, sauce spicy.",
+        "id": "import-item-22",
+        "name": "Crispy",
+        "price": 10.9,
+        "options": [
+          {
+            "id": "cnc-pain-signature",
+            "label": "Pain",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-pain-signature-0",
+                "label": "Naan fromage",
+                "price": 0
+              },
+              {
+                "id": "cnc-pain-signature-1",
+                "label": "Galette",
+                "price": 0
+              }
+            ]
+          },
+          {
+            "id": "cnc-patates-signature",
+            "label": "Patates douces",
+            "min": 0,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-patates-signature-0",
+                "label": "Patates douces",
+                "price": 1
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "allergens": [
+          "gluten",
+          "lait"
+        ],
+        "desc": "Naan fromage ou galette, salade du chef, légumes sautés, falafel, aubergines panées, sauce blanche.",
+        "id": "import-item-23",
+        "name": "Vegan",
+        "price": 10.9,
+        "options": [
+          {
+            "id": "cnc-pain-signature",
+            "label": "Pain",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-pain-signature-0",
+                "label": "Naan fromage",
+                "price": 0
+              },
+              {
+                "id": "cnc-pain-signature-1",
+                "label": "Galette",
+                "price": 0
+              }
+            ]
+          },
+          {
+            "id": "cnc-patates-signature",
+            "label": "Patates douces",
+            "min": 0,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-patates-signature-0",
+                "label": "Patates douces",
+                "price": 1
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "label": "Sandwichs signatures"
+  },
+  {
+    "id": "import-cat-27",
+    "items": [
+      {
+        "allergens": [
+          "gluten"
+        ],
+        "builder": false,
+        "desc": "Pain boulanger, salade, cornichon, tomate, oignons caramélisés, steak du chef, bacon, sauce du chef.",
+        "id": "import-item-10",
+        "name": "Chake Chaks — seul",
+        "options": [
+          {
+            "id": "cnc-signature-extra",
+            "label": "Suppléments",
+            "min": 0,
+            "max": 7,
+            "choices": [
+              {
+                "id": "cnc-signature-extra-0",
+                "label": "Roquefort",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-1",
+                "label": "Raclette",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-2",
+                "label": "Chèvre",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-3",
+                "label": "Crème cheddar",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-4",
+                "label": "Miel",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-5",
+                "label": "Œuf",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-6",
+                "label": "Bacon",
+                "price": 1
+              }
+            ]
+          }
+        ],
+        "price": 12
+      },
+      {
+        "allergens": [
+          "gluten"
+        ],
+        "desc": "Pain boulanger, salade, cornichon, tomate, oignons caramélisés, steak du chef, bacon, sauce du chef.",
+        "id": "import-item-28",
+        "name": "Chake Chaks — menu",
+        "price": 14.9,
+        "options": [
+          {
+            "id": "cnc-signature-extra",
+            "label": "Suppléments",
+            "min": 0,
+            "max": 7,
+            "choices": [
+              {
+                "id": "cnc-signature-extra-0",
+                "label": "Roquefort",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-1",
+                "label": "Raclette",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-2",
+                "label": "Chèvre",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-3",
+                "label": "Crème cheddar",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-4",
+                "label": "Miel",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-5",
+                "label": "Œuf",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-6",
+                "label": "Bacon",
+                "price": 1
+              }
+            ]
+          },
+          {
+            "id": "cnc-frites",
+            "label": "Frites du menu",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-frites-0",
+                "label": "Frites",
+                "price": 0
+              },
+              {
+                "id": "cnc-frites-1",
+                "label": "Patates douces",
+                "price": 1
+              }
+            ]
+          },
+          {
+            "id": "cnc-boisson",
+            "label": "Boisson du menu",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-boisson-0",
+                "label": "Soft 33 cl",
+                "price": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "allergens": [
+          "gluten"
+        ],
+        "builder": false,
+        "desc": "Pain boulanger, salade, champignons, oignons confits, galette de poulet du chef, bacon, sauce du chef.",
+        "id": "import-item-11",
+        "name": "Chick’s burger — seul",
+        "options": [
+          {
+            "id": "cnc-signature-extra",
+            "label": "Suppléments",
+            "min": 0,
+            "max": 7,
+            "choices": [
+              {
+                "id": "cnc-signature-extra-0",
+                "label": "Roquefort",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-1",
+                "label": "Raclette",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-2",
+                "label": "Chèvre",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-3",
+                "label": "Crème cheddar",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-4",
+                "label": "Miel",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-5",
+                "label": "Œuf",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-6",
+                "label": "Bacon",
+                "price": 1
+              }
+            ]
+          }
+        ],
+        "price": 12
+      },
+      {
+        "allergens": [
+          "gluten"
+        ],
+        "desc": "Pain boulanger, salade, champignons, oignons confits, galette de poulet du chef, bacon, sauce du chef.",
+        "id": "import-item-29",
+        "name": "Chick’s burger — menu",
+        "price": 14.9,
+        "options": [
+          {
+            "id": "cnc-signature-extra",
+            "label": "Suppléments",
+            "min": 0,
+            "max": 7,
+            "choices": [
+              {
+                "id": "cnc-signature-extra-0",
+                "label": "Roquefort",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-1",
+                "label": "Raclette",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-2",
+                "label": "Chèvre",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-3",
+                "label": "Crème cheddar",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-4",
+                "label": "Miel",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-5",
+                "label": "Œuf",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-6",
+                "label": "Bacon",
+                "price": 1
+              }
+            ]
+          },
+          {
+            "id": "cnc-frites",
+            "label": "Frites du menu",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-frites-0",
+                "label": "Frites",
+                "price": 0
+              },
+              {
+                "id": "cnc-frites-1",
+                "label": "Patates douces",
+                "price": 1
+              }
+            ]
+          },
+          {
+            "id": "cnc-boisson",
+            "label": "Boisson du menu",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-boisson-0",
+                "label": "Soft 33 cl",
+                "price": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "allergens": [
+          "gluten",
+          "lait"
+        ],
+        "builder": false,
+        "desc": "Pain boulanger, steak du chef et galette de poulet du chef, salade, cornichons, oignons caramélisés, fromage fondu, sauce du chef.",
+        "id": "import-item-12",
+        "name": "Cheesey burger — seul",
+        "options": [
+          {
+            "id": "cnc-signature-extra",
+            "label": "Suppléments",
+            "min": 0,
+            "max": 7,
+            "choices": [
+              {
+                "id": "cnc-signature-extra-0",
+                "label": "Roquefort",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-1",
+                "label": "Raclette",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-2",
+                "label": "Chèvre",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-3",
+                "label": "Crème cheddar",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-4",
+                "label": "Miel",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-5",
+                "label": "Œuf",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-6",
+                "label": "Bacon",
+                "price": 1
+              }
+            ]
+          }
+        ],
+        "price": 14.5
+      },
+      {
+        "allergens": [
+          "gluten",
+          "lait"
+        ],
+        "desc": "Pain boulanger, steak du chef et galette de poulet du chef, salade, cornichons, oignons caramélisés, fromage fondu, sauce du chef.",
+        "id": "import-item-30",
+        "name": "Cheesey burger — menu",
+        "price": 17.9,
+        "options": [
+          {
+            "id": "cnc-signature-extra",
+            "label": "Suppléments",
+            "min": 0,
+            "max": 7,
+            "choices": [
+              {
+                "id": "cnc-signature-extra-0",
+                "label": "Roquefort",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-1",
+                "label": "Raclette",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-2",
+                "label": "Chèvre",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-3",
+                "label": "Crème cheddar",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-4",
+                "label": "Miel",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-5",
+                "label": "Œuf",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-6",
+                "label": "Bacon",
+                "price": 1
+              }
+            ]
+          },
+          {
+            "id": "cnc-frites",
+            "label": "Frites du menu",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-frites-0",
+                "label": "Frites",
+                "price": 0
+              },
+              {
+                "id": "cnc-frites-1",
+                "label": "Patates douces",
+                "price": 1
+              }
+            ]
+          },
+          {
+            "id": "cnc-boisson",
+            "label": "Boisson du menu",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-boisson-0",
+                "label": "Soft 33 cl",
+                "price": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "allergens": [
+          "gluten",
+          "lait"
+        ],
+        "builder": false,
+        "desc": "Pain boulanger, galette de pois chiche, aubergines panées, légumes sautés, champignons, cheddar, sauce blanche.",
+        "id": "import-item-13",
+        "name": "Veggie burger — seul",
+        "options": [
+          {
+            "id": "cnc-signature-extra",
+            "label": "Suppléments",
+            "min": 0,
+            "max": 7,
+            "choices": [
+              {
+                "id": "cnc-signature-extra-0",
+                "label": "Roquefort",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-1",
+                "label": "Raclette",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-2",
+                "label": "Chèvre",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-3",
+                "label": "Crème cheddar",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-4",
+                "label": "Miel",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-5",
+                "label": "Œuf",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-6",
+                "label": "Bacon",
+                "price": 1
+              }
+            ]
+          }
+        ],
+        "price": 12
+      },
+      {
+        "allergens": [
+          "gluten",
+          "lait"
+        ],
+        "desc": "Pain boulanger, galette de pois chiche, aubergines panées, légumes sautés, champignons, cheddar, sauce blanche.",
+        "id": "import-item-31",
+        "name": "Veggie burger — menu",
+        "price": 14.9,
+        "options": [
+          {
+            "id": "cnc-signature-extra",
+            "label": "Suppléments",
+            "min": 0,
+            "max": 7,
+            "choices": [
+              {
+                "id": "cnc-signature-extra-0",
+                "label": "Roquefort",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-1",
+                "label": "Raclette",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-2",
+                "label": "Chèvre",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-3",
+                "label": "Crème cheddar",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-4",
+                "label": "Miel",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-5",
+                "label": "Œuf",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-6",
+                "label": "Bacon",
+                "price": 1
+              }
+            ]
+          },
+          {
+            "id": "cnc-frites",
+            "label": "Frites du menu",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-frites-0",
+                "label": "Frites",
+                "price": 0
+              },
+              {
+                "id": "cnc-frites-1",
+                "label": "Patates douces",
+                "price": 1
+              }
+            ]
+          },
+          {
+            "id": "cnc-boisson",
+            "label": "Boisson du menu",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-boisson-0",
+                "label": "Soft 33 cl",
+                "price": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "allergens": [
+          "gluten",
+          "oeufs",
+          "poissons",
+          "lait"
+        ],
+        "builder": false,
+        "desc": "Pain boulanger, poisson pané maison, crudités, légumes sautés, crème cheddar, sauce aïoli / blanche.",
+        "id": "import-item-14",
+        "name": "Fish burger — seul",
+        "options": [
+          {
+            "id": "cnc-fish-sauce",
+            "label": "Sauce",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-fish-sauce-0",
+                "label": "Aïoli",
+                "price": 0
+              },
+              {
+                "id": "cnc-fish-sauce-1",
+                "label": "Blanche",
+                "price": 0
+              }
+            ]
+          },
+          {
+            "id": "cnc-signature-extra",
+            "label": "Suppléments",
+            "min": 0,
+            "max": 7,
+            "choices": [
+              {
+                "id": "cnc-signature-extra-0",
+                "label": "Roquefort",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-1",
+                "label": "Raclette",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-2",
+                "label": "Chèvre",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-3",
+                "label": "Crème cheddar",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-4",
+                "label": "Miel",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-5",
+                "label": "Œuf",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-6",
+                "label": "Bacon",
+                "price": 1
+              }
+            ]
+          }
+        ],
+        "price": 12
+      },
+      {
+        "allergens": [
+          "gluten",
+          "oeufs",
+          "poissons",
+          "lait"
+        ],
+        "desc": "Pain boulanger, poisson pané maison, crudités, légumes sautés, crème cheddar, sauce aïoli / blanche.",
+        "id": "import-item-32",
+        "name": "Fish burger — menu",
+        "price": 14.9,
+        "options": [
+          {
+            "id": "cnc-fish-sauce",
+            "label": "Sauce",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-fish-sauce-0",
+                "label": "Aïoli",
+                "price": 0
+              },
+              {
+                "id": "cnc-fish-sauce-1",
+                "label": "Blanche",
+                "price": 0
+              }
+            ]
+          },
+          {
+            "id": "cnc-signature-extra",
+            "label": "Suppléments",
+            "min": 0,
+            "max": 7,
+            "choices": [
+              {
+                "id": "cnc-signature-extra-0",
+                "label": "Roquefort",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-1",
+                "label": "Raclette",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-2",
+                "label": "Chèvre",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-3",
+                "label": "Crème cheddar",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-4",
+                "label": "Miel",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-5",
+                "label": "Œuf",
+                "price": 1
+              },
+              {
+                "id": "cnc-signature-extra-6",
+                "label": "Bacon",
+                "price": 1
+              }
+            ]
+          },
+          {
+            "id": "cnc-frites",
+            "label": "Frites du menu",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-frites-0",
+                "label": "Frites",
+                "price": 0
+              },
+              {
+                "id": "cnc-frites-1",
+                "label": "Patates douces",
+                "price": 1
+              }
+            ]
+          },
+          {
+            "id": "cnc-boisson",
+            "label": "Boisson du menu",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-boisson-0",
+                "label": "Soft 33 cl",
+                "price": 0
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "label": "Burgers signatures"
+  },
+  {
+    "id": "import-cat-35",
+    "items": [
+      {
+        "allergens": [
+          "gluten",
+          "oeufs",
+          "lait",
+          "sulfites"
+        ],
+        "desc": "Salade mixte, œuf, croûtons, copeaux de parmesan, poulet pané, crème balsamique, sauce du chef.",
+        "id": "import-item-36",
+        "name": "César",
+        "price": 12.5
+      },
+      {
+        "allergens": [
+          "gluten",
+          "lait"
+        ],
+        "desc": "Salade mixte, croûtons, olives, aubergine panée, chèvre pané, pois chiche, sauce du chef.",
+        "id": "import-item-37",
+        "name": "Veggie",
+        "price": 11.5
+      }
+    ],
+    "label": "Salades"
+  },
+  {
+    "id": "import-cat-38",
+    "items": [
+      {
+        "allergens": [
+          "gluten"
+        ],
+        "desc": "4 pièces.",
+        "id": "import-item-39",
+        "name": "Samossa",
+        "price": 4.9
+      },
+      {
+        "allergens": [],
+        "desc": "4 pièces.",
+        "id": "import-item-40",
+        "name": "Chicken wings",
+        "price": 4.9
+      },
+      {
+        "allergens": [
+          "gluten"
+        ],
+        "desc": "4 pièces.",
+        "id": "import-item-41",
+        "name": "Tenders",
+        "price": 4.9
+      },
+      {
+        "allergens": [
+          "gluten",
+          "lait"
+        ],
+        "desc": "4 pièces.",
+        "id": "import-item-42",
+        "name": "Chèvre pané",
+        "price": 4.9
+      },
+      {
+        "allergens": [],
+        "desc": "4 pièces.",
+        "id": "import-item-43",
+        "name": "Falafel",
+        "price": 4.9
+      },
+      {
+        "allergens": [],
+        "id": "import-item-44",
+        "name": "Chicken stick",
+        "price": 4.9
+      },
+      {
+        "allergens": [
+          "gluten"
+        ],
+        "id": "import-item-45",
+        "name": "Oignon rings",
+        "price": 4.9
+      },
+      {
+        "allergens": [],
+        "id": "import-item-46",
+        "name": "Frites",
+        "price": 3.5
+      },
+      {
+        "allergens": [],
+        "id": "import-item-47",
+        "name": "Patates douces",
+        "price": 4.5
+      }
+    ],
+    "label": "Tex-Mex",
+    "note": "Chicken stick et Oignon rings : quantité à confirmer, mise en page du document ambiguë."
+  },
+  {
+    "id": "import-cat-48",
+    "items": [
+      {
+        "allergens": [
+          "gluten"
+        ],
+        "desc": "Tenders, nuggets ou hamburger, avec frites, Capri-Sun et compote.",
+        "id": "import-item-49",
+        "name": "Menu enfant",
+        "price": 7,
+        "options": [
+          {
+            "id": "cnc-enfant-plat",
+            "label": "Plat",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-enfant-plat-0",
+                "label": "Tenders",
+                "price": 0
+              },
+              {
+                "id": "cnc-enfant-plat-1",
+                "label": "Nuggets",
+                "price": 0
+              },
+              {
+                "id": "cnc-enfant-plat-2",
+                "label": "Hamburger",
+                "price": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "allergens": [
+          "gluten"
+        ],
+        "desc": "Hamburger, tacos ou sandwich, avec boisson et frites. Viandes : kebab, chicken tikka, tenders, steak.",
+        "id": "import-item-50",
+        "name": "Menu étudiant",
+        "price": 8,
+        "options": [
+          {
+            "id": "cnc-etudiant-plat",
+            "label": "Plat",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-etudiant-plat-0",
+                "label": "Hamburger",
+                "price": 8
+              },
+              {
+                "id": "cnc-etudiant-plat-1",
+                "label": "Tacos",
+                "price": 8
+              },
+              {
+                "id": "cnc-etudiant-plat-2",
+                "label": "Sandwich",
+                "price": 8
+              }
+            ],
+            "kind": "size"
+          },
+          {
+            "id": "cnc-etudiant-viande-1",
+            "label": "Viande au choix",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-etudiant-viande-1-0",
+                "label": "Kebab",
+                "price": 0
+              },
+              {
+                "id": "cnc-etudiant-viande-1-1",
+                "label": "Poulet tikka",
+                "price": 0
+              },
+              {
+                "id": "cnc-etudiant-viande-1-2",
+                "label": "Tenders",
+                "price": 0
+              },
+              {
+                "id": "cnc-etudiant-viande-1-3",
+                "label": "Steak haché",
+                "price": 0
+              }
+            ],
+            "forSize": "cnc-etudiant-plat-1"
+          },
+          {
+            "id": "cnc-etudiant-viande-2",
+            "label": "Viande au choix",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-etudiant-viande-2-0",
+                "label": "Kebab",
+                "price": 0
+              },
+              {
+                "id": "cnc-etudiant-viande-2-1",
+                "label": "Poulet tikka",
+                "price": 0
+              },
+              {
+                "id": "cnc-etudiant-viande-2-2",
+                "label": "Tenders",
+                "price": 0
+              },
+              {
+                "id": "cnc-etudiant-viande-2-3",
+                "label": "Steak haché",
+                "price": 0
+              }
+            ],
+            "forSize": "cnc-etudiant-plat-2"
+          },
+          {
+            "id": "cnc-etudiant-pain",
+            "label": "Pain",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-etudiant-pain-0",
+                "label": "Naan fromage",
+                "price": 0
+              },
+              {
+                "id": "cnc-etudiant-pain-1",
+                "label": "Pain rond",
+                "price": 0
+              },
+              {
+                "id": "cnc-etudiant-pain-2",
+                "label": "Galette",
+                "price": 0
+              }
+            ],
+            "forSize": "cnc-etudiant-plat-2"
+          },
+          {
+            "id": "cnc-sauces",
+            "label": "Sauces au choix",
+            "min": 0,
+            "max": 11,
+            "choices": [
+              {
+                "id": "cnc-sauces-0",
+                "label": "Blanche",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-1",
+                "label": "Spicy",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-2",
+                "label": "Golden",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-3",
+                "label": "Green",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-4",
+                "label": "Cocktail",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-5",
+                "label": "Bengal",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-6",
+                "label": "Algérienne",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-7",
+                "label": "Samouraï",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-8",
+                "label": "Barbecue",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-9",
+                "label": "Harissa",
+                "price": 0
+              },
+              {
+                "id": "cnc-sauces-10",
+                "label": "Biggy",
+                "price": 0
+              }
+            ],
+            "included": 2,
+            "extraPrice": 0.5
+          },
+          {
+            "id": "cnc-boisson",
+            "label": "Boisson du menu",
+            "min": 1,
+            "max": 1,
+            "choices": [
+              {
+                "id": "cnc-boisson-0",
+                "label": "Soft 33 cl",
+                "price": 0
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "label": "Menus"
+  },
+  {
+    "id": "import-cat-51",
+    "items": [
+      {
+        "allergens": [],
+        "id": "import-item-52",
+        "name": "Mango Missu",
+        "price": 4.5
+      },
+      {
+        "allergens": [
+          "oeufs"
+        ],
+        "id": "import-item-53",
+        "name": "Mousse au chocolat",
+        "price": 4.5
+      },
+      {
+        "allergens": [],
+        "id": "import-item-54",
+        "name": "Dessert du moment",
+        "price": 3.9
+      }
+    ],
+    "label": "Desserts"
+  },
+  {
+    "id": "import-cat-55",
+    "items": [
+      {
+        "allergens": [],
+        "id": "import-item-56",
+        "name": "Soft 33 cl",
+        "price": 2
+      },
+      {
+        "allergens": [],
+        "id": "import-item-57",
+        "name": "Bouteille de soft 50 cl",
+        "price": 2.5
+      },
+      {
+        "allergens": [],
+        "id": "import-item-58",
+        "name": "Bouteille de soft 1,5 l",
+        "price": 4
+      },
+      {
+        "allergens": [],
+        "id": "import-item-59",
+        "name": "Expresso",
+        "price": 1.5
+      },
+      {
+        "allergens": [],
+        "id": "import-item-60",
+        "name": "Double expresso",
+        "price": 2.4
+      },
+      {
+        "allergens": [],
+        "id": "import-item-61",
+        "name": "Café long",
+        "price": 2
+      },
+      {
+        "allergens": [],
+        "id": "import-item-62",
+        "name": "Thé artisanal",
+        "price": 3.5
+      }
+    ],
+    "label": "Boissons",
+    "note": "Marques des boissons non précisées dans la carte fournie."
+  }
+]
