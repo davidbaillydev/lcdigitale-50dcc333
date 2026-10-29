@@ -159,7 +159,7 @@ function Page() {
           {shown.some((o) => o.delivery_lat == null) && <p className="text-xs text-muted-foreground">{shown.filter((o) => o.delivery_lat == null).length} livraison(s) sans position GPS : visibles uniquement dans la liste.</p>}
           {focused && (
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary bg-card p-3 text-sm">
-              <span><strong>n°{focused.order_number}</strong> · {focused.customer_name} · {fmtTime(focused.slot)}<br /><span className="text-muted-foreground">{fullAddr(focused)}</span></span>
+              <span><strong>n°{focused.order_number}</strong> · {focused.customer_name} · {fmtTime(focused.slot)}<br /><span className="text-muted-foreground">{fullAddr(focused)}{focused.is_test ? " · CB Test (Admin) - Aucun encaissement" : ""}</span></span>
               <DriverSelect orderId={focused.id} driverId={focused.driver_id} drivers={drivers} courierStatus={focused.courier_status} />
             </div>
           )}
@@ -169,7 +169,7 @@ function Page() {
             <ul className="mt-2 divide-y divide-border">
               {shown.map((o) => (
                 <li key={o.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
-                  <button type="button" className="text-left" onClick={() => setFocus(o.id)}><span className={`mr-2 inline-block h-3 w-3 rounded-full ${ST[stateOf(o)].dot}`} /><strong>n°{o.order_number}</strong> · {fmtTime(o.slot)} · {o.customer_name}<br /><span className="text-muted-foreground">{fullAddr(o)}{o.zone_name ? ` · ${o.zone_name}` : ""}</span></button>
+                  <button type="button" className="text-left" onClick={() => setFocus(o.id)}><span className={`mr-2 inline-block h-3 w-3 rounded-full ${ST[stateOf(o)].dot}`} /><strong>n°{o.order_number}</strong> · {fmtTime(o.slot)} · {o.customer_name}<br /><span className="text-muted-foreground">{fullAddr(o)}{o.zone_name ? ` · ${o.zone_name}` : ""}{o.is_test ? " · CB Test (Admin) - Aucun encaissement" : ""}</span></button>
                   <span className="flex flex-wrap items-center gap-2"><DriverSelect orderId={o.id} driverId={o.driver_id} drivers={drivers} courierStatus={o.courier_status} />
                   <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold">{ST[stateOf(o)].label}{o.courier_name ? ` · ${o.courier_name}` : ""}</span></span>
                 </li>

@@ -16,6 +16,7 @@ vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: { from:
 } } }));
 import { createAdminTestOrder, createOrder } from "@/lib/orders.functions";
 import { issueForOrder } from "@/lib/invoice.server";
+import { payLabel, settlementNote } from "@/lib/ticket";
 const restaurant = { id: "00000000-0000-4000-8000-000000000001", slug: "fixture", menu_key: "vierge", menu: [{ id: "food", label: "Plats", items: [{ id: "dish", name: "Plat", price: 10 }] }], config: { serviceFee: { enabled: true, kind: "fixed", value: 1, modes: { delivery: true, pickup: false, dine_in: false, kiosk: false } } }, opening: { "4": [[0, 1440]] }, delivery: { fee: 2.5, freeFrom: 40, minOrder: 15, zones: [{ cp: "31770", city: "Colomiers" }] } };
 const input = { restaurant: "fixture", mode: "delivery", asap: true, slot: "", first_name: "Admin", last_name: "Test", phone: "0600000000", address: "1 rue de test", postal_code: "31770", payment_method: "online", cgv: true, lines: [{ itemId: "dish", qty: 2, sel: {} }] };
 type Invoke = (args: { data: unknown; context?: unknown }) => Promise<unknown>;
@@ -23,6 +24,10 @@ const invoke = (data = input) => (createAdminTestOrder as unknown as Invoke)({ d
 beforeEach(() => { vi.clearAllMocks(); vi.useFakeTimers(); vi.setSystemTime(new Date("2026-10-29T13:54:00Z")); m.rpc.mockResolvedValue({ data: true, error: null }); });
 afterEach(() => vi.useRealTimers());
 describe("CB Test (Admin)", () => {
+  it("distingue le règlement simulé d’un règlement bancaire dans les tickets", () => {
+    expect(payLabel("online", true, true)).toBe("CB Test (Admin) - Aucun encaissement");
+    expect(settlementNote({ payment_method: "online", payment_status: "paid", is_test: true })).toBe("CB Test (Admin) — Paiement simulé, aucun encaissement, aucune facture");
+  });
   it("refuse un gérant/cuisine/non administrateur avant toute écriture", async () => {
     m.rpc.mockResolvedValue({ data: false }); await expect(invoke()).rejects.toThrow("réservé"); expect(m.insert).not.toHaveBeenCalled(); expect(m.bank).not.toHaveBeenCalled();
   });
