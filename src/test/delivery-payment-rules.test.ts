@@ -7,7 +7,7 @@ vi.mock("@tanstack/react-start", () => ({ createServerFn: () => {
 vi.mock("@/integrations/supabase/auth-middleware", () => ({ requireSupabaseAuth: {} }));
 vi.mock("@/lib/menu-photos.functions", () => ({ MENU_PHOTO_RE: /^\/api\/public\/menu-photo\/([^/]+)\/.+$/ }));
 vi.mock("@/lib/menu-options", () => ({ loadOptionData: async () => ({}), withOptions: (c: unknown) => c }));
-vi.mock("@/lib/payments.functions", () => ({ stripeForRestaurant: async () => null, stripeCall: vi.fn(), startOnlinePayment: vi.fn() }));
+vi.mock("@/lib/payments.functions", () => ({ stripeForRestaurant: async () => ({}), stripeCall: vi.fn(), startOnlinePayment: vi.fn() }));
 vi.mock("@/lib/promo.server", () => ({ resolveDiscount: async () => ({ discount: 0, code: null }) }));
 vi.mock("@/lib/pos.server", () => ({ syncOrderToPos: async () => ({ status: "skipped" }) }));
 vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: { from: () => {
