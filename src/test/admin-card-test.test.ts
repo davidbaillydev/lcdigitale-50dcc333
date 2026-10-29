@@ -16,7 +16,7 @@ vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: { from:
 } } }));
 import { createAdminTestOrder, createOrder } from "@/lib/orders.functions";
 import { issueForOrder } from "@/lib/invoice.server";
-const restaurant = { id: "00000000-0000-4000-8000-000000000001", slug: "fixture", menu_key: "vierge", menu: [{ id: "food", label: "Plats", items: [{ id: "dish", name: "Plat", price: 10 }] }], config: { serviceFee: { enabled: true, kind: "fixed", value: 1, channels: { delivery: true } } }, opening: { "4": [[0, 1440]] }, delivery: { fee: 2.5, freeFrom: 40, minOrder: 15, zones: [{ cp: "31770", city: "Colomiers" }] } };
+const restaurant = { id: "00000000-0000-4000-8000-000000000001", slug: "fixture", menu_key: "vierge", menu: [{ id: "food", label: "Plats", items: [{ id: "dish", name: "Plat", price: 10 }] }], config: { serviceFee: { enabled: true, kind: "fixed", value: 1, modes: { delivery: true, pickup: false, dine_in: false, kiosk: false } } }, opening: { "4": [[0, 1440]] }, delivery: { fee: 2.5, freeFrom: 40, minOrder: 15, zones: [{ cp: "31770", city: "Colomiers" }] } };
 const input = { restaurant: "fixture", mode: "delivery", asap: true, slot: "", first_name: "Admin", last_name: "Test", phone: "0600000000", address: "1 rue de test", postal_code: "31770", payment_method: "online", cgv: true, lines: [{ itemId: "dish", qty: 2, sel: {} }] };
 type Invoke = (args: { data: unknown; context?: unknown }) => Promise<unknown>;
 const invoke = (data = input) => (createAdminTestOrder as unknown as Invoke)({ data, context: { userId: restaurant.id, supabase: { rpc: m.rpc } } });
@@ -39,6 +39,11 @@ describe("CB Test (Admin)", () => {
   it("ne permet pas au chemin public de simuler un paiement", async () => {
     m.bank.mockResolvedValue(null);
     await expect((createOrder as unknown as Invoke)({ data: { ...input, is_test: true, test_created_by: restaurant.id } })).rejects.toThrow("paiement en ligne"); expect(m.insert).not.toHaveBeenCalled();
+  });
+  it("calcule les frais de service à 7 % du sous-total", async () => {
+    restaurant.config.serviceFee.kind = "percent"; restaurant.config.serviceFee.value = 7;
+    try { await invoke(); expect(m.insert).toHaveBeenCalledWith(expect.objectContaining({ subtotal: 20, delivery_fee: 2.5, service_fee: 1.4, total: 23.9 })); }
+    finally { restaurant.config.serviceFee.kind = "fixed"; restaurant.config.serviceFee.value = 1; }
   });
   it("refuse une adresse hors zone", async () => { await expect(invoke({ ...input, postal_code: "75001" })).rejects.toThrow("hors de notre zone"); expect(m.insert).not.toHaveBeenCalled(); });
   it("refuse le minimum de livraison non atteint", async () => { await expect(invoke({ ...input, lines: [{ itemId: "dish", qty: 1, sel: {} }] })).rejects.toThrow("Minimum"); expect(m.insert).not.toHaveBeenCalled(); });

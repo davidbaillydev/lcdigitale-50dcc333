@@ -42,7 +42,7 @@ export const Route = createFileRoute("/_authenticated/espace/$slug/livraison")({
 });
 
 type Tool = "none" | "center" | "origin" | "polygon";
-type Del = { id: string; order_number: number; customer_name: string; phone: string; address: string | null; postal_code: string | null; city: string | null; slot: string; status: string; total: number; payment_method: string; payment_status: string; delivery_lat: number | null; delivery_lng: number | null; courier_status: string | null; courier_name: string | null; zone_name: string | null; driver_id: string | null };
+type Del = { id: string; is_test?: boolean; order_number: number; customer_name: string; phone: string; address: string | null; postal_code: string | null; city: string | null; slot: string; status: string; total: number; payment_method: string; payment_status: string; delivery_lat: number | null; delivery_lng: number | null; courier_status: string | null; courier_name: string | null; zone_name: string | null; driver_id: string | null };
 type St = "waiting" | "ready" | "en_route" | "delivered";
 const ST: Record<St, { label: string; color: string; dot: string }> = {
   waiting: { label: "En attente / À préparer", color: "#f59e0b", dot: "bg-[#f59e0b]" },
@@ -83,7 +83,7 @@ function Page() {
     if (!r) return;
     const since = new Date(Date.now() - 12 * 3600_000).toISOString();
     const fetchO = async () => {
-      const { data, error } = await supabase.from("orders").select("id, order_number, customer_name, phone, address, postal_code, city, slot, status, total, payment_method, payment_status, delivery_lat, delivery_lng, courier_status, courier_name, zone_name, driver_id").eq("restaurant_id", r.id).eq("mode", "delivery").gte("created_at", since).not("status", "in", "(awaiting_payment,cancelled,rejected)").order("slot");
+      const { data, error } = await supabase.from("orders").select("id, is_test, order_number, customer_name, phone, address, postal_code, city, slot, status, total, payment_method, payment_status, delivery_lat, delivery_lng, courier_status, courier_name, zone_name, driver_id").eq("restaurant_id", r.id).eq("mode", "delivery").gte("created_at", since).not("status", "in", "(awaiting_payment,cancelled,rejected)").order("slot");
       if (error) { toast.error("Livraisons indisponibles"); return; } setOrders((data ?? []) as Del[]);
     };
     fetchO();
@@ -115,7 +115,7 @@ function Page() {
     const st = stateOf(o), a = fullAddr(o), q = encodeURIComponent(a);
     const nav = `${o.delivery_lat},${o.delivery_lng}`;
     return { id: o.id, at: [o.delivery_lat!, o.delivery_lng!] as LatLng, color: ST[st].color, label: `n°${o.order_number} · ${ST[st].label}`,
-      popup: `<strong>Commande n°${o.order_number}</strong> — ${esc(ST[st].label)}<br>${esc(o.customer_name)} · ${esc(o.phone)}<br>${esc(a)}<br>Créneau ${fmtTime(o.slot)} · ${Number(o.total).toFixed(2)} € · ${o.payment_status === "paid" ? "payé en ligne" : "à encaisser"}<br>Livreur : ${esc(o.courier_name ?? "non assigné")}<br><a href="https://waze.com/ul?ll=${nav}&navigate=yes" target="_blank" rel="noreferrer">Waze</a> · <a href="https://www.google.com/maps/dir/?api=1&destination=${q || nav}" target="_blank" rel="noreferrer">Google Maps</a>` };
+      popup: `<strong>Commande n°${o.order_number}</strong> — ${esc(ST[st].label)}<br>${esc(o.customer_name)} · ${esc(o.phone)}<br>${esc(a)}<br>Créneau ${fmtTime(o.slot)} · ${Number(o.total).toFixed(2)} € · ${o.is_test ? "CB Test (Admin) - Aucun encaissement" : o.payment_status === "paid" ? "payé en ligne" : "à encaisser"}<br>Livreur : ${esc(o.courier_name ?? "non assigné")}<br><a href="https://waze.com/ul?ll=${nav}&navigate=yes" target="_blank" rel="noreferrer">Waze</a> · <a href="https://www.google.com/maps/dir/?api=1&destination=${q || nav}" target="_blank" rel="noreferrer">Google Maps</a>` };
   }), [shown]);
   const focused = orders.find((o) => o.id === focus);
 
