@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { applyOutbox, enqueueChange, flushOutbox, isNetworkError, loadSnapshot, readOutbox, saveSnapshot } from "@/lib/kitchen-offline";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { EMPTY_OPTIONS, loadOptionData } from "@/lib/menu-options";
-import { ArrowLeft, ArrowRight, Bell, BellOff, Bike, Check, ChefHat, Lock, LogOut, Maximize, Minimize, MoonStar, PanelTopClose, PanelTopOpen, Phone, Printer, Settings, History, ShoppingBag, Sun, Users, Volume2, VolumeX } from "lucide-react";
+import { ArrowLeft, ArrowRight, Bell, BellOff, Bike, Check, ChefHat, Lock, LogOut, Maximize, Minimize, MoonStar, PanelTopClose, PanelTopOpen, Phone, Printer, Settings, History, ShoppingBag, Sun, Users, Volume2, VolumeX, WifiOff } from "lucide-react";
 import { useKitchenFullscreen } from "@/hooks/use-kitchen-fullscreen";
 import { useWakeLock } from "@/hooks/use-wake-lock";
 import { ticketOptions, printTickets, printingDefaults, printingFields, autoPrintKinds, autoPrintLabel, useTicketWidth, type PrintingConfig, type TicketKind } from "@/lib/ticket";
@@ -422,7 +422,7 @@ function Kitchen() {
         </DialogContent>
       </Dialog>
       {(!online || !live || queued > 0) && (
-        <div role="status" aria-live="polite" className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-warning/40 bg-warning/15 px-4 py-2 text-sm text-foreground">
+        <div role="status" aria-live="polite" className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-destructive/40 bg-destructive/10 px-4 py-2 text-sm text-foreground">
           <WifiOff className="h-4 w-4 shrink-0" aria-hidden />
           <strong>{!online ? "Mode hors-ligne actif" : !live ? "Reconnexion en cours…" : "Synchronisation en attente"}</strong>
           <span className="text-muted-foreground">
