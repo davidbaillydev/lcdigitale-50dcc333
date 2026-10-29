@@ -1,6 +1,6 @@
 // Encodeur ESC/POS : transforme une commande en octets pour imprimante thermique.
 import { allergenLabel } from "./allergens";
-import { isPaid, isPreorder, itemTitle, modeLabel, payLabel, ticketCustomer, ticketFields, ticketOptions, ticketTiming, ticketTotals, ticketWebsite, type TicketFieldsIn, type TicketKind, type TicketOrder, type TicketShop, type TicketWidth } from "./ticket";
+import { isPaid, isPreorder, itemTitle, modeLabel, payLabel, settlementNote, ticketCustomer, ticketFields, ticketOptions, ticketTiming, ticketTotals, ticketWebsite, type TicketFieldsIn, type TicketKind, type TicketOrder, type TicketShop, type TicketWidth } from "./ticket";
 
 const CP858: Record<string, number> = {
   "Ç": 0x80, "ü": 0x81, "é": 0x82, "â": 0x83, "ä": 0x84, "à": 0x85, "ç": 0x87, "ê": 0x88, "ë": 0x89, "è": 0x8a,
@@ -102,8 +102,7 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
   if (f.prices) e.bold(true).size(1, 2).line(lr("TOTAL", eur(totals.total), cols)).size(1, 1).bold(false);
   if (f.paid) { const p = isPaid(o); e.line(hr).align(1).bold(true).size(1, 2).line(`[${p ? "X" : " "}] PAYE    [${p ? " " : "X"}] IMPAYE`).size(1, 1).bold(false).line(hr).align(0); }
   if (f.qc && kind === "kitchen") { e.line(hr).bold(true).line("CONTROLE EMBALLAGE").bold(false).line("[ ] Articles conformes").line("[ ] Tous les articles").line("[ ] Couverts / sauces").line("").line("Visa : " + ".".repeat(Math.max(4, cols - 7))); }
-  if (isPreorder(kind, o)) { e.line(hr).align(1).bold(true); wrap("Document non fiscal - A regler obligatoirement a la caisse du restaurant avant delivrance de la commande", cols).forEach((l) => e.line(l)); e.bold(false).line("Merci de votre commande !"); }
-  else if (kind === "receipt") e.line(hr).align(1).line("PAYE - ticket non fiscal").line("Facture sur demande").line("Merci de votre commande !");
+  if (kind === "receipt") { e.line(hr).align(1).bold(true); wrap(settlementNote(o), cols).forEach((l) => e.line(l)); e.bold(false).line("Merci de votre commande !"); }
   e.line(hr).align(1).bold(true).line("Commande en ligne:");
   wrap(ticketWebsite(shop), cols).forEach((l) => e.line(l));
   e.line(hr).line().size(1, 2);
