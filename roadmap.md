@@ -37,6 +37,8 @@
 Verified on a temporary restaurant, now deactivated: upload and reload persistence, customer site and kiosk rendering, removal, mobile fallback without horizontal overflow, and no browser errors. Three banner component tests pass; automatic build passes. Storage is private and direct anon/authenticated access is denied. Five database advisor findings predate this change and remain outside its scope.
 - [x] Dish photos (import + AI), table QR codes, Google review invite
 
+- [x] Chick'N Co : FoodBooking actuel/PDF comparés ; XL 14/16,50 €, brochettes des assiettes et patates douces +1 € corrigés, sauces clarifiées ; 51 plats/11 catégories, carte enregistrée identique à la référence testée ; 71 tests réussis, compilation OK, aperçu privé XL avec 3 sauces à 17 € vérifié sans ajout/commande. Restaurant désactivé, email null, horaires/livraison inchangés, aucun prestataire connecté. À valider : quantités Chicken stick/Oignon rings, marques/parfums boissons, tarifs non présents FoodBooking (menu étudiant, soft 50 cl, boissons chaudes). Aucune publication ou paiement.
+
 ## 7 modules avancés (plan approuvé 2026-10-05)
 - [x] Étape 1 : ruptures temps réel depuis la Cuisine + QR room service / libre-service / consultation
 - [ ] Étape 2 : zones de livraison (CP/rayon), livreurs, statuts de livraison
