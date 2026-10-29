@@ -4,7 +4,7 @@ export type WhatsAppRestaurant = {
   name: string;
   slug: string;
   phone: string | null;
-  config: { serviceFee?: Partial<ServiceFeeConfig> };
+  config: { ordersPaused?: boolean; serviceFee?: Partial<ServiceFeeConfig> };
 };
 
 // Shared public origin, never the temporary preview or a restaurant-only domain.
