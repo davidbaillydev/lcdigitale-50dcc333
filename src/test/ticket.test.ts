@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { ticketEscpos } from "@/lib/escpos";
-import { cleanOptionLabel, isPaid, isPreorder, payLabel, printingDefaults, ticketCustomer, ticketFields, ticketHtml, ticketOptions, ticketTiming, ticketTotals, ticketWebsite, autoPrintKinds, autoPrintLabel, ticketFontSize, TICKET_FONTS, type TicketOrder } from "@/lib/ticket";
+import { cleanOptionLabel, isPaid, isPreorder, payLabel, printingDefaults, settlementNote, ticketCustomer, ticketFields, ticketHtml, ticketOptions, ticketTiming, ticketTotals, ticketWebsite, autoPrintKinds, autoPrintLabel, ticketFontSize, TICKET_FONTS, type TicketOrder } from "@/lib/ticket";
+
+/** Décode les octets ESC/POS (CP858) en texte lisible pour les assertions (retours à la ligne aplatis). */
+const decodeEscpos = (bytes: Uint8Array) =>
+  Array.from(bytes)
+    .map((b) => ({ 0x82: "é", 0x90: "É", 0x85: "à", 0x8a: "è", 0x87: "ç", 0xd5: "€", 0x0a: "\n" })[b] ?? (b >= 32 && b < 127 ? String.fromCharCode(b) : ""))
+    .join("")
+    .replace(/\s+/g, " ");
 
 const order: TicketOrder = {
   order_number: 12,
@@ -68,7 +75,7 @@ describe("ticket formatting", () => {
     expect(ticketTotals({ ...order, total: "11.00" })).toEqual({ subtotal: 11, vat: 1, total: 11 });
   });
 
-  it("keeps unpaid receipts non-fiscal even when payment was initiated online", () => {
+  it("keeps unpaid receipts as a payment voucher even when payment was initiated online", () => {
     const unpaid = { ...order, payment_status: "pending" };
     expect(isPaid(unpaid)).toBe(false);
     expect(isPreorder("receipt", unpaid)).toBe(true);
@@ -133,6 +140,25 @@ describe("ticket formatting", () => {
     expect(payLabel("card_terminal")).toBe("Carte bancaire (au comptoir)");
   });
 
+  it("labels the settlement note by payment mode and state, without the non-fiscal wording", () => {
+    expect(settlementNote(order)).toBe("Payé en ligne — Facture envoyée par email et accessible sur votre lien de suivi");
+    expect(settlementNote({ ...order, payment_method: "counter", payment_status: "paid" })).toBe("Reçu de paiement — Facture disponible sur demande");
+    expect(settlementNote({ ...order, payment_method: "card_terminal", payment_status: "paid" })).toBe("Reçu de paiement — Facture disponible sur demande");
+    expect(settlementNote({ ...order, payment_status: "unpaid" })).toBe("Bon de commande — À régler au comptoir avant remise");
+  });
+
+  it("prints the settlement note on the customer ticket, never the non-fiscal notice", () => {
+    for (const html of [ticketHtml(order, "receipt", 80, { name: "W" }), ticketHtml({ ...order, payment_status: "unpaid" }, "receipt", 80, { name: "W" })]) {
+      expect(html).not.toContain("non fiscal");
+      expect(html).toContain("Merci de votre commande !");
+    }
+    expect(ticketHtml(order, "receipt", 80, { name: "W" })).toContain("Payé en ligne — Facture envoyée par email et accessible sur votre lien de suivi");
+    expect(ticketHtml({ ...order, payment_status: "unpaid" }, "receipt", 80, { name: "W" })).toContain("Bon de commande — À régler au comptoir avant remise");
+    const text = decodeEscpos(ticketEscpos({ ...order, payment_method: "counter", payment_status: "paid" }, "receipt", 80, { name: "W" }));
+    expect(text).toContain("Reçu de paiement - Facture disponible sur demande");
+    expect(text).not.toContain("non fiscal");
+  });
+
   it("uses the stored subtotal when present and matches the model VAT", () => {
     expect(ticketTotals({ ...order, total: 17.5, subtotal: 17.5 })).toEqual({ subtotal: 17.5, total: 17.5, vat: 1.59 });
     expect(ticketTotals({ ...order, total: 17.5, subtotal: 20 })).toMatchObject({ subtotal: 20 });
@@ -163,13 +189,13 @@ describe("ticket text size and font", () => {
 describe("receipt aligned with kitchen format", () => {
   const full = { ...order, delivery_fee: 3, service_fee: 1, discount: 2, promo_code: "BIENVENUE", total: 16.8 };
   const shop = { name: "Wok & Sushi", address: "1 rue Test", phone: "05 00 00 00 00", slug: "woknsushi" };
-  it("always shows prices, fees, discount, VAT, total, status, shop block and non-fiscal notice", () => {
+  it("always shows prices, fees, discount, VAT, total, status, shop block and the settlement note", () => {
     for (const html of [ticketHtml(full, "receipt", 80, shop, { prices: false }), ticketHtml(full, "receipt", 58, shop, { textSize: "compact", font: "mono" })]) {
-      for (const s of ["14,80 €", "Livraison", "Frais de service", "Remise BIENVENUE", "TVA (10 % incluse)", "TOTAL", "16,80 €", "Payé", "WOK &amp; SUSHI", "1 rue Test", "05 00 00 00 00", "restaurant.lcdigitale.fr/woknsushi", "non fiscal"]) expect(html).toContain(s);
+      for (const s of ["14,80 €", "Livraison", "Frais de service", "Remise BIENVENUE", "TVA (10 % incluse)", "TOTAL", "16,80 €", "Payé", "WOK &amp; SUSHI", "1 rue Test", "05 00 00 00 00", "restaurant.lcdigitale.fr/woknsushi", "Payé en ligne — Facture envoyée par email et accessible sur votre lien de suivi"]) expect(html).toContain(s);
       expect(html).toContain("+ Cordon bleu (+1,50 €)");
     }
-    const text = Array.from(ticketEscpos(full, "receipt", 80, shop, { prices: false })).map((b) => String.fromCharCode(b)).join("");
-    for (const s of ["Livraison", "Frais de service", "Remise BIENVENUE", "TOTAL", "non fiscal", "restaurant.lcdigitale.fr/woknsushi", "WOK & SUSHI"]) expect(text).toContain(s);
+    const text = decodeEscpos(ticketEscpos(full, "receipt", 80, shop, { prices: false }));
+    for (const s of ["Livraison", "Frais de service", "Remise BIENVENUE", "TOTAL", "Payé en ligne - Facture envoyée par email et accessible sur votre lien de suivi", "restaurant.lcdigitale.fr/woknsushi", "WOK & SUSHI"]) expect(text).toContain(s);
   });
   it("applies text size and font to the receipt too", () => {
     expect(ticketHtml(order, "receipt", 80, "W", { textSize: "large", font: "condensed" })).toContain(`${ticketFontSize(80, "large")}px`);

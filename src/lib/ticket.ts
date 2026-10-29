@@ -22,11 +22,18 @@ const esc = (s: unknown) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&
 const eur = (n: unknown) => `${Number(n ?? 0).toFixed(2).replace(".", ",")} €`;
 const time = (d: string) => new Date(d).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 export const modeLabel = (m: string) => (m === "delivery" ? "LIVRAISON" : m === "dine_in" ? "SUR PLACE" : "À EMPORTER");
-/** Ticket client d'une commande non encore réglée : bon de pré-commande non fiscal. */
+/** Ticket client d'une commande non encore réglée : bon de commande à régler au comptoir. */
 export const isPreorder = (kind: TicketKind, o: { payment_method: string; payment_status?: string | null }) => kind === "receipt" && !isPaid(o);
 export const isPaid = (o: { payment_method: string; payment_status?: string | null }) => o.payment_status ? o.payment_status === "paid" : o.payment_method === "online";
 export const payLabel = (p: string, paid = false) =>
   p === "online" ? paid ? "Payé en ligne" : "Paiement en ligne (en attente)" : p === "card_terminal" ? "Carte bancaire (au comptoir)" : p === "counter" ? "Paiement au comptoir" : "Paiement à la remise";
+/** Mention de règlement du ticket client, selon le mode et l'état de paiement (sans mention « non fiscal »). */
+export const settlementNote = (o: { payment_method: string; payment_status?: string | null }) =>
+  isPaid(o)
+    ? o.payment_method === "online"
+      ? "Payé en ligne — Facture envoyée par email et accessible sur votre lien de suivi"
+      : "Reçu de paiement — Facture disponible sur demande"
+    : "Bon de commande — À régler au comptoir avant remise";
 
 export type KitchenFields = { allergens: boolean; options: boolean; notes: boolean; customer: boolean; contact: boolean; prices: boolean; paid: boolean; qc: boolean };
 export type TicketTextSize = "compact" | "normal" | "large";
@@ -237,8 +244,7 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
     ${f.prices ? `<div class="row"><span>TVA (10 % incluse)</span><span>${eur(totals.vat)}</span></div><div class="row l"><span>TOTAL</span><span>${eur(totals.total)}</span></div>` : ""}
     ${f.paid ? `<div class="box"><span><span class="ck">${isPaid(o) ? "✓" : ""}</span>Payé</span><span><span class="ck">${isPaid(o) ? "" : "✓"}</span>Impayé</span></div>` : ""}
     ${f.qc && kind === "kitchen" ? `<hr><div class="l">Contrôle emballage</div><div><span class="ck"></span>Articles conformes</div><div><span class="ck"></span>Tous les articles</div><div><span class="ck"></span>Couverts / sauces</div><div>Visa :</div><div class="sig"></div>` : ""}
-    ${isPreorder(kind, o) ? `<hr><div class="c"><b>Document non fiscal - À régler obligatoirement à la caisse du restaurant avant délivrance de la commande</b></div>` : ""}
-    ${kind === "receipt" && !isPreorder(kind, o) ? `<hr><div class="c">Payé — ticket non fiscal, facture disponible sur demande</div><div class="c">Merci de votre commande !</div>` : ""}
+    ${kind === "receipt" ? `<hr><div class="c"><b>${settlementNote(o)}</b></div><div class="c">Merci de votre commande !</div>` : ""}
     <div class="promo">Commande en ligne:<br>${esc(ticketWebsite(shop))}</div>
     <div class="c l">${esc(restaurant.toUpperCase())}</div>
     ${shop.address ? `<div class="c">${esc(shop.address)}</div>` : ""}
