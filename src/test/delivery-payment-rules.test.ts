@@ -7,11 +7,11 @@ vi.mock("@tanstack/react-start", () => ({ createServerFn: () => {
 vi.mock("@/integrations/supabase/auth-middleware", () => ({ requireSupabaseAuth: {} }));
 vi.mock("@/lib/menu-photos.functions", () => ({ MENU_PHOTO_RE: /^\/api\/public\/menu-photo\/([^/]+)\/.+$/ }));
 vi.mock("@/lib/menu-options", () => ({ loadOptionData: async () => ({}), withOptions: (c: unknown) => c }));
-vi.mock("@/lib/payments.functions", () => ({ stripeForRestaurant: async () => ({}), stripeCall: vi.fn(), startOnlinePayment: vi.fn() }));
+vi.mock("@/lib/payments.functions", () => ({ stripeForRestaurant: async () => ({}), stripeCall: async () => ({ id: "pi_test", client_secret: "secret_test" }), startOnlinePayment: vi.fn() }));
 vi.mock("@/lib/promo.server", () => ({ resolveDiscount: async () => ({ discount: 0, code: null }) }));
 vi.mock("@/lib/pos.server", () => ({ syncOrderToPos: async () => ({ status: "skipped" }) }));
 vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: { from: () => {
-  const q = { select: () => q, eq: () => q, maybeSingle: async () => ({ data: restaurant }), then: (resolve: (d: unknown) => unknown) => Promise.resolve({ data: [], error: null }).then(resolve), insert: mocks.insert }; return q;
+  const q = { select: () => q, eq: () => q, maybeSingle: async () => ({ data: restaurant }), then: (resolve: (d: unknown) => unknown) => Promise.resolve({ data: [], error: null }).then(resolve), insert: mocks.insert, update: () => ({ eq: async () => ({ error: null }) }) }; return q;
 } } }));
 import { createOrder } from "@/lib/orders.functions";
 const id = "00000000-0000-4000-8000-000000000001";
