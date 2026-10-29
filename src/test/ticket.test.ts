@@ -68,7 +68,7 @@ describe("ticket formatting", () => {
     expect(ticketTotals({ ...order, total: "11.00" })).toEqual({ subtotal: 11, vat: 1, total: 11 });
   });
 
-  it("keeps unpaid receipts non-fiscal even when payment was initiated online", () => {
+  it("keeps unpaid receipts as a payment voucher even when payment was initiated online", () => {
     const unpaid = { ...order, payment_status: "pending" };
     expect(isPaid(unpaid)).toBe(false);
     expect(isPreorder("receipt", unpaid)).toBe(true);
