@@ -421,6 +421,17 @@ function Kitchen() {
           </div>
         </DialogContent>
       </Dialog>
+      {(!online || !live || queued > 0) && (
+        <div role="status" aria-live="polite" className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-warning/40 bg-warning/15 px-4 py-2 text-sm text-foreground">
+          <WifiOff className="h-4 w-4 shrink-0" aria-hidden />
+          <strong>{!online ? "Mode hors-ligne actif" : !live ? "Reconnexion en cours…" : "Synchronisation en attente"}</strong>
+          <span className="text-muted-foreground">
+            Les commandes restent consultables{savedAt ? ` (sauvegardées à ${new Date(savedAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })})` : ""}.
+            {queued > 0 ? ` ${queued} changement${queued > 1 ? "s" : ""} en attente d'envoi.` : ""} Les nouvelles commandes apparaîtront au retour du réseau.
+          </span>
+          {online && queued > 0 && <Button size="sm" variant="outline" className="ml-auto min-h-10" onClick={() => void sync()}>Synchroniser</Button>}
+        </div>
+      )}
       <header className="kds-header border-b border-border">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
         <div className="kds-identity flex min-w-0 items-center gap-3">
