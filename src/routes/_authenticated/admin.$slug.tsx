@@ -19,6 +19,7 @@ import { ThemeToggle } from "@/lib/theme";
 import { BrandLogo } from "@/lib/brand";
 import { SettingsGroup, SettingsWorkspace } from "@/components/SettingsWorkspace";
 import { MenuTemplatePanel } from "@/components/MenuTemplatePanel";
+import { WhatsAppAccess } from "@/components/WhatsAppAccess";
 
 export const Route = createFileRoute("/_authenticated/admin/$slug")({
   head: () => ({
@@ -67,6 +68,7 @@ function Page() {
             <Button asChild variant="secondary"><Link to="/espace/$slug" params={{ slug }}><ChefHat /> Cuisine</Link></Button>
             <Button asChild variant="secondary"><a href={`/${slug}`} target="_blank" rel="noreferrer"><ExternalLink /> Site</a></Button>
             <Button asChild variant="secondary"><a href={`/${slug}/borne`} target="_blank" rel="noreferrer"><Tablet /> Borne</a></Button>
+            <WhatsAppAccess restaurant={r} />
           </div>
           <p className="text-sm text-muted-foreground">Identité, logo et couleurs se modifient depuis la console (bouton « Modifier »).</p>
           <MenuTemplatePanel restaurantId={r.id} name={r.name} />

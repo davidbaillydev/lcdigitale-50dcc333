@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ThemeToggle } from "@/lib/theme";
 import { OrdersPausedToggle } from "@/components/OrdersPausedToggle";
 import { MenuAiSettings } from "@/components/MenuAiSettings";
+import { WhatsAppAccess } from "@/components/WhatsAppAccess";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   head: () => ({
@@ -142,6 +143,7 @@ function Console() {
                 <Button size="sm" variant="secondary" asChild><Link to="/espace/$slug/clients" params={{ slug: r.slug }}>Clients</Link></Button>
                 <Button size="sm" variant="secondary" asChild><Link to="/admin/$slug" params={{ slug: r.slug }}><Settings /> Réglages</Link></Button>
                 <Button size="sm" onClick={() => setForm({ ...r })}><Pencil /> Modifier</Button>
+                <WhatsAppAccess restaurant={r} compact />
               </div>
             </article>
           ))}
