@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { configuredDeliveryRates, configuredServiceFee, whatsappMessageParts, normalizeWhatsAppPhone, whatsappUrl } from "@/lib/whatsapp-access";
+import { buildWhatsAppOnboarding, configuredDeliveryRates, configuredServiceFee, DEFAULT_PUBLIC_ORIGIN, normalizePublicOrigin, whatsappMessageParts, normalizeWhatsAppPhone, whatsappUrl, type WhatsAppRestaurant } from "@/lib/whatsapp-access";
 import { computeServiceFee } from "@/lib/service-fee";
 
 describe("accès WhatsApp", () => {
@@ -46,5 +46,37 @@ describe("accès WhatsApp", () => {
     expect(computeServiceFee({ enabled: true, kind: "fixed", value: 2 }, 20, "delivery")).toBe(2);
     expect(computeServiceFee({ enabled: true, kind: "percent", value: 5 }, 20, "delivery")).toBe(1);
     expect(computeServiceFee(undefined, 20, "delivery")).toBe(0);
+  });
+});
+
+describe("domaine public des liens WhatsApp", () => {
+  const restaurant: WhatsAppRestaurant = {
+    name: "Tacos House",
+    slug: "tacos-house",
+    phone: null,
+    config: {},
+    delivery: { fee: 2.5, freeFrom: 40, minOrder: 20, zones: [] },
+  };
+  const linksOf = (message: string) => whatsappMessageParts(message).filter((part) => part.href).map((part) => part.href as string);
+
+  it("génère chaque lien par défaut sur https://restaurant.lcdigitale.fr", () => {
+    const links = linksOf(buildWhatsAppOnboarding(restaurant));
+    expect(links.length).toBeGreaterThanOrEqual(6);
+    for (const href of links) expect(href.startsWith(`${DEFAULT_PUBLIC_ORIGIN}/`)).toBe(true);
+    expect(links).toContain("https://restaurant.lcdigitale.fr/espace/tacos-house");
+    expect(links).toContain("https://restaurant.lcdigitale.fr/livreur?r=tacos-house");
+    expect(links).toContain("https://restaurant.lcdigitale.fr/tacos-house");
+  });
+  it("utilise le domaine configuré pour tous les liens quand il est valide", () => {
+    const links = linksOf(buildWhatsAppOnboarding(restaurant, "https://commande.exemple.fr/"));
+    expect(links.length).toBeGreaterThanOrEqual(6);
+    for (const href of links) expect(href.startsWith("https://commande.exemple.fr/")).toBe(true);
+  });
+  it("retombe sur le domaine par défaut si le réglage est vide ou invalide", () => {
+    for (const bad of ["", "  ", "http://insecure.fr", "https://exemple.fr/chemin", "javascript:alert(1)", "pas-une-url"]) {
+      expect(normalizePublicOrigin(bad)).toBe(DEFAULT_PUBLIC_ORIGIN);
+      const links = linksOf(buildWhatsAppOnboarding(restaurant, bad));
+      for (const href of links) expect(href.startsWith(`${DEFAULT_PUBLIC_ORIGIN}/`)).toBe(true);
+    }
   });
 });

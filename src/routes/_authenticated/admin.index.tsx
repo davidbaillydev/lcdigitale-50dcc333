@@ -112,6 +112,19 @@ function Console() {
       </header>
       <Input className="mt-6" placeholder="Rechercher un restaurant (nom, ville, adresse web)…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher" />
 
+      <section className="mt-6 rounded-lg border border-border bg-card p-4 sm:p-6" aria-label="Domaine public">
+        <h2 className="font-display text-2xl font-semibold">Domaine public</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Base des liens partagés (messages WhatsApp, accès livreurs et clients). Elle doit rester identique au domaine publié.</p>
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
+          <div className="flex-1 space-y-1">
+            <Label htmlFor="public-domain">Adresse du site public</Label>
+            <Input id="public-domain" type="url" inputMode="url" placeholder="https://restaurant.lcdigitale.fr" value={domainDraft} onChange={(e) => setDomainDraft(e.target.value)} />
+          </div>
+          <Button className="min-h-12" disabled={savingDomain || !domainDraft.trim()} onClick={submitDomain}>{savingDomain ? "Enregistrement…" : "Enregistrer"}</Button>
+        </div>
+        {publicDomain && <p className="mt-2 text-sm text-muted-foreground">Liens générés actuellement sur : <span className="font-medium text-foreground">{publicDomain}</span></p>}
+      </section>
+
       <div className="admin-metrics mt-8 grid grid-cols-1 gap-6 sm:grid-cols-3">
         {[["Restaurants", rows?.length ?? 0], ["En ligne", active], ["Commandes aujourd'hui", today]].map(([l, v]) => (
           <div key={l} className="border-b border-border pb-5">
