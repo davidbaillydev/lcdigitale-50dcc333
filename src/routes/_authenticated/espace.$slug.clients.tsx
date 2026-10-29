@@ -60,7 +60,7 @@ function Page() {
       let customers = await loadCustomers();
       const orders: { customer_name: string; email: string | null; phone: string; total: number; created_at: string }[] = [];
       for (let i = 0; ; i += 1000) {
-        const { data: o, error } = await supabase.from("orders").select("customer_name, email, phone, total, created_at").eq("restaurant_id", rid!).not("status", "in", "(awaiting_payment,cancelled)").range(i, i + 999);
+        const { data: o, error } = await supabase.from("orders").select("customer_name, email, phone, total, created_at").eq("restaurant_id", rid!).eq("is_test", false).not("status", "in", "(awaiting_payment,cancelled)").range(i, i + 999);
         if (error) throw error;
         orders.push(...((o ?? []) as typeof orders));
         if (!o || o.length < 1000) break;

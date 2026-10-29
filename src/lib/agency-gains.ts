@@ -1,6 +1,7 @@
 // Agrégation pure des gains agence (frais de service) — testable sans réseau.
 
 export type GainOrderRow = {
+  is_test?: boolean;
   restaurant_id: string;
   service_fee: number | null;
   total: number | null;
@@ -33,7 +34,7 @@ export function aggregateGains(rows: GainOrderRow[]): AgencyGains {
   let serviceFees = 0;
   let revenue = 0;
   for (const r of rows) {
-    if (EXCLUDED_STATUSES.has(r.status)) continue;
+    if (r.is_test || EXCLUDED_STATUSES.has(r.status)) continue;
     const fee = Number(r.service_fee ?? 0) || 0;
     const tot = Number(r.total ?? 0) || 0;
     orders += 1;
@@ -55,7 +56,7 @@ export function aggregateGains(rows: GainOrderRow[]): AgencyGains {
 export function gainsByDay(rows: GainOrderRow[]): { day: string; serviceFees: number }[] {
   const per = new Map<string, number>();
   for (const r of rows) {
-    if (EXCLUDED_STATUSES.has(r.status)) continue;
+    if (r.is_test || EXCLUDED_STATUSES.has(r.status)) continue;
     const day = r.created_at.slice(0, 10);
     per.set(day, (per.get(day) ?? 0) + (Number(r.service_fee ?? 0) || 0));
   }

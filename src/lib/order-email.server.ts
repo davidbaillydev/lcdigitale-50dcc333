@@ -17,11 +17,11 @@ export function notificationsOf(config: unknown): NotificationSettings {
 
 type Line = { name: string; qty: number; total: number; size?: string; details?: string | string[] };
 type Rest = { slug: string; name: string; email: string | null; brand: { accent?: string } | null; config: unknown };
-const ORDER_COLS = "id, order_number, status, mode, slot, asap, total, items, notes, email, phone, customer_name, first_name, last_name, address, postal_code, city, table_label, payment_method, payment_status, confirmation_email_at, received_email_at, restaurant_email_at, restaurants(slug, name, email, brand, config)";
+const ORDER_COLS = "id, is_test, order_number, status, mode, slot, asap, total, items, notes, email, phone, customer_name, first_name, last_name, address, postal_code, city, table_label, payment_method, payment_status, confirmation_email_at, received_email_at, restaurant_email_at, restaurants(slug, name, email, brand, config)";
 
 async function load(admin: Admin, orderId: string) {
   const { data: o } = await admin.from("orders").select(ORDER_COLS).eq("id", orderId).maybeSingle();
-  if (!o) return null;
+  if (!o || o.is_test) return null;
   return { o, r: o.restaurants as unknown as Rest };
 }
 

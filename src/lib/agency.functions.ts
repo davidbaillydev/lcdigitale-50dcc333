@@ -43,7 +43,7 @@ export const listAgencyRestaurants = createServerFn({ method: "GET" })
     const since = new Date(); since.setHours(0, 0, 0, 0);
     const [{ data: rs }, { data: orders }] = await Promise.all([
       context.supabase.from("restaurants").select("id, slug, name, city, address, phone, email, menu_key, logo_url, brand, active, config, delivery").order("sort_order").order("name"),
-      context.supabase.from("orders").select("restaurant_id").gte("created_at", since.toISOString()),
+      context.supabase.from("orders").select("restaurant_id").eq("is_test", false).gte("created_at", since.toISOString()),
     ]);
     const count: Record<string, number> = {};
     (orders ?? []).forEach((o) => { count[o.restaurant_id] = (count[o.restaurant_id] ?? 0) + 1; });

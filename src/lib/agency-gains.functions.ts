@@ -25,6 +25,7 @@ export const getAgencyGains = createServerFn({ method: "GET" })
       context.supabase
         .from("orders")
         .select("restaurant_id, service_fee, total, status, created_at")
+        .eq("is_test", false)
         .gte("created_at", from)
         .lte("created_at", to)
         .limit(10000),

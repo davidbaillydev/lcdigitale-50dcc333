@@ -42,7 +42,7 @@ export const Route = createFileRoute("/_authenticated/espace/$slug/livraison")({
 });
 
 type Tool = "none" | "center" | "origin" | "polygon";
-type Del = { id: string; order_number: number; customer_name: string; phone: string; address: string | null; postal_code: string | null; city: string | null; slot: string; status: string; total: number; payment_method: string; payment_status: string; delivery_lat: number | null; delivery_lng: number | null; courier_status: string | null; courier_name: string | null; zone_name: string | null; driver_id: string | null };
+type Del = { id: string; is_test?: boolean; order_number: number; customer_name: string; phone: string; address: string | null; postal_code: string | null; city: string | null; slot: string; status: string; total: number; payment_method: string; payment_status: string; delivery_lat: number | null; delivery_lng: number | null; courier_status: string | null; courier_name: string | null; zone_name: string | null; driver_id: string | null };
 type St = "waiting" | "ready" | "en_route" | "delivered";
 const ST: Record<St, { label: string; color: string; dot: string }> = {
   waiting: { label: "En attente / À préparer", color: "#f59e0b", dot: "bg-[#f59e0b]" },
@@ -83,7 +83,7 @@ function Page() {
     if (!r) return;
     const since = new Date(Date.now() - 12 * 3600_000).toISOString();
     const fetchO = async () => {
-      const { data, error } = await supabase.from("orders").select("id, order_number, customer_name, phone, address, postal_code, city, slot, status, total, payment_method, payment_status, delivery_lat, delivery_lng, courier_status, courier_name, zone_name, driver_id").eq("restaurant_id", r.id).eq("mode", "delivery").gte("created_at", since).not("status", "in", "(awaiting_payment,cancelled,rejected)").order("slot");
+      const { data, error } = await supabase.from("orders").select("id, is_test, order_number, customer_name, phone, address, postal_code, city, slot, status, total, payment_method, payment_status, delivery_lat, delivery_lng, courier_status, courier_name, zone_name, driver_id").eq("restaurant_id", r.id).eq("mode", "delivery").gte("created_at", since).not("status", "in", "(awaiting_payment,cancelled,rejected)").order("slot");
       if (error) { toast.error("Livraisons indisponibles"); return; } setOrders((data ?? []) as Del[]);
     };
     fetchO();
@@ -115,7 +115,7 @@ function Page() {
     const st = stateOf(o), a = fullAddr(o), q = encodeURIComponent(a);
     const nav = `${o.delivery_lat},${o.delivery_lng}`;
     return { id: o.id, at: [o.delivery_lat!, o.delivery_lng!] as LatLng, color: ST[st].color, label: `n°${o.order_number} · ${ST[st].label}`,
-      popup: `<strong>Commande n°${o.order_number}</strong> — ${esc(ST[st].label)}<br>${esc(o.customer_name)} · ${esc(o.phone)}<br>${esc(a)}<br>Créneau ${fmtTime(o.slot)} · ${Number(o.total).toFixed(2)} € · ${o.payment_status === "paid" ? "payé en ligne" : "à encaisser"}<br>Livreur : ${esc(o.courier_name ?? "non assigné")}<br><a href="https://waze.com/ul?ll=${nav}&navigate=yes" target="_blank" rel="noreferrer">Waze</a> · <a href="https://www.google.com/maps/dir/?api=1&destination=${q || nav}" target="_blank" rel="noreferrer">Google Maps</a>` };
+      popup: `<strong>Commande n°${o.order_number}</strong> — ${esc(ST[st].label)}<br>${esc(o.customer_name)} · ${esc(o.phone)}<br>${esc(a)}<br>Créneau ${fmtTime(o.slot)} · ${Number(o.total).toFixed(2)} € · ${o.is_test ? "CB Test (Admin) - Aucun encaissement" : o.payment_status === "paid" ? "payé en ligne" : "à encaisser"}<br>Livreur : ${esc(o.courier_name ?? "non assigné")}<br><a href="https://waze.com/ul?ll=${nav}&navigate=yes" target="_blank" rel="noreferrer">Waze</a> · <a href="https://www.google.com/maps/dir/?api=1&destination=${q || nav}" target="_blank" rel="noreferrer">Google Maps</a>` };
   }), [shown]);
   const focused = orders.find((o) => o.id === focus);
 
@@ -159,7 +159,7 @@ function Page() {
           {shown.some((o) => o.delivery_lat == null) && <p className="text-xs text-muted-foreground">{shown.filter((o) => o.delivery_lat == null).length} livraison(s) sans position GPS : visibles uniquement dans la liste.</p>}
           {focused && (
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary bg-card p-3 text-sm">
-              <span><strong>n°{focused.order_number}</strong> · {focused.customer_name} · {fmtTime(focused.slot)}<br /><span className="text-muted-foreground">{fullAddr(focused)}</span></span>
+              <span><strong>n°{focused.order_number}</strong> · {focused.customer_name} · {fmtTime(focused.slot)}<br /><span className="text-muted-foreground">{fullAddr(focused)}{focused.is_test ? " · CB Test (Admin) - Aucun encaissement" : ""}</span></span>
               <DriverSelect orderId={focused.id} driverId={focused.driver_id} drivers={drivers} courierStatus={focused.courier_status} />
             </div>
           )}
@@ -169,7 +169,7 @@ function Page() {
             <ul className="mt-2 divide-y divide-border">
               {shown.map((o) => (
                 <li key={o.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
-                  <button type="button" className="text-left" onClick={() => setFocus(o.id)}><span className={`mr-2 inline-block h-3 w-3 rounded-full ${ST[stateOf(o)].dot}`} /><strong>n°{o.order_number}</strong> · {fmtTime(o.slot)} · {o.customer_name}<br /><span className="text-muted-foreground">{fullAddr(o)}{o.zone_name ? ` · ${o.zone_name}` : ""}</span></button>
+                  <button type="button" className="text-left" onClick={() => setFocus(o.id)}><span className={`mr-2 inline-block h-3 w-3 rounded-full ${ST[stateOf(o)].dot}`} /><strong>n°{o.order_number}</strong> · {fmtTime(o.slot)} · {o.customer_name}<br /><span className="text-muted-foreground">{fullAddr(o)}{o.zone_name ? ` · ${o.zone_name}` : ""}{o.is_test ? " · CB Test (Admin) - Aucun encaissement" : ""}</span></button>
                   <span className="flex flex-wrap items-center gap-2"><DriverSelect orderId={o.id} driverId={o.driver_id} drivers={drivers} courierStatus={o.courier_status} />
                   <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold">{ST[stateOf(o)].label}{o.courier_name ? ` · ${o.courier_name}` : ""}</span></span>
                 </li>

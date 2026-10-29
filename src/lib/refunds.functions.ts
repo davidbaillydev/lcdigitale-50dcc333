@@ -28,10 +28,11 @@ export const refundOrder = createServerFn({ method: "POST" })
   }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
-    const { data: o } = await db.from("orders").select("id, order_number, restaurant_id, total, refunded_amount, payment_method, payment_status, payment_ref, email, customer_name").eq("id", data.orderId).maybeSingle();
+    const { data: o } = await db.from("orders").select("id, is_test, order_number, restaurant_id, total, refunded_amount, payment_method, payment_status, payment_ref, email, customer_name").eq("id", data.orderId).maybeSingle();
     if (!o) throw new Error("Commande introuvable");
     const { data: ok } = await context.supabase.rpc("is_restaurant_manager", { _user_id: context.userId, _restaurant_id: o.restaurant_id });
     if (!ok) throw new Error("Réservé au gérant de l'établissement ou à l'agence.");
+    if (o.is_test) throw new Error("CB Test (Admin) : aucun paiement bancaire à rembourser.");
 
     const key = `refund_${o.id}_${data.requestKey}`;
     const { data: done } = await db.from("order_refunds").select("credit_note_number, amount").eq("idempotency_key", key).maybeSingle();

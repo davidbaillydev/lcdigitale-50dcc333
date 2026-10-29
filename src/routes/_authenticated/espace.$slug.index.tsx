@@ -53,6 +53,7 @@ export const Route = createFileRoute("/_authenticated/espace/$slug/")({
 });
 
 type Order = {
+  is_test?: boolean;
   id: string; order_number: number; customer_name: string; phone: string; mode: string; address: string | null; city: string | null;
   slot: string; items: { name: string; qty: number; details: string[]; allergens?: string[]; size?: { name: string }; selected_options?: { id: string; name: string; price: number; group?: string }[] }[]; notes: string | null; total: number;
   payment_method: string; payment_status?: string; status: string; source?: string; created_at: string; table_label?: string | null; room_label?: string | null; asap?: boolean; driver_id?: string | null; courier_status?: string | null;
@@ -383,7 +384,7 @@ function Kitchen() {
       </header>
       <div className="kds-service flex flex-wrap items-center justify-between gap-4 bg-primary px-6 py-5 text-primary-foreground">
         <p className="flex items-center gap-3 font-display text-2xl font-semibold"><ChefHat aria-hidden="true" /> Le service<span aria-hidden="true">.</span></p>
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm"><span><strong className="text-xl tabular-nums">{orders.filter((o) => COLS.some((c) => c.s === o.status)).length}</strong> en cours</span><span><strong className="text-xl tabular-nums">{done.length}</strong> terminée(s)</span><span>CA <strong className="text-xl tabular-nums">{euro(done.reduce((s, o) => s + Number(o.total), 0))}</strong></span></div>
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm"><span><strong className="text-xl tabular-nums">{orders.filter((o) => COLS.some((c) => c.s === o.status)).length}</strong> en cours</span><span><strong className="text-xl tabular-nums">{done.length}</strong> terminée(s)</span><span>CA <strong className="text-xl tabular-nums">{euro(done.filter((o) => !o.is_test).reduce((s, o) => s + Number(o.total), 0))}</strong></span></div>
       </div>
       {orders.some((o) => o.status === "pending_approval") && (
         <section aria-label="Commandes libre-service à valider" className="kds-approvals shrink-0 overflow-y-auto overscroll-contain border-b border-border bg-card px-4 py-4 lg:px-6">
@@ -440,7 +441,7 @@ function Kitchen() {
                     {o.mode === "delivery" && <div className="mt-2 space-y-2"><p className="text-sm">{o.address}{o.city ? `, ${o.city}` : ""}</p><DriverSelect orderId={o.id} driverId={o.driver_id ?? null} drivers={drivers} courierStatus={o.courier_status ?? null} /></div>}
                     <div className="mt-2 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-start gap-2 break-words text-sm text-muted-foreground">
                       {o.source === "kiosk" ? <span /> : <a href={`tel:${o.phone}`} className="flex items-center gap-1"><Phone className="h-3 w-3" />{o.phone}</a>}
-                      <span>{euro(Number(o.total))} · {o.payment_method === "online" && o.payment_status === "paid" ? `Payé en ligne (${String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("mollie:") ? "Mollie" : String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("paypal:") ? "PayPal" : String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("lyra:") ? "Lyra" : "Stripe"})` : o.payment_status === "paid" ? "payé (terminal)" : o.payment_method === "online" ? "payé" : o.payment_method === "card_terminal" ? "CB au comptoir" : o.payment_method === "counter" ? "espèces/TR au comptoir" : "à encaisser"}</span>
+                      <span>{euro(Number(o.total))} · {o.is_test ? "CB Test (Admin) · Aucun encaissement" : o.payment_method === "online" && o.payment_status === "paid" ? `Payé en ligne (${String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("mollie:") ? "Mollie" : String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("paypal:") ? "PayPal" : String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("lyra:") ? "Lyra" : "Stripe"})` : o.payment_status === "paid" ? "payé (terminal)" : o.payment_method === "online" ? "payé" : o.payment_method === "card_terminal" ? "CB au comptoir" : o.payment_method === "counter" ? "espèces/TR au comptoir" : "à encaisser"}</span>
                     </div>
                     <div className="mt-3 flex gap-2">
                       <Button size="lg" className="min-h-14 flex-1 text-base font-semibold" onClick={() => (c.s === "new" ? accept(o) : move(o, c.next))}>{c.action}<ArrowRight aria-hidden="true" /></Button>
@@ -450,9 +451,9 @@ function Kitchen() {
                       <Button size="sm" variant="secondary" className="min-h-12 min-w-0 flex-1" onClick={() => setPreview({ order: o, kinds: ["kitchen"] })}><Printer /> {logs[o.id]?.length ? "Réimprimer cuisine" : "Cuisine"}</Button>
                       <Button size="sm" variant="secondary" className="min-h-12 min-w-0 flex-1" onClick={() => setPreview({ order: o, kinds: ["receipt"] })}><Printer /> Caisse</Button>
                       <Button size="sm" variant="secondary" className="min-h-12 min-w-0 flex-1" onClick={() => setPreview({ order: o, kinds: ["kitchen", "receipt"] })}><Printer /> Cuisine + Caisse</Button>
-                      <InvoiceButton orderId={o.id} />
+                      {!o.is_test && <InvoiceButton orderId={o.id} />}
                     </div>
-                    <div className="mt-2 space-y-2"><RefundBadge o={o as never} /><RefundButton o={o as never} />{feat.pos_sync && <PosSyncStatus o={o as never} onDone={load} />}</div>
+                    {!o.is_test && <div className="mt-2 space-y-2"><RefundBadge o={o as never} /><RefundButton o={o as never} />{feat.pos_sync && <PosSyncStatus o={o as never} onDone={load} />}</div>}
                     {(printState[o.id] ?? logs[o.id]?.at(-1)?.status) === "failed" && <p role="alert" className="mt-2 rounded bg-destructive/20 p-2 text-sm">Impression échouée — vérifiez l'imprimante puis réimprimez.</p>}
                     {!!logs[o.id]?.length && (
                       <div className="mt-1">

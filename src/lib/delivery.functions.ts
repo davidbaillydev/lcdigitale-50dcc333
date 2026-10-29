@@ -126,7 +126,7 @@ async function checkDriver(admin: Awaited<typeof import("@/integrations/supabase
   if (roster?.length && !driverId) throw new Error("Choisissez votre profil : reconnectez-vous");
 }
 
-const DELIVERY_COLS = "id, order_number, customer_name, phone, address, postal_code, city, notes, slot, total, payment_method, payment_status, status, delivery_lat, delivery_lng, zone_name, courier_status, courier_name, driver_id";
+const DELIVERY_COLS = "id, is_test, order_number, customer_name, phone, address, postal_code, city, notes, slot, total, payment_method, payment_status, status, delivery_lat, delivery_lng, zone_name, courier_status, courier_name, driver_id";
 
 export const courierOrders = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ token: z.string().max(200), driverId: z.string().uuid().optional() }).parse(d))
@@ -141,7 +141,7 @@ export const courierOrders = createServerFn({ method: "POST" })
     if (!data.driverId) q = q.is("driver_id", null);
     if (data.driverId) q = q.or(`driver_id.eq.${data.driverId},driver_id.is.null`);
     const { data: rows } = await q.order("slot");
-    type Row = { id: string; order_number: number; customer_name: string; phone: string; address: string | null; postal_code: string | null; city: string | null; notes: string | null; slot: string; total: number; payment_method: string; payment_status: string; status: string; delivery_lat: number | null; delivery_lng: number | null; zone_name: string | null; courier_status: string | null; courier_name: string | null; driver_id: string | null };
+    type Row = { id: string; is_test: boolean; order_number: number; customer_name: string; phone: string; address: string | null; postal_code: string | null; city: string | null; notes: string | null; slot: string; total: number; payment_method: string; payment_status: string; status: string; delivery_lat: number | null; delivery_lng: number | null; zone_name: string | null; courier_status: string | null; courier_name: string | null; driver_id: string | null };
     return ((rows ?? []) as unknown as Row[]).filter((o) => o.status !== "done" || o.courier_status === "delivered");
   });
 
@@ -165,9 +165,9 @@ export const courierUpdate = createServerFn({ method: "POST" })
     if (data.step === "delivered") uq = uq.eq("courier_status", "en_route");
     if (data.driverId) uq = uq.or(`driver_id.eq.${data.driverId},driver_id.is.null`);
     const { data: o, error } = await uq
-      .select("id, order_number, restaurants(slug, name)").maybeSingle();
+      .select("id, is_test, order_number, restaurants(slug, name)").maybeSingle();
     if (error || !o) throw new Error("Commande introuvable");
-    if (data.step !== "assigned") {
+    if (data.step !== "assigned" && !o.is_test) {
       const r = o.restaurants as unknown as { slug: string; name: string } | null;
       const { notifySubscribers } = await import("./push.server");
       await notifySubscribers(supabaseAdmin, { order_id: o.id, audience: "customer" }, {

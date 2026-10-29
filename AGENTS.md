@@ -9,6 +9,7 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 - Menu simulation uses the manager-guarded editor draft, a shared pure item configurator and memory-only order snapshots; never mount the live cart provider or call order/payment/analytics services there. Why: tests must not affect customer carts, kitchen or sales.
+- Admin card tests use a separate authenticated agency-only endpoint sharing createOrder calculations, immutable orders.is_test audit and simulated paid state; retain kitchen/courier/tickets but exclude revenue, invoices, refunds, promo usage, emails and POS. Why: operational testing cannot impersonate a bank settlement or alter commercial records.
 
 - HTML and ESC/POS tickets share ticket.ts presentation helpers; optional catalog/group context restores missing option labels by stable IDs only, with snapshot-name fallback. Preserve kitchen visibility, prices and non-fiscal warnings. Why: previews and physical tickets must agree without changing orders/payments.
 
