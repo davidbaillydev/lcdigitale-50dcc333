@@ -77,12 +77,17 @@ function Checkout() {
   const onSiteOk = restaurant.config.payments?.on_site !== false;
   const embed = useEmbedMode(restaurant.slug, featuresOf(restaurant.enabled_features).embed);
 
+  const isDelivery = mode === "delivery" && !table;
+  const firstOnline = (r: typeof online) => (r.mollie ? "mollie" : r.stripe ? "stripe" : r.paypal ? "paypal" : r.lyra ? "lyra" : null);
   useEffect(() => {
     infoFn({ data: { slug: restaurant.slug } }).then((r) => {
       setOnline(r);
-      if (!onSiteOk) setPay(r.stripe ? "stripe" : r.mollie ? "mollie" : r.paypal ? "paypal" : r.lyra ? "lyra" : "on_site");
+      if (!onSiteOk) setPay((r.stripe ? "stripe" : firstOnline(r)) ?? "on_site");
     }).catch(() => {});
   }, [restaurant.slug, infoFn, onSiteOk]);
+  useEffect(() => {
+    if (isDelivery && pay === "on_site") { const f = firstOnline(online); if (f) setPay(f); }
+  }, [isDelivery, pay, online]);
 
   useEffect(() => {
     const s = availableSlots(restaurant, mode);
@@ -189,7 +194,7 @@ function Checkout() {
   };
 
   const options = [
-    ...(onSiteOk ? [{ v: "on_site" as const, Icon: Store, t: table ? "À table / au comptoir" : mode === "delivery" ? "À la livraison" : "Au retrait", s: "Espèces, CB ou tickets resto", ok: true }] : []),
+    ...(onSiteOk && !isDelivery ? [{ v: "on_site" as const, Icon: Store, t: table ? "À table / au comptoir" : "Au retrait", s: "Espèces, CB ou tickets resto", ok: true }] : []),
     { v: "stripe" as const, Icon: CreditCard, t: "Carte bancaire", s: online.stripe ? "Carte, Apple Pay, Google Pay" : "Non proposé par ce restaurant", ok: !!online.stripe },
     ...(online.mollie ? [{ v: "mollie" as const, Icon: CreditCard, t: "Carte · Bancontact · Apple Pay", s: "Page de paiement sécurisée Mollie", ok: true }] : []),
     ...(online.paypal ? [{ v: "paypal" as const, Icon: Wallet, t: "PayPal", s: "Compte PayPal ou carte via PayPal", ok: true }] : []),
@@ -318,6 +323,7 @@ function Checkout() {
           <section>
             <h2 className="text-3xl">4. Paiement</h2>
             <div className="mt-3 grid grid-cols-[repeat(2,minmax(0,1fr))] gap-2 sm:gap-3">
+              {isDelivery && <p className="rounded-lg bg-muted p-2 text-xs text-muted-foreground">Livraison : paiement en ligne uniquement (aucun paiement à la remise).</p>}
               {options.map(({ v, Icon, t, s, ok }) => (
                 <Button variant="outline" key={v} disabled={!ok || !!payment} onClick={() => setPay(v)} className={cn("h-auto min-w-0 flex-col items-start whitespace-normal break-words rounded-lg border p-3 text-left sm:p-4", !ok && "cursor-not-allowed opacity-50", pay === v ? "border-primary bg-primary/10" : "border-border")}>
                   <Icon className="mb-2 h-6 w-6 text-primary" />
