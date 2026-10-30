@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { euro } from "@/lib/menu";
 import type { OptionData } from "@/lib/menu-options";
 import { OptionSortableList } from "./OptionSortableList";
+import { OptionGroupsImportDialog } from "./OptionGroupsImportDialog";
 
 const fail = (e: unknown) => toast.error(e instanceof Error ? e.message : "Modification impossible");
 async function run(p: PromiseLike<{ error: { message: string } | null }>) { const { error } = await p; if (error) throw new Error(error.message); }
@@ -44,6 +45,7 @@ export function OptionGroupsPanel({ restaurantId, data, reload }: { restaurantId
       <form className="mt-3 flex flex-wrap gap-2" onSubmit={(e) => { e.preventDefault(); if (name.trim().length < 2) return; void act(supabase.from("option_groups").insert({ restaurant_id: restaurantId, name: name.trim(), sort_order: nextOrder(data.groups) }), "Groupe créé"); setName(""); }}>
         <Input className="min-w-0 flex-1" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nom du groupe (ex. Extra fromages)" aria-label="Nom du nouveau groupe" maxLength={80} />
         <Button type="submit" className="min-h-12"><Plus /> Créer le groupe</Button>
+        <OptionGroupsImportDialog restaurantId={restaurantId} existing={data} reload={reload} />
       </form>
       <div className="mt-4 space-y-3">
         <OptionSortableList items={data.groups} label="Ordre des groupes de suppléments" onReorder={(rows) => reorder("option_groups", rows, restaurantId, reload)}>
