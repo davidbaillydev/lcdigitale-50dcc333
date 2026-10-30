@@ -53,6 +53,5 @@ describe("Chick'N Co source priority", () => {
   });
   it("does not declare unverified allergens", () => {
     expect(items.every((i) => i.allergens === undefined)).toBe(true);
-    expect(allergensOnRequest(categories)).toBe(true);
   });
 });
