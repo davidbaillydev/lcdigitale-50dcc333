@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import menu from "./fixtures/chick-n-co-menu.json";
 import { orderLine, unitPrice, type Category, type MenuItem } from "@/lib/menu";
-import { allergensOnRequest } from "@/lib/allergens";
 
 const categories = menu as Category[];
 const items = categories.flatMap((c) => c.items);
