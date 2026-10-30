@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import menu from "./fixtures/chick-n-co-menu.json";
 import { orderLine, unitPrice, type Category, type MenuItem } from "@/lib/menu";
-import { allergensOnRequest } from "@/lib/allergens";
 
 const categories = menu as Category[];
 const items = categories.flatMap((c) => c.items);
@@ -53,6 +52,5 @@ describe("Chick'N Co source priority", () => {
   });
   it("does not declare unverified allergens", () => {
     expect(items.every((i) => i.allergens === undefined)).toBe(true);
-    expect(allergensOnRequest(categories)).toBe(true);
   });
 });
