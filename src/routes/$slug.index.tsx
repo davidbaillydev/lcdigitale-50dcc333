@@ -11,7 +11,6 @@ import { LegalFooter } from "@/components/LegalFooter";
 import { useConsent } from "@/lib/consent";
 import { useCart } from "@/lib/cart";
 import { Button } from "@/components/ui/button";
-import { menuImage } from "@/lib/menu-images";
 import { AllergenBadges, AllergenPicker } from "@/components/Allergens";
 import { safeFor } from "@/lib/allergens";
 import { useTable } from "@/lib/table";
@@ -109,8 +108,8 @@ function MenuPage() {
           <section key={c.id} id={c.id} className="scroll-mt-32">
             <div className="flex items-center justify-between gap-4 border-b border-border pb-4">
               <h2 className="inline-block min-w-0 -rotate-1 brush px-3 py-1 text-3xl break-words sm:px-5 sm:text-4xl">{catLabel(c, lang)}</h2>
-              {menuImage(c.id) && <img src={menuImage(c.id)} alt={`Illustration de la catégorie ${c.label}`} loading="lazy" width={1024} height={768} className="h-20 w-24 shrink-0 rounded-md object-cover sm:h-32 sm:w-48" />}
             </div>
+            {c.note && <p className="mt-3 text-sm text-muted-foreground">{c.note}</p>}
             <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {c.items.map((i) => (
                 <button key={i.id} onClick={() => !view && !paused && setOpen(i)} disabled={view || paused}

@@ -18,7 +18,7 @@ import { createKioskOrder } from "@/lib/orders.functions";
 import { abandonKioskQr, kioskQrAvailable, kioskQrStatus, startKioskQrPayment } from "@/lib/payments.functions";
 import { abandonKioskOrder, cancelKioskPayment, kioskPaymentStatus, kioskTerminalAvailable, startKioskCardPayment } from "@/lib/payments.functions";
 import { activeGroups, fromPrice, selectedExtras, selectionLines, euro, groupCost, REMOVE_KEY, removableChoices, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
-import { itemImage, menuImage } from "@/lib/menu-images";
+import { itemImage } from "@/lib/menu-images";
 import { BrandLogo } from "@/lib/brand";
 import { ThemeToggle } from "@/lib/theme";
 import { RestaurantBanner } from "@/components/RestaurantBanner";
@@ -252,8 +252,8 @@ function Kiosk() {
           <main className="min-h-0 flex-1 overflow-y-auto p-5">
             <div className="mb-4 flex items-center justify-between gap-4 border-b border-border pb-3">
               <h2 className="font-display text-5xl">{category?.label}</h2>
-              {category && menuImage(category.id) && <img src={menuImage(category.id)} alt={`Illustration ${category.label}`} loading="lazy" width={1024} height={768} className="h-28 w-40 rounded-md object-cover" />}
             </div>
+            {category?.note && <p className="mb-4 text-lg text-muted-foreground">{category.note}</p>}
             {excluded.length > 0 && category && !category.items.length && <p className="py-10 text-center text-2xl text-muted-foreground">Aucun plat de cette catégorie sans ces allergènes.</p>}
             <div className="grid grid-cols-2 gap-4 pb-32 lg:grid-cols-3 2xl:grid-cols-4 min-[2200px]:grid-cols-5">
               {category?.items.map((it) => (
