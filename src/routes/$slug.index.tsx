@@ -11,7 +11,6 @@ import { LegalFooter } from "@/components/LegalFooter";
 import { useConsent } from "@/lib/consent";
 import { useCart } from "@/lib/cart";
 import { Button } from "@/components/ui/button";
-import { menuImage } from "@/lib/menu-images";
 import { AllergenBadges, AllergenPicker } from "@/components/Allergens";
 import { safeFor } from "@/lib/allergens";
 import { useTable } from "@/lib/table";
