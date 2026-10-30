@@ -254,7 +254,6 @@ function Kiosk() {
               <h2 className="font-display text-5xl">{category?.label}</h2>
               {category && menuImage(category.id) && <img src={menuImage(category.id)} alt={`Illustration ${category.label}`} loading="lazy" width={1024} height={768} className="h-28 w-40 rounded-md object-cover" />}
             </div>
-            {category?.note && <p className="mb-4 text-lg text-muted-foreground">{category.note}</p>}
             {excluded.length > 0 && category && !category.items.length && <p className="py-10 text-center text-2xl text-muted-foreground">Aucun plat de cette catégorie sans ces allergènes.</p>}
             <div className="grid grid-cols-2 gap-4 pb-32 lg:grid-cols-3 2xl:grid-cols-4 min-[2200px]:grid-cols-5">
               {category?.items.map((it) => (
