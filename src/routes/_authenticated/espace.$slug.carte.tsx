@@ -1,5 +1,6 @@
 import { RestaurantGuard, RestaurantNav } from "@/components/RestaurantGuard";
 import { LcAiAssistant } from "@/components/LcAiAssistant";
+import { LcAiAssistant } from "@/components/LcAiAssistant";
 import { Crumbs } from "@/components/Crumbs";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -144,6 +145,7 @@ function MenuEditor() {
   return (
       <div className="admin-menu mx-auto max-w-4xl p-6 pb-28">
         <div className="flex items-center justify-between gap-3"><Crumbs slug={slug} page="Carte" /><ThemeToggle /></div>
+      <LcAiAssistant restaurantName={r?.name ?? "Votre restaurant"} />
       <LcAiAssistant restaurantName={r?.name ?? "Votre restaurant"} />
       <RestaurantNav slug={slug} className="print:hidden" />
         <h1 className="mt-4 text-5xl">Carte · {r?.name}</h1>
