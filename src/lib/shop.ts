@@ -32,6 +32,8 @@ export type Restaurant = {
     ordersPaused?: boolean;
     printing?: Partial<import("./ticket").PrintingConfig>;
     modes?: { pickup?: boolean; delivery?: boolean; dine_in?: boolean };
+    /** Montant minimum de commande à emporter (€) ; null/absent = pas de minimum. */
+    pickupMinOrder?: number | null;
     payments?: { online?: boolean; onlineDeliveryOnly?: boolean; on_site?: boolean; counter?: boolean; card_terminal?: boolean; qr?: boolean };
     /** Voie B (BOI-TVA-DECLA-30-10-30 § 37 ex. 4) : borne 100 % carte bancaire, aucun encaissement espèces. */
     kiosk?: { cardOnly?: boolean };
@@ -62,6 +64,12 @@ export function ordersPaused(r: Pick<Restaurant, "config">) { return r.config?.o
 
 export function deliveryFee(r: Restaurant, subtotal: number) {
   return subtotal >= r.delivery.freeFrom ? 0 : r.delivery.fee;
+}
+
+/** Minimum de commande à emporter configuré (€), ou null si aucun. */
+export function pickupMinOrder(r: Pick<Restaurant, "config">): number | null {
+  const v = r.config?.pickupMinOrder;
+  return typeof v === "number" && v > 0 ? v : null;
 }
 
 const TZ = "Europe/Paris";
