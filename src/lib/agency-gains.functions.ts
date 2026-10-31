@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { aggregateGains, gainsByDay, paymentDetails, type GainOrderRow } from "@/lib/agency-gains";
 import type { Restaurant } from "@/lib/shop";
+import type { PlatformFeeConfig } from "@/lib/platform-fee";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function assertAgency(supabase: any, userId: string) {
@@ -41,7 +42,7 @@ export const getAgencyGains = createServerFn({ method: "GET" })
       details: paymentDetails(rows),
       restaurants: (rs ?? []).map((r) => ({
         restaurantId: r.id, name: r.name, slug: r.slug, active: r.active,
-        config: r.config as Restaurant["config"] & { platformFee?: unknown },
+        config: r.config as Restaurant["config"] & { platformFee?: Partial<PlatformFeeConfig> },
         ...paymentDetails(rows.filter((o) => o.restaurant_id === r.id)),
       })),
       transactions: rows.filter((r) => !["cancelled", "awaiting_payment"].includes(r.status)).sort((a, b) => b.created_at.localeCompare(a.created_at)).map((r) => ({
