@@ -21,7 +21,7 @@ export const settingsSchema = z.object({
     ordersPaused: z.boolean().optional(),
     timing: z.object({ asap: z.boolean(), scheduled: z.boolean(), prepMode: z.enum(["auto", "manual"]), defaultPrep: z.number().int().min(5).max(180) }),
     modes: z.object({ pickup: z.boolean(), delivery: z.boolean(), dine_in: z.boolean() }),
-    payments: z.object({ online: z.boolean().optional(), on_site: z.boolean(), counter: z.boolean(), card_terminal: z.boolean(), qr: z.boolean().optional() }),
+    payments: z.object({ online: z.boolean().optional(), onlineDeliveryOnly: z.boolean().optional(), on_site: z.boolean(), counter: z.boolean(), card_terminal: z.boolean(), qr: z.boolean().optional() }),
     kiosk: z.object({ cardOnly: z.boolean() }).optional(),
     serviceFee: z.object({
       enabled: z.boolean(), kind: z.enum(["fixed", "percent"]), value: z.number().min(0).max(100),

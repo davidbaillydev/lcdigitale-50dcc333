@@ -19,7 +19,7 @@ import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { matchCpZone, type BanAddress } from "@/lib/address-autocomplete";
 import { geocodeAddress } from "@/lib/delivery.functions";
 import { computeServiceFee, serviceFeeLabel, type ServiceFeeChannel } from "@/lib/service-fee";
-import { asapSlot, availableSlots, deliveryFee, fmtTime, isOpenNow, modeEnabled, timingOf } from "@/lib/shop";
+import { asapSlot, availableSlots, deliveryFee, fmtTime, isOpenNow, modeEnabled, onlinePaymentEnabled, timingOf } from "@/lib/shop";
 import { createOrder } from "@/lib/orders.functions";
 import { deliverySlotLoad } from "@/lib/delivery.functions";
 import { capacityBucket } from "@/lib/shop";
@@ -81,16 +81,17 @@ function Checkout() {
   const embed = useEmbedMode(restaurant.slug, featuresOf(restaurant.enabled_features).embed);
 
   const isDelivery = mode === "delivery" && !table;
+  const onlineOk = onlinePaymentEnabled(restaurant, table ? "dine_in" : mode);
   const firstOnline = (r: typeof online) => (r.mollie ? "mollie" : r.stripe ? "stripe" : r.paypal ? "paypal" : r.lyra ? "lyra" : null);
   useEffect(() => {
     infoFn({ data: { slug: restaurant.slug } }).then((r) => {
       setOnline(r);
-      if (!onSiteOk) setPay((r.stripe ? "stripe" : firstOnline(r)) ?? "on_site");
     }).catch(() => {});
   }, [restaurant.slug, infoFn, onSiteOk]);
   useEffect(() => {
-    if (isDelivery && pay === "on_site") { const f = firstOnline(online); if (f) setPay(f); }
-  }, [isDelivery, pay, online]);
+    if (!onlineOk && pay !== "on_site") setPay("on_site");
+    else if (onlineOk && (isDelivery || !onSiteOk) && pay === "on_site") { const f = firstOnline(online); if (f) setPay(f); }
+  }, [isDelivery, pay, online, onlineOk, onSiteOk]);
 
   useEffect(() => {
     const s = availableSlots(restaurant, mode);
@@ -159,6 +160,7 @@ function Checkout() {
   );
 
   const submit = async () => {
+    if (pay === "on_site" ? !onSiteOk || isDelivery : !onlineOk || !online[pay]) return;
     setBusy(true);
     const embedded = isEmbedded();
     const back = embedded ? embedReturnTo(restaurant.slug) : null;
@@ -210,10 +212,10 @@ function Checkout() {
 
   const options = [
     ...(onSiteOk && !isDelivery ? [{ v: "on_site" as const, Icon: Store, t: table ? "À table / au comptoir" : "Au retrait", s: "Espèces, CB ou tickets resto", ok: true }] : []),
-    { v: "stripe" as const, Icon: CreditCard, t: "Carte bancaire", s: online.stripe ? "Carte, Apple Pay, Google Pay" : "Non proposé par ce restaurant", ok: !!online.stripe },
-    ...(online.mollie ? [{ v: "mollie" as const, Icon: CreditCard, t: "Carte · Bancontact · Apple Pay", s: "Page de paiement sécurisée Mollie", ok: true }] : []),
-    ...(online.paypal ? [{ v: "paypal" as const, Icon: Wallet, t: "PayPal", s: "Compte PayPal ou carte via PayPal", ok: true }] : []),
-    ...(online.lyra ? [{ v: "lyra" as const, Icon: Landmark, t: "Carte bancaire (banque)", s: "Page de paiement sécurisée Lyra / PayZen", ok: true }] : []),
+    ...(onlineOk ? [{ v: "stripe" as const, Icon: CreditCard, t: "Carte bancaire", s: online.stripe ? "Carte, Apple Pay, Google Pay" : "Non proposé par ce restaurant", ok: !!online.stripe }] : []),
+    ...(onlineOk && online.mollie ? [{ v: "mollie" as const, Icon: CreditCard, t: "Carte · Bancontact · Apple Pay", s: "Page de paiement sécurisée Mollie", ok: true }] : []),
+    ...(onlineOk && online.paypal ? [{ v: "paypal" as const, Icon: Wallet, t: "PayPal", s: "Compte PayPal ou carte via PayPal", ok: true }] : []),
+    ...(onlineOk && online.lyra ? [{ v: "lyra" as const, Icon: Landmark, t: "Carte bancaire (banque)", s: "Page de paiement sécurisée Lyra / PayZen", ok: true }] : []),
   ].filter((o) => o.ok || (!online.paypal && !online.lyra && !online.mollie));
 
   if (!lines.length)
@@ -410,7 +412,7 @@ function Checkout() {
             </label>
             {paused && <p role="alert" className="mt-3 rounded-lg bg-destructive/10 p-2 text-sm font-semibold text-destructive">{ordering.paused ? "Le restaurant ne prend pas de commandes pour le moment" : ordering.onlineOff ? "Commandes en ligne désactivées pour le moment" : "Restaurant actuellement fermé"}</p>}
             {embed && pay !== "on_site" && <p className="mt-3 rounded-lg bg-muted p-2 text-xs text-muted-foreground">Vous allez être redirigé vers la page de paiement sécurisée.</p>}
-            <Button size="lg" className="mt-4 w-full font-semibold" disabled={paused || !canSubmit || !proOk || !cgv || busy || (pay === "on_site" && !onSiteOk)} onClick={submit}>
+            <Button size="lg" className="mt-4 w-full font-semibold" disabled={paused || !canSubmit || !proOk || !cgv || busy || (pay === "on_site" ? !onSiteOk || isDelivery : !onlineOk || !online[pay])} onClick={submit}>
               {busy ? "Envoi…" : pay === "on_site" ? `Valider la commande · ${euro(total)}` : pay === "paypal" ? `Payer avec PayPal · ${euro(total)}` : `Continuer vers le paiement · ${euro(total)}`}
             </Button>
           </>)}

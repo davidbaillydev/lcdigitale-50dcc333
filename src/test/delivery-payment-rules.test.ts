@@ -21,6 +21,7 @@ type Invoke = (args: { data: unknown; context?: unknown }) => Promise<unknown>;
 const base = { restaurant: "fixture", asap: false, slot: "2026-10-26T11:00:00Z", first_name: "Test", last_name: "Test", phone: "0600000000", cgv: true, lines: [{ itemId: "wok", qty: 1, sel: {} }] };
 beforeEach(() => {
   vi.clearAllMocks(); vi.useFakeTimers(); vi.setSystemTime(new Date("2026-10-26T08:00:00Z"));
+  restaurant.config = {};
   mocks.insert.mockReturnValue({ select: () => ({ single: async () => ({ data: { id: "order-1", order_number: 1 }, error: null }) }) });
 });
 afterEach(() => vi.useRealTimers());
@@ -36,6 +37,25 @@ describe("livraison : paiement en ligne obligatoire", () => {
   });
 });
 describe("paiement en mains propres : retrait uniquement", () => {
+  it("refuse un paiement en ligne au retrait si réservé à la livraison", async () => {
+    restaurant.config = { payments: { onlineDeliveryOnly: true } };
+    await expect((createOrder as unknown as Invoke)({ data: { ...base, mode: "pickup", payment_method: "online" } })).rejects.toThrow("réservé à la livraison");
+    expect(mocks.insert).not.toHaveBeenCalled();
+  });
+  it("accepte le paiement en ligne au retrait en mode tous les modes", async () => {
+    restaurant.config = { payments: { onlineDeliveryOnly: false } };
+    await (createOrder as unknown as Invoke)({ data: { ...base, mode: "pickup", payment_method: "online" } });
+    expect(mocks.insert.mock.calls[0]?.[0]).toMatchObject({ mode: "pickup", payment_method: "online" });
+  });
+  it("conserve le paiement en ligne au retrait sans nouveau réglage", async () => {
+    await (createOrder as unknown as Invoke)({ data: { ...base, mode: "pickup", payment_method: "online" } });
+    expect(mocks.insert).toHaveBeenCalled();
+  });
+  it("accepte la livraison en ligne avec la restriction activée", async () => {
+    restaurant.config = { payments: { onlineDeliveryOnly: true } };
+    await (createOrder as unknown as Invoke)({ data: { ...base, mode: "delivery", payment_method: "online", address: "1 rue de Test", postal_code: "31770" } });
+    expect(mocks.insert.mock.calls[0]?.[0]).toMatchObject({ mode: "delivery", payment_method: "online" });
+  });
   it("accepte un retrait payé en mains propres", async () => {
     await (createOrder as unknown as Invoke)({ data: { ...base, mode: "pickup", payment_method: "on_site" } });
     expect(mocks.insert).toHaveBeenCalled();

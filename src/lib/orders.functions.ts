@@ -109,6 +109,7 @@ async function createCalculatedOrder(supabaseAdmin: Awaited<typeof import("@/int
         data.slot = next; data.asap = false;
       }
     }
+    if (data.payment_method === "online" && !onlinePaymentEnabled(r, data.mode)) throw new Error(onlinePaymentEnabled(r) ? "Le paiement en ligne est réservé à la livraison." : "Le paiement en ligne est désactivé par ce restaurant.");
     const { stripeForRestaurant, stripeCall, startOnlinePayment } = await import("./payments.functions");
     const provider = !testUserId && data.payment_method === "online" ? (data.provider ?? "stripe") : null;
     const stripe = provider === "stripe" ? await stripeForRestaurant(r.id) : null;
