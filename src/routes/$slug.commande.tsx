@@ -19,7 +19,7 @@ import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { matchCpZone, type BanAddress } from "@/lib/address-autocomplete";
 import { geocodeAddress } from "@/lib/delivery.functions";
 import { computeServiceFee, serviceFeeLabel, type ServiceFeeChannel } from "@/lib/service-fee";
-import { asapSlot, availableSlots, deliveryFee, fmtTime, isOpenNow, modeEnabled, onlinePaymentEnabled, timingOf } from "@/lib/shop";
+import { asapSlot, availableSlots, deliveryFee, fmtTime, isOpenNow, modeEnabled, onlinePaymentEnabled, pickupMinOrder, timingOf } from "@/lib/shop";
 import { createOrder } from "@/lib/orders.functions";
 import { deliverySlotLoad } from "@/lib/delivery.functions";
 import { capacityBucket } from "@/lib/shop";
