@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aggregateGains, gainsByDay, type GainOrderRow } from "@/lib/agency-gains";
+import { aggregateGains, gainsByDay, paymentDetails, type GainOrderRow } from "@/lib/agency-gains";
 
 const row = (over: Partial<GainOrderRow>): GainOrderRow => ({
   restaurant_id: "r1",
@@ -57,5 +57,26 @@ describe("gainsByDay", () => {
       { day: "2026-10-20", serviceFees: 1 },
       { day: "2026-10-21", serviceFees: 1 },
     ]);
+  });
+});
+
+describe("paymentDetails", () => {
+  it("sépare les frais client de la commission Mollie sauvegardée", () => {
+    expect(paymentDetails([row({ total: 40, service_fee: 1, platform_fee: 2.8, payment_status: "paid", payment_ref: "mollie:abc" })])).toMatchObject({ paid: 40, paidServiceFees: 1, platformFees: 2.8, restaurantBalanceEstimate: 37.2 });
+  });
+  it("ne considère pas une commande validée mais non réglée comme encaissée", () => {
+    expect(paymentDetails([row({ payment_status: "pending", platform_fee: 1.4 })])).toMatchObject({ paid: 0, unpaid: 20, platformFees: 0, paidServiceFees: 0 });
+  });
+  it("déduit les remboursements enregistrés du solde estimé", () => {
+    expect(paymentDetails([row({ total: 40, payment_status: "partially_refunded", payment_ref: "mollie:abc", platform_fee: 2.8, refunded_amount: 10 })])).toMatchObject({ paid: 40, refunds: 10, restaurantBalanceEstimate: 27.2 });
+  });
+  it("n'attribue pas au TPE une commission Mollie Connect", () => {
+    expect(paymentDetails([row({ payment_status: "paid", payment_ref: "mollie_term:abc", platform_fee: 1.4 })]).platformFees).toBe(0);
+  });
+  it("exclut tests, annulations et attente de paiement de tous les détails", () => {
+    expect(paymentDetails([row({ is_test: true }), row({ status: "cancelled" }), row({ status: "awaiting_payment" })])).toMatchObject({ orders: 0, paid: 0, unpaid: 0, serviceFees: 0 });
+  });
+  it("identifie la borne par sa source sans modifier le mode sauvegardé", () => {
+    expect(paymentDetails([row({ source: "kiosk", mode: "pickup" })]).channels).toEqual([{ channel: "kiosk", orders: 1, total: 20 }]);
   });
 });
