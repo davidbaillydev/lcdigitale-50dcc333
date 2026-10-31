@@ -6,7 +6,7 @@ import { validateSelections, orderLine } from "./menu";
 import { loadOptionData, withOptions } from "./menu-options";
 import { getCatalog } from "./catalogs";
 import { computeServiceFee, type ServiceFeeChannel } from "./service-fee";
-import { ORDERS_PAUSED_MSG, ordersPaused, RESTAURANT_COLUMNS, deliveryFee, isValidSlot, isOpenNow, asapSlot, timingOf, modeEnabled, paymentEnabled, onlinePaymentEnabled, availableSlots, DELIVERY_FULL_MSG, kioskCardOnly, type Restaurant } from "./shop";
+import { ORDERS_PAUSED_MSG, ordersPaused, RESTAURANT_COLUMNS, deliveryFee, pickupMinOrder, isValidSlot, isOpenNow, asapSlot, timingOf, modeEnabled, paymentEnabled, onlinePaymentEnabled, availableSlots, DELIVERY_FULL_MSG, kioskCardOnly, type Restaurant } from "./shop";
 import { cgvVersion } from "./legal";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
@@ -299,6 +299,10 @@ export const createKioskOrder = createServerFn({ method: "POST" })
       return orderLine(item, l.sel, l.qty, categoryOf(catalog, item.id));
     });
     const subtotal = Math.round(items.reduce((s, i) => s + i.total, 0) * 100) / 100;
+    if (data.mode === "pickup") {
+      const min = pickupMinOrder(r);
+      if (min != null && subtotal < min) throw new Error(`Minimum de commande à emporter : ${min} €`);
+    }
     const { resolveDiscount } = await import("./promo.server");
     const promo = await resolveDiscount(supabaseAdmin, r, subtotal, { code: data.promo_code, channel: "kiosk" });
     const serviceFee = computeServiceFee(r.config.serviceFee, subtotal, "kiosk");
