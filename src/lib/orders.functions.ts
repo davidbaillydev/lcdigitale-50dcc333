@@ -155,6 +155,9 @@ async function createCalculatedOrder(supabaseAdmin: Awaited<typeof import("@/int
       if (subtotal < r.delivery.minOrder) throw new Error(`Minimum de commande en livraison : ${r.delivery.minOrder} €`);
       fee = deliveryFee(r, subtotal);
       city = zone.city;
+    } else if (data.mode === "pickup") {
+      const min = pickupMinOrder(r);
+      if (min != null && subtotal < min) throw new Error(`Minimum de commande à emporter : ${min} €`);
     }
     const { resolveDiscount } = await import("./promo.server");
     const promo = await resolveDiscount(supabaseAdmin, r, subtotal, { code: data.promo_code, email: data.email, phone: data.phone, channel: "web" });
