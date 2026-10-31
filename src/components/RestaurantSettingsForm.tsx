@@ -31,7 +31,7 @@ export function initialSettings(r: Restaurant): Settings {
       ordersPaused: c.ordersPaused === true,
       timing: timingOf(r),
       modes: { pickup: c.modes?.pickup !== false, delivery: c.modes?.delivery !== false, dine_in: c.modes?.dine_in !== false },
-      payments: { online: c.payments?.online !== false, on_site: c.payments?.on_site !== false, counter: c.payments?.counter !== false, card_terminal: c.payments?.card_terminal !== false, qr: c.payments?.qr === true },
+      payments: { online: c.payments?.online !== false, onlineDeliveryOnly: c.payments?.onlineDeliveryOnly === true, on_site: c.payments?.on_site !== false, counter: c.payments?.counter !== false, card_terminal: c.payments?.card_terminal !== false, qr: c.payments?.qr === true },
       kiosk: { cardOnly: c.kiosk?.cardOnly === true },
       printing: printingDefaults(c.printing),
       serviceFee: serviceFeeDefaults(c.serviceFee),
@@ -212,6 +212,14 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
             <div className="space-y-1 rounded-lg border border-border p-3">
               <Toggle label="Paiement en mains propres au retrait / comptoir" hint="Le client commande sur le site et paie au retrait ou au comptoir (espèces, carte ou tickets restaurant). Non disponible pour la livraison, qui exige toujours un paiement en ligne." checked={s.config.payments.on_site} onChange={(v) => cfg({ payments: { ...s.config.payments, on_site: v } })} />
               <Toggle label="Paiement en ligne par carte" hint="Le client paie sur le site via le prestataire connecté par l'agence. Le désactiver conserve la connexion : la réactivation est immédiate." checked={s.config.payments.online !== false} onChange={(v) => { if (v && s.config.modes.delivery === false) setConfirmOnlineOn(true); else if (v) cfg({ payments: { ...s.config.payments, online: true } }); else setConfirmOnlineOff(true); }} />
+              <div className="space-y-2 py-2">
+                <Label htmlFor="online-payment-modes">Modes acceptant le paiement en ligne</Label>
+                <select id="online-payment-modes" className="h-12 w-full rounded-md border border-input bg-background px-3 text-sm" value={s.config.payments.onlineDeliveryOnly ? "delivery" : "all"} onChange={(e) => cfg({ payments: { ...s.config.payments, onlineDeliveryOnly: e.target.value === "delivery" } })}>
+                  <option value="all">Tous les modes : livraison, retrait et sur place</option>
+                  <option value="delivery">Paiement en ligne réservé à la livraison</option>
+                </select>
+                {s.config.payments.onlineDeliveryOnly && !s.config.payments.on_site && <p role="alert" className="text-sm text-destructive">Le retrait ne dispose d'aucun paiement accepté. Activez le paiement en mains propres ou choisissez tous les modes.</p>}
+              </div>
               <p className="pt-1 text-sm text-muted-foreground">Le paiement en ligne par carte sur le site s'active en connectant un prestataire (Stripe, Mollie, PayPal ou Lyra) dans la section « Prestataires de paiement » ci-dessous.</p>
             </div>
           </div>
