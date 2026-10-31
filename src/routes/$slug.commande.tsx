@@ -150,7 +150,8 @@ function Checkout() {
   const discount = promo.d?.discount ?? 0;
   const serviceFee = computeServiceFee(restaurant.config.serviceFee, subtotal, mode as ServiceFeeChannel);
   const total = Math.round((subtotal - discount + fee + serviceFee) * 100) / 100;
-  const belowMin = mode === "delivery" && subtotal < (geoZones.length ? (geo?.zone?.minOrder ?? 0) : DELIVERY.minOrder);
+  const pickupMin = pickupMinOrder(restaurant);
+  const belowMin = mode === "delivery" ? subtotal < (geoZones.length ? (geo?.zone?.minOrder ?? 0) : DELIVERY.minOrder) : mode === "pickup" && pickupMin != null && subtotal < pickupMin;
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
 
   const canSubmit = useMemo(
@@ -398,7 +399,7 @@ function Checkout() {
             {mode === "delivery" && <div className="flex justify-between"><span>Livraison</span><span>{fee ? euro(fee) : "Offerte"}</span></div>}
             <div className="flex justify-between pt-2 text-lg font-bold"><span>Total</span><span className="text-primary">{euro(total)}</span></div>
           </div>
-          {belowMin && <p className="mt-3 text-sm text-destructive">Minimum {geoZones.length ? (geo?.zone?.minOrder ?? 0) : DELIVERY.minOrder} € en livraison.</p>}
+          {belowMin && <p className="mt-3 text-sm text-destructive">{mode === "pickup" ? `Minimum ${pickupMin} € à emporter.` : `Minimum ${geoZones.length ? (geo?.zone?.minOrder ?? 0) : DELIVERY.minOrder} € en livraison.`}</p>}
           {payment && online.stripe ? (
             <div className="mt-4">
               <Suspense fallback={<p className="py-6 text-center text-sm text-muted-foreground">Chargement du paiement sécurisé…</p>}>
