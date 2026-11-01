@@ -28,7 +28,6 @@ export function vatBreakdown(o: VatOrder, ctx: VatContext = {}): VatRow[] {
   const def = defaultVatRate(ctx.defaultRate);
   const total = r2(Number(o.total) || 0);
   const fees = r2(Number(o.delivery_fee ?? 0) + Number(o.service_fee ?? 0));
-  const discount = r2(Number(o.discount ?? 0));
   const goods = r2(total - fees);
   const by = new Map<number, number>();
   const lines = o.items.filter((i) => i.total != null && Number.isFinite(Number(i.total)));
@@ -39,7 +38,6 @@ export function vatBreakdown(o: VatOrder, ctx: VatContext = {}): VatRow[] {
     for (const i of lines) { const rate = itemVatRate(i, ctx); by.set(rate, (by.get(rate) ?? 0) + Number(i.total) * k); }
   } else if (goods !== 0) by.set(def, goods);
   if (fees) by.set(def, (by.get(def) ?? 0) + fees);
-  void discount;
   const rows = [...by.entries()].sort((a, b) => a[0] - b[0]).map(([rate, ttc]) => ({ rate, ttc: r2(ttc) }));
   // Corrige le centime d'arrondi sur la plus grosse ligne pour que la somme égale le total.
   const diff = r2(total - rows.reduce((s, r) => s + r.ttc, 0));
