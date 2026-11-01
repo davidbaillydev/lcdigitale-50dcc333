@@ -425,7 +425,7 @@ function Kitchen() {
         {feat.reservation && <Button asChild variant="secondary"><Link to="/espace/$slug/reservations" params={{ slug }}>Réservations</Link></Button>}
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/reglages" params={{ slug }}>Réglages</Link></Button>}
         {isAdmin && feat.qrcode && <Button asChild variant="secondary"><Link to="/espace/$slug/qr" params={{ slug }}>QR tables & avis</Link></Button>}
-        {isAdmin && posEnabled(restaurant) && <Button asChild variant="secondary"><Link to="/espace/$slug/caisse" params={{ slug }}>Caisse comptoir</Link></Button>}
+        {isAdmin && (feat.pos || posEnabled(restaurant)) && <Button asChild variant="secondary"><Link to="/espace/$slug/caisse" params={{ slug }}>Caisse comptoir</Link></Button>}
         {isAdmin && feat.livraison && <Button asChild variant="secondary"><Link to="/espace/$slug/livraison" params={{ slug }}>Livraison & livreurs</Link></Button>}
         {restaurant?.role === "agency" && <Button asChild variant="secondary"><Link to="/espace/$slug/equipe" params={{ slug }}><Users /> Équipe</Link></Button>}
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/clients" params={{ slug }}>Clients</Link></Button>}
