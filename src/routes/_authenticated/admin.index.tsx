@@ -1,7 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowDown, ArrowUp, ChefHat, GripVertical, ExternalLink, LogOut, Pencil, Plus, Settings, Tablet, Users } from "lucide-react";
+import { ArrowDown, ArrowUp, BookOpen, ChefHat, Contact, GripVertical, ExternalLink, LogOut, MoreHorizontal, Pencil, Plus, Settings, Tablet, Users } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useStaff } from "@/hooks/use-staff";
@@ -138,44 +140,83 @@ function Console() {
           {rows.filter((r) => `${r.name} ${r.city ?? ""} ${r.slug}`.toLowerCase().includes(q.toLowerCase())).map((r) => (
             <article key={r.id} draggable={!q} onDragStart={(e) => { setDragId(r.id); e.dataTransfer.effectAllowed = "move"; }} onDragEnd={() => setDragId(null)}
               onDragOver={(e) => { if (dragId) e.preventDefault(); }} onDrop={(e) => { e.preventDefault(); if (dragId) move(dragId, r.id); setDragId(null); }}
-              className={`admin-restaurant-card rounded-lg border border-border bg-card p-4 sm:p-6 ${dragId === r.id ? "opacity-50" : ""}`}>
-              {!q && <div className="mb-3 flex items-center justify-end gap-1 text-muted-foreground">
-                <GripVertical className="mr-auto hidden cursor-grab md:block" aria-hidden />
-                <Button size="icon" variant="ghost" onClick={() => move(r.id, -1)} disabled={rows[0]?.id === r.id} aria-label={`Monter ${r.name}`}><ArrowUp /></Button>
-                <Button size="icon" variant="ghost" onClick={() => move(r.id, 1)} disabled={rows[rows.length - 1]?.id === r.id} aria-label={`Descendre ${r.name}`}><ArrowDown /></Button>
-              </div>}
-              <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 lg:flex lg:flex-wrap lg:gap-4">
-                {r.logo_url ? <BrandLogo src={r.logo_url} name={r.name} className="h-14 w-14 shrink-0 rounded-lg object-contain" />
-                  : <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-primary font-display text-3xl text-primary-foreground">{r.name[0]}</div>}
-                <div className="min-w-0 flex-1">
-                  <h2 className="font-display text-2xl font-semibold">{r.name}</h2>
-                  <p className="break-words text-sm text-muted-foreground">/{r.slug} · {r.city ?? "—"} · {r.orders_today} cmd aujourd'hui</p>
-                  <div style={brandVars(r.brand)} className="mt-3 flex gap-1" aria-label="Couleurs du restaurant">
-                    <span className="h-4 w-8 rounded bg-primary" /><span className="h-4 w-8 rounded bg-accent" />
+              className={`admin-restaurant-card group flex flex-col rounded-xl border border-border bg-card p-4 transition-shadow hover:shadow-md sm:p-5 ${dragId === r.id ? "opacity-50" : ""}`}>
+              <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3 sm:gap-4">
+                {r.logo_url ? <BrandLogo src={r.logo_url} name={r.name} className="h-12 w-12 shrink-0 rounded-lg object-contain sm:h-14 sm:w-14" />
+                  : <div style={brandVars(r.brand)} className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary font-display text-2xl text-primary-foreground sm:h-14 sm:w-14">{r.name[0]}</div>}
+                <div className="min-w-0">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <h2 className="truncate font-display text-xl font-semibold sm:text-2xl">{r.name}</h2>
+                    <span style={brandVars(r.brand)} className="hidden shrink-0 gap-0.5 sm:flex" aria-label="Couleurs du restaurant">
+                      <span className="h-2.5 w-2.5 rounded-full bg-primary" /><span className="h-2.5 w-2.5 rounded-full bg-accent" />
+                    </span>
                   </div>
+                  <p className="truncate text-sm text-muted-foreground">{r.city ?? "—"} · /{r.slug}</p>
+                  <p className="mt-1 text-sm"><span className="font-semibold">{r.orders_today}</span> <span className="text-muted-foreground">commande{r.orders_today > 1 ? "s" : ""} aujourd'hui</span></p>
                 </div>
-                <label className="col-span-2 flex shrink-0 items-center gap-2 border-t border-border pt-3 text-sm lg:border-0 lg:pt-0">
+                <div className="flex items-center gap-1">
+                  {!q && <GripVertical className="hidden h-5 w-5 cursor-grab text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 md:block" aria-hidden />}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="icon" variant="ghost" className="h-11 w-11" aria-label={`Actions pour ${r.name}`}><MoreHorizontal /></Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <DropdownMenuLabel className="truncate">{r.name}</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild className="min-h-11"><a href={`/${r.slug}`} target="_blank" rel="noreferrer"><ExternalLink /> Voir le site</a></DropdownMenuItem>
+                      <DropdownMenuItem asChild className="min-h-11"><a href={`/${r.slug}/borne`} target="_blank" rel="noreferrer"><Tablet /> Ouvrir la borne</a></DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild className="min-h-11"><Link to="/espace/$slug" params={{ slug: r.slug }}><ChefHat /> Cuisine</Link></DropdownMenuItem>
+                      <DropdownMenuItem asChild className="min-h-11"><Link to="/espace/$slug/carte" params={{ slug: r.slug }}><BookOpen /> Carte</Link></DropdownMenuItem>
+                      <DropdownMenuItem asChild className="min-h-11"><Link to="/espace/$slug/equipe" params={{ slug: r.slug }}><Users /> Équipe</Link></DropdownMenuItem>
+                      <DropdownMenuItem asChild className="min-h-11"><Link to="/espace/$slug/clients" params={{ slug: r.slug }}><Contact /> Clients</Link></DropdownMenuItem>
+                      <DropdownMenuItem asChild className="min-h-11"><Link to="/admin/$slug" params={{ slug: r.slug }}><Settings /> Réglages</Link></DropdownMenuItem>
+                      <DropdownMenuItem className="min-h-11" onSelect={() => setForm({ ...r })}><Pencil /> Modifier l'identité</DropdownMenuItem>
+                      {!q && <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="min-h-11" disabled={rows[0]?.id === r.id} onSelect={() => move(r.id, -1)}><ArrowUp /> Monter</DropdownMenuItem>
+                        <DropdownMenuItem className="min-h-11" disabled={rows[rows.length - 1]?.id === r.id} onSelect={() => move(r.id, 1)}><ArrowDown /> Descendre</DropdownMenuItem>
+                      </>}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-3 rounded-lg bg-muted/50 p-3 sm:grid-cols-2 sm:items-center">
+                <label className="flex min-h-11 items-center gap-3 text-sm">
                   <Switch checked={r.active} onCheckedChange={async (v) => {
                     setRows((p) => p?.map((x) => (x.id === r.id ? { ...x, active: v } : x)) ?? null);
                     try { await toggle({ data: { id: r.id, active: v } }); toast.success(v ? "Restaurant en ligne" : "Restaurant désactivé"); }
                     catch (e) { toast.error((e as Error).message); load(); }
                   }} aria-label={`Activer ${r.name}`} />
-                  {r.active ? "En ligne" : "Hors ligne"}
+                  <span className="flex items-center gap-2 font-medium">
+                    <span className={`h-2 w-2 rounded-full ${r.active ? "bg-primary" : "bg-muted-foreground"}`} aria-hidden />
+                    {r.active ? "En ligne" : "Hors ligne"}
+                  </span>
                 </label>
-              </div>
-              <div className="mt-4 border-t border-border pt-4">
                 <OrdersPausedToggle restaurant={{ id: r.id, config: r.config }} className="w-full" />
               </div>
-              <div className="admin-card-actions mt-5 grid grid-cols-2 gap-2 border-t border-border pt-4 sm:flex sm:flex-wrap">
-                <Button size="sm" variant="secondary" asChild><a href={`/${r.slug}`} target="_blank" rel="noreferrer"><ExternalLink /> Site</a></Button>
-                <Button size="sm" variant="secondary" asChild><a href={`/${r.slug}/borne`} target="_blank" rel="noreferrer"><Tablet /> Borne</a></Button>
-                <Button size="sm" variant="secondary" asChild><Link to="/espace/$slug" params={{ slug: r.slug }}><ChefHat /> Cuisine</Link></Button>
-                <Button size="sm" variant="secondary" asChild><Link to="/espace/$slug/equipe" params={{ slug: r.slug }}><Users /> Équipe</Link></Button>
-                <Button size="sm" variant="secondary" asChild><Link to="/espace/$slug/carte" params={{ slug: r.slug }}>Carte</Link></Button>
-                <Button size="sm" variant="secondary" asChild><Link to="/espace/$slug/clients" params={{ slug: r.slug }}>Clients</Link></Button>
-                <Button size="sm" variant="secondary" asChild><Link to="/admin/$slug" params={{ slug: r.slug }}><Settings /> Réglages</Link></Button>
-                <Button size="sm" onClick={() => setForm({ ...r })}><Pencil /> Modifier</Button>
-                <WhatsAppAccess restaurant={r} compact origin={publicDomain} />
+
+              <div className="admin-card-actions mt-4 flex flex-wrap items-center gap-2">
+                <Button size="sm" className="min-h-10 flex-1 sm:flex-none" asChild><Link to="/espace/$slug" params={{ slug: r.slug }}><ChefHat /> Cuisine</Link></Button>
+                <Button size="sm" variant="secondary" className="min-h-10 flex-1 sm:flex-none" asChild><Link to="/admin/$slug" params={{ slug: r.slug }}><Settings /> Réglages</Link></Button>
+                <TooltipProvider delayDuration={200}>
+                  <div className="ml-auto hidden items-center gap-0.5 lg:flex" role="toolbar" aria-label={`Raccourcis ${r.name}`}>
+                    {([
+                      [<ExternalLink key="i" />, "Voir le site", `/${r.slug}`, true],
+                      [<Tablet key="i" />, "Ouvrir la borne", `/${r.slug}/borne`, true],
+                    ] as const).map(([icon, label, href]) => (
+                      <Tooltip key={label}><TooltipTrigger asChild>
+                        <Button size="icon" variant="ghost" asChild><a href={href} target="_blank" rel="noreferrer" aria-label={label}>{icon}</a></Button>
+                      </TooltipTrigger><TooltipContent>{label}</TooltipContent></Tooltip>
+                    ))}
+                    <Tooltip><TooltipTrigger asChild><Button size="icon" variant="ghost" asChild><Link to="/espace/$slug/carte" params={{ slug: r.slug }} aria-label="Carte"><BookOpen /></Link></Button></TooltipTrigger><TooltipContent>Carte</TooltipContent></Tooltip>
+                    <Tooltip><TooltipTrigger asChild><Button size="icon" variant="ghost" asChild><Link to="/espace/$slug/equipe" params={{ slug: r.slug }} aria-label="Équipe"><Users /></Link></Button></TooltipTrigger><TooltipContent>Équipe</TooltipContent></Tooltip>
+                    <Tooltip><TooltipTrigger asChild><Button size="icon" variant="ghost" asChild><Link to="/espace/$slug/clients" params={{ slug: r.slug }} aria-label="Clients"><Contact /></Link></Button></TooltipTrigger><TooltipContent>Clients</TooltipContent></Tooltip>
+                    <Tooltip><TooltipTrigger asChild><Button size="icon" variant="ghost" onClick={() => setForm({ ...r })} aria-label="Modifier l'identité"><Pencil /></Button></TooltipTrigger><TooltipContent>Modifier l'identité</TooltipContent></Tooltip>
+                  </div>
+                </TooltipProvider>
+                <div className="w-full sm:w-auto lg:ml-0"><WhatsAppAccess restaurant={r} compact origin={publicDomain} /></div>
               </div>
             </article>
           ))}
