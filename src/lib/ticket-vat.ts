@@ -4,7 +4,7 @@ import type { LegalInfo } from "./legal";
 export type VatRow = { rate: number; ht: number; vat: number; ttc: number };
 export type VatItem = { id?: string; total?: number | string | null; vatRate?: number | null };
 export type VatOrder = { items: VatItem[]; total: number | string; delivery_fee?: number | string | null; service_fee?: number | string | null; discount?: number | string | null };
-export type VatContext = { defaultRate?: number | string | null; itemRates?: Record<string, number | undefined> };
+export type VatContext = { defaultRate?: number | string | null | undefined; itemRates?: Record<string, number | undefined> | undefined };
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 const ALLOWED = [0, 2.1, 5.5, 10, 20];
