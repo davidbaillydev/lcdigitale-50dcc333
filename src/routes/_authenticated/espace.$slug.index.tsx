@@ -553,6 +553,7 @@ function Kitchen() {
                       ) : <Button size="lg" className="min-h-14 flex-1 text-base font-semibold" onClick={() => (c.s === "new" ? accept(o) : move(o, c.next))}>{c.action}<ArrowRight aria-hidden="true" /></Button>}
                       {c.s === "new" && <Button size="lg" variant="outline" className="min-h-14" onClick={() => confirm("Refuser cette commande ?") && move(o, "cancelled")}>Refuser</Button>}
                     </div>
+                    {canMarkNoShow(o) && <Button size="lg" variant="destructive" className="mt-2 min-h-12 w-full" onClick={() => confirm(`Marquer la commande #${o.order_number} comme perte (non récupérée) ? Elle ne sera pas encaissée.`) && move(o, "no_show")}><AlertTriangle />Marquer comme Perte</Button>}
                     <div className="mt-2 flex flex-wrap gap-2">
                       <Button size="sm" variant="secondary" className="min-h-12 min-w-0 flex-1" onClick={() => setPreview({ order: o, kinds: ["kitchen"] })}><Printer /> {logs[o.id]?.length ? "Réimprimer cuisine" : "Cuisine"}</Button>
                       <Button size="sm" variant="secondary" className="min-h-12 min-w-0 flex-1" onClick={() => setPreview({ order: o, kinds: ["receipt"] })}><Printer /> Caisse</Button>
