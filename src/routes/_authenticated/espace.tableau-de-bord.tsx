@@ -3,7 +3,7 @@ import { Crumbs } from "@/components/Crumbs";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { FileDown, FileSpreadsheet, FileText } from "lucide-react";
+import { AlertTriangle, FileDown, FileSpreadsheet, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useStaff } from "@/hooks/use-staff";
 import { downloadCSV, downloadPDF, downloadXLSX, eur } from "@/lib/export";
@@ -33,7 +33,7 @@ const iso = (d: Date) => d.toISOString().slice(0, 10);
 const PRESETS = [["today", "Aujourd'hui"], ["7", "7 jours"], ["30", "30 jours"], ["month", "Ce mois"], ["year", "Cette année"]] as const;
 const MODE: Record<string, string> = { pickup: "À emporter", delivery: "Livraison", dine_in: "Sur place" };
 const PAY: Record<string, string> = { online: "En ligne", on_site: "Sur place", counter: "Comptoir", card_terminal: "Terminal carte" };
-const STATUS: Record<string, string> = { new: "Nouvelle", accepted: "Acceptée", ready: "Prête", done: "Terminée", cancelled: "Annulée" };
+const STATUS: Record<string, string> = { new: "Nouvelle", accepted: "Acceptée", ready: "Prête", done: "Terminée", cancelled: "Annulée", no_show: "Perte (non récupérée)" };
 
 function range(p: string): [string, string] {
   const now = new Date(), t = iso(now);
@@ -70,7 +70,7 @@ function Dashboard() {
 
   const s = useMemo(() => {
     const list = orders ?? [];
-    const ok = list.filter((o) => o.status !== "cancelled");
+    const ok = list.filter((o) => o.status !== "cancelled" && o.status !== "no_show");
     const sum = (a: Order[], f: (o: Order) => number) => Math.round(a.reduce((t, o) => t + Number(f(o)), 0) * 100) / 100;
     const group = (f: (o: Order) => string) => {
       const m = new Map<string, { n: number; ca: number }>();
@@ -109,6 +109,7 @@ function Dashboard() {
         <span className="mr-auto" /><ThemeToggle />
       </div>
       <h1 className="text-5xl">Tableau de bord</h1>
+      <LossWidget ids={ids} slug={rid === "all" ? (managed.length === 1 ? managed[0].slug : null) : managed.find((r) => r.id === rid)?.slug ?? null} />
 
       <div className="grid grid-cols-2 items-end gap-3 border-y border-border py-4 sm:flex sm:flex-wrap">
         <label className="col-span-2 min-w-0 space-y-1 text-sm">Restaurant
@@ -184,6 +185,29 @@ function Breakdown({ title, rows, total }: { title: string; rows: [string, { n: 
         ))}
         {!rows.length && <p className="text-sm text-muted-foreground">—</p>}
       </div>
+    </section>
+  );
+}
+
+function LossWidget({ ids, slug }: { ids: string[]; slug: string | null }) {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  const { data } = useQuery({
+    queryKey: ["losses-month", ids.join(), start], enabled: ids.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("orders").select("total").in("restaurant_id", ids).eq("status", "no_show").eq("is_test", false).gte("created_at", start);
+      if (error) throw error;
+      return { n: data.length, sum: Math.round(data.reduce((t, o) => t + Number(o.total), 0) * 100) / 100 };
+    },
+  });
+  return (
+    <section className="rounded-lg border-2 border-destructive/60 bg-destructive/5 p-5">
+      <p className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-destructive"><AlertTriangle className="h-4 w-4" />Manque à gagner (Pertes) — mois en cours</p>
+      <p className="mt-2 text-5xl font-bold text-destructive">{eur(data?.sum ?? 0)}</p>
+      <p className="mt-1 text-sm text-muted-foreground">{data?.n ?? 0} commande(s) à emporter non récupérée(s) et jamais encaissée(s) ce mois-ci. Le paiement en ligne obligatoire supprime ce risque.</p>
+      {slug ? (
+        <Button asChild variant="destructive" className="mt-4 min-h-12"><Link to="/espace/$slug/reglages" params={{ slug }}>Activer le paiement en ligne obligatoire</Link></Button>
+      ) : <p className="mt-4 text-sm text-muted-foreground">Choisissez un restaurant pour accéder à ses réglages de paiement.</p>}
     </section>
   );
 }
