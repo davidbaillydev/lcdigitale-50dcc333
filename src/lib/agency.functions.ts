@@ -2,6 +2,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { normalizePublicOrigin } from "./whatsapp-access";
+import { FEATURES } from "./features";
+
+/** Schéma des modules d'abonnement, dérivé de FEATURES pour ne jamais oublier une clé. */
+const featuresSchema = z.object(Object.fromEntries(FEATURES.map(([k]) => [k, z.boolean()]))).strict();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function assertAgency(supabase: any, userId: string) {
@@ -132,7 +136,7 @@ export const saveRestaurantFeatures = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({
     id: z.string().uuid(),
-    features: z.object({ borne: z.boolean(), kds: z.boolean(), livraison: z.boolean(), reservation: z.boolean(), qrcode: z.boolean(), facturx: z.boolean(), pos_sync: z.boolean(), borne_cash_payment: z.boolean(), embed: z.boolean() }).strict(),
+    features: featuresSchema,
   }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAgency(context.supabase, context.userId);

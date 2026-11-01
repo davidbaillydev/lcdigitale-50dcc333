@@ -241,7 +241,7 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
           )}
           {agency && (
             <div className="rounded-lg border border-border p-3">
-              <Toggle label="Mode Caisse comptoir (POS)" hint="Active l'écran de caisse intégré (espèces, CB, titres restaurant, ouverture/clôture). Désactivé par défaut : la caisse actuelle (Hiboutik) reste utilisée." checked={!!s.config.pos?.enabled} onChange={(v) => cfg({ pos: { enabled: v } })} />
+              <Toggle label="Mode Caisse comptoir (POS)" hint="Réglage de compatibilité. Le module s'active normalement dans « Modules de l'abonnement » (Caisse comptoir (POS)), désactivé par défaut : la caisse actuelle (Hiboutik) reste utilisée." checked={!!s.config.pos?.enabled} onChange={(v) => cfg({ pos: { enabled: v } })} />
               {s.config.pos?.enabled && <p className="mt-2 rounded bg-muted p-2 text-sm text-muted-foreground">Module en développement, non certifié NF525. Un logiciel de caisse enregistrant des espèces doit être certifié (art. 286-I-3° bis du CGI) : à utiliser en test uniquement tant que la certification n'est pas obtenue.</p>}
             </div>
           )}
