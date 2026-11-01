@@ -49,6 +49,7 @@ import { Route as ApiPublicMollieOauthCallbackRouteImport } from './routes/api/p
 import { Route as ApiPublicMollieWebhookRouteImport } from './routes/api/public/mollie-webhook'
 import { Route as ApiPublicVersionRouteImport } from './routes/api/public/version'
 import { Route as AuthenticatedEspaceSlugIndexRouteImport } from './routes/_authenticated/espace.$slug.index'
+import { Route as AuthenticatedEspaceSlugCaisseRouteImport } from './routes/_authenticated/espace.$slug.caisse'
 import { Route as AuthenticatedEspaceSlugCarteRouteImport } from './routes/_authenticated/espace.$slug.carte'
 import { Route as AuthenticatedEspaceSlugClientsRouteImport } from './routes/_authenticated/espace.$slug.clients'
 import { Route as AuthenticatedEspaceSlugEquipeRouteImport } from './routes/_authenticated/espace.$slug.equipe'
@@ -271,6 +272,12 @@ const AuthenticatedEspaceSlugIndexRoute =
     path: '/espace/$slug/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedEspaceSlugCaisseRoute =
+  AuthenticatedEspaceSlugCaisseRouteImport.update({
+    id: '/espace/$slug/caisse',
+    path: '/espace/$slug/caisse',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedEspaceSlugCarteRoute =
   AuthenticatedEspaceSlugCarteRouteImport.update({
     id: '/espace/$slug/carte',
@@ -388,6 +395,7 @@ export interface FileRoutesByFullPath {
   '/api/public/version': typeof ApiPublicVersionRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/espace/': typeof AuthenticatedEspaceIndexRoute
+  '/espace/$slug/caisse': typeof AuthenticatedEspaceSlugCaisseRoute
   '/espace/$slug/carte': typeof AuthenticatedEspaceSlugCarteRoute
   '/espace/$slug/clients': typeof AuthenticatedEspaceSlugClientsRoute
   '/espace/$slug/equipe': typeof AuthenticatedEspaceSlugEquipeRoute
@@ -440,6 +448,7 @@ export interface FileRoutesByTo {
   '/api/public/version': typeof ApiPublicVersionRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/espace': typeof AuthenticatedEspaceIndexRoute
+  '/espace/$slug/caisse': typeof AuthenticatedEspaceSlugCaisseRoute
   '/espace/$slug/carte': typeof AuthenticatedEspaceSlugCarteRoute
   '/espace/$slug/clients': typeof AuthenticatedEspaceSlugClientsRoute
   '/espace/$slug/equipe': typeof AuthenticatedEspaceSlugEquipeRoute
@@ -496,6 +505,7 @@ export interface FileRoutesById {
   '/api/public/version': typeof ApiPublicVersionRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/espace/': typeof AuthenticatedEspaceIndexRoute
+  '/_authenticated/espace/$slug/caisse': typeof AuthenticatedEspaceSlugCaisseRoute
   '/_authenticated/espace/$slug/carte': typeof AuthenticatedEspaceSlugCarteRoute
   '/_authenticated/espace/$slug/clients': typeof AuthenticatedEspaceSlugClientsRoute
   '/_authenticated/espace/$slug/equipe': typeof AuthenticatedEspaceSlugEquipeRoute
@@ -552,6 +562,7 @@ export interface FileRouteTypes {
     | '/api/public/version'
     | '/admin/'
     | '/espace/'
+    | '/espace/$slug/caisse'
     | '/espace/$slug/carte'
     | '/espace/$slug/clients'
     | '/espace/$slug/equipe'
@@ -604,6 +615,7 @@ export interface FileRouteTypes {
     | '/api/public/version'
     | '/admin'
     | '/espace'
+    | '/espace/$slug/caisse'
     | '/espace/$slug/carte'
     | '/espace/$slug/clients'
     | '/espace/$slug/equipe'
@@ -659,6 +671,7 @@ export interface FileRouteTypes {
     | '/api/public/version'
     | '/_authenticated/admin/'
     | '/_authenticated/espace/'
+    | '/_authenticated/espace/$slug/caisse'
     | '/_authenticated/espace/$slug/carte'
     | '/_authenticated/espace/$slug/clients'
     | '/_authenticated/espace/$slug/equipe'
@@ -983,6 +996,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEspaceSlugIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/espace/$slug/caisse': {
+      id: '/_authenticated/espace/$slug/caisse'
+      path: '/espace/$slug/caisse'
+      fullPath: '/espace/$slug/caisse'
+      preLoaderRoute: typeof AuthenticatedEspaceSlugCaisseRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/espace/$slug/carte': {
       id: '/_authenticated/espace/$slug/carte'
       path: '/espace/$slug/carte'
@@ -1106,6 +1126,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEspaceFacturesRoute: typeof AuthenticatedEspaceFacturesRoute
   AuthenticatedEspaceTableauDeBordRoute: typeof AuthenticatedEspaceTableauDeBordRoute
   AuthenticatedEspaceIndexRoute: typeof AuthenticatedEspaceIndexRoute
+  AuthenticatedEspaceSlugCaisseRoute: typeof AuthenticatedEspaceSlugCaisseRoute
   AuthenticatedEspaceSlugCarteRoute: typeof AuthenticatedEspaceSlugCarteRoute
   AuthenticatedEspaceSlugClientsRoute: typeof AuthenticatedEspaceSlugClientsRoute
   AuthenticatedEspaceSlugEquipeRoute: typeof AuthenticatedEspaceSlugEquipeRoute
@@ -1122,6 +1143,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEspaceFacturesRoute: AuthenticatedEspaceFacturesRoute,
   AuthenticatedEspaceTableauDeBordRoute: AuthenticatedEspaceTableauDeBordRoute,
   AuthenticatedEspaceIndexRoute: AuthenticatedEspaceIndexRoute,
+  AuthenticatedEspaceSlugCaisseRoute: AuthenticatedEspaceSlugCaisseRoute,
   AuthenticatedEspaceSlugCarteRoute: AuthenticatedEspaceSlugCarteRoute,
   AuthenticatedEspaceSlugClientsRoute: AuthenticatedEspaceSlugClientsRoute,
   AuthenticatedEspaceSlugEquipeRoute: AuthenticatedEspaceSlugEquipeRoute,
