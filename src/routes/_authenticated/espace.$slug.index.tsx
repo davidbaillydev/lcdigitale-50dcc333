@@ -1,3 +1,4 @@
+import { posEnabled } from "@/lib/pos-register";
 import type { LegalInfo } from "@/lib/legal";
 import { useRestaurantFeatures } from "@/hooks/use-restaurant-features";
 import { FeatureGate } from "@/components/FeatureGate";

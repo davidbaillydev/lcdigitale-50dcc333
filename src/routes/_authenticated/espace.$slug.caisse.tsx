@@ -84,7 +84,7 @@ function Register({ restaurantId, name, slug, restaurant }: { restaurantId: stri
     const key = itemId + JSON.stringify(sel);
     setLines((p) => p.some((l) => l.key === key) ? p.map((l) => l.key === key ? { ...l, qty: l.qty + qty } : l) : [...p, { key, itemId, sel, qty }]);
   };
-  const tap = (id: string) => { const it = catalog.itemsById[id]; if (!it) return; if ((it.groups?.length ?? 0) > 0 || it.builder) setItem(id); else addLine(id, {}, 1); };
+  const tap = (id: string) => { const it = catalog.itemsById[id]; if (!it) return; if ((it.options?.length ?? 0) > 0 || it.builder) setItem(id); else addLine(id, {}, 1); };
 
   const checkout = async () => {
     setBusy(true);
@@ -99,7 +99,7 @@ function Register({ restaurantId, name, slug, restaurant }: { restaurantId: stri
 
   if (!st.session) return (
     <main className="mx-auto max-w-xl space-y-6 p-6">
-      <Crumbs items={[{ label: name, to: `/espace/${slug}` }, { label: "Caisse" }]} />
+      <Crumbs slug={slug} page="Caisse" />
       <h1 className="text-2xl font-semibold">Ouvrir la caisse</h1>
       <div className="space-y-2"><Label htmlFor="float">Fond de caisse (€)</Label><Input id="float" inputMode="decimal" className="h-14 text-lg" value={float} onChange={(e) => setFloat(e.target.value)} /></div>
       <Button className="min-h-14 w-full text-lg" onClick={async () => { try { await open({ data: { restaurantId, openingFloat: Number(float.replace(",", ".")) || 0 } }); refresh(); } catch (e) { toast.error((e as Error).message); } }}><Unlock />Ouvrir la caisse</Button>
@@ -124,7 +124,7 @@ function Register({ restaurantId, name, slug, restaurant }: { restaurantId: stri
       <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[1fr_360px]">
         <section className="flex min-h-0 flex-col">
           <div className="flex gap-2 overflow-x-auto border-b border-border p-2">
-            {catalog.categories.map((c) => <Button key={c.id} variant={activeCat?.id === c.id ? "default" : "secondary"} className="min-h-12 shrink-0" onClick={() => setCat(c.id)}>{c.name}</Button>)}
+            {catalog.categories.map((c) => <Button key={c.id} variant={activeCat?.id === c.id ? "default" : "secondary"} className="min-h-12 shrink-0" onClick={() => setCat(c.id)}>{c.label}</Button>)}
           </div>
           <div className="grid flex-1 auto-rows-min grid-cols-2 gap-2 overflow-y-auto p-2 sm:grid-cols-3 lg:grid-cols-4">
             {activeCat?.items.map((it) => (

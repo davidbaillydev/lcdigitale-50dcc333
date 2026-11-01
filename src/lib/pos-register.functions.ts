@@ -82,7 +82,7 @@ export const createPosOrder = createServerFn({ method: "POST" })
       assertItemAvailable(item, now);
       const err = validateSelections(item, l.sel);
       if (err) throw new Error(err);
-      const category = catalog.categories.find((c) => c.items.some((i) => i.id === item.id))?.name;
+      const category = catalog.categories.find((c) => c.items.some((i) => i.id === item.id))?.label;
       return orderLine(item, l.sel, l.qty, category);
     });
     const total = Math.round(items.reduce((a, i) => a + i.total, 0) * 100) / 100;
