@@ -146,7 +146,7 @@ export function dailyGains(rows: GainOrderRow[]): DailyGains[] {
     const d = per.get(day) ?? { day, orders: 0, revenue: 0, online: 0, inHand: 0, commission: 0, offlinePotential: 0, serviceFees: 0 };
     const total = Number(r.total ?? 0) || 0;
     const paid = PAID_STATES.includes(r.payment_status ?? "");
-    const commission = paid && paymentProvider(r.payment_ref ?? (r as { provider?: string }).provider === "Mollie" ? "mollie:" : r.payment_ref) === "Mollie" ? Number(r.platform_fee ?? 0) || 0 : 0;
+    const commission = paid && (r.payment_ref ? paymentProvider(r.payment_ref) : (r as { provider?: string }).provider) === "Mollie" ? Number(r.platform_fee ?? 0) || 0 : 0;
     d.orders += 1; d.revenue += total; d.serviceFees += Number(r.service_fee ?? 0) || 0;
     if (isInHand(r)) d.inHand += total; else d.online += total;
     d.commission += commission;

@@ -80,3 +80,22 @@ describe("paymentDetails", () => {
     expect(paymentDetails([row({ source: "kiosk", mode: "pickup" })]).channels).toEqual([{ channel: "kiosk", orders: 1, total: 20 }]);
   });
 });
+
+import { dailyGains, periodRange } from "@/lib/agency-gains";
+describe("vue journalière agence", () => {
+  it("sépare en ligne / mains propres, commission Mollie et potentiel 7 %", () => {
+    const base = { restaurant_id: "r", service_fee: 0, status: "done" };
+    const d = dailyGains([
+      { ...base, total: 100, payment_method: "online", payment_status: "paid", payment_ref: "mollie:x", platform_fee: 7, created_at: "2026-11-01T10:00:00Z" },
+      { ...base, total: 50, payment_method: "on_site", payment_status: "unpaid", created_at: "2026-11-01T11:00:00Z" },
+      { ...base, total: 20, payment_method: "on_site", created_at: "2026-10-31T23:30:00Z" }, // 00:30 Paris le 1er
+    ]);
+    expect(d).toHaveLength(1);
+    expect(d[0]).toMatchObject({ day: "2026-11-01", orders: 3, revenue: 170, online: 100, inHand: 70, commission: 7, offlinePotential: 4.9 });
+  });
+  it("Aujourd'hui et Hier en jours Paris", () => {
+    const now = new Date("2026-11-01T23:30:00Z"); // 2 nov. 00:30 Paris
+    expect(periodRange("today", now)).toEqual({ from: "2026-11-02", to: "2026-11-02" });
+    expect(periodRange("yesterday", now)).toEqual({ from: "2026-11-01", to: "2026-11-01" });
+  });
+});
