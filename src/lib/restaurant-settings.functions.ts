@@ -24,6 +24,7 @@ export const settingsSchema = z.object({
     pickupMinOrder: z.number().min(0).max(500).nullable(),
     payments: z.object({ online: z.boolean().optional(), onlineDeliveryOnly: z.boolean().optional(), on_site: z.boolean(), counter: z.boolean(), card_terminal: z.boolean(), qr: z.boolean().optional() }),
     kiosk: z.object({ cardOnly: z.boolean() }).optional(),
+    pos: z.object({ enabled: z.boolean() }).optional(),
     serviceFee: z.object({
       enabled: z.boolean(), kind: z.enum(["fixed", "percent"]), value: z.number().min(0).max(100),
       modes: z.object({ delivery: z.boolean(), pickup: z.boolean(), dine_in: z.boolean(), kiosk: z.boolean() }),
@@ -81,6 +82,8 @@ export const saveRestaurantSettings = createServerFn({ method: "POST" })
     if (!isAgency) { const k = (cur?.config as { kiosk?: { cardOnly?: boolean } } | null)?.kiosk; if (k) s.config.kiosk = { cardOnly: k.cardOnly === true }; else delete s.config.kiosk; }
     // Frais de service : réglage agence uniquement, conservé tel quel pour un gérant.
     if (!isAgency) { const sf = (cur?.config as { serviceFee?: unknown } | null)?.serviceFee; if (sf) s.config.serviceFee = sf as typeof s.config.serviceFee; else delete s.config.serviceFee; }
+    // Caisse comptoir intégrée : activation agence uniquement (désactivée par défaut, Hiboutik reste la caisse).
+    if (!isAgency) { const p = (cur?.config as { pos?: { enabled?: boolean } } | null)?.pos; if (p) s.config.pos = { enabled: p.enabled === true }; else delete s.config.pos; }
     if (s.config.payments.online === false) s.config.modes.delivery = false;
     if (s.config.kiosk?.cardOnly) { s.config.payments.counter = false; s.config.payments.card_terminal = true; }
     const { error } = await supabaseAdmin.from("restaurants").update({ opening: s.opening, delivery: { ...s.delivery, ...(geoZones ? { geoZones } : {}), ...(origin ? { origin } : {}), ...(capacity ? { capacity } : {}) } as never, config: { ...s.config, ordersPaused: (cur?.config as { ordersPaused?: boolean } | null)?.ordersPaused === true, ...(marketing ? { marketing } : {}), ...(qr ? { qr } : {}), ...(reservations ? { reservations } : {}), ...(customDomains ? { customDomains } : {}), ...((cur?.config as { platformFee?: unknown } | null)?.platformFee ? { platformFee: (cur?.config as { platformFee?: unknown }).platformFee } : {}), ...((cur?.config as { notifications?: unknown } | null)?.notifications ? { notifications: (cur?.config as { notifications?: unknown }).notifications } : {}), ...((cur?.config as { upsell?: unknown } | null)?.upsell ? { upsell: (cur?.config as { upsell?: unknown }).upsell } : {}) } as never }).eq("id", data.restaurantId);
