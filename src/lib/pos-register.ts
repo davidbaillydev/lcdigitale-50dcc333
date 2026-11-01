@@ -1,4 +1,6 @@
 /** Caisse comptoir (POS) intégrée — helpers purs partagés client/serveur. */
+import { featuresOf } from "./features";
+
 export type PosTenderMethod = "cash" | "card" | "meal_voucher";
 export type PosTender = { method: PosTenderMethod; given?: number; change?: number };
 
@@ -6,10 +8,14 @@ export const POS_TENDER_LABELS: Record<PosTenderMethod, string> = { cash: "Espè
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
-/** Désactivé par défaut : seule une valeur explicite `config.pos.enabled === true` active la caisse. */
-export function posEnabled(r: { config?: unknown } | null | undefined): boolean {
+/**
+ * Caisse activée par le module d'abonnement `pos` (opt-in strict : `enabled_features.pos === true`),
+ * ou par l'ancien réglage `config.pos.enabled === true` conservé pour compatibilité.
+ * Absent des deux = désactivé : les restaurants existants restent sur Hiboutik.
+ */
+export function posEnabled(r: { config?: unknown; enabled_features?: unknown } | null | undefined): boolean {
   const c = (r?.config ?? {}) as { pos?: { enabled?: unknown } };
-  return c.pos?.enabled === true;
+  return featuresOf(r?.enabled_features).pos || c.pos?.enabled === true;
 }
 
 /** Rendu de monnaie ; null si la somme remise est insuffisante. */
