@@ -483,7 +483,7 @@ function Kitchen() {
       )}
       <header className="kds-header border-b border-border">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
-        <div className="kds-identity flex min-w-0 items-center gap-3">
+        <div className="kds-identity col-span-2 flex min-w-0 items-center gap-3 sm:col-span-4 lg:col-span-1">
         {restaurants.length > 1 && <Button asChild variant="ghost" size="icon" className="text-foreground" aria-label="Mes restaurants"><Link to="/espace"><ArrowLeft /></Link></Button>}
         <BrandLogo src={restaurant?.logo_url} name={restaurant?.name ?? ""} />
         <div className="mr-auto min-w-0"><p className="text-sm text-muted-foreground">Écran cuisine</p><h1 className="truncate">{restaurant?.name}</h1></div>
@@ -492,7 +492,7 @@ function Kitchen() {
           {sound ? <Volume2 /> : <VolumeX />} <span className="hidden sm:inline">{sound ? "Son activé — couper" : "Son coupé — activer"}</span>
         </Button>
         <Button variant="outline" className="min-h-12" onClick={() => setHistoryOpen(true)}><History /><span className="hidden sm:inline">Ventes & tickets</span><span className="sr-only sm:hidden">Ventes & tickets</span></Button>
-        <div className="flex items-center justify-end gap-2">
+        <div className="col-span-2 flex items-center justify-end gap-2 lg:col-span-1">
           {showPos && <Button asChild className="min-h-12"><Link to="/espace/$slug/caisse" params={{ slug }}><Store /> Caisse</Link></Button>}
           <Button variant="outline" size="icon" className="min-h-12 min-w-12" aria-label="Réglages et sections" title="Réglages et sections" onClick={() => setSettingsOpen(true)}><Settings /></Button>
         </div>
