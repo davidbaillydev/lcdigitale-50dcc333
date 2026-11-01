@@ -119,3 +119,49 @@ export function paymentDetails(rows: GainOrderRow[]) {
   for (const key of Object.keys(totals) as (keyof PaymentTotals)[]) totals[key] = round2(totals[key]);
   return { ...totals, channels: [...new Set(valid.map(orderChannel))].map((channel) => ({ channel, orders: valid.filter((r) => orderChannel(r) === channel).length, total: round2(valid.filter((r) => orderChannel(r) === channel).reduce((s, r) => s + Number(r.total ?? 0), 0)) })) };
 }
+
+/** Jour calendaire Europe/Paris (YYYY-MM-DD) d'un horodatage ISO. */
+export function parisDay(iso: string | Date): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(iso));
+}
+
+export const OFFLINE_POTENTIAL_RATE = 0.07;
+const PAID_STATES = ["paid", "partially_refunded", "refunded"];
+const isInHand = (r: GainOrderRow) => r.payment_method === "on_site" || r.payment_method === "counter" || r.payment_method === "card_terminal";
+
+export type DailyGains = {
+  day: string; orders: number; revenue: number; online: number; inHand: number;
+  commission: number; offlinePotential: number; serviceFees: number;
+};
+
+/**
+ * Vue jour par jour (Paris). commission = platform_fee Mollie enregistrée sur paiements réglés.
+ * offlinePotential = 7 % indicatif du total des commandes sans commission enregistrée (non facturé).
+ */
+export function dailyGains(rows: GainOrderRow[]): DailyGains[] {
+  const per = new Map<string, DailyGains>();
+  for (const r of rows) {
+    if (r.is_test || EXCLUDED_STATUSES.has(r.status)) continue;
+    const day = parisDay(r.created_at);
+    const d = per.get(day) ?? { day, orders: 0, revenue: 0, online: 0, inHand: 0, commission: 0, offlinePotential: 0, serviceFees: 0 };
+    const total = Number(r.total ?? 0) || 0;
+    const paid = PAID_STATES.includes(r.payment_status ?? "");
+    const commission = paid && paymentProvider(r.payment_ref ?? (r as { provider?: string }).provider === "Mollie" ? "mollie:" : r.payment_ref) === "Mollie" ? Number(r.platform_fee ?? 0) || 0 : 0;
+    d.orders += 1; d.revenue += total; d.serviceFees += Number(r.service_fee ?? 0) || 0;
+    if (isInHand(r)) d.inHand += total; else d.online += total;
+    d.commission += commission;
+    if (commission === 0) d.offlinePotential += total * OFFLINE_POTENTIAL_RATE;
+    per.set(day, d);
+  }
+  return [...per.values()].map((d) => ({ ...d, revenue: round2(d.revenue), online: round2(d.online), inHand: round2(d.inHand), commission: round2(d.commission), offlinePotential: round2(d.offlinePotential), serviceFees: round2(d.serviceFees) })).sort((a, b) => b.day.localeCompare(a.day));
+}
+
+/** Bornes de période en jours Paris. */
+export function periodRange(key: string, now = new Date()): { from: string; to: string } {
+  const today = parisDay(now);
+  const shift = (n: number) => { const d = new Date(`${today}T12:00:00Z`); d.setUTCDate(d.getUTCDate() - n); return d.toISOString().slice(0, 10); };
+  if (key === "today") return { from: today, to: today };
+  if (key === "yesterday") return { from: shift(1), to: shift(1) };
+  if (key === "month") return { from: `${today.slice(0, 7)}-01`, to: today };
+  return { from: shift((Number(key) || 30) - 1), to: today };
+}
