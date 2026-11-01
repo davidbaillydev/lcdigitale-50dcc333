@@ -1,15 +1,12 @@
 import { useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { isNewerBuild } from "@/lib/app-version";
 
 declare const __APP_BUILD_ID__: string;
 
 const CHECK_MS = 5 * 60 * 1000;
 
-/** True when the deployed build differs from the one running in this tab. */
-export function isNewerBuild(current: string, remote: unknown): boolean {
-  return typeof remote === "string" && remote.length > 0 && remote !== current;
-}
 
 /**
  * Shows "Une mise à jour est disponible" when a new version is deployed.

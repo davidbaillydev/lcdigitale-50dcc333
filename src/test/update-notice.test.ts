@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
-(globalThis as any).__APP_BUILD_ID__ = "1";
-const { isNewerBuild } = await import("@/components/UpdateNotice");
+import { isNewerBuild } from "@/lib/app-version";
 describe("isNewerBuild", () => {
   it("détecte une version différente", () => expect(isNewerBuild("1", "2")).toBe(true));
   it("ignore la même version", () => expect(isNewerBuild("1", "1")).toBe(false));
