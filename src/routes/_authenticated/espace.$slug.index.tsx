@@ -1,3 +1,4 @@
+import type { LegalInfo } from "@/lib/legal";
 import { useRestaurantFeatures } from "@/hooks/use-restaurant-features";
 import { FeatureGate } from "@/components/FeatureGate";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
@@ -116,6 +117,13 @@ function Kitchen() {
     staleTime: 15 * 60 * 1000,
   };
   const { data: ticketOptionData } = useQuery({ ...ticketOptionQuery, enabled: !!rid });
+  // Mentions légales et taux de TVA par défaut imprimés sur le ticket client.
+  const { data: ticketLegal } = useQuery({
+    queryKey: ["ticket-legal", rid],
+    queryFn: async () => { const { data } = await supabase.from("restaurants").select("legal").eq("id", rid ?? "").maybeSingle(); return ((data?.legal ?? {}) as LegalInfo); },
+    enabled: !!rid, staleTime: 15 * 60 * 1000,
+  });
+  const ticketVatShop = { vatRate: ticketLegal?.vatRate ?? null, legal: ticketLegal ?? null };
   const feat = useRestaurantFeatures(rid).features;
   const posSync = useServerFn(retryPosSync);
   const navigate = useNavigate();
@@ -130,7 +138,7 @@ function Kitchen() {
   const [preview, setPreview] = useState<{ order: Order; kinds: TicketKind[] } | null>(null);
   const doPrint = useCallback(async (o: Order, kinds: TicketKind[], auto = false) => {
     const optionData = rid ? await queryClient.ensureQueryData(ticketOptionQuery).catch(() => ticketOptionData) : ticketOptionData;
-    const shop = { name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null, slug, customDomains: (restaurant?.config as Restaurant["config"] | null)?.customDomains, optionData };
+    const shop = { name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null, slug, customDomains: (restaurant?.config as Restaurant["config"] | null)?.customDomains, optionData, ...ticketVatShop };
     const ok = await printTickets(o, kinds, shop, printing.width, printingFields(printing));
     setPrintState((p) => ({ ...p, [o.id]: ok ? "ok" : "failed" }));
     if (rid) {
@@ -143,7 +151,7 @@ function Kitchen() {
       setLogs((p) => ({ ...p, [o.id]: [...(p[o.id] ?? []), entry] }));
     }
     if (!ok) toast.error(`Impression du ticket n° ${o.order_number} échouée`);
-  }, [restaurant, rid, logs, printing.width, printing.kitchen, printing.textSize, printing.font, slug, ticketOptionData, queryClient]);
+  }, [restaurant, rid, logs, printing.width, printing.kitchen, printing.textSize, printing.font, slug, ticketOptionData, queryClient, ticketLegal]);
   const printRef = useRef({ auto: false, kinds: [] as TicketKind[], doPrint }); printRef.current = { auto: autoPrintKinds(printing).length > 0, kinds: autoPrintKinds(printing), doPrint };
   const [sound, setSound] = useState(false);
   const [started, setStarted] = useState(false);
@@ -587,12 +595,12 @@ function Kitchen() {
           );
         })}
       </div>
-      {rid && <KitchenHistory restaurantId={rid} open={historyOpen && !locked} onClose={() => setHistoryOpen(false)} shop={{ name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null, slug, customDomains: (restaurant?.config as Restaurant["config"] | null)?.customDomains, optionData: ticketOptionData }} width={printing.width} fields={printingFields(printing)} onPrint={(order, kinds) => doPrint(order as Order, kinds)} />}
+      {rid && <KitchenHistory restaurantId={rid} open={historyOpen && !locked} onClose={() => setHistoryOpen(false)} shop={{ name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null, slug, customDomains: (restaurant?.config as Restaurant["config"] | null)?.customDomains, optionData: ticketOptionData, ...ticketVatShop }} width={printing.width} fields={printingFields(printing)} onPrint={(order, kinds) => doPrint(order as Order, kinds)} />}
       {locked && rid && <KitchenLock restaurantId={rid} name={restaurant?.name ?? ""} onUnlock={() => setLock(false)} />}
       <TicketPreviewDialog
         order={preview?.order ?? null}
         kinds={preview?.kinds ?? ["kitchen"]}
-        shop={{ name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null, slug, customDomains: (restaurant?.config as Restaurant["config"] | null)?.customDomains, optionData: ticketOptionData }}
+        shop={{ name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null, slug, customDomains: (restaurant?.config as Restaurant["config"] | null)?.customDomains, optionData: ticketOptionData, ...ticketVatShop }}
         width={printing.width}
         kitchen={printingFields(printing)}
         onClose={() => setPreview(null)}

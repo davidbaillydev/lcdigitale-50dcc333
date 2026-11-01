@@ -116,6 +116,7 @@ export const saveLegal = createServerFn({ method: "POST" })
       company: legalField, form: legalField, capital: legalField, siret: z.string().trim().max(20).optional(), rcs: legalField,
       vat: z.string().trim().max(20).optional(), representative: legalField, dpoEmail: z.string().trim().email().max(255).optional().or(z.literal("")),
       mediator: legalField, mediatorUrl: z.string().trim().url().max(200).optional().or(z.literal("")), host: z.string().trim().max(300).optional(),
+      seat: legalField, vatRate: z.string().trim().regex(/^(?:\d{1,2}(?:[.,]\d{1,2})?)?$/, "Taux de TVA invalide").optional(), vatExemption: legalField,
     }),
   }).parse(d))
   .handler(async ({ data, context }) => {

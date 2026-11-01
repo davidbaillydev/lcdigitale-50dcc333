@@ -1,6 +1,7 @@
 // Encodeur ESC/POS : transforme une commande en octets pour imprimante thermique.
 import { allergenLabel } from "./allergens";
-import { isPaid, isPreorder, itemTitle, modeLabel, payLabel, settlementNote, ticketCustomer, ticketFields, ticketOptions, ticketTiming, ticketTotals, ticketWebsite, type TicketFieldsIn, type TicketKind, type TicketOrder, type TicketShop, type TicketWidth } from "./ticket";
+import { ticketLegalLines, vatRateLabel } from "./ticket-vat";
+import { ticketVat, isPaid, isPreorder, itemTitle, modeLabel, payLabel, settlementNote, ticketCustomer, ticketFields, ticketOptions, ticketTiming, ticketTotals, ticketWebsite, type TicketFieldsIn, type TicketKind, type TicketOrder, type TicketShop, type TicketWidth } from "./ticket";
 
 const CP858: Record<string, number> = {
   "Ç": 0x80, "ü": 0x81, "é": 0x82, "â": 0x83, "ä": 0x84, "à": 0x85, "ç": 0x87, "ê": 0x88, "ë": 0x89, "è": 0x8a,
@@ -52,7 +53,7 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
   // Grand : titres d'articles en double hauteur et options en gras ; compact : interligne réduit.
   const itemCols = cols;
   const f = ticketFields(kind, fieldsIn);
-  const totals = ticketTotals(o);
+  const totals = ticketTotals(o, shop);
   const timing = ticketTiming(o);
   const e = new Enc().raw(0x1b, 0x40, 0x1b, 0x74, 19);
   if (compact) e.raw(0x1b, 0x33, 22); // interligne serré
@@ -98,8 +99,17 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
   if (f.prices && Number(o.delivery_fee) > 0) e.line(lr("Livraison", eur(o.delivery_fee), cols));
   if (f.prices && Number(o.service_fee) > 0) e.line(lr("Frais de service", eur(o.service_fee), cols));
   if (f.prices && Number(o.discount) > 0) e.line(lr(`Remise${o.promo_code ? ` ${o.promo_code}` : ""}`, `-${eur(o.discount)}`, cols));
-  if (f.prices) e.line(lr("TVA (10 % incluse)", eur(totals.vat), cols));
+  const vatRows = ticketVat(o, shop);
+  if (f.prices) for (const v of vatRows) e.line(lr(`TVA (${vatRateLabel(v.rate)} incluse)`, eur(v.vat), cols));
   if (f.prices) e.bold(true).size(1, 2).line(lr("TOTAL", eur(totals.total), cols)).size(1, 1).bold(false);
+  if (f.prices && kind === "receipt" && vatRows.length) {
+    const w = Math.floor((cols - 6) / 3);
+    const row = (a: string, b: string, c: string, d: string) => a.padEnd(6).slice(0, 6) + b.padStart(w) + c.padStart(w) + d.padStart(cols - 6 - 2 * w);
+    const n = (x: number) => x.toFixed(2).replace(".", ",");
+    e.line(hr).line(row("Taux", "HT", "TVA", "TTC"));
+    for (const v of vatRows) e.line(row(vatRateLabel(v.rate).replace(" ", ""), n(v.ht), n(v.vat), n(v.ttc)));
+    if (vatRows.length > 1) e.bold(true).line(row("Total", n(vatRows.reduce((s, v) => s + v.ht, 0)), n(totals.vat), n(totals.total))).bold(false);
+  }
   if (f.paid) { const p = isPaid(o); e.line(hr).align(1).bold(true).size(1, 2).line(`[${p ? "X" : " "}] PAYE    [${p ? " " : "X"}] IMPAYE`).size(1, 1).bold(false).line(hr).align(0); }
   if (f.qc && kind === "kitchen") { e.line(hr).bold(true).line("CONTROLE EMBALLAGE").bold(false).line("[ ] Articles conformes").line("[ ] Tous les articles").line("[ ] Couverts / sauces").line("").line("Visa : " + ".".repeat(Math.max(4, cols - 7))); }
   if (kind === "receipt") { e.line(hr).align(1).bold(true); wrap(settlementNote(o).replace(/—/g, "-"), cols).forEach((l) => e.line(l)); e.bold(false).line("Merci de votre commande !"); }
@@ -110,6 +120,7 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
   e.size(1, 1).bold(false);
   if (shop.address) wrap(shop.address, cols).forEach((l) => e.line(l));
   if (shop.phone) wrap(shop.phone, cols).forEach((l) => e.line(l));
+  if (kind === "receipt") for (const l of ticketLegalLines(shop.legal, shop.name)) wrap(l.replace(/—/g, "-"), cols).forEach((x) => e.line(x));
   e.line(new Date().toLocaleString("fr-FR"));
   e.raw(0x0a, 0x0a, 0x0a, 0x1d, 0x56, 0x42, 0x00); // avance + coupe
   return new Uint8Array(e.b);

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { allergenLabel } from "./allergens";
 import type { Catalog } from "./catalogs";
 import type { OptionData } from "./menu-options";
+import { ticketLegalLines, vatBreakdown, vatRateLabel, type TicketLegal, type VatRow } from "./ticket-vat";
 
 /** Nom commercial inchangé ; la taille choisie reste visible. */
 export const itemTitle = (it: { name: string; size?: { name: string } | null }) => (it.size ? `${it.name} [${it.size.name}]` : it.name);
@@ -13,7 +14,7 @@ export type TicketOrder = {
   is_test?: boolean;
   order_number: number; customer_name?: string | null; phone?: string | null; email?: string | null; mode: string;
   address?: string | null; city?: string | null; slot: string; created_at?: string; asap?: boolean; first_name?: string | null; last_name?: string | null;
-  items: { id?: string; name: string; qty: number; total?: number; category?: string; details?: string[]; allergens?: string[]; size?: { id?: string; name: string } | null; selected_options?: { id?: string; name: string; price: number; group?: string }[] }[];
+  items: { id?: string; name: string; qty: number; total?: number; category?: string; details?: string[]; allergens?: string[]; size?: { id?: string; name: string } | null; selected_options?: { id?: string; name: string; price: number; group?: string }[]; vatRate?: number }[];
   notes?: string | null; total: number | string; subtotal?: number | string | null; delivery_fee?: number | string | null; service_fee?: number | string | null;
   discount?: number | string | null; promo_code?: string | null;
   payment_method: string; payment_status?: string | null; source?: string | null; table_label?: string | null; room_label?: string | null;
@@ -62,7 +63,7 @@ export function autoPrintLabel(p: Pick<PrintingConfig, "autoKitchen" | "autoRece
 }
 /** Style + champs cuisine d'une configuration, prêt à passer aux rendus. */
 export const printingFields = (p: Pick<PrintingConfig, "kitchen" | "textSize" | "font">): TicketFieldsIn => ({ ...p.kitchen, textSize: p.textSize, font: p.font });
-export type TicketShop = { name: string; address?: string | null; phone?: string | null; slug?: string; customDomains?: string[] | undefined; optionData?: OptionData | undefined; catalog?: Catalog | undefined };
+export type TicketShop = { name: string; address?: string | null; phone?: string | null; slug?: string; customDomains?: string[] | undefined; optionData?: OptionData | undefined; catalog?: Catalog | undefined; /** Taux par défaut (mentions légales). */ vatRate?: number | string | null | undefined; legal?: TicketLegal | null | undefined };
 export function ticketWebsite(shop: TicketShop) {
   const domain = shop.customDomains?.find((d) => /^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i.test(d));
   return domain ?? (shop.slug ? `restaurant.lcdigitale.fr/${shop.slug}` : "restaurant.lcdigitale.fr");
@@ -145,10 +146,16 @@ export function ticketOptions(it: TicketOrder["items"][number], shop?: TicketSho
   }
   return [...paid.filter((p) => !p.startsWith("+ ")), ...choices, ...paid.filter((p) => p.startsWith("+ "))];
 }
-export function ticketTotals(o: TicketOrder) {
+/** Ventilation par taux : taux figé de la ligne, sinon carte, sinon défaut ; aucune si franchise en base. */
+export function ticketVat(o: TicketOrder, shop?: TicketShop): VatRow[] {
+  if (shop?.legal?.vatExemption?.trim()) return [];
+  const itemRates = shop?.catalog ? Object.fromEntries(Object.entries(shop.catalog.itemsById).map(([k, v]) => [k, v?.vatRate])) : undefined;
+  return vatBreakdown(o, { defaultRate: shop?.vatRate, ...(itemRates ? { itemRates } : {}) });
+}
+export function ticketTotals(o: TicketOrder, shop?: TicketShop) {
   const total = Number(o.total);
   const subtotal = o.subtotal != null ? Number(o.subtotal) : Math.round((total - Number(o.delivery_fee ?? 0) - Number(o.service_fee ?? 0) + Number(o.discount ?? 0)) * 100) / 100;
-  return { subtotal, vat: Math.round((total - total / 1.1) * 100) / 100, total };
+  return { subtotal, vat: Math.round(ticketVat(o, shop).reduce((s, r) => s + r.vat, 0) * 100) / 100, total };
 }
 export function ticketTiming(o: TicketOrder) {
   const minutes = o.created_at ? Math.max(0, Math.round((Date.parse(o.slot) - Date.parse(o.created_at)) / 60_000)) : 0;
@@ -194,7 +201,9 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
   const shop = typeof shopIn === "string" ? { name: shopIn } : shopIn;
   const restaurant = shop.name;
   const f = ticketFields(kind, fieldsIn);
-  const totals = ticketTotals(o);
+  const totals = ticketTotals(o, shop);
+  const vatRows = ticketVat(o, shop);
+  const legal = kind === "receipt" ? ticketLegalLines(shop.legal, shop.name) : [];
   const timing = ticketTiming(o);
   const big = ticketFontSize(width, fieldsIn?.textSize);
   const font = TICKET_FONTS[fieldsIn?.font ?? "sans"];
@@ -225,6 +234,7 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
     .ck { display: inline-block; width: 1em; height: 1em; border: 2px solid #000; vertical-align: -2px; margin-right: 4px; text-align: center; line-height: .9em; }
     .band { background: var(--ticket-ink); color: var(--ticket-paper); padding: 4px; margin: 8px 0; font-weight: bold; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
     .band.row { align-items: start; }
+    .vat { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: ${big - 2}px; } .vat th, .vat td { text-align: right; padding: 1px 2px; } .vat th:first-child, .vat td:first-child { text-align: left; } .vat th { border-bottom: 1px solid #000; } .vat .tot td { border-top: 1px solid #000; font-weight: bold; }
     .sig { margin-top: 14px; border-bottom: 1px dotted #000; height: 1.4em; }
   </style></head><body>
     <div class="c">${kind === "kitchen" ? "TICKET CUISINE" : isPreorder(kind, o) ? "BON DE PRÉ-COMMANDE - À RÉGLER EN CAISSE" : "TICKET CLIENT"}</div>
@@ -242,7 +252,9 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
     ${f.prices && Number(o.delivery_fee) > 0 ? `<div class="row"><span>Livraison</span><span>${eur(o.delivery_fee)}</span></div>` : ""}
     ${f.prices && Number(o.service_fee) > 0 ? `<div class="row"><span>Frais de service</span><span>${eur(o.service_fee)}</span></div>` : ""}
     ${f.prices && Number(o.discount) > 0 ? `<div class="row"><span>Remise${o.promo_code ? ` ${esc(o.promo_code)}` : ""}</span><span>-${eur(o.discount)}</span></div>` : ""}
-    ${f.prices ? `<div class="row"><span>TVA (10 % incluse)</span><span>${eur(totals.vat)}</span></div><div class="row l"><span>TOTAL</span><span>${eur(totals.total)}</span></div>` : ""}
+    ${f.prices ? vatRows.map((v) => `<div class="row"><span>TVA (${vatRateLabel(v.rate)} incluse)</span><span>${eur(v.vat)}</span></div>`).join("") : ""}
+    ${f.prices ? `<div class="row l"><span>TOTAL</span><span>${eur(totals.total)}</span></div>` : ""}
+    ${f.prices && kind === "receipt" && vatRows.length ? `<table class="vat"><tr><th>Taux</th><th>HT</th><th>TVA</th><th>TTC</th></tr>${vatRows.map((v) => `<tr><td>${vatRateLabel(v.rate)}</td><td>${eur(v.ht)}</td><td>${eur(v.vat)}</td><td>${eur(v.ttc)}</td></tr>`).join("")}${vatRows.length > 1 ? `<tr class="tot"><td>Total</td><td>${eur(vatRows.reduce((s, v) => s + v.ht, 0))}</td><td>${eur(totals.vat)}</td><td>${eur(totals.total)}</td></tr>` : ""}</table>` : ""}
     ${f.paid ? `<div class="box"><span><span class="ck">${isPaid(o) ? "✓" : ""}</span>Payé</span><span><span class="ck">${isPaid(o) ? "" : "✓"}</span>Impayé</span></div>` : ""}
     ${f.qc && kind === "kitchen" ? `<hr><div class="l">Contrôle emballage</div><div><span class="ck"></span>Articles conformes</div><div><span class="ck"></span>Tous les articles</div><div><span class="ck"></span>Couverts / sauces</div><div>Visa :</div><div class="sig"></div>` : ""}
     ${kind === "receipt" ? `<hr><div class="c"><b>${settlementNote(o)}</b></div><div class="c">Merci de votre commande !</div>` : ""}
@@ -250,6 +262,7 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
     <div class="c l">${esc(restaurant.toUpperCase())}</div>
     ${shop.address ? `<div class="c">${esc(shop.address)}</div>` : ""}
     ${shop.phone ? `<div class="c">${esc(shop.phone)}</div>` : ""}
+    ${legal.map((l) => `<div class="c legal">${esc(l)}</div>`).join("")}
     <div class="c" style="margin-top:6px">${new Date().toLocaleString("fr-FR")}</div>
   </body></html>`;
 }
