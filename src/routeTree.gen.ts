@@ -47,6 +47,7 @@ import { Route as ApiPublicLyraIpnRouteImport } from './routes/api/public/lyra-i
 import { Route as ApiPublicManifestRouteImport } from './routes/api/public/manifest'
 import { Route as ApiPublicMollieOauthCallbackRouteImport } from './routes/api/public/mollie-oauth-callback'
 import { Route as ApiPublicMollieWebhookRouteImport } from './routes/api/public/mollie-webhook'
+import { Route as ApiPublicVersionRouteImport } from './routes/api/public/version'
 import { Route as AuthenticatedEspaceSlugIndexRouteImport } from './routes/_authenticated/espace.$slug.index'
 import { Route as AuthenticatedEspaceSlugCarteRouteImport } from './routes/_authenticated/espace.$slug.carte'
 import { Route as AuthenticatedEspaceSlugClientsRouteImport } from './routes/_authenticated/espace.$slug.clients'
@@ -259,6 +260,11 @@ const ApiPublicMollieWebhookRoute = ApiPublicMollieWebhookRouteImport.update({
   path: '/api/public/mollie-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicVersionRoute = ApiPublicVersionRouteImport.update({
+  id: '/api/public/version',
+  path: '/api/public/version',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedEspaceSlugIndexRoute =
   AuthenticatedEspaceSlugIndexRouteImport.update({
     id: '/espace/$slug/',
@@ -379,6 +385,7 @@ export interface FileRoutesByFullPath {
   '/api/public/manifest': typeof ApiPublicManifestRoute
   '/api/public/mollie-oauth-callback': typeof ApiPublicMollieOauthCallbackRoute
   '/api/public/mollie-webhook': typeof ApiPublicMollieWebhookRoute
+  '/api/public/version': typeof ApiPublicVersionRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/espace/': typeof AuthenticatedEspaceIndexRoute
   '/espace/$slug/carte': typeof AuthenticatedEspaceSlugCarteRoute
@@ -430,6 +437,7 @@ export interface FileRoutesByTo {
   '/api/public/manifest': typeof ApiPublicManifestRoute
   '/api/public/mollie-oauth-callback': typeof ApiPublicMollieOauthCallbackRoute
   '/api/public/mollie-webhook': typeof ApiPublicMollieWebhookRoute
+  '/api/public/version': typeof ApiPublicVersionRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/espace': typeof AuthenticatedEspaceIndexRoute
   '/espace/$slug/carte': typeof AuthenticatedEspaceSlugCarteRoute
@@ -485,6 +493,7 @@ export interface FileRoutesById {
   '/api/public/manifest': typeof ApiPublicManifestRoute
   '/api/public/mollie-oauth-callback': typeof ApiPublicMollieOauthCallbackRoute
   '/api/public/mollie-webhook': typeof ApiPublicMollieWebhookRoute
+  '/api/public/version': typeof ApiPublicVersionRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/espace/': typeof AuthenticatedEspaceIndexRoute
   '/_authenticated/espace/$slug/carte': typeof AuthenticatedEspaceSlugCarteRoute
@@ -540,6 +549,7 @@ export interface FileRouteTypes {
     | '/api/public/manifest'
     | '/api/public/mollie-oauth-callback'
     | '/api/public/mollie-webhook'
+    | '/api/public/version'
     | '/admin/'
     | '/espace/'
     | '/espace/$slug/carte'
@@ -591,6 +601,7 @@ export interface FileRouteTypes {
     | '/api/public/manifest'
     | '/api/public/mollie-oauth-callback'
     | '/api/public/mollie-webhook'
+    | '/api/public/version'
     | '/admin'
     | '/espace'
     | '/espace/$slug/carte'
@@ -645,6 +656,7 @@ export interface FileRouteTypes {
     | '/api/public/manifest'
     | '/api/public/mollie-oauth-callback'
     | '/api/public/mollie-webhook'
+    | '/api/public/version'
     | '/_authenticated/admin/'
     | '/_authenticated/espace/'
     | '/_authenticated/espace/$slug/carte'
@@ -681,6 +693,7 @@ export interface RootRouteChildren {
   ApiPublicManifestRoute: typeof ApiPublicManifestRoute
   ApiPublicMollieOauthCallbackRoute: typeof ApiPublicMollieOauthCallbackRoute
   ApiPublicMollieWebhookRoute: typeof ApiPublicMollieWebhookRoute
+  ApiPublicVersionRoute: typeof ApiPublicVersionRoute
   ApiPublicEmbedStatusSlugRoute: typeof ApiPublicEmbedStatusSlugRoute
   ApiPublicPushMessageRoute: typeof ApiPublicPushMessageRoute
   ApiPublicRestaurantBannerIdRoute: typeof ApiPublicRestaurantBannerIdRoute
@@ -956,6 +969,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicMollieWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/version': {
+      id: '/api/public/version'
+      path: '/api/public/version'
+      fullPath: '/api/public/version'
+      preLoaderRoute: typeof ApiPublicVersionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/espace/$slug/': {
       id: '/_authenticated/espace/$slug/'
       path: '/espace/$slug'
@@ -1164,6 +1184,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicManifestRoute: ApiPublicManifestRoute,
   ApiPublicMollieOauthCallbackRoute: ApiPublicMollieOauthCallbackRoute,
   ApiPublicMollieWebhookRoute: ApiPublicMollieWebhookRoute,
+  ApiPublicVersionRoute: ApiPublicVersionRoute,
   ApiPublicEmbedStatusSlugRoute: ApiPublicEmbedStatusSlugRoute,
   ApiPublicPushMessageRoute: ApiPublicPushMessageRoute,
   ApiPublicRestaurantBannerIdRoute: ApiPublicRestaurantBannerIdRoute,
