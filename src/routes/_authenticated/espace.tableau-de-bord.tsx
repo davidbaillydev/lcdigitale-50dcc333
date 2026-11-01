@@ -109,7 +109,7 @@ function Dashboard() {
         <span className="mr-auto" /><ThemeToggle />
       </div>
       <h1 className="text-5xl">Tableau de bord</h1>
-      <LossWidget ids={ids} slug={rid === "all" ? (managed.length === 1 ? managed[0].slug : null) : managed.find((r) => r.id === rid)?.slug ?? null} />
+      <LossWidget ids={ids} slug={rid === "all" ? (managed.length === 1 ? managed[0]?.slug ?? null : null) : managed.find((r) => r.id === rid)?.slug ?? null} />
 
       <div className="grid grid-cols-2 items-end gap-3 border-y border-border py-4 sm:flex sm:flex-wrap">
         <label className="col-span-2 min-w-0 space-y-1 text-sm">Restaurant
