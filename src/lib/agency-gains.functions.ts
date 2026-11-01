@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { aggregateGains, gainsByDay, paymentDetails, type GainOrderRow } from "@/lib/agency-gains";
+import { aggregateGains, gainsByDay, paymentDetails, parisDay, type GainOrderRow } from "@/lib/agency-gains";
 import type { Restaurant } from "@/lib/shop";
 import type { PlatformFeeConfig } from "@/lib/platform-fee";
 
@@ -21,8 +21,10 @@ export const getAgencyGains = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => input.parse(d))
   .handler(async ({ data, context }) => {
     await assertAgency(context.supabase, context.userId);
-    const from = `${data.from}T00:00:00.000Z`;
-    const to = `${data.to}T23:59:59.999Z`;
+    // Jours Paris : on élargit la requête d'un jour puis on filtre sur le jour local.
+    const widen = (d: string, n: number) => { const x = new Date(`${d}T12:00:00Z`); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
+    const from = `${widen(data.from, -1)}T00:00:00.000Z`;
+    const to = `${widen(data.to, 1)}T23:59:59.999Z`;
     const { data: rs, error: restaurantError } = await context.supabase.from("restaurants").select("id, name, slug, config, active").order("name");
     if (restaurantError) throw new Error("Impossible de charger les restaurants.");
     const rows: GainOrderRow[] = [];
@@ -35,6 +37,8 @@ export const getAgencyGains = createServerFn({ method: "GET" })
       rows.push(...(orders ?? []) as GainOrderRow[]);
       if ((orders ?? []).length < 1000) break;
     }
+    const inRange = rows.filter((r) => { const d = parisDay(r.created_at); return d >= data.from && d <= data.to; });
+    rows.length = 0; rows.push(...inRange);
     const gains = aggregateGains(rows);
     const names = Object.fromEntries((rs ?? []).map((r) => [r.id, { name: r.name as string, slug: r.slug as string }]));
     return {
