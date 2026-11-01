@@ -50,7 +50,7 @@ function Page() {
   const selected = data?.restaurants.find((r) => r.restaurantId === restaurant);
   const totals = selected ?? data?.details;
   const transactions = (data?.transactions ?? []).filter((o) => restaurant === "all" || o.restaurant_id === restaurant);
-  const days = useMemo(() => dailyGains(transactions as Parameters<typeof dailyGains>[0]), [transactions]);
+  const days = useMemo(() => dailyGains(transactions as unknown as Parameters<typeof dailyGains>[0]), [transactions]);
   const potential = days.reduce((s, d) => s + d.offlinePotential, 0);
   const restaurants = (data?.restaurants ?? []).filter((r) => restaurant === "all" || r.restaurantId === restaurant);
   return <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6">
