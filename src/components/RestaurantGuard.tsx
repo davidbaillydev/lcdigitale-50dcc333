@@ -5,6 +5,7 @@ import { useStaff, type StaffRestaurant } from "@/hooks/use-staff";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { rememberLastRestaurant } from "@/lib/last-restaurant";
+import { posEnabled } from "@/lib/pos-register";
 
 type Level = "kitchen" | "manager" | "agency";
 const RANK: Record<StaffRestaurant["role"], number> = { kitchen: 0, manager: 1, agency: 2 };
@@ -61,6 +62,7 @@ export function RestaurantNav({ slug, className }: { slug: string; className?: s
   const f = r.features;
   const links: { to: string; label: string; show: boolean }[] = [
     { to: "/espace/$slug", label: "Cuisine", show: true },
+    { to: "/espace/$slug/caisse", label: "Caisse", show: mgr && posEnabled({ config: r.config, enabled_features: f }) },
     { to: "/espace/$slug/carte", label: "Carte", show: mgr },
     { to: "/espace/$slug/reservations", label: "Réservations", show: f.reservation },
     { to: "/espace/$slug/reglages", label: "Réglages", show: mgr },
