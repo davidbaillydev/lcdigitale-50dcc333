@@ -34,7 +34,7 @@ export type AgencyGains = {
   perRestaurant: RestaurantGains[];
 };
 
-const EXCLUDED_STATUSES = new Set(["cancelled", "awaiting_payment"]);
+const EXCLUDED_STATUSES = new Set(["cancelled", "awaiting_payment", "no_show"]);
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
