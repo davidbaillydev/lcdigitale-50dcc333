@@ -53,7 +53,7 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
   // Grand : titres d'articles en double hauteur et options en gras ; compact : interligne réduit.
   const itemCols = cols;
   const f = ticketFields(kind, fieldsIn);
-  const totals = ticketTotals(o);
+  const totals = ticketTotals(o, shop);
   const timing = ticketTiming(o);
   const e = new Enc().raw(0x1b, 0x40, 0x1b, 0x74, 19);
   if (compact) e.raw(0x1b, 0x33, 22); // interligne serré
