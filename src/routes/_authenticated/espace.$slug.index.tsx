@@ -4,10 +4,10 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { applyOutbox, enqueueChange, flushOutbox, isNetworkError, loadSnapshot, readOutbox, saveSnapshot, type StatusChange } from "@/lib/kitchen-offline";
-import { deliveryStatusPatch, startKitchenReminder, type DeliveryStep } from "@/lib/kitchen-status";
+import { canMarkNoShow, deliveryStatusPatch, startKitchenReminder, type DeliveryStep } from "@/lib/kitchen-status";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { EMPTY_OPTIONS, loadOptionData } from "@/lib/menu-options";
-import { ArrowLeft, ArrowRight, Bell, BellOff, Bike, Check, ChefHat, Lock, LogOut, Maximize, Minimize, MoonStar, PanelTopClose, PanelTopOpen, Phone, Printer, Settings, History, ShoppingBag, Sun, Users, Volume2, VolumeX, WifiOff } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, Bell, BellOff, Bike, Check, ChefHat, Lock, LogOut, Maximize, Minimize, MoonStar, PanelTopClose, PanelTopOpen, Phone, Printer, Settings, History, ShoppingBag, Sun, Users, Volume2, VolumeX, WifiOff } from "lucide-react";
 import { useKitchenFullscreen } from "@/hooks/use-kitchen-fullscreen";
 import { useWakeLock } from "@/hooks/use-wake-lock";
 import { useKioskLock } from "@/hooks/use-kiosk-lock";
@@ -335,7 +335,7 @@ function Kitchen() {
     const { error } = await supabase.from("orders").update({ status, ...(slot ? { slot } : {}), updated_at: new Date().toISOString() }).eq("id", o.id);
     if (error && isNetworkError(error)) { queue(o, status, slot); return; }
     if (error) { toast.error("Mise à jour impossible"); load(); return; }
-    notify({ data: { orderId: o.id, origin: window.location.origin } }).catch(() => {});
+    if (status !== "no_show") notify({ data: { orderId: o.id, origin: window.location.origin } }).catch(() => {});
     // Commande validée en cuisine (ex. QR libre-service) : envoi à la caisse si pas encore fait
     if (feat.pos_sync && (status === "accepted" || status === "new") && !(o as { pos_status?: string | null }).pos_status) posSync({ data: { orderId: o.id } }).then(() => load()).catch(() => load());
   };
@@ -553,6 +553,7 @@ function Kitchen() {
                       ) : <Button size="lg" className="min-h-14 flex-1 text-base font-semibold" onClick={() => (c.s === "new" ? accept(o) : move(o, c.next))}>{c.action}<ArrowRight aria-hidden="true" /></Button>}
                       {c.s === "new" && <Button size="lg" variant="outline" className="min-h-14" onClick={() => confirm("Refuser cette commande ?") && move(o, "cancelled")}>Refuser</Button>}
                     </div>
+                    {canMarkNoShow(o) && <Button size="lg" variant="destructive" className="mt-2 min-h-12 w-full" onClick={() => confirm(`Marquer la commande #${o.order_number} comme perte (non récupérée) ? Elle ne sera pas encaissée.`) && move(o, "no_show")}><AlertTriangle />Marquer comme Perte</Button>}
                     <div className="mt-2 flex flex-wrap gap-2">
                       <Button size="sm" variant="secondary" className="min-h-12 min-w-0 flex-1" onClick={() => setPreview({ order: o, kinds: ["kitchen"] })}><Printer /> {logs[o.id]?.length ? "Réimprimer cuisine" : "Cuisine"}</Button>
                       <Button size="sm" variant="secondary" className="min-h-12 min-w-0 flex-1" onClick={() => setPreview({ order: o, kinds: ["receipt"] })}><Printer /> Caisse</Button>

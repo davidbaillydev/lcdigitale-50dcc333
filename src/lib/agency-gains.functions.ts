@@ -49,7 +49,7 @@ export const getAgencyGains = createServerFn({ method: "GET" })
         config: r.config as Restaurant["config"] & { platformFee?: Partial<PlatformFeeConfig> },
         ...paymentDetails(rows.filter((o) => o.restaurant_id === r.id)),
       })),
-      transactions: rows.filter((r) => !["cancelled", "awaiting_payment"].includes(r.status)).sort((a, b) => b.created_at.localeCompare(a.created_at)).map((r) => ({
+      transactions: rows.filter((r) => !["cancelled", "awaiting_payment", "no_show"].includes(r.status)).sort((a, b) => b.created_at.localeCompare(a.created_at)).map((r) => ({
         ...r, payment_ref: undefined, provider: r.payment_ref?.startsWith("mollie:") ? "Mollie" : r.payment_ref?.startsWith("mollie_term:") ? "Mollie TPE" : r.payment_ref?.startsWith("pi_") || r.payment_ref?.startsWith("cs_") ? "Stripe" : r.payment_ref?.startsWith("paypal:") ? "PayPal" : r.payment_ref?.startsWith("lyra:") ? "Lyra" : "Non identifié",
         name: names[r.restaurant_id]?.name ?? "Restaurant",
       })),
