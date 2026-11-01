@@ -19,3 +19,6 @@ export function startKitchenReminder(enabled: boolean, orders: { status: string 
   const timer = setInterval(ring, 10_000);
   return () => clearInterval(timer);
 }
+/** « Perte » : commande à emporter non récupérée, jamais réglée en ligne ni encaissée. */
+export const canMarkNoShow = (o: { mode: string; status: string; payment_method: string; payment_status?: string | null; is_test?: boolean | null }) =>
+  o.mode === "pickup" && (o.status === "accepted" || o.status === "ready") && o.payment_method !== "online" && o.payment_status !== "paid" && !o.is_test;
