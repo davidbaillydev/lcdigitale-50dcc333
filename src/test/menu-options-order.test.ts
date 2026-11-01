@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { groupsFor, type OptionData } from "@/lib/menu-options";
+import { groupsFor, withOptions, EMPTY_OPTIONS, type OptionData } from "@/lib/menu-options";
 
 const data: OptionData = {
   variants: [
@@ -22,6 +22,12 @@ const data: OptionData = {
 };
 
 describe("Ordre manuel des options dans tous les catalogues", () => {
+  it("préserve les articles de caisse en attendant le chargement des options", () => {
+    const dish = { id: "dish", name: "Tacos", price: 10 };
+    const catalog = { categories: [{ id: "tacos", label: "Tacos", items: [dish] }], itemsById: { dish } };
+    expect(withOptions(catalog, EMPTY_OPTIONS).itemsById['dish']?.price).toBe(10);
+    expect(withOptions(catalog, data).itemsById['dish']?.options?.[0]?.choices.map((c) => c.price)).toEqual([10, 15]);
+  });
   it("classe les groupes selon leur ordre et non celui des rattachements", () => {
     expect(groupsFor("dish", data).map((g) => g.id)).toEqual(["size", "og-cheese", "og-sauce"]);
   });

@@ -16,7 +16,7 @@ import { loadRestaurantAdmin } from "@/lib/restaurant-settings.functions";
 import { getPosState, openPosSession, closePosSession, createPosOrder } from "@/lib/pos-register.functions";
 import { posEnabled, changeDue, POS_TENDER_LABELS, type PosTenderMethod, type ZReport } from "@/lib/pos-register";
 import { getCatalog } from "@/lib/catalogs";
-import { withOptions, loadOptionData } from "@/lib/menu-options";
+import { withOptions, loadOptionData, EMPTY_OPTIONS } from "@/lib/menu-options";
 import { euro, unitPrice, type Selections } from "@/lib/menu";
 import { cn } from "@/lib/utils";
 
@@ -59,7 +59,7 @@ function Register({ restaurantId, name, slug, restaurant }: { restaurantId: stri
   const sell = useServerFn(createPosOrder);
   const { data: st } = useQuery({ queryKey: ["pos-state", restaurantId], queryFn: () => state({ data: { restaurantId } }) });
   const { data: options } = useQuery({ queryKey: ["pos-options", restaurantId], queryFn: () => loadOptionData(supabase, restaurantId) });
-  const catalog = useMemo(() => withOptions(getCatalog(restaurant), options ?? { groups: [], links: [] } as never), [restaurant, options]);
+  const catalog = useMemo(() => withOptions(getCatalog(restaurant), options ?? EMPTY_OPTIONS), [restaurant, options]);
   const [cat, setCat] = useState<string>("");
   const [lines, setLines] = useState<Line[]>([]);
   const [item, setItem] = useState<string | null>(null);

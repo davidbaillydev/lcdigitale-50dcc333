@@ -9,7 +9,7 @@ import { applyOutbox, enqueueChange, flushOutbox, isNetworkError, loadSnapshot, 
 import { canMarkNoShow, deliveryStatusPatch, startKitchenReminder, type DeliveryStep } from "@/lib/kitchen-status";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { EMPTY_OPTIONS, loadOptionData } from "@/lib/menu-options";
-import { AlertTriangle, ArrowLeft, ArrowRight, Bell, BellOff, Bike, Check, ChefHat, Lock, LogOut, Maximize, Minimize, MoonStar, PanelTopClose, PanelTopOpen, Phone, Printer, Settings, History, ShoppingBag, Sun, Users, Volume2, VolumeX, WifiOff } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, Bell, BellOff, Bike, Check, ChefHat, Lock, LogOut, Maximize, Minimize, MoonStar, PanelTopClose, PanelTopOpen, Phone, Printer, Settings, History, ShoppingBag, Store, Sun, Users, Volume2, VolumeX, WifiOff } from "lucide-react";
 import { useKitchenFullscreen } from "@/hooks/use-kitchen-fullscreen";
 import { useWakeLock } from "@/hooks/use-wake-lock";
 import { useKioskLock } from "@/hooks/use-kiosk-lock";
@@ -126,6 +126,7 @@ function Kitchen() {
   });
   const ticketVatShop = { vatRate: ticketLegal?.vatRate ?? null, legal: ticketLegal ?? null };
   const feat = useRestaurantFeatures(rid).features;
+  const showPos = isAdmin && posEnabled({ config: restaurant?.config, enabled_features: feat });
   const posSync = useServerFn(retryPosSync);
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -425,7 +426,7 @@ function Kitchen() {
         {feat.reservation && <Button asChild variant="secondary"><Link to="/espace/$slug/reservations" params={{ slug }}>Réservations</Link></Button>}
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/reglages" params={{ slug }}>Réglages</Link></Button>}
         {isAdmin && feat.qrcode && <Button asChild variant="secondary"><Link to="/espace/$slug/qr" params={{ slug }}>QR tables & avis</Link></Button>}
-        {isAdmin && (feat.pos || posEnabled(restaurant)) && <Button asChild variant="secondary"><Link to="/espace/$slug/caisse" params={{ slug }}>Caisse comptoir</Link></Button>}
+        {showPos && <Button asChild variant="secondary"><Link to="/espace/$slug/caisse" params={{ slug }}>Caisse comptoir</Link></Button>}
         {isAdmin && feat.livraison && <Button asChild variant="secondary"><Link to="/espace/$slug/livraison" params={{ slug }}>Livraison & livreurs</Link></Button>}
         {restaurant?.role === "agency" && <Button asChild variant="secondary"><Link to="/espace/$slug/equipe" params={{ slug }}><Users /> Équipe</Link></Button>}
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/clients" params={{ slug }}>Clients</Link></Button>}
@@ -482,7 +483,7 @@ function Kitchen() {
       )}
       <header className="kds-header border-b border-border">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
-        <div className="kds-identity flex min-w-0 items-center gap-3">
+        <div className="kds-identity col-span-2 flex min-w-0 items-center gap-3 sm:col-span-4 lg:col-span-1">
         {restaurants.length > 1 && <Button asChild variant="ghost" size="icon" className="text-foreground" aria-label="Mes restaurants"><Link to="/espace"><ArrowLeft /></Link></Button>}
         <BrandLogo src={restaurant?.logo_url} name={restaurant?.name ?? ""} />
         <div className="mr-auto min-w-0"><p className="text-sm text-muted-foreground">Écran cuisine</p><h1 className="truncate">{restaurant?.name}</h1></div>
@@ -491,7 +492,10 @@ function Kitchen() {
           {sound ? <Volume2 /> : <VolumeX />} <span className="hidden sm:inline">{sound ? "Son activé — couper" : "Son coupé — activer"}</span>
         </Button>
         <Button variant="outline" className="min-h-12" onClick={() => setHistoryOpen(true)}><History /><span className="hidden sm:inline">Ventes & tickets</span><span className="sr-only sm:hidden">Ventes & tickets</span></Button>
-        <Button variant="outline" size="icon" className="min-h-12 min-w-12" aria-label="Réglages et sections" title="Réglages et sections" onClick={() => setSettingsOpen(true)}><Settings /></Button>
+        <div className="col-span-2 flex items-center justify-end gap-2 lg:col-span-1">
+          {showPos && <Button asChild className="min-h-12"><Link to="/espace/$slug/caisse" params={{ slug }}><Store /> Caisse</Link></Button>}
+          <Button variant="outline" size="icon" className="min-h-12 min-w-12" aria-label="Réglages et sections" title="Réglages et sections" onClick={() => setSettingsOpen(true)}><Settings /></Button>
+        </div>
         </div>
       </header>
       <div className="kds-service flex flex-wrap items-center justify-between gap-4 bg-primary px-6 py-5 text-primary-foreground">

@@ -6,7 +6,8 @@ import { Crumbs } from "@/components/Crumbs";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, ChefHat, ExternalLink, Tablet, Users, UtensilsCrossed } from "lucide-react";
+import { Check, ChefHat, ExternalLink, Tablet, Users, UtensilsCrossed, Store } from "lucide-react";
+import { posEnabled } from "@/lib/pos-register";
 import { loadRestaurantAdmin } from "@/lib/restaurant-settings.functions";
 import { getAgencyPublicDomain } from "@/lib/agency.functions";
 import { RestaurantSettingsForm } from "@/components/RestaurantSettingsForm";
@@ -67,6 +68,7 @@ function Page() {
             ))}
           </ol>
           <div className="flex flex-wrap gap-2">
+            {posEnabled(r) && <Button asChild className="min-h-12"><Link to="/espace/$slug/caisse" params={{ slug }}><Store /> Caisse comptoir</Link></Button>}
             <Button asChild variant="secondary"><Link to="/espace/$slug/carte" params={{ slug }}><UtensilsCrossed /> Carte & import</Link></Button>
             <Button asChild variant="secondary"><Link to="/espace/$slug/equipe" params={{ slug }}><Users /> Équipe & invitations</Link></Button>
             <Button asChild variant="secondary"><Link to="/espace/$slug" params={{ slug }}><ChefHat /> Cuisine</Link></Button>
