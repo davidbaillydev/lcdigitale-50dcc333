@@ -34,6 +34,7 @@ export function initialSettings(r: Restaurant): Settings {
       pickupMinOrder: typeof c.pickupMinOrder === "number" && c.pickupMinOrder > 0 ? c.pickupMinOrder : null,
       payments: { online: c.payments?.online !== false, onlineDeliveryOnly: c.payments?.onlineDeliveryOnly === true, on_site: c.payments?.on_site !== false, counter: c.payments?.counter !== false, card_terminal: c.payments?.card_terminal !== false, qr: c.payments?.qr === true },
       kiosk: { cardOnly: c.kiosk?.cardOnly === true },
+      pos: { enabled: (c as { pos?: { enabled?: boolean } }).pos?.enabled === true },
       printing: printingDefaults(c.printing),
       serviceFee: serviceFeeDefaults(c.serviceFee),
     },
@@ -236,6 +237,12 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
             <div className="rounded-lg border border-border p-3">
               <Toggle label="Borne 100 % carte bancaire (Voie B — dispense de caisse sécurisée)" checked={!!s.config.kiosk?.cardOnly} onChange={(v) => cfg({ kiosk: { cardOnly: v }, ...(v ? { payments: { ...s.config.payments, counter: false, card_terminal: true } } : {}) })} />
               {s.config.kiosk?.cardOnly && <p className="mt-2 rounded bg-muted p-2 text-sm text-muted-foreground">La borne n'accepte que la carte sur son terminal connecté (Stripe Terminal, Mollie POS ou SumUp). Aucune espèce, chèque ou ticket restaurant papier n'est proposé ni enregistré ; une commande n'est envoyée en cuisine qu'une fois le paiement accepté (BOI-TVA-DECLA-30-10-30, § 35 et § 37 ex. 4).</p>}
+            </div>
+          )}
+          {agency && (
+            <div className="rounded-lg border border-border p-3">
+              <Toggle label="Mode Caisse comptoir (POS)" hint="Active l'écran de caisse intégré (espèces, CB, titres restaurant, ouverture/clôture). Désactivé par défaut : la caisse actuelle (Hiboutik) reste utilisée." checked={!!s.config.pos?.enabled} onChange={(v) => cfg({ pos: { enabled: v } })} />
+              {s.config.pos?.enabled && <p className="mt-2 rounded bg-muted p-2 text-sm text-muted-foreground">Module en développement, non certifié NF525. Un logiciel de caisse enregistrant des espèces doit être certifié (art. 286-I-3° bis du CGI) : à utiliser en test uniquement tant que la certification n'est pas obtenue.</p>}
             </div>
           )}
         </div>

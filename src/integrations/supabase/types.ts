@@ -411,8 +411,10 @@ export type Database = {
           platform_fee: number
           pos_error: string | null
           pos_ref: string | null
+          pos_session_id: string | null
           pos_status: string | null
           pos_synced_at: string | null
+          pos_tender: Json | null
           postal_code: string | null
           promo_code: string | null
           qr_mode: string | null
@@ -469,8 +471,10 @@ export type Database = {
           platform_fee?: number
           pos_error?: string | null
           pos_ref?: string | null
+          pos_session_id?: string | null
           pos_status?: string | null
           pos_synced_at?: string | null
+          pos_tender?: Json | null
           postal_code?: string | null
           promo_code?: string | null
           qr_mode?: string | null
@@ -527,8 +531,10 @@ export type Database = {
           platform_fee?: number
           pos_error?: string | null
           pos_ref?: string | null
+          pos_session_id?: string | null
           pos_status?: string | null
           pos_synced_at?: string | null
+          pos_tender?: Json | null
           postal_code?: string | null
           promo_code?: string | null
           qr_mode?: string | null
@@ -560,7 +566,61 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "orders_pos_session_id_fkey"
+            columns: ["pos_session_id"]
+            isOneToOne: false
+            referencedRelation: "pos_sessions"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "orders_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pos_sessions: {
+        Row: {
+          closed_at: string | null
+          closed_by: string | null
+          counted_cash: number | null
+          id: string
+          opened_at: string
+          opened_by: string
+          opening_float: number
+          restaurant_id: string
+          z_number: number | null
+          z_report: Json | null
+        }
+        Insert: {
+          closed_at?: string | null
+          closed_by?: string | null
+          counted_cash?: number | null
+          id?: string
+          opened_at?: string
+          opened_by: string
+          opening_float?: number
+          restaurant_id: string
+          z_number?: number | null
+          z_report?: Json | null
+        }
+        Update: {
+          closed_at?: string | null
+          closed_by?: string | null
+          counted_cash?: number | null
+          id?: string
+          opened_at?: string
+          opened_by?: string
+          opening_float?: number
+          restaurant_id?: string
+          z_number?: number | null
+          z_report?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_sessions_restaurant_id_fkey"
             columns: ["restaurant_id"]
             isOneToOne: false
             referencedRelation: "restaurants"

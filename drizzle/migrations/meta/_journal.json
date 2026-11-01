@@ -155,6 +155,13 @@
       "when": 1793554326169,
       "tag": "0021_orders_no_show_status",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1793567806410,
+      "tag": "0022_pos_register_sessions",
+      "breakpoints": true
     }
   ]
 }
