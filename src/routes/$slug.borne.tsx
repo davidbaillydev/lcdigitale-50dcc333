@@ -16,7 +16,7 @@ import { safeFor } from "@/lib/allergens";
 import { useCart } from "@/lib/cart";
 import { createKioskOrder } from "@/lib/orders.functions";
 import { abandonKioskQr, kioskQrAvailable, kioskQrStatus, startKioskQrPayment } from "@/lib/payments.functions";
-import { normalizeKioskId } from "@/lib/kiosk-readers";
+import { kioskIdentity, normalizeKioskId } from "@/lib/kiosk-readers";
 import { abandonKioskOrder, cancelKioskPayment, kioskPaymentStatus, kioskTerminalAvailable, startKioskCardPayment } from "@/lib/payments.functions";
 import { activeGroups, fromPrice, selectedExtras, selectionLines, euro, groupCost, REMOVE_KEY, removableChoices, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
 import { itemImage } from "@/lib/menu-images";
