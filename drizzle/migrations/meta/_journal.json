@@ -162,6 +162,13 @@
       "when": 1793567806410,
       "tag": "0022_pos_register_sessions",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793660406949,
+      "tag": "0023_kiosk_pins",
+      "breakpoints": true
     }
   ]
 }

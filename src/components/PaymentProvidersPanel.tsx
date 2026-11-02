@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { hasKioskPin, setKioskPin } from "@/lib/kitchen-pin.functions";
 import { getKioskTerminal, listMolliePayments, startMollieConnect, disconnectMollie, setKioskTerminal, setKioskReaders, testKioskTerminal, listPaymentProviders, pairSumupReader, savePaymentProvider, testLyra, testMollie, testPaypal, testStripe, testSumup, type Provider } from "@/lib/payments.functions";
 
 const MODES: Partial<Record<Provider, { options: [string, string][]; hint?: string }>> = {
@@ -67,6 +68,7 @@ export function PaymentProvidersPanel({ restaurantId, modules }: { restaurantId:
       <p className="mb-4 text-sm text-muted-foreground">Les clés sont gardées sur le serveur et ne sont jamais réaffichées en entier.</p>
       <div className="space-y-4">
         <TerminalChoice restaurantId={restaurantId} />
+        <KioskPin restaurantId={restaurantId} />
         {visible.map((p) => <ProviderCard key={p.provider} restaurantId={restaurantId} p={p} onChange={() => refetch()} />)}
         {!visible.length && <p className="text-sm text-muted-foreground">Aucun module de paiement n'est proposé à ce restaurant. L'agence peut les activer dans « Modules de paiement proposés ».</p>}
       </div>
@@ -265,7 +267,7 @@ function KioskReaders({ restaurantId, initial, onSaved }: { restaurantId: string
   return (
     <div className="mt-4 space-y-2 border-t border-border pt-3">
       <p className="font-semibold">Un TPE par borne</p>
-      <p className="text-sm text-muted-foreground">Ouvrez chaque borne une fois avec son adresse dédiée (ex. …/borne?borne=1) : elle s'en souvient et envoie le montant à son propre lecteur. Ensuite, pour changer de borne sur place, appuyez 1,5 s sur l'écran d'accueil de la borne ou sur sa pastille « Borne … » puis saisissez le code PIN cuisine du restaurant (obligatoire, les clients ne peuvent donc pas changer la borne). Le nom saisi s'affiche sur l'écran de la borne pour la reconnaître sur place. Le paiement au comptoir et par QR code ne change pas.</p>
+      <p className="text-sm text-muted-foreground">Ouvrez chaque borne une fois avec son adresse dédiée (ex. …/borne?borne=1) : elle s'en souvient et envoie le montant à son propre lecteur. Ensuite, pour changer de borne sur place, appuyez 1,5 s sur l'écran d'accueil de la borne ou sur sa pastille « Borne … » puis saisissez le code PIN des bornes (obligatoire, les clients ne peuvent donc pas changer la borne). Le nom saisi s'affiche sur l'écran de la borne pour la reconnaître sur place. Le paiement au comptoir et par QR code ne change pas.</p>
       {rows.map((k, i) => (
         <div key={i} className="grid gap-2 sm:grid-cols-[6rem_1fr_1fr_auto]">
           <Input aria-label="Identifiant de la borne" placeholder="1" value={k.id} onChange={(e) => upd(i, "id", e.target.value)} />
@@ -356,6 +358,35 @@ function MolliePayments({ restaurantId }: { restaurantId: string }) {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+/** Agence : code PIN demandé sur la borne avant de changer son numéro. */
+function KioskPin({ restaurantId }: { restaurantId: string }) {
+  const check = useServerFn(hasKioskPin);
+  const save = useServerFn(setKioskPin);
+  const { data, refetch } = useQuery({ queryKey: ["kiosk-pin", restaurantId], queryFn: () => check({ data: { restaurantId } }) });
+  const [pin, setPin] = useState("");
+  const run = async (value: string | null) => {
+    try {
+      await save({ data: { restaurantId, pin: value } });
+      toast.success(value ? "Code PIN des bornes enregistré" : "Code PIN des bornes réinitialisé");
+      setPin(""); void refetch();
+    } catch (e) { toast.error((e as Error).message); }
+  };
+  return (
+    <div className="space-y-3 rounded-xl border border-border p-4">
+      <p className="font-semibold">Code PIN des bornes</p>
+      <p className="text-sm text-muted-foreground">
+        Demandé sur la borne avant de changer son numéro (appui long). {data?.enabled ? "Un code est défini." : data?.kitchenFallback ? "Aucun code dédié : le code PIN cuisine est utilisé en attendant." : "Aucun code défini : le changement de borne est bloqué."}
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <Input inputMode="numeric" type="password" autoComplete="off" maxLength={6} placeholder="4 à 6 chiffres" value={pin}
+          onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))} className="max-w-48" />
+        <Button onClick={() => run(pin)} disabled={pin.length < 4}>{data?.enabled ? "Changer le code" : "Définir le code"}</Button>
+        {data?.enabled && <Button variant="outline" onClick={() => run(null)}>Réinitialiser</Button>}
+      </div>
     </div>
   );
 }

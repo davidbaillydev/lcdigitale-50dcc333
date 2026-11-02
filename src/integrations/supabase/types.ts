@@ -1073,6 +1073,41 @@ export type Database = {
           },
         ]
       }
+      restaurant_kiosk_pins: {
+        Row: {
+          failed_attempts: number
+          locked_until: string | null
+          pin_hash: string
+          restaurant_id: string
+          salt: string
+          updated_at: string
+        }
+        Insert: {
+          failed_attempts?: number
+          locked_until?: string | null
+          pin_hash: string
+          restaurant_id: string
+          salt: string
+          updated_at?: string
+        }
+        Update: {
+          failed_attempts?: number
+          locked_until?: string | null
+          pin_hash?: string
+          restaurant_id?: string
+          salt?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_kiosk_pins_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: true
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurant_kitchen_pins: {
         Row: {
           failed_attempts: number
