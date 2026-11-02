@@ -25,3 +25,17 @@ export function readerForKiosk(config: unknown, kioskId: string | null | undefin
   if (!id) return null;
   return kioskReadersOf(config).find((k) => k.id === id)?.reader ?? null;
 }
+
+/**
+ * Identité visible de la borne active : numéro + libellé, à afficher sur son écran.
+ * Fonctionne même sans TPE dédié (le libellé reste utile pour repérer la borne sur place).
+ */
+export function kioskIdentity(config: unknown, kioskId: string | null | undefined): { id: string; label: string; text: string } | null {
+  const id = normalizeKioskId(kioskId);
+  if (!id) return null;
+  const list = (config as { kioskReaders?: unknown } | null)?.kioskReaders;
+  const raw = Array.isArray(list) ? list.find((k) => normalizeKioskId((k as KioskReader)?.id) === id) as KioskReader | undefined : undefined;
+  const label = String(raw?.label ?? "").trim().slice(0, 40);
+  const repeated = !label || label.toLowerCase() === `borne ${id}` || label.toLowerCase() === id;
+  return { id, label, text: repeated ? `Borne ${id}` : `${label} · Borne ${id}` };
+}
