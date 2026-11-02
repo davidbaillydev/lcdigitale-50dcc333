@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { greetingText } from "@/lib/email-templates";
 
 const GATEWAY = "https://connector-gateway.lovable.dev/brevo";
 const SENDER = { email: "contact@lcdigitale.fr" };
@@ -29,6 +30,19 @@ async function brevo(body: unknown) {
   }
 }
 
+/** Prénom d'un client réellement ciblé : l'email de test montre alors le rendu final. */
+async function firstNameOfTarget(restaurantId: string, customerIds: string[]) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  for (let i = 0; i < customerIds.length; i += 500) {
+    const { data: rows } = await supabaseAdmin.from("restaurant_customers")
+      .select("name").eq("restaurant_id", restaurantId).eq("marketing_consent", true)
+      .not("email", "is", null).not("name", "is", null).in("id", customerIds.slice(i, i + 500)).limit(1);
+    const name = (rows?.[0] as { name?: string | null } | undefined)?.name?.trim();
+    if (name) return name;
+  }
+  return null;
+}
+
 /** Envoie une campagne aux clients ciblés — le serveur ne garde que les clients consentants avec email. */
 export const sendCampaign = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -45,7 +59,8 @@ export const sendCampaign = createServerFn({ method: "POST" })
     const base = { sender: { ...SENDER, name: r.name }, ...(r.email ? { replyTo: { email: r.email, name: r.name } } : {}), subject: data.subject, htmlContent: html };
 
     if (data.testEmail) {
-      await brevo({ ...base, subject: `[TEST] ${data.subject}`, to: [{ email: data.testEmail }], params: { name: "client", unsub: `${data.origin}/desabonnement` } });
+      const sample = (await firstNameOfTarget(data.restaurantId, data.customerIds)) ?? "Alexia";
+      await brevo({ ...base, subject: `[TEST] ${data.subject}`, to: [{ email: data.testEmail }], params: { greeting: greetingText(sample), unsub: `${data.origin}/desabonnement` } });
       return { sent: 1, test: true };
     }
 
@@ -62,7 +77,7 @@ export const sendCampaign = createServerFn({ method: "POST" })
       for (let i = 0; i < recipients.length; i += 500) {
         await brevo({ ...base, messageVersions: recipients.slice(i, i + 500).map((c) => ({
           to: [{ email: c.email, ...(c.name ? { name: c.name } : {}) }],
-          params: { name: c.name?.split(" ")[0] || "client", unsub: `${data.origin}/desabonnement?c=${c.id}&t=${unsubToken(c.id)}` },
+          params: { greeting: greetingText(c.name), unsub: `${data.origin}/desabonnement?c=${c.id}&t=${unsubToken(c.id)}` },
         })) });
         sent += Math.min(500, recipients.length - i);
       }
