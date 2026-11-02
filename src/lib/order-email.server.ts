@@ -5,7 +5,6 @@ import { orderReceivedHtml, restaurantNewOrderHtml, orderConfirmedHtml, refundHt
 const GATEWAY = "https://connector-gateway.lovable.dev/brevo";
 const FALLBACK_ORIGIN = "https://restaurant.lcdigitale.fr";
 const CONFIRMED = ["accepted", "preparing", "ready", "delivering", "done"];
-const esc = (s: string) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 const baseOf = (origin?: string | null) => (/^https?:\/\/[^/]+$/.test(origin ?? "") ? origin! : FALLBACK_ORIGIN);
 
 export type NotificationSettings = { received: boolean; confirmed: boolean; restaurant: boolean; email?: string | undefined };
@@ -15,7 +14,6 @@ export function notificationsOf(config: unknown): NotificationSettings {
   return { received: n.received !== false, confirmed: n.confirmed !== false, restaurant: n.restaurant !== false, email: n.email || undefined };
 }
 
-type Line = { name: string; qty: number; total: number; size?: string; details?: string | string[] };
 type Rest = { slug: string; name: string; email: string | null; brand: { accent?: string } | null; config: unknown; logo_url?: string | null; address?: string | null; city?: string | null; phone?: string | null };
 const ORDER_COLS = "id, is_test, order_number, status, mode, slot, asap, total, items, notes, email, phone, customer_name, first_name, last_name, address, postal_code, city, table_label, payment_method, payment_status, confirmation_email_at, received_email_at, restaurant_email_at, restaurants(slug, name, email, brand, config, logo_url, address, city, phone)";
 
