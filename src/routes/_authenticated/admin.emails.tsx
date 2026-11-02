@@ -71,7 +71,7 @@ function Page() {
 
   return <div className="min-h-screen bg-background">
     <header className="border-b"><div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4">
-      <Crumbs items={[{ label: "Console agence", to: "/admin" }, { label: "Aperçu des e-mails" }]} />
+      <Crumbs page="Aperçu des e-mails" />
       <ThemeToggle />
     </div></header>
     <main className="mx-auto grid max-w-6xl gap-6 px-4 py-6 lg:grid-cols-[280px_minmax(0,1fr)]">
