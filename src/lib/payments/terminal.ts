@@ -6,6 +6,7 @@ import { admin, assertManager, assertOrdersOpen, getRow } from "./shared";
 import { sumup, sumupForRestaurant } from "./sumup";
 import { stripeCall } from "./stripe";
 import { mollieCall, mollieForRestaurant } from "./mollie";
+import { kioskReadersOf, normalizeKioskId, readerForKiosk } from "../kiosk-readers";
 
 // ───────────── TPE Cloud de la borne (Stripe Terminal, Mollie POS ou SumUp Solo) ─────────────
 export const TERMINALS = ["stripe", "mollie", "sumup"] as const;
@@ -28,14 +29,19 @@ export async function terminalCandidate(restaurantId: string, kind: TerminalKind
   return m && t ? { kind, key: m.key, terminal: t, profileId: m.profileId, live: m.live } : null;
 }
 /** Terminal choisi par l'agence (restaurants.config.terminal), sinon le premier prêt. */
-export async function terminalForRestaurant(restaurantId: string): Promise<Terminal | null> {
+export async function terminalForRestaurant(restaurantId: string, kioskId?: string | null): Promise<Terminal | null> {
   const db = await admin();
   const { data } = await db.from("restaurants").select("config").eq("id", restaurantId).maybeSingle();
   const chosen = (data?.config as { terminal?: TerminalKind } | null)?.terminal;
-  if (chosen && TERMINALS.includes(chosen)) return terminalCandidate(restaurantId, chosen);
-  for (const k of ["sumup", "stripe", "mollie"] as const) { const t = await terminalCandidate(restaurantId, k); if (t) return t; }
-  return null;
+  let t: Terminal | null = null;
+  if (chosen && TERMINALS.includes(chosen)) t = await terminalCandidate(restaurantId, chosen);
+  else for (const k of ["sumup", "stripe", "mollie"] as const) { t = await terminalCandidate(restaurantId, k); if (t) break; }
+  // Borne identifiée : même compte prestataire, mais son propre lecteur physique
+  const own = t ? readerForKiosk(data?.config, kioskId) : null;
+  if (t && own) return t.kind === "mollie" ? { ...t, terminal: own } : { ...t, reader: own };
+  return t;
 }
+const kioskField = z.string().max(40).nullish();
 export async function mollieDelete(key: string, path: string) {
   await fetch(`https://api.mollie.com/v2${path}`, { method: "DELETE", headers: { Authorization: `Bearer ${key}` } }).catch(() => null);
 }
@@ -50,7 +56,7 @@ export const getKioskTerminal = createServerFn({ method: "POST" })
     const { data: r } = await db.from("restaurants").select("config").eq("id", data.restaurantId).single();
     const t = (r?.config as { terminal?: TerminalKind } | null)?.terminal;
     const ready = await terminalForRestaurant(data.restaurantId);
-    return { terminal: t && TERMINALS.includes(t) ? t : null, active: ready?.kind ?? null };
+    return { terminal: t && TERMINALS.includes(t) ? t : null, active: ready?.kind ?? null, kiosks: kioskReadersOf(r?.config) };
   });
 
 /** Choix du TPE Cloud de la borne (agence). */
@@ -63,6 +69,24 @@ export const setKioskTerminal = createServerFn({ method: "POST" })
     const { data: r } = await db.from("restaurants").select("config").eq("id", data.restaurantId).single();
     const config = { ...(r?.config ?? {}) } as Record<string, unknown>;
     if (data.terminal) config["terminal"] = data.terminal; else delete config["terminal"];
+    const { error } = await db.from("restaurants").update({ config }).eq("id", data.restaurantId);
+    if (error) throw new Error("Enregistrement impossible");
+    return { ok: true };
+  });
+
+/** Lecteurs propres à chaque borne (agence) : la borne ouverte avec ?borne=<id> utilise son lecteur. */
+export const setKioskReaders = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ restaurantId: z.string().uuid(), kiosks: z.array(z.object({ id: z.string().max(20), label: z.string().max(40), reader: z.string().trim().min(3).max(80).regex(/^[A-Za-z0-9_-]+$/) })).max(20) }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertManager(context.supabase, context.userId, data.restaurantId);
+    const kiosks = data.kiosks.map((k) => ({ ...k, id: normalizeKioskId(k.id) ?? "" }));
+    if (kiosks.some((k) => !k.id)) throw new Error("Chaque borne doit avoir un identifiant (lettres, chiffres ou tirets).");
+    if (new Set(kiosks.map((k) => k.id)).size !== kiosks.length) throw new Error("Deux bornes ont le même identifiant.");
+    const db = await admin();
+    const { data: r } = await db.from("restaurants").select("config").eq("id", data.restaurantId).single();
+    const config = { ...(r?.config ?? {}) } as Record<string, unknown>;
+    if (kiosks.length) config["kioskReaders"] = kiosks; else delete config["kioskReaders"];
     const { error } = await db.from("restaurants").update({ config }).eq("id", data.restaurantId);
     if (error) throw new Error("Enregistrement impossible");
     return { ok: true };
@@ -121,12 +145,12 @@ export async function kioskOrder(orderId: string) {
 
 /** Envoie le montant de la commande borne sur le TPE Cloud du restaurant. */
 export const startKioskCardPayment = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
+  .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid(), kioskId: kioskField }).parse(d))
   .handler(async ({ data }) => {
     const { db, o } = await kioskOrder(data.orderId);
     if (o.payment_status === "paid") return { status: "paid" as const };
     await assertOrdersOpen(o.restaurant_id);
-    const t = await terminalForRestaurant(o.restaurant_id);
+    const t = await terminalForRestaurant(o.restaurant_id, data.kioskId);
     if (!t) throw new Error("Terminal de paiement non configuré");
     const cents = Math.round(Number(o.total) * 100);
     const description = `Commande borne n° ${o.order_number}`;
@@ -156,12 +180,12 @@ export const startKioskCardPayment = createServerFn({ method: "POST" })
 
 /** Statut du paiement sur terminal (la borne interroge toutes les 2 s ; l'état est toujours relu chez le prestataire). */
 export const kioskPaymentStatus = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
+  .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid(), kioskId: kioskField }).parse(d))
   .handler(async ({ data }) => {
     const { db, o } = await kioskOrder(data.orderId);
     if (o.payment_status === "paid" || o.payment_status === "failed") return { status: o.payment_status as "paid" | "failed" };
     if (!o.payment_ref) return { status: "pending" as const };
-    const t = await terminalForRestaurant(o.restaurant_id);
+    const t = await terminalForRestaurant(o.restaurant_id, data.kioskId);
     if (!t) return { status: "failed" as const };
     let next: "paid" | "failed" | "pending" = "pending";
     try {
@@ -188,13 +212,13 @@ export const kioskPaymentStatus = createServerFn({ method: "POST" })
 
 /** Annule le paiement en cours sur le terminal. */
 export const cancelKioskPayment = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
+  .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid(), kioskId: kioskField }).parse(d))
   .handler(async ({ data }) => {
     const { db, o } = await kioskOrder(data.orderId);
     if (o.payment_status === "paid") { await releaseKioskOrder(db, o.id); return { status: "paid" as const }; }
     // Jamais d'annulation sur le terminal sans paiement en attente propre à cette commande
     if (o.payment_status !== "pending" || !o.payment_ref) return { status: "failed" as const };
-    const t = await terminalForRestaurant(o.restaurant_id);
+    const t = await terminalForRestaurant(o.restaurant_id, data.kioskId);
     try {
       if (t?.kind === "stripe" && o.payment_ref.startsWith("stripe_term:")) {
         const pi = o.payment_ref.slice(12);
