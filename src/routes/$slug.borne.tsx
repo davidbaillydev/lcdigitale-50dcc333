@@ -8,7 +8,7 @@ import { featuresOf } from "@/lib/features";
 import { createFileRoute } from "@tanstack/react-router";
 import { computeServiceFee, serviceFeeLabel } from "@/lib/service-fee";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Check, ChevronLeft, CreditCard, Minus, Plus, ShoppingBag, Trash2, UtensilsCrossed, Banknote, QrCode } from "lucide-react";
+import { Check, ChevronLeft, CreditCard, Minus, Monitor, Plus, ShoppingBag, Trash2, UtensilsCrossed, Banknote, QrCode } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { cn } from "@/lib/utils";
 import { AllergenBadges, AllergenInfo, AllergenPicker } from "@/components/Allergens";
@@ -84,6 +84,8 @@ function Kiosk() {
     const fromUrl = normalizeKioskId(new URLSearchParams(window.location.search).get("borne"));
     try { if (fromUrl) localStorage.setItem(key, fromUrl); setKioskId(fromUrl ?? normalizeKioskId(localStorage.getItem(key))); } catch { setKioskId(fromUrl); }
   }, [restaurant.slug]);
+  // Nom et numéro de la borne active, affichés à l'écran pour la repérer sur place
+  const kiosk = kioskIdentity(restaurant.config, kioskId);
   const [pending, setPending] = useState<{ id: string; n: number; total: number } | null>(null);
   const [cardState, setCardState] = useState<"pending" | "failed">("pending");
   const checkQr = useServerFn(kioskQrAvailable);
@@ -209,6 +211,11 @@ function Kiosk() {
       {step === "welcome" && (
         <div className="absolute right-5 top-5 z-[60]"><ThemeToggle className="h-14 w-14" /></div>
       )}
+      {step === "welcome" && kiosk && (
+        <div className="absolute left-5 top-5 z-[60] flex items-center gap-3 rounded-full border border-border bg-card/90 px-6 py-3 text-2xl font-semibold text-muted-foreground">
+          <Monitor className="h-7 w-7 text-primary" />{kiosk.text}
+        </div>
+      )}
       {step === "welcome" && (
         <div role="button" tabIndex={0} className="relative flex flex-1 cursor-pointer flex-col items-center justify-center gap-10 overflow-hidden p-10 text-center" onClick={() => setStep("menu")}>
           <RestaurantBanner restaurant={restaurant} />
@@ -233,7 +240,7 @@ function Kiosk() {
       {step !== "welcome" && step !== "done" && (
         <header className="flex items-center justify-between gap-4 border-b border-border px-6 py-4">
           <button onClick={reset} className="rounded-xl bg-muted px-6 py-4 text-xl font-semibold">Annuler</button>
-          <p className="flex items-center gap-3 font-display text-4xl text-primary"><BrandLogo src={restaurant.logo_url} name={restaurant.name} className="h-12 w-12 object-contain" />{restaurant.name}</p>
+          <p className="flex items-center gap-3 font-display text-4xl text-primary"><BrandLogo src={restaurant.logo_url} name={restaurant.name} className="h-12 w-12 object-contain" />{restaurant.name}{kiosk && <span className="rounded-full bg-muted px-4 py-2 font-sans text-lg font-semibold text-muted-foreground">{kiosk.text}</span>}</p>
           <div className="flex items-center gap-3">
             <ThemeToggle className="rounded-xl p-4" />
             <div className="flex rounded-xl bg-muted p-1 text-lg font-semibold">
@@ -391,6 +398,7 @@ function Kiosk() {
           <CreditCard className={cardState === "pending" ? "h-28 w-28 animate-pulse text-primary" : "h-28 w-28 text-destructive"} />
           <p className="font-display text-6xl">{cardState === "pending" ? "Veuillez suivre les instructions sur le lecteur de carte" : "Paiement refusé ou annulé"}</p>
           <p className="text-4xl">{euro(pending.total)}</p>
+          {kiosk && <p className="text-2xl text-muted-foreground">{kiosk.text}</p>}
           {cardState === "pending" ? (
             <button onClick={async () => { try { await cancelCard({ data: { orderId: pending.id, kioskId } }); } catch { /* ignore */ } setCardState("failed"); }}
               className="rounded-xl bg-muted px-8 py-5 text-xl font-semibold">Annuler le paiement</button>
@@ -416,6 +424,7 @@ function Kiosk() {
           <p className="text-4xl">Merci ! Votre numéro de commande</p>
           <p className="font-display text-[12rem] leading-none text-primary">{result.n}</p>
           <p className="text-3xl">{mode === "dine_in" ? "Sur place" : "À emporter"} · {euro(result.total)}</p>
+          {kiosk && <p className="text-xl text-muted-foreground">{kiosk.text}</p>}
           <p className="max-w-3xl text-2xl text-muted-foreground">
             {result.pay === "card_paid" ? "Paiement accepté." : result.pay === "counter" ? "Présentez-vous au comptoir pour régler (espèces ou tickets resto)." : "Présentez-vous au comptoir pour régler par carte."} Nous appellerons votre numéro dès que c'est prêt.
           </p>
