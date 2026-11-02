@@ -392,7 +392,7 @@ function Kiosk() {
           <p className="font-display text-6xl">{cardState === "pending" ? "Veuillez suivre les instructions sur le lecteur de carte" : "Paiement refusé ou annulé"}</p>
           <p className="text-4xl">{euro(pending.total)}</p>
           {cardState === "pending" ? (
-            <button onClick={async () => { try { await cancelCard({ data: { orderId: pending.id } }); } catch { /* ignore */ } setCardState("failed"); }}
+            <button onClick={async () => { try { await cancelCard({ data: { orderId: pending.id, kioskId } }); } catch { /* ignore */ } setCardState("failed"); }}
               className="rounded-xl bg-muted px-8 py-5 text-xl font-semibold">Annuler le paiement</button>
           ) : (
             <div className="flex flex-wrap justify-center gap-4">
