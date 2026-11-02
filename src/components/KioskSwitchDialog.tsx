@@ -21,7 +21,7 @@ export function KioskSwitchDialog(props: {
   return <Switcher {...props} />;
 }
 
-const MSG = { wrong: "Code incorrect", locked: "Trop d'essais : réessayez dans 5 minutes", no_pin: "Aucun code PIN cuisine n'est défini : demandez à l'agence de le configurer.", error: "Vérification impossible, réessayez" };
+const MSG = { wrong: "Code incorrect", locked: "Trop d'essais : réessayez dans 5 minutes", no_pin: "Aucun code PIN des bornes n'est défini : demandez à l'agence de le configurer.", error: "Vérification impossible, réessayez" };
 
 /** Verrou : le code PIN cuisine du restaurant est vérifié côté serveur avant d'afficher le sélecteur. */
 function PinGate({ restaurantId, onOk, onClose }: { restaurantId: string; onOk: () => void; onClose: () => void }) {
@@ -43,7 +43,7 @@ function PinGate({ restaurantId, onOk, onClose }: { restaurantId: string; onOk: 
     <div role="dialog" aria-modal="true" aria-label="Code personnel" className="absolute inset-0 z-[70] flex flex-col items-center justify-center gap-6 bg-background p-8">
       <button onClick={onClose} aria-label="Fermer" className="absolute right-8 top-8 rounded-xl bg-muted p-4"><X className="h-8 w-8" /></button>
       <p className="flex items-center gap-3 font-display text-5xl"><Lock className="h-10 w-10 text-primary" />Réservé au personnel</p>
-      <p className="text-xl text-muted-foreground">Saisissez le code PIN cuisine pour changer de borne.</p>
+      <p className="text-xl text-muted-foreground">Saisissez le code PIN des bornes pour changer de borne.</p>
       <p aria-label="Code saisi" className="h-14 text-5xl tracking-[0.5em]">{"•".repeat(pin.length)}</p>
       {err && <p role="alert" className="text-xl font-semibold text-destructive">{err}</p>}
       <div className="grid grid-cols-3 gap-3">
