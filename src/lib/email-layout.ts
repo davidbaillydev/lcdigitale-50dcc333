@@ -1,7 +1,7 @@
 /** Mise en page commune des e-mails (commande, remboursement, campagne) aux couleurs du restaurant. */
 export const escHtml = (s: string) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
-export type EmailBrand = { name: string; color?: string | null; logoUrl?: string | null; address?: string | null; city?: string | null; phone?: string | null };
+export type EmailBrand = { name: string; color?: string | null | undefined; logoUrl?: string | null | undefined; address?: string | null | undefined; city?: string | null | undefined; phone?: string | null | undefined };
 
 export const brandColor = (c?: string | null, fallback = "#1f2937") => (/^#[0-9a-f]{6}$/i.test(c ?? "") ? c! : fallback);
 /** Les logos stockés en data: sont bloqués par la plupart des messageries : on ne garde que les URL https. */
@@ -11,7 +11,7 @@ export function emailButton(href: string, label: string, color: string) {
   return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px auto 8px"><tr><td style="background:${color};border-radius:10px"><a href="${escHtml(href)}" style="display:inline-block;padding:14px 28px;color:#ffffff;font-size:15px;font-weight:bold;text-decoration:none">${escHtml(label)}</a></td></tr></table>`;
 }
 
-export function emailLayout(b: EmailBrand, o: { preheader?: string; title: string; body: string; footer?: string }) {
+export function emailLayout(b: EmailBrand, o: { preheader?: string | undefined; title: string; body: string; footer?: string | undefined }) {
   const color = brandColor(b.color);
   const logo = safeLogo(b.logoUrl);
   const head = logo
