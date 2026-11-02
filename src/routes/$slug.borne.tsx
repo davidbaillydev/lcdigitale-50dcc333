@@ -17,6 +17,7 @@ import { useCart } from "@/lib/cart";
 import { createKioskOrder } from "@/lib/orders.functions";
 import { abandonKioskQr, kioskQrAvailable, kioskQrStatus, startKioskQrPayment } from "@/lib/payments.functions";
 import { kioskIdentity, normalizeKioskId } from "@/lib/kiosk-readers";
+import { applyKioskId } from "@/lib/kiosk-switch";
 import { abandonKioskOrder, cancelKioskPayment, kioskPaymentStatus, kioskTerminalAvailable, startKioskCardPayment } from "@/lib/payments.functions";
 import { activeGroups, fromPrice, selectedExtras, selectionLines, euro, groupCost, REMOVE_KEY, removableChoices, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
 import { itemImage } from "@/lib/menu-images";
@@ -29,6 +30,8 @@ import { isSimple, useSuggestions } from "@/components/CartSuggestions";
 import { assertItemAvailable, isItemAvailable, itemScheduleLabel } from "@/lib/shop";
 import { useMenuClock } from "@/hooks/use-menu-clock";
 import { Button } from "@/components/ui/button";
+import { KioskSwitchDialog } from "@/components/KioskSwitchDialog";
+import { useLongPress } from "@/hooks/use-long-press";
 
 export const Route = createFileRoute("/$slug/borne")({
   head: () => ({
@@ -86,6 +89,12 @@ function Kiosk() {
   }, [restaurant.slug]);
   // Nom et numéro de la borne active, affichés à l'écran pour la repérer sur place
   const kiosk = kioskIdentity(restaurant.config, kioskId);
+  // Changer de borne sur place : appui long sur la pastille ou sur l'écran d'accueil
+  const [switchOpen, setSwitchOpen] = useState(false);
+  const held = useRef(false);
+  const openSwitch = useCallback(() => { held.current = true; setSwitchOpen(true); }, []);
+  const pickKiosk = useCallback((id: string | null) => { setKioskId(applyKioskId(restaurant.slug, id)); held.current = false; setSwitchOpen(false); }, [restaurant.slug]);
+  const longPress = useLongPress(openSwitch);
   const [pending, setPending] = useState<{ id: string; n: number; total: number } | null>(null);
   const [cardState, setCardState] = useState<"pending" | "failed">("pending");
   const checkQr = useServerFn(kioskQrAvailable);
@@ -212,12 +221,13 @@ function Kiosk() {
         <div className="absolute right-5 top-5 z-[60]"><ThemeToggle className="h-14 w-14" /></div>
       )}
       {step === "welcome" && kiosk && (
-        <div className="absolute left-5 top-5 z-[60] flex items-center gap-3 rounded-full border border-border bg-card/90 px-6 py-3 text-2xl font-semibold text-muted-foreground">
+        <div {...longPress} title="Appui long : changer de borne"
+          className="absolute left-5 top-5 z-[60] flex items-center gap-3 rounded-full border border-border bg-card/90 px-6 py-3 text-2xl font-semibold text-muted-foreground">
           <Monitor className="h-7 w-7 text-primary" />{kiosk.text}
         </div>
       )}
       {step === "welcome" && (
-        <div role="button" tabIndex={0} className="relative flex flex-1 cursor-pointer flex-col items-center justify-center gap-10 overflow-hidden p-10 text-center" onClick={() => setStep("menu")}>
+        <div role="button" tabIndex={0} {...longPress} className="relative flex flex-1 cursor-pointer flex-col items-center justify-center gap-10 overflow-hidden p-10 text-center" onClick={() => { if (held.current) { held.current = false; return; } setStep("menu"); }}>
           <RestaurantBanner restaurant={restaurant} />
           <div className="absolute inset-0 bg-background/75" />
           <BrandLogo src={restaurant.logo_url} name={restaurant.name} className="relative h-40 w-40 object-contain" />
@@ -227,7 +237,7 @@ function Kiosk() {
           <span className="relative animate-pulse rounded-full bg-primary px-14 py-8 font-display text-5xl text-primary-foreground">Touchez pour commander</span>
           <div className="relative mt-6 grid w-full max-w-3xl grid-cols-2 gap-6" onClick={(e) => e.stopPropagation()}>
             {([["dine_in", "Sur place", UtensilsCrossed], ["pickup", "À emporter", ShoppingBag]] as const).filter(([m]) => restaurant.config.modes?.[m] !== false).map(([m, label, Icon]) => (
-              <button key={m} onClick={() => { setMode(m); setStep("menu"); }}
+              <button key={m} onClick={() => { if (held.current) return; setMode(m); setStep("menu"); }}
                 className="flex flex-col items-center gap-4 rounded-2xl border-2 border-border bg-card p-10 active:border-primary active:bg-primary/15">
                 <Icon className="h-20 w-20 text-primary" />
                 <span className="font-display text-5xl">{label}</span>
@@ -240,7 +250,7 @@ function Kiosk() {
       {step !== "welcome" && step !== "done" && (
         <header className="flex items-center justify-between gap-4 border-b border-border px-6 py-4">
           <button onClick={reset} className="rounded-xl bg-muted px-6 py-4 text-xl font-semibold">Annuler</button>
-          <p className="flex items-center gap-3 font-display text-4xl text-primary"><BrandLogo src={restaurant.logo_url} name={restaurant.name} className="h-12 w-12 object-contain" />{restaurant.name}{kiosk && <span className="rounded-full bg-muted px-4 py-2 font-sans text-lg font-semibold text-muted-foreground">{kiosk.text}</span>}</p>
+          <p className="flex items-center gap-3 font-display text-4xl text-primary"><BrandLogo src={restaurant.logo_url} name={restaurant.name} className="h-12 w-12 object-contain" />{restaurant.name}{kiosk && <span {...longPress} title="Appui long : changer de borne" className="rounded-full bg-muted px-4 py-2 font-sans text-lg font-semibold text-muted-foreground">{kiosk.text}</span>}</p>
           <div className="flex items-center gap-3">
             <ThemeToggle className="rounded-xl p-4" />
             <div className="flex rounded-xl bg-muted p-1 text-lg font-semibold">
@@ -445,6 +455,7 @@ function Kiosk() {
       )}
       {item && <KioskItem item={item} image={itemImage(item, catalog.categories)?.src} onClose={() => setItem(null)} onAdd={(sel, q) => { add(item.id, sel, q); setItem(null); }} />}
 
+      {switchOpen && <KioskSwitchDialog config={restaurant.config} current={kioskId} onPick={pickKiosk} onClose={() => { held.current = false; setSwitchOpen(false); }} />}
       {warn && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80">
           <div className="rounded-2xl border border-border bg-card p-12 text-center">
