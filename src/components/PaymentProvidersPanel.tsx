@@ -265,7 +265,7 @@ function KioskReaders({ restaurantId, initial, onSaved }: { restaurantId: string
   return (
     <div className="mt-4 space-y-2 border-t border-border pt-3">
       <p className="font-semibold">Un TPE par borne</p>
-      <p className="text-sm text-muted-foreground">Ouvrez chaque borne une fois avec son adresse dédiée (ex. …/borne?borne=1) : elle s'en souvient et envoie le montant à son propre lecteur. Ensuite, pour changer de borne sur place, appuyez 1,5 s sur l'écran d'accueil de la borne ou sur sa pastille « Borne … » — pas besoin de retaper l'adresse. Le nom saisi s'affiche sur l'écran de la borne pour la reconnaître sur place. Le paiement au comptoir et par QR code ne change pas.</p>
+      <p className="text-sm text-muted-foreground">Ouvrez chaque borne une fois avec son adresse dédiée (ex. …/borne?borne=1) : elle s'en souvient et envoie le montant à son propre lecteur. Ensuite, pour changer de borne sur place, appuyez 1,5 s sur l'écran d'accueil de la borne ou sur sa pastille « Borne … » puis saisissez le code PIN cuisine du restaurant (obligatoire, les clients ne peuvent donc pas changer la borne). Le nom saisi s'affiche sur l'écran de la borne pour la reconnaître sur place. Le paiement au comptoir et par QR code ne change pas.</p>
       {rows.map((k, i) => (
         <div key={i} className="grid gap-2 sm:grid-cols-[6rem_1fr_1fr_auto]">
           <Input aria-label="Identifiant de la borne" placeholder="1" value={k.id} onChange={(e) => upd(i, "id", e.target.value)} />
