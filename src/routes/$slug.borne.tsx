@@ -16,6 +16,7 @@ import { safeFor } from "@/lib/allergens";
 import { useCart } from "@/lib/cart";
 import { createKioskOrder } from "@/lib/orders.functions";
 import { abandonKioskQr, kioskQrAvailable, kioskQrStatus, startKioskQrPayment } from "@/lib/payments.functions";
+import { normalizeKioskId } from "@/lib/kiosk-readers";
 import { abandonKioskOrder, cancelKioskPayment, kioskPaymentStatus, kioskTerminalAvailable, startKioskCardPayment } from "@/lib/payments.functions";
 import { activeGroups, fromPrice, selectedExtras, selectionLines, euro, groupCost, REMOVE_KEY, removableChoices, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
 import { itemImage } from "@/lib/menu-images";
@@ -76,6 +77,13 @@ function Kiosk() {
   const abandon = useServerFn(abandonKioskOrder);
   const cardOnly = restaurant.config.kiosk?.cardOnly === true;
   const [terminal, setTerminal] = useState(false);
+  // Identification de la borne (?borne=2, mémorisée sur l'appareil) pour déclencher son propre TPE
+  const [kioskId, setKioskId] = useState<string | null>(null);
+  useEffect(() => {
+    const key = `kiosk-id:${restaurant.slug}`;
+    const fromUrl = normalizeKioskId(new URLSearchParams(window.location.search).get("borne"));
+    try { if (fromUrl) localStorage.setItem(key, fromUrl); setKioskId(fromUrl ?? normalizeKioskId(localStorage.getItem(key))); } catch { setKioskId(fromUrl); }
+  }, [restaurant.slug]);
   const [pending, setPending] = useState<{ id: string; n: number; total: number } | null>(null);
   const [cardState, setCardState] = useState<"pending" | "failed">("pending");
   const checkQr = useServerFn(kioskQrAvailable);
@@ -108,13 +116,13 @@ function Kiosk() {
     const t = setInterval(async () => {
       last.current = Date.now();
       try {
-        const r = await pollCard({ data: { orderId: pending.id } });
+        const r = await pollCard({ data: { orderId: pending.id, kioskId } });
         if (r.status === "paid") { track("completed", "Paiement TPE validé", pending.id); setResult({ n: pending.n, total: pending.total, pay: "card_paid" }); setPending(null); setStep("done"); }
         else if (r.status === "failed") setCardState("failed");
       } catch { /* réessai au prochain tour */ }
     }, 2000);
     return () => clearInterval(t);
-  }, [step, pending, cardState, pollCard]);
+  }, [step, pending, cardState, pollCard, kioskId]);
 
   // Borne : écran toujours allumé et verrouillé (zoom, pull-to-refresh)
   useWakeLock({ always: true });
@@ -177,7 +185,7 @@ function Kiosk() {
       clear(); last.current = Date.now();
       if (payment_method === "card_terminal" && (terminal || cardOnly)) {
         try {
-          await startCard({ data: { orderId: row.id } });
+          await startCard({ data: { orderId: row.id, kioskId } });
           setPending({ id: row.id, n: row.order_number, total: Number(row.total) }); setCardState("pending"); setStep("terminal");
           return;
         } catch {
@@ -384,7 +392,7 @@ function Kiosk() {
           <p className="font-display text-6xl">{cardState === "pending" ? "Veuillez suivre les instructions sur le lecteur de carte" : "Paiement refusé ou annulé"}</p>
           <p className="text-4xl">{euro(pending.total)}</p>
           {cardState === "pending" ? (
-            <button onClick={async () => { try { await cancelCard({ data: { orderId: pending.id } }); } catch { /* ignore */ } setCardState("failed"); }}
+            <button onClick={async () => { try { await cancelCard({ data: { orderId: pending.id, kioskId } }); } catch { /* ignore */ } setCardState("failed"); }}
               className="rounded-xl bg-muted px-8 py-5 text-xl font-semibold">Annuler le paiement</button>
           ) : (
             <div className="flex flex-wrap justify-center gap-4">

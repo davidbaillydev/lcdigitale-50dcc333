@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { getKioskTerminal, listMolliePayments, startMollieConnect, disconnectMollie, setKioskTerminal, testKioskTerminal, listPaymentProviders, pairSumupReader, savePaymentProvider, testLyra, testMollie, testPaypal, testStripe, testSumup, type Provider } from "@/lib/payments.functions";
+import { getKioskTerminal, listMolliePayments, startMollieConnect, disconnectMollie, setKioskTerminal, setKioskReaders, testKioskTerminal, listPaymentProviders, pairSumupReader, savePaymentProvider, testLyra, testMollie, testPaypal, testStripe, testSumup, type Provider } from "@/lib/payments.functions";
 
 const MODES: Partial<Record<Provider, { options: [string, string][]; hint?: string }>> = {
   stripe: { options: [["test", "Test (aucun vrai paiement)"], ["live", "Réel (live)"]], hint: "Apple Pay et Google Pay s'affichent automatiquement s'ils sont activés dans votre compte Stripe." },
@@ -246,6 +246,38 @@ function TerminalChoice({ restaurantId }: { restaurantId: string }) {
         ))}
       </div>
       <p className="mt-2 text-sm">{data?.active ? `Lecteur prêt : ${TERMINAL_LABELS[data.active]}` : "Aucun lecteur prêt : la carte se paiera au comptoir."}</p>
+      {data && <KioskReaders restaurantId={restaurantId} initial={data.kiosks} onSaved={() => void refetch()} />}
+    </div>
+  );
+}
+
+/** Une borne = un TPE physique. Sans identifiant de borne, le lecteur ci-dessus est utilisé. */
+function KioskReaders({ restaurantId, initial, onSaved }: { restaurantId: string; initial: { id: string; label: string; reader: string }[]; onSaved: () => void }) {
+  const save = useServerFn(setKioskReaders);
+  const [rows, setRows] = useState(initial);
+  const [busy, setBusy] = useState(false);
+  const upd = (i: number, k: "id" | "label" | "reader", v: string) => setRows((r) => r.map((x, j) => (j === i ? { ...x, [k]: v } : x)));
+  const submit = async () => {
+    setBusy(true);
+    try { await save({ data: { restaurantId, kiosks: rows } }); toast.success("Bornes enregistrées"); onSaved(); }
+    catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
+  };
+  return (
+    <div className="mt-4 space-y-2 border-t border-border pt-3">
+      <p className="font-semibold">Un TPE par borne</p>
+      <p className="text-sm text-muted-foreground">Ouvrez chaque borne une fois avec son adresse dédiée (ex. …/borne?borne=1) : elle s'en souvient et envoie le montant à son propre lecteur. Le paiement au comptoir et par QR code ne change pas.</p>
+      {rows.map((k, i) => (
+        <div key={i} className="grid gap-2 sm:grid-cols-[6rem_1fr_1fr_auto]">
+          <Input aria-label="Identifiant de la borne" placeholder="1" value={k.id} onChange={(e) => upd(i, "id", e.target.value)} />
+          <Input aria-label="Nom de la borne" placeholder="Borne entrée" value={k.label} onChange={(e) => upd(i, "label", e.target.value)} />
+          <Input aria-label="Identifiant du lecteur" placeholder="tmr_… / term_… / lecteur SumUp" value={k.reader} onChange={(e) => upd(i, "reader", e.target.value)} />
+          <Button variant="outline" className="h-10" onClick={() => setRows((r) => r.filter((_, j) => j !== i))}>Retirer</Button>
+        </div>
+      ))}
+      <div className="flex flex-wrap gap-2">
+        <Button variant="secondary" disabled={rows.length >= 20} onClick={() => setRows((r) => [...r, { id: String(r.length + 1), label: `Borne ${r.length + 1}`, reader: "" }])}>Ajouter une borne</Button>
+        <Button disabled={busy} onClick={submit}>Enregistrer les bornes</Button>
+      </div>
     </div>
   );
 }
