@@ -455,7 +455,7 @@ function Kiosk() {
       )}
       {item && <KioskItem item={item} image={itemImage(item, catalog.categories)?.src} onClose={() => setItem(null)} onAdd={(sel, q) => { add(item.id, sel, q); setItem(null); }} />}
 
-      {switchOpen && <KioskSwitchDialog config={restaurant.config} current={kioskId} onPick={pickKiosk} onClose={() => { held.current = false; setSwitchOpen(false); }} />}
+      {switchOpen && <KioskSwitchDialog restaurantId={restaurant.id} config={restaurant.config} current={kioskId} onPick={pickKiosk} onClose={() => { held.current = false; setSwitchOpen(false); }} />}
       {warn && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80">
           <div className="rounded-2xl border border-border bg-card p-12 text-center">
