@@ -50,6 +50,7 @@ function Page() {
   const [tpl, setTpl] = useState<Key>("received");
   const [mode, setMode] = useState("delivery");
   const [mobile, setMobile] = useState(false);
+  const [withName, setWithName] = useState(true);
   const r = (restaurants.find((x) => x.slug === slug) ?? restaurants[0]) as EmailRestaurant | undefined;
 
   const html = useMemo(() => {
@@ -65,9 +66,9 @@ function Page() {
         body: "Ce week-end, profitez de 20 % de réduction sur tous nos menus, en livraison comme à emporter.\nCode : WEEKEND20",
         ctaUrl: `${BASE}/${r.slug}`, ctaLabel: "Commander maintenant",
         brand: { logoUrl: r.logo_url, address: r.address, city: r.city, phone: r.phone },
-      }).replace("{{params.name}}", "Marie").replace("{{params.unsub}}", "#");
+      }).replace("{{params.greeting}}", withName ? "Bonjour Marie," : "Bonjour,").replace("{{params.unsub}}", "#");
     }
-  }, [r, tpl, mode]);
+  }, [r, tpl, mode, withName]);
 
   return <div className="min-h-screen bg-background">
     <header className="border-b"><div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4">
@@ -94,6 +95,14 @@ function Page() {
             <option value="delivery">Livraison</option><option value="pickup">À emporter</option><option value="dine_in">Sur place</option>
           </select>
         </label>}
+        {tpl === "campaign" && <div className="space-y-1.5">
+          <p className="text-sm font-medium">Prénom du client</p>
+          <div className="flex gap-2">
+            <Button variant={withName ? "default" : "outline"} className="h-11 flex-1" onClick={() => setWithName(true)}>Avec prénom</Button>
+            <Button variant={withName ? "outline" : "default"} className="h-11 flex-1" onClick={() => setWithName(false)}>Sans prénom</Button>
+          </div>
+          <p className="text-xs text-muted-foreground">Un client sans prénom reçoit « Bonjour, » — jamais « Bonjour client, ».</p>
+        </div>}
         <div className="flex gap-2">
           <Button variant={mobile ? "outline" : "default"} className="h-11 flex-1" onClick={() => setMobile(false)}><Monitor className="mr-2 h-4 w-4" />Ordinateur</Button>
           <Button variant={mobile ? "default" : "outline"} className="h-11 flex-1" onClick={() => setMobile(true)}><Smartphone className="mr-2 h-4 w-4" />Mobile</Button>
