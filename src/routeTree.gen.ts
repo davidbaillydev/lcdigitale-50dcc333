@@ -37,6 +37,7 @@ import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminSlugRouteImport } from './routes/_authenticated/admin.$slug'
 import { Route as AuthenticatedAdminAdministrateursRouteImport } from './routes/_authenticated/admin.administrateurs'
 import { Route as AuthenticatedAdminClientsRouteImport } from './routes/_authenticated/admin.clients'
+import { Route as AuthenticatedAdminEmailsRouteImport } from './routes/_authenticated/admin.emails'
 import { Route as AuthenticatedAdminGainsRouteImport } from './routes/_authenticated/admin.gains'
 import { Route as AuthenticatedAdminQrcodesRouteImport } from './routes/_authenticated/admin.qrcodes'
 import { Route as AuthenticatedAdminStatistiquesRouteImport } from './routes/_authenticated/admin.statistiques'
@@ -203,6 +204,12 @@ const AuthenticatedAdminClientsRoute =
   AuthenticatedAdminClientsRouteImport.update({
     id: '/clients',
     path: '/clients',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminEmailsRoute =
+  AuthenticatedAdminEmailsRouteImport.update({
+    id: '/emails',
+    path: '/emails',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminGainsRoute = AuthenticatedAdminGainsRouteImport.update({
@@ -383,6 +390,7 @@ export interface FileRoutesByFullPath {
   '/admin/$slug': typeof AuthenticatedAdminSlugRoute
   '/admin/administrateurs': typeof AuthenticatedAdminAdministrateursRoute
   '/admin/clients': typeof AuthenticatedAdminClientsRoute
+  '/admin/emails': typeof AuthenticatedAdminEmailsRoute
   '/admin/gains': typeof AuthenticatedAdminGainsRoute
   '/admin/qrcodes': typeof AuthenticatedAdminQrcodesRoute
   '/admin/statistiques': typeof AuthenticatedAdminStatistiquesRoute
@@ -436,6 +444,7 @@ export interface FileRoutesByTo {
   '/admin/$slug': typeof AuthenticatedAdminSlugRoute
   '/admin/administrateurs': typeof AuthenticatedAdminAdministrateursRoute
   '/admin/clients': typeof AuthenticatedAdminClientsRoute
+  '/admin/emails': typeof AuthenticatedAdminEmailsRoute
   '/admin/gains': typeof AuthenticatedAdminGainsRoute
   '/admin/qrcodes': typeof AuthenticatedAdminQrcodesRoute
   '/admin/statistiques': typeof AuthenticatedAdminStatistiquesRoute
@@ -493,6 +502,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/$slug': typeof AuthenticatedAdminSlugRoute
   '/_authenticated/admin/administrateurs': typeof AuthenticatedAdminAdministrateursRoute
   '/_authenticated/admin/clients': typeof AuthenticatedAdminClientsRoute
+  '/_authenticated/admin/emails': typeof AuthenticatedAdminEmailsRoute
   '/_authenticated/admin/gains': typeof AuthenticatedAdminGainsRoute
   '/_authenticated/admin/qrcodes': typeof AuthenticatedAdminQrcodesRoute
   '/_authenticated/admin/statistiques': typeof AuthenticatedAdminStatistiquesRoute
@@ -550,6 +560,7 @@ export interface FileRouteTypes {
     | '/admin/$slug'
     | '/admin/administrateurs'
     | '/admin/clients'
+    | '/admin/emails'
     | '/admin/gains'
     | '/admin/qrcodes'
     | '/admin/statistiques'
@@ -603,6 +614,7 @@ export interface FileRouteTypes {
     | '/admin/$slug'
     | '/admin/administrateurs'
     | '/admin/clients'
+    | '/admin/emails'
     | '/admin/gains'
     | '/admin/qrcodes'
     | '/admin/statistiques'
@@ -659,6 +671,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/$slug'
     | '/_authenticated/admin/administrateurs'
     | '/_authenticated/admin/clients'
+    | '/_authenticated/admin/emails'
     | '/_authenticated/admin/gains'
     | '/_authenticated/admin/qrcodes'
     | '/_authenticated/admin/statistiques'
@@ -912,6 +925,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminClientsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/emails': {
+      id: '/_authenticated/admin/emails'
+      path: '/emails'
+      fullPath: '/admin/emails'
+      preLoaderRoute: typeof AuthenticatedAdminEmailsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/gains': {
       id: '/_authenticated/admin/gains'
       path: '/gains'
@@ -1101,6 +1121,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminSlugRoute: typeof AuthenticatedAdminSlugRoute
   AuthenticatedAdminAdministrateursRoute: typeof AuthenticatedAdminAdministrateursRoute
   AuthenticatedAdminClientsRoute: typeof AuthenticatedAdminClientsRoute
+  AuthenticatedAdminEmailsRoute: typeof AuthenticatedAdminEmailsRoute
   AuthenticatedAdminGainsRoute: typeof AuthenticatedAdminGainsRoute
   AuthenticatedAdminQrcodesRoute: typeof AuthenticatedAdminQrcodesRoute
   AuthenticatedAdminStatistiquesRoute: typeof AuthenticatedAdminStatistiquesRoute
@@ -1112,6 +1133,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminAdministrateursRoute:
     AuthenticatedAdminAdministrateursRoute,
   AuthenticatedAdminClientsRoute: AuthenticatedAdminClientsRoute,
+  AuthenticatedAdminEmailsRoute: AuthenticatedAdminEmailsRoute,
   AuthenticatedAdminGainsRoute: AuthenticatedAdminGainsRoute,
   AuthenticatedAdminQrcodesRoute: AuthenticatedAdminQrcodesRoute,
   AuthenticatedAdminStatistiquesRoute: AuthenticatedAdminStatistiquesRoute,
