@@ -4,7 +4,7 @@ export { PROVIDERS, type Provider } from "./payments/shared";
 export { listPaymentProviders, savePaymentProvider } from "./payments/settings";
 export { testSumup, pairSumupReader } from "./payments/sumup";
 export {
-  TERMINALS, type TerminalKind, getKioskTerminal, setKioskTerminal, testKioskTerminal, kioskTerminalAvailable,
+  TERMINALS, type TerminalKind, getKioskTerminal, setKioskTerminal, setKioskReaders, testKioskTerminal, kioskTerminalAvailable,
   kioskTerminalReady, startKioskCardPayment, kioskPaymentStatus, cancelKioskPayment, abandonKioskOrder,
 } from "./payments/terminal";
 export { kioskQrReady, kioskQrAvailable, startKioskQrPayment, kioskQrStatus, abandonKioskQr } from "./payments/kiosk-qr";
