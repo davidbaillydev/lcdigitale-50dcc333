@@ -1,5 +1,7 @@
 type Admin = Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"];
 
+import { emailLayout, emailButton, escHtml } from "@/lib/email-layout";
+
 const GATEWAY = "https://connector-gateway.lovable.dev/brevo";
 const FALLBACK_ORIGIN = "https://restaurant.lcdigitale.fr";
 const CONFIRMED = ["accepted", "preparing", "ready", "delivering", "done"];
@@ -16,8 +18,8 @@ export function notificationsOf(config: unknown): NotificationSettings {
 }
 
 type Line = { name: string; qty: number; total: number; size?: string; details?: string | string[] };
-type Rest = { slug: string; name: string; email: string | null; brand: { accent?: string } | null; config: unknown };
-const ORDER_COLS = "id, is_test, order_number, status, mode, slot, asap, total, items, notes, email, phone, customer_name, first_name, last_name, address, postal_code, city, table_label, payment_method, payment_status, confirmation_email_at, received_email_at, restaurant_email_at, restaurants(slug, name, email, brand, config)";
+type Rest = { slug: string; name: string; email: string | null; brand: { accent?: string } | null; config: unknown; logo_url?: string | null; address?: string | null; city?: string | null; phone?: string | null };
+const ORDER_COLS = "id, is_test, order_number, status, mode, slot, asap, total, items, notes, email, phone, customer_name, first_name, last_name, address, postal_code, city, table_label, payment_method, payment_status, confirmation_email_at, received_email_at, restaurant_email_at, restaurants(slug, name, email, brand, config, logo_url, address, city, phone)";
 
 async function load(admin: Admin, orderId: string) {
   const { data: o } = await admin.from("orders").select(ORDER_COLS).eq("id", orderId).maybeSingle();
@@ -46,10 +48,11 @@ async function brevo(payload: Record<string, unknown>, tag: string) {
 const brevoReady = () => !!process.env["BREVO_API_KEY"] && !!process.env["LOVABLE_API_KEY"];
 const colorOf = (r: Rest) => (/^#[0-9a-f]{6}$/i.test(r.brand?.accent ?? "") ? r.brand!.accent! : "#007af5");
 const firstName = (o: { first_name: string | null; customer_name: string }) => o.first_name?.trim() || o.customer_name.split(" ")[0] || "";
-const lineDetails = (i: Line) => { const d = Array.isArray(i.details) ? i.details.join(", ") : i.details; return d ? `<br><span style="color:#666;font-size:12px">${esc(d)}</span>` : ""; };
-const itemsTable = (items: Line[], total: number) => `<table style="width:100%;font-size:14px;border-collapse:collapse">${items.map((i) => `<tr><td style="padding:4px 0">${i.qty} × ${esc(i.name)}${i.size ? ` [${esc(i.size)}]` : ""}${lineDetails(i)}</td><td style="text-align:right;vertical-align:top">${eur(i.total)}</td></tr>`).join("")}
-<tr><td style="padding-top:8px;border-top:1px solid #eee"><b>Total TTC</b></td><td style="text-align:right;padding-top:8px;border-top:1px solid #eee"><b>${eur(total)}</b></td></tr></table>`;
-const wrap = (inner: string) => `<!doctype html><html><body style="margin:0;background:#ffffff;font-family:Arial,sans-serif;color:#222"><div style="max-width:560px;margin:0 auto;padding:24px">${inner}</div></body></html>`;
+const lineDetails = (i: Line) => { const d = Array.isArray(i.details) ? i.details.join(", ") : i.details; return d ? `<div style="color:#6b7280;font-size:13px;margin-top:2px">${esc(d)}</div>` : ""; };
+const itemsTable = (items: Line[], total: number) => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;border-collapse:collapse;margin:20px 0;background:#fafafa;border-radius:10px">${items.map((i) => `<tr><td style="padding:10px 14px;border-bottom:1px solid #eeeeee"><b>${i.qty} ×</b> ${esc(i.name)}${i.size ? ` <span style="color:#6b7280">(${esc(i.size)})</span>` : ""}${lineDetails(i)}</td><td style="padding:10px 14px;text-align:right;vertical-align:top;white-space:nowrap;border-bottom:1px solid #eeeeee">${eur(i.total)}</td></tr>`).join("")}
+<tr><td style="padding:12px 14px;font-size:16px"><b>Total TTC</b></td><td style="padding:12px 14px;text-align:right;font-size:16px;white-space:nowrap"><b>${eur(total)}</b></td></tr></table>`;
+const brandOf = (r: Rest) => ({ name: r.name, color: colorOf(r), logoUrl: r.logo_url, address: r.address, city: r.city, phone: r.phone });
+const infoBox = (rows: [string, string][]) => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;margin:8px 0">${rows.map(([k, v]) => `<tr><td style="padding:4px 0;color:#6b7280;width:38%;vertical-align:top">${k}</td><td style="padding:4px 0;color:#111827;font-weight:bold">${v}</td></tr>`).join("")}</table>`;
 const slotText = (o: { slot: string; asap: boolean }) => o.asap ? "Dès que possible" : new Date(o.slot).toLocaleString("fr-FR", { timeZone: "Europe/Paris", weekday: "long", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
 /** « Commande reçue » (client) : création en paiement sur place ou paiement en ligne confirmé. */
@@ -62,12 +65,16 @@ export async function sendOrderReceived(admin: Admin, orderId: string, origin?: 
   if (!(await claim(admin, o.id, "received_email_at"))) return { sent: false };
   const color = colorOf(r), track = `${baseOf(origin)}/${r.slug}/suivi/${o.id}`;
   const paid = o.payment_status === "paid";
-  const html = wrap(`<h1 style="font-size:22px;color:${color};margin:0 0 12px">${esc(r.name)}</h1>
-<p style="font-size:15px">Bonjour ${esc(firstName(o))},</p>
-<p style="font-size:15px">Nous avons bien reçu votre commande <b>n° ${o.order_number}</b> (${MODE[o.mode] ?? o.mode}${o.mode !== "dine_in" ? ` — ${esc(slotText(o))}` : ""}). Le restaurant va la confirmer très vite.</p>
+  const html = emailLayout(brandOf(r), {
+    preheader: `Commande n° ${o.order_number} bien reçue`,
+    title: "Merci, votre commande est bien reçue",
+    body: `<p style="margin:0 0 12px">Bonjour ${esc(firstName(o))},</p>
+<p style="margin:0 0 12px">Le restaurant va confirmer votre commande dans quelques instants. Vous recevrez un e-mail dès qu'elle sera acceptée.</p>
+${infoBox([["Commande", `n° ${o.order_number}`], ["Mode", MODE[o.mode] ?? o.mode], ...(o.mode !== "dine_in" ? [["Heure", esc(slotText(o))] as [string, string]] : []), ["Règlement", paid ? "Payé en ligne" : "À régler sur place"]])}
 ${itemsTable((o.items as Line[]) ?? [], Number(o.total))}
-<p style="font-size:14px">${paid ? "Paiement en ligne reçu." : "Paiement à régler sur place."}</p>
-<p style="text-align:center;margin:28px 0 12px"><a href="${track}" style="background:${color};color:#ffffff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:bold">Suivre ma commande</a></p>`);
+${emailButton(track, "Suivre ma commande", color)}`,
+    footer: "Une question ? Répondez simplement à cet e-mail.",
+  });
   const ok = await brevo({ sender: { email: "contact@lcdigitale.fr", name: r.name }, ...(r.email ? { replyTo: { email: r.email, name: r.name } } : {}), to: [{ email: o.email, name: o.customer_name }], subject: `${r.name} — commande n° ${o.order_number} reçue`, htmlContent: html }, "order-received");
   if (!ok) await release(admin, o.id, "received_email_at");
   return { sent: ok };
@@ -86,15 +93,24 @@ export async function sendRestaurantNewOrder(admin: Admin, orderId: string, orig
   const color = colorOf(r);
   const paid = o.payment_status === "paid";
   const name = [o.first_name, o.last_name].filter(Boolean).join(" ") || o.customer_name;
-  const addr = o.mode === "delivery" ? `<p style="font-size:14px"><b>Adresse :</b> ${esc([o.address, o.postal_code, o.city].filter(Boolean).join(", "))}</p>` : "";
-  const html = wrap(`<h1 style="font-size:22px;color:${color};margin:0 0 12px">Nouvelle commande n° ${o.order_number}</h1>
-<p style="font-size:14px"><b>Mode :</b> ${MODE[o.mode] ?? o.mode}${o.table_label ? ` — table ${esc(o.table_label)}` : ""}<br><b>Créneau :</b> ${esc(slotText(o))}</p>
-<p style="font-size:14px"><b>Client :</b> ${esc(name)}<br><b>Téléphone :</b> ${esc(o.phone)}${o.email ? `<br><b>Email :</b> ${esc(o.email)}` : ""}</p>
-${addr}
+  const rows: [string, string][] = [
+    ["Mode", `${MODE[o.mode] ?? o.mode}${o.table_label ? ` — table ${esc(o.table_label)}` : ""}`],
+    ["Créneau", esc(slotText(o))],
+    ["Client", esc(name)],
+    ["Téléphone", esc(o.phone)],
+    ...(o.email ? [["E-mail", esc(o.email)] as [string, string]] : []),
+    ...(o.mode === "delivery" ? [["Adresse", esc([o.address, o.postal_code, o.city].filter(Boolean).join(", "))] as [string, string]] : []),
+    ["Règlement", paid ? "Payé en ligne" : "À encaisser sur place"],
+  ];
+  const html = emailLayout(brandOf(r), {
+    preheader: `${MODE[o.mode] ?? o.mode} — ${eur(Number(o.total))}`,
+    title: `Nouvelle commande n° ${o.order_number}`,
+    body: `${infoBox(rows)}
 ${itemsTable((o.items as Line[]) ?? [], Number(o.total))}
-${o.notes ? `<p style="font-size:14px"><b>Remarques :</b> ${esc(o.notes)}</p>` : ""}
-<p style="font-size:15px"><b>${paid ? "Payé en ligne" : "À payer sur place"}</b></p>
-<p style="text-align:center;margin:28px 0 12px"><a href="${baseOf(origin)}/espace/${r.slug}" style="background:${color};color:#ffffff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:bold">Ouvrir l'écran cuisine</a></p>`);
+${o.notes ? `<p style="margin:0 0 12px;padding:12px 14px;background:#fff7ed;border-radius:10px;font-size:14px"><b>Remarque du client :</b> ${esc(o.notes)}</p>` : ""}
+${emailButton(`${baseOf(origin)}/espace/${r.slug}`, "Ouvrir l'écran cuisine", color)}`,
+    footer: "Notification automatique LC Digitale.",
+  });
   const ok = await brevo({ sender: { email: "contact@lcdigitale.fr", name: "LC Digitale" }, to: [{ email: to, name: r.name }], ...(o.email ? { replyTo: { email: o.email, name } } : {}), subject: `Nouvelle commande n° ${o.order_number} — ${name}`, htmlContent: html }, "order-restaurant");
   if (!ok) await release(admin, o.id, "restaurant_email_at");
   return { sent: ok };
@@ -120,14 +136,17 @@ export async function sendOrderConfirmation(admin: Admin, orderId: string, origi
   const color = colorOf(r);
   const track = `${baseOf(origin)}/${r.slug}/suivi/${o.id}`;
   const invoice = `${track}?facture=1`;
-  const html = wrap(`<h1 style="font-size:22px;color:${color};margin:0 0 12px">${esc(r.name)}</h1>
-<p style="font-size:15px">Bonjour ${esc(firstName(o))},</p>
-<p style="font-size:15px">Votre commande <b>n° ${o.order_number}</b> est confirmée (${MODE[o.mode] ?? o.mode}).</p>
+  const html = emailLayout(brandOf(r), {
+    preheader: `Commande n° ${o.order_number} confirmée par ${r.name}`,
+    title: "Votre commande est confirmée ✓",
+    body: `<p style="margin:0 0 12px">Bonjour ${esc(firstName(o))},</p>
+<p style="margin:0 0 12px">Bonne nouvelle : le restaurant a confirmé votre commande et s'occupe de la préparer.</p>
+${infoBox([["Commande", `n° ${o.order_number}`], ["Mode", MODE[o.mode] ?? o.mode], ...(o.mode !== "dine_in" ? [["Heure", esc(slotText(o))] as [string, string]] : [])])}
 ${itemsTable((o.items as Line[]) ?? [], Number(o.total))}
-<p style="text-align:center;margin:28px 0 12px"><a href="${invoice}" style="background:${color};color:#ffffff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:bold">Télécharger ma facture (PDF / Factur-X)</a></p>
-<p style="text-align:center;font-size:13px"><a href="${track}" style="color:${color}">Suivre ma commande</a></p>
-<hr style="border:none;border-top:1px solid #eee;margin:28px 0 12px">
-<p style="font-size:11px;color:#888">Email envoyé suite à votre commande chez ${esc(r.name)}. Conservez ce lien : il donne accès à votre facture.</p>`);
+${emailButton(track, "Suivre ma commande", color)}
+<p style="text-align:center;font-size:13px;margin:4px 0 0"><a href="${invoice}" style="color:${color}">Télécharger ma facture (PDF)</a></p>`,
+    footer: "Conservez cet e-mail : il donne accès à votre facture. Une question ? Répondez simplement à ce message.",
+  });
   const ok = await brevo({ sender: { email: "contact@lcdigitale.fr", name: r.name }, ...(r.email ? { replyTo: { email: r.email, name: r.name } } : {}), to: [{ email: o.email, name: o.customer_name }], subject: `${r.name} — commande n° ${o.order_number} confirmée`, htmlContent: html }, "order-confirmation");
   if (!ok) { await release(admin, o.id, "confirmation_email_at"); return { sent: false, reason: "brevo_error" }; }
   return { sent: true };
@@ -136,14 +155,19 @@ ${itemsTable((o.items as Line[]) ?? [], Number(o.total))}
 /** Email de confirmation de remboursement avec lien vers l'avoir (page de suivi). */
 export async function sendRefundEmail(admin: Admin, orderId: string, amount: number, creditNote: string, origin?: string | null) {
   if (!brevoReady()) return { sent: false };
-  const { data: o } = await admin.from("orders").select("id, order_number, email, customer_name, first_name, restaurants(slug, name, email)").eq("id", orderId).maybeSingle();
+  const { data: o } = await admin.from("orders").select("id, order_number, email, customer_name, first_name, restaurants(slug, name, email, brand, config, logo_url, address, city, phone)").eq("id", orderId).maybeSingle();
   if (!o?.email) return { sent: false };
-  const r = o.restaurants as unknown as { slug: string; name: string; email: string | null };
+  const r = o.restaurants as unknown as Rest;
   const track = `${baseOf(origin)}/${r.slug}/suivi/${o.id}`;
-  const html = wrap(`<h1 style="font-size:20px">${esc(r.name)} — remboursement de votre commande n° ${o.order_number}</h1>
-<p>Bonjour ${esc(firstName(o))},</p>
-<p>Nous avons remboursé <strong>${eur(amount)}</strong> sur le moyen de paiement utilisé lors de votre commande. Le crédit apparaît généralement sous 5 à 10 jours ouvrés selon votre banque.</p>
-<p>Votre avoir <strong>${esc(creditNote)}</strong> est téléchargeable ici : <a href="${track}">${track}</a></p>`);
+  const html = emailLayout(brandOf(r), {
+    preheader: `Remboursement de ${eur(amount)} effectué`,
+    title: "Votre remboursement est en route",
+    body: `<p style="margin:0 0 12px">Bonjour ${esc(firstName(o))},</p>
+<p style="margin:0 0 12px">Nous avons remboursé votre commande <b>n° ${o.order_number}</b> sur le moyen de paiement utilisé.</p>
+${infoBox([["Montant remboursé", eur(amount)], ["Avoir", esc(creditNote)], ["Délai bancaire", "5 à 10 jours ouvrés"]])}
+${emailButton(track, "Télécharger mon avoir", colorOf(r))}`,
+    footer: "Une question ? Répondez simplement à cet e-mail.",
+  });
   const ok = await brevo({ sender: { email: "contact@lcdigitale.fr", name: r.name }, ...(r.email ? { replyTo: { email: r.email, name: r.name } } : {}), to: [{ email: o.email, name: o.customer_name }], subject: `${r.name} — remboursement commande n° ${o.order_number}`, htmlContent: html }, "order-refund");
   return { sent: ok };
 }

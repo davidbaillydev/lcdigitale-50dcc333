@@ -39,9 +39,9 @@ export const sendCampaign = createServerFn({ method: "POST" })
     if (!process.env["BREVO_API_KEY"]) throw new Error("Brevo n'est pas connecté.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { campaignHtml, unsubToken } = await import("./campaign.server");
-    const { data: r } = await supabaseAdmin.from("restaurants").select("name, email, brand").eq("id", data.restaurantId).single();
+    const { data: r } = await supabaseAdmin.from("restaurants").select("name, email, brand, logo_url, address, city, phone").eq("id", data.restaurantId).single();
     if (!r) throw new Error("Restaurant introuvable");
-    const html = campaignHtml({ restaurant: r.name, body: data.body, ctaUrl: data.ctaUrl || undefined, ctaLabel: data.ctaLabel, color: (r.brand as { accent?: string })?.accent });
+    const html = campaignHtml({ restaurant: r.name, body: data.body, ctaUrl: data.ctaUrl || undefined, ctaLabel: data.ctaLabel, color: (r.brand as { accent?: string })?.accent, subject: data.subject, brand: { logoUrl: r.logo_url, address: r.address, city: r.city, phone: r.phone } });
     const base = { sender: { ...SENDER, name: r.name }, ...(r.email ? { replyTo: { email: r.email, name: r.name } } : {}), subject: data.subject, htmlContent: html };
 
     if (data.testEmail) {
