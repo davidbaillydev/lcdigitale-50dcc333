@@ -101,7 +101,7 @@ function Console() {
           <p className="text-sm font-semibold text-primary">Réseau de restaurants</p>
           <h1 className="text-5xl">Console agence</h1>
         </div>
-        <Button variant="secondary" asChild><Link to="/espace/tableau-de-bord">Tableau de bord</Link></Button>
+        <Button variant="secondary" asChild><Link to="/espace/tableau-de-bord">Ventes & statistiques</Link></Button>
         <Button variant="secondary" asChild><Link to="/espace/factures">Factures</Link></Button>
         <Button variant="secondary" asChild><Link to="/admin/qrcodes">QR codes</Link></Button>
         <Button variant="secondary" asChild><Link to="/admin/clients">Clients</Link></Button>

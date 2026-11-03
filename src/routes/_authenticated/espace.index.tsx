@@ -6,7 +6,7 @@ import { useStaff } from "@/hooks/use-staff";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/lib/theme";
 import { BrandLogo } from "@/lib/brand";
-import { getLastRestaurant } from "@/lib/last-restaurant";
+import { automaticRestaurant } from "@/lib/last-restaurant";
 
 export const Route = createFileRoute("/_authenticated/espace/")({
   head: () => ({
@@ -29,14 +29,10 @@ function Picker() {
   const navigate = useNavigate();
   useEffect(() => { if (!loading && !user) navigate({ to: "/connexion" }); }, [loading, user, navigate]);
   useEffect(() => {
-    if (loading || !restaurants.length) return;
-    // Dernier restaurant consulté : on y retourne directement s'il est toujours accessible.
-    const remembered = getLastRestaurant();
-    const target = remembered ? restaurants.find((r) => r.slug === remembered) : undefined;
-    const fallback = !isAgency && restaurants.length === 1 ? restaurants[0] : undefined;
-    const chosen = target ?? fallback;
+    if (loading || !user) return;
+    const chosen = automaticRestaurant(restaurants, isAgency);
     if (chosen) navigate({ to: "/espace/$slug", params: { slug: chosen.slug }, replace: true });
-  }, [loading, isAgency, restaurants, navigate]);
+  }, [loading, user, isAgency, restaurants, navigate]);
 
   if (loading || !user) return <p className="p-10 text-center text-muted-foreground">Chargement…</p>;
   if (!restaurants.length)
@@ -59,7 +55,7 @@ function Picker() {
       <div className="workspace-inner workspace-selection">
       <div className="flex flex-wrap items-center gap-2 border-b border-border pb-5">
         <h2 className="mr-auto text-2xl">Mes établissements</h2>
-        {restaurants.some((r) => r.role !== "kitchen" && (r.role === "agency" || r.features.facturx)) && <Button asChild variant="secondary"><Link to="/espace/tableau-de-bord">Tableau de bord</Link></Button>}
+        {restaurants.some((r) => r.role !== "kitchen" && (r.role === "agency" || r.features.facturx)) && <Button asChild variant="secondary"><Link to="/espace/tableau-de-bord">Ventes & statistiques</Link></Button>}
         {restaurants.some((r) => r.role !== "kitchen" && (r.role === "agency" || r.features.facturx)) && <Button asChild variant="secondary"><Link to="/espace/factures">Factures</Link></Button>}
         {isAgency && <Button asChild variant="secondary"><Link to="/admin">Console agence</Link></Button>}
         <ThemeToggle />
