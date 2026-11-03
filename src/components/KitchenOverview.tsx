@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { StaffRestaurant } from "@/hooks/use-staff";
-import { ACTIVE_STATUSES, activeBreakdown } from "@/lib/kitchen-overview";
+import { ACTIVE_STATUSES, activeBreakdown, startOfTodayIso } from "@/lib/kitchen-overview";
 
 export type KitchenCounts = { fresh: number; cooking: number; ready: number };
 export const ZERO_COUNTS: KitchenCounts = { fresh: 0, cooking: 0, ready: 0 };
