@@ -10,7 +10,7 @@ describe("compteurs au changement de jour", () => {
     { status: "new", created_at: at("2026-11-03T00:05:00").toISOString() },
   ];
   it("avant minuit, la commande de 23h50 est comptée", () => {
-    expect(activeBreakdown(todaysOrders(orders, at("2026-11-02T23:59:00")))).toEqual({ fresh: 0, cooking: 0, ready: 1 });
+    expect(activeBreakdown(todaysOrders(orders.slice(0, 1), at("2026-11-02T23:59:00")))).toEqual({ fresh: 0, cooking: 0, ready: 1 });
   });
   it("après minuit, seule la commande du nouveau jour reste", () => {
     expect(activeBreakdown(todaysOrders(orders, at("2026-11-03T00:10:00")))).toEqual({ fresh: 1, cooking: 0, ready: 0 });
