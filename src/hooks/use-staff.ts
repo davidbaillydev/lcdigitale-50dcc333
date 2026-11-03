@@ -3,7 +3,7 @@ import type { User } from "@supabase/supabase-js";
 import { featuresOf } from "@/lib/features";
 import { supabase } from "@/integrations/supabase/client";
 
-export type StaffRestaurant = { id: string; slug: string; name: string; city: string | null; logo_url: string | null; brand: { primary?: string; accent?: string }; address?: string | null; phone?: string | null; config?: Record<string, unknown> | null; features: import("@/lib/features").Features; role: "agency" | "manager" | "kitchen" };
+export type StaffRestaurant = { id: string; slug: string; name: string; city: string | null; logo_url: string | null; brand: { primary?: string; accent?: string }; address?: string | null; phone?: string | null; config?: Record<string, unknown> | null; active?: boolean; features: import("@/lib/features").Features; role: "agency" | "manager" | "kitchen" };
 
 /** Utilisateur connecté + restaurants auxquels il a accès (l'agence voit tous les restaurants) */
 export function useStaff() {
@@ -21,7 +21,7 @@ export function useStaff() {
       ]);
       const isAgency = (roles ?? []).some((r) => r.role === "admin");
       const ids = (members ?? []).map((m) => m.restaurant_id);
-      let q = supabase.from("restaurants").select("id, slug, name, city, address, phone, logo_url, brand, config, enabled_features").order("sort_order").order("name");
+      let q = supabase.from("restaurants").select("id, slug, name, city, address, phone, logo_url, brand, config, enabled_features, active").order("sort_order").order("name");
       if (!isAgency) q = q.in("id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]);
       const { data: rs } = await q;
       const restaurants = (rs ?? []).map((r) => {
