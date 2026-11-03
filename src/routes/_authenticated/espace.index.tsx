@@ -107,13 +107,13 @@ function RestaurantCard({ r, c }: { r: StaffRestaurant; c: KitchenCounts }) {
       <div className="flex items-start gap-4">
         <BrandLogo src={r.logo_url} name={r.name} className="h-14 w-14 shrink-0 rounded-lg object-contain" />
         <div className="min-w-0 flex-1">
-          <p className="break-words font-display text-lg font-semibold leading-tight">{r.name}</p>
+          <p className="hyphens-auto font-display text-lg font-semibold leading-tight">{r.name}</p>
           <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground"><MapPin aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />{r.city ?? "—"} · {ROLE[r.role]}</p>
+          <span className={`mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${online ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+            <span aria-hidden="true" className={`h-2 w-2 rounded-full ${online ? "bg-primary" : "bg-muted-foreground"}`} />
+            {online ? "En ligne" : "Hors ligne"}
+          </span>
         </div>
-        <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${online ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
-          <span aria-hidden="true" className={`h-2 w-2 rounded-full ${online ? "bg-primary" : "bg-muted-foreground"}`} />
-          {online ? "En ligne" : "Hors ligne"}
-        </span>
       </div>
 
       <div className="mt-5 grid grid-cols-3 gap-2 text-center">
