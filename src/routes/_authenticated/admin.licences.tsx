@@ -64,7 +64,7 @@ function Page() {
     const rows = [["Restaurant", "Borne", "Libellé", "Début", "Fin", "Montant HT EUR", "État", "Référence facture", "Échéance", "Règlement déclaré"]];
     for (const b of bills) {
       const l = licenses.find((x) => x.id === b.license_id);
-      rows.push([rs(l?.restaurant_id ?? "")?.name ?? "", l?.kiosk_id ?? "", l?.label ?? "", b.starts_on, b.ends_on, String(b.amount_ht_cents / 100), billingLabels[b.status], b.invoice_reference, b.due_on ?? "", b.paid_on ?? ""]);
+      rows.push([rs(l?.restaurant_id ?? "")?.name ?? "", l?.kiosk_id ?? "", l?.label ?? "", b.starts_on, b.ends_on, String(b.amount_ht_cents / 100), billingLabels[b.status] ?? b.status, b.invoice_reference, b.due_on ?? "", b.paid_on ?? ""]);
     }
     const cell = (s: string) => `"${(/^[=+@-]/.test(s) ? "'" : "") + s.replaceAll('"', '""')}"`;
     const url = URL.createObjectURL(new Blob(["\uFEFF", rows.map((r) => r.map(cell).join(";")).join("\r\n")], { type: "text/csv;charset=utf-8" }));

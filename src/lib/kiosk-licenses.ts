@@ -16,7 +16,8 @@ export const billingSchema = z.object({
 });
 export function annualEnd(start: string): string {
   const date = z.string().date().parse(start);
-  const [year, month, day] = date.split("-").map(Number);
+  const parsed = new Date(`${date}T12:00:00Z`);
+  const year = parsed.getUTCFullYear(), month = parsed.getUTCMonth() + 1, day = parsed.getUTCDate();
   const lastDay = new Date(Date.UTC(year + 1, month, 0)).getUTCDate();
   return `${year + 1}-${String(month).padStart(2, "0")}-${String(Math.min(day, lastDay)).padStart(2, "0")}`;
 }
