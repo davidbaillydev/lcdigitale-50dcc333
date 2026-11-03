@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { StaffRestaurant } from "@/hooks/use-staff";
-import { ACTIVE_STATUSES, activeBreakdown } from "@/lib/kitchen-overview";
+import { ACTIVE_STATUSES, activeBreakdown, startOfTodayIso } from "@/lib/kitchen-overview";
 
 export type KitchenCounts = { fresh: number; cooking: number; ready: number };
 export const ZERO_COUNTS: KitchenCounts = { fresh: 0, cooking: 0, ready: 0 };
@@ -17,7 +17,8 @@ export function useKitchenCounts(restaurants: StaffRestaurant[]) {
         .from("orders")
         .select("restaurant_id, status, is_test")
         .in("restaurant_id", restaurants.map((r) => r.id))
-        .in("status", [...ACTIVE_STATUSES]);
+        .in("status", [...ACTIVE_STATUSES])
+        .gte("created_at", startOfTodayIso());
       if (cancelled) return;
       const by = new Map<string, { status: string; is_test?: boolean }[]>();
       for (const o of data ?? []) by.set(o.restaurant_id, [...(by.get(o.restaurant_id) ?? []), o]);

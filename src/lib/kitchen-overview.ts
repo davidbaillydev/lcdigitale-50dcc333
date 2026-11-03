@@ -1,3 +1,10 @@
+/** Début du service du jour (minuit, heure locale de l'écran) — aligné sur l'écran cuisine. */
+export function startOfTodayIso(now: Date = new Date()): string {
+  const d = new Date(now);
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString();
+}
+
 /** Statuts visibles sur l'écran cuisine (hors attente de paiement). */
 export const ACTIVE_STATUSES = ["new", "pending_approval", "accepted", "ready"] as const;
 

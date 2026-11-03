@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { activeBreakdown, countActive } from "@/lib/kitchen-overview";
+import { activeBreakdown, countActive, startOfTodayIso } from "@/lib/kitchen-overview";
 
 describe("kitchen overview", () => {
   it("compte les commandes ouvertes en cuisine", () => {
@@ -25,5 +25,15 @@ describe("kitchen overview", () => {
       { status: "new", is_test: true },
     ]);
     expect(b).toEqual({ fresh: 2, cooking: 1, ready: 2 });
+  });
+
+  it("borne le service du jour à minuit local (00h00, secondes et ms nulles)", () => {
+    const iso = startOfTodayIso(new Date(2026, 10, 3, 14, 57, 33, 512));
+    const d = new Date(iso);
+    expect(d.getHours()).toBe(0);
+    expect(d.getMinutes()).toBe(0);
+    expect(d.getSeconds()).toBe(0);
+    expect(d.getMilliseconds()).toBe(0);
+    expect(d.getDate()).toBe(3);
   });
 });
