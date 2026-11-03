@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/lib/theme";
 import { BrandLogo } from "@/lib/brand";
 import { automaticRestaurant } from "@/lib/last-restaurant";
+import { KitchenOverview } from "@/components/KitchenOverview";
 
 export const Route = createFileRoute("/_authenticated/espace/")({
   head: () => ({
