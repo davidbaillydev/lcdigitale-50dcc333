@@ -109,6 +109,109 @@ export type Database = {
           },
         ]
       }
+      kiosk_license_billing: {
+        Row: {
+          amount_ht_cents: number
+          created_at: string
+          due_on: string | null
+          ends_on: string
+          id: string
+          invoice_reference: string
+          license_id: string
+          notes: string
+          paid_on: string | null
+          starts_on: string
+          status: string
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          amount_ht_cents?: number
+          created_at?: string
+          due_on?: string | null
+          ends_on: string
+          id?: string
+          invoice_reference?: string
+          license_id: string
+          notes?: string
+          paid_on?: string | null
+          starts_on: string
+          status?: string
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          amount_ht_cents?: number
+          created_at?: string
+          due_on?: string | null
+          ends_on?: string
+          id?: string
+          invoice_reference?: string
+          license_id?: string
+          notes?: string
+          paid_on?: string | null
+          starts_on?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kiosk_license_billing_license_id_fkey"
+            columns: ["license_id"]
+            isOneToOne: false
+            referencedRelation: "kiosk_licenses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kiosk_licenses: {
+        Row: {
+          ends_on: string
+          id: string
+          kiosk_id: string
+          label: string
+          notes: string
+          restaurant_id: string
+          starts_on: string
+          status: string
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          ends_on: string
+          id?: string
+          kiosk_id: string
+          label?: string
+          notes?: string
+          restaurant_id: string
+          starts_on: string
+          status?: string
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          ends_on?: string
+          id?: string
+          kiosk_id?: string
+          label?: string
+          notes?: string
+          restaurant_id?: string
+          starts_on?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kiosk_licenses_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       menu_stock: {
         Row: {
           item_id: string

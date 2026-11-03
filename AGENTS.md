@@ -33,6 +33,7 @@
 - Invoice transmission stays disabled pending provider and compliance validation; PDFs alone are not fiscal compliance.
 - Settings share themed navigation with mounted hidden sections and scoped save actions. Why: changing themes retains drafts without implying a global save.
 - Read subdirectory AGENTS.md before edits; they contain scoped rules.
+- Kiosk licensing uses separate agency-only RLS records and server-validated annual billing snapshots; manual invoice tracking never confirms payments or gates kiosk access. Why: protect operations and financial separation.
 - Menu structure templates are agency-published detached snapshots; managers map imported items explicitly, inline size/extra groups remain draft-only until saveMenu. Why: reuse formats across restaurants without live links, source assets or unintended option-table writes.
 - The public directory reuses existing restaurant data and professional entry routes; presentation/search stay client-side and never infer opening status from an active listing. Why: redesigns must not invent availability or change access permissions.
 - Restaurant modules live in restaurants.enabled_features (missing key = enabled), agency-written, re-checked by server functions. Why: subscription gating must not rely on hidden UI.
