@@ -31,8 +31,16 @@ export function useKitchenCounts(restaurants: StaffRestaurant[]) {
       .channel("kitchen-overview")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => void load())
       .subscribe();
+    // Filet de sécurité : minuit, reconnexion, onglet en veille.
+    const timer = window.setInterval(() => void load(), 60_000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void load();
+    };
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       cancelled = true;
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
       void supabase.removeChannel(channel);
     };
   }, [restaurants]);
