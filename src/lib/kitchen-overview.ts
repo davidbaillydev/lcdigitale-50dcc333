@@ -22,3 +22,16 @@ export function activeBreakdown(orders: { status: string; is_test?: boolean }[])
     ready: real.filter((o) => o.status === "ready").length,
   };
 }
+
+/** Commandes comptées en direct : créées depuis minuit (même borne que l'écran cuisine). */
+export function todaysOrders<T extends { created_at: string }>(orders: T[], now: Date = new Date()): T[] {
+  const since = startOfTodayIso(now);
+  return orders.filter((o) => new Date(o.created_at).toISOString() >= since);
+}
+
+/** Règle de clôture automatique (miroir de la tâche horaire en base). */
+export const AUTO_CLOSE_STATUSES = ["accepted", "ready"] as const;
+export const AUTO_CLOSE_AFTER_MS = 24 * 60 * 60 * 1000;
+export function shouldAutoClose(o: { status: string; created_at: string }, now: Date = new Date()): boolean {
+  return (AUTO_CLOSE_STATUSES as readonly string[]).includes(o.status) && now.getTime() - new Date(o.created_at).getTime() > AUTO_CLOSE_AFTER_MS;
+}

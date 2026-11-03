@@ -1,3 +1,4 @@
+import { startOfTodayIso } from "@/lib/kitchen-overview";
 import { posEnabled } from "@/lib/pos-register";
 import type { LegalInfo } from "@/lib/legal";
 import { useRestaurantFeatures } from "@/hooks/use-restaurant-features";
@@ -196,8 +197,7 @@ function Kitchen() {
   useEffect(() => { if (!loading && !user) navigate({ to: "/connexion" }); }, [loading, user, navigate]);
 
   const load = useCallback(async () => {
-    const since = new Date(); since.setHours(0, 0, 0, 0);
-    const { data, error } = await supabase.from("orders").select("*").eq("restaurant_id", rid ?? "").gte("created_at", since.toISOString()).order("slot");
+    const { data, error } = await supabase.from("orders").select("*").eq("restaurant_id", rid ?? "").gte("created_at", startOfTodayIso()).order("slot");
     if (error || !data) return; // coupure : on garde l'affichage actuel (instantané local)
     const list = ((data ?? []) as unknown as Order[]).filter((o) => o.status !== "awaiting_payment");
     setOrders(rid ? applyOutbox(list, readOutbox(localStorage, rid)) : list);
