@@ -62,6 +62,7 @@ function Picker() {
         <ThemeToggle />
         <Button variant="ghost" size="icon" className="text-foreground" onClick={() => supabase.auth.signOut()} aria-label="Déconnexion"><LogOut /></Button>
       </div>
+      <KitchenOverview restaurants={restaurants} />
       <div className="mt-6 grid gap-x-8 gap-y-4 sm:grid-cols-2">
         {restaurants.map((r, index) => (
           <Link key={r.id} to="/espace/$slug" params={{ slug: r.slug }} className="workspace-establishment group min-w-0 border-b border-border py-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
