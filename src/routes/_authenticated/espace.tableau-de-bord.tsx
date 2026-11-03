@@ -14,9 +14,9 @@ import { ThemeToggle } from "@/lib/theme";
 export const Route = createFileRoute("/_authenticated/espace/tableau-de-bord")({
   head: () => ({
     meta: [
-      { title: "Tableau de bord des ventes — LC Digitale" },
+      { title: "Ventes & statistiques — LC Digitale" },
       { name: "description", content: "Chiffre d'affaires, commandes et plats les plus vendus par restaurant et par période." },
-      { property: "og:title", content: "Tableau de bord des ventes" },
+      { property: "og:title", content: "Ventes & statistiques — LC Digitale" },
       { property: "og:description", content: "Indicateurs de ventes et exports." },
       { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
@@ -105,10 +105,10 @@ function Dashboard() {
   return (
     <div className="admin-dashboard mx-auto max-w-6xl space-y-6 p-6">
       <div className="flex items-center gap-2">
-        <Crumbs page="Tableau de bord" />
+        <Crumbs page="Ventes & statistiques" />
         <span className="mr-auto" /><ThemeToggle />
       </div>
-      <h1 className="text-5xl">Tableau de bord</h1>
+      <h1 className="text-5xl">Ventes & statistiques</h1>
       <LossWidget ids={ids} slug={rid === "all" ? (managed.length === 1 ? managed[0]?.slug ?? null : null) : managed.find((r) => r.id === rid)?.slug ?? null} />
 
       <div className="grid grid-cols-2 items-end gap-3 border-y border-border py-4 sm:flex sm:flex-wrap">

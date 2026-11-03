@@ -46,7 +46,7 @@ export const Route = createFileRoute("/_authenticated/espace/$slug/")({
   head: () => ({
     meta: [
       { title: "Écran cuisine — LC Digitale" },
-      { name: "description", content: "Tableau de bord des commandes en temps réel." },
+      { name: "description", content: "Écran cuisine des commandes en temps réel." },
       { property: "og:title", content: "Écran cuisine — LC Digitale" },
       { property: "og:description", content: "Commandes en temps réel." },
       { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
@@ -431,7 +431,7 @@ function Kitchen() {
         {restaurant?.role === "agency" && <Button asChild variant="secondary"><Link to="/espace/$slug/equipe" params={{ slug }}><Users /> Équipe</Link></Button>}
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/clients" params={{ slug }}>Clients</Link></Button>}
         {isAdmin && <Button asChild variant="secondary"><Link to="/espace/$slug/statistiques" params={{ slug }}>Conversion & abandons</Link></Button>}
-        {isAdmin && <Button asChild variant="secondary"><Link to="/espace/tableau-de-bord">Tableau de bord</Link></Button>}
+        {isAdmin && <Button asChild variant="secondary"><Link to="/espace/tableau-de-bord">Ventes & statistiques</Link></Button>}
         {rid && <StockDialog slug={slug} restaurantId={rid} />}
         <PrinterSetup compact width={printing.width} shop={{ name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null, slug, customDomains: (restaurant?.config as Restaurant["config"] | null)?.customDomains }} />
         <Button size="sm" variant="outline" onClick={() => setDeviceWidth(printing.width === 80 ? 58 : 80)} aria-label={`Rouleau ${printing.width} mm — basculer en ${printing.width === 80 ? 58 : 80} mm`} title="Changer le format de rouleau sur cet appareil">
