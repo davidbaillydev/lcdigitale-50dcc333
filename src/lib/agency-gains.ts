@@ -186,6 +186,14 @@ export type MonthlyCommissionRow = {
 };
 
 /** Commission Mollie enregistrée par restaurant (commandes réglées, snapshots historiques). */
+/** Référence Zoho stable par restaurant et par mois : évite les doublons de factures. */
+export const zohoReference = (month: string, restaurantId: string) => `COM-${month.replace("-", "")}-${restaurantId.replace(/-/g, "").slice(0, 8).toUpperCase()}`;
+/** Dernier jour du mois "YYYY-MM" au format YYYY-MM-DD. */
+export function lastDayOfMonth(month: string) {
+  const [y = 0, m = 1] = month.split("-").map(Number);
+  return new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10);
+}
+
 export function monthlyCommissions(rows: GainOrderRow[], restaurants: { restaurantId: string; name: string; legal?: { company?: string; siret?: string; seat?: string; vat?: string } | null }[]): MonthlyCommissionRow[] {
   return restaurants.map((r) => {
     const own = rows.filter((o) => o.restaurant_id === r.restaurantId && !o.is_test && !EXCLUDED_STATUSES.has(o.status)
