@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { RefreshCw, ChevronRight, Download } from "lucide-react";
+import { RefreshCw, ChevronRight, Download, FileText, Loader2, ExternalLink } from "lucide-react";
+import { getZohoInvoiceStatus, createZohoDraftInvoices } from "@/lib/zoho-invoices.functions";
 import { Crumbs } from "@/components/Crumbs";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/lib/theme";
@@ -57,6 +58,16 @@ function MonthlyCommissions() {
   const fetchGains = useServerFn(getAgencyGains);
   const { data, isLoading, error } = useQuery({ queryKey: ["agency-gains", from, to], queryFn: () => fetchGains({ data: { from, to } }) });
   const rows = data?.monthly ?? [];
+  const qc = useQueryClient();
+  const fetchZoho = useServerFn(getZohoInvoiceStatus), createZoho = useServerFn(createZohoDraftInvoices);
+  const zohoQ = useQuery({ queryKey: ["zoho-status", month], queryFn: () => fetchZoho({ data: { month } }), enabled: rows.length > 0 });
+  const [report, setReport] = useState<Awaited<ReturnType<typeof createZoho>> | null>(null);
+  const sync = useMutation({
+    mutationFn: () => createZoho({ data: { month } }),
+    onSuccess: (r) => { setReport(r); qc.setQueryData(["zoho-status", month], { statuses: r.statuses, error: null }); },
+  });
+  const zohoBy = Object.fromEntries((zohoQ.data?.statuses ?? []).map((s) => [s.restaurantId, s]));
+  const zStatus = (s: string) => ({ draft: "Brouillon", sent: "Envoyée", paid: "Payée", overdue: "En retard", void: "Annulée", partially_paid: "Partiellement payée" })[s] ?? s;
   const total = rows.reduce((s, r) => s + r.commission, 0);
   const exportCsv = () => {
     const head = ["Mois", "Restaurant", "Raison sociale", "SIRET", "Siège social", "TVA intracom.", "Commandes avec commission", "Montant encaissé TTC", "Commission agence"];
@@ -74,11 +85,15 @@ function MonthlyCommissions() {
   return <section aria-label="Commissions mensuelles" className="rounded-lg border bg-card p-5">
     <div className="flex flex-wrap items-end gap-4"><div className="mr-auto"><h2 className="text-2xl">Commissions par mois</h2><p className="mt-1 text-sm text-muted-foreground">Pour préparer vos factures mensuelles : commission Mollie enregistrée par restaurant, avec ses informations légales.</p></div>
       <label className="text-sm">Mois<select aria-label="Mois" className="mt-1 h-12 w-full rounded-md border border-input bg-background px-3 capitalize text-foreground" value={month} onChange={(e) => setMonth(e.target.value)}>{months.map((m) => <option key={m} value={m}>{monthLabel(m)}</option>)}</select></label>
-      <Button variant="outline" className="h-12" disabled={!rows.length} onClick={exportCsv}><Download />Récapitulatif (CSV)</Button><Button variant="outline" className="h-12" disabled={!rows.length} onClick={exportZoho}><Download />Zoho Invoice (CSV)</Button></div>
+      <Button variant="outline" className="h-12" disabled={!rows.length} onClick={exportCsv}><Download />Récapitulatif (CSV)</Button><Button variant="outline" className="h-12" disabled={!rows.length} onClick={exportZoho}><Download />Zoho Invoice (CSV)</Button>
+      <Button className="h-12" disabled={!rows.length || sync.isPending} onClick={() => { setReport(null); sync.mutate(); }}>{sync.isPending ? <Loader2 className="animate-spin" /> : <FileText />}Créer les brouillons Zoho</Button></div>
+    {sync.error && <p role="alert" className="mt-4 text-destructive">Synchronisation Zoho impossible : {sync.error instanceof Error ? sync.error.message : "erreur inconnue"}</p>}
+    {report && <div role="status" className="mt-4 rounded-md border bg-muted/40 p-4 text-sm"><p className="font-semibold">Rapport Zoho · {monthLabel(month)}</p><p className="mt-1">{report.created} facture(s) créée(s) en brouillon · {report.skipped} déjà existante(s), non dupliquée(s) · {report.contactsCreated} contact(s) créé(s) · {report.errors.length} erreur(s)</p>{report.errors.map((e) => <p key={e.name} className="mt-1 text-destructive">{e.name} : {e.message}</p>)}</div>}
+    {zohoQ.data?.error && <p className="mt-4 text-sm text-destructive">Statut Zoho indisponible : {zohoQ.data.error}</p>}
     {isLoading && <p role="status" className="mt-4">Chargement…</p>}{error && <p role="alert" className="mt-4 text-destructive">Impossible de charger les commissions.</p>}
-    {data && <div className="mt-4 overflow-x-auto"><table className="w-full text-left text-sm"><thead className="border-b text-muted-foreground"><tr>{["Restaurant", "Raison sociale", "SIRET", "Commandes", "Encaissé TTC", "Commission"].map((h) => <th key={h} className="whitespace-nowrap px-3 py-3 font-medium">{h}</th>)}</tr></thead>
-      <tbody className="divide-y">{rows.map((r) => <tr key={r.restaurantId}><td className="px-3 py-3 font-medium">{r.name}</td><td className="px-3 py-3">{r.company || <span className="text-destructive">À compléter</span>}{r.seat && <p className="text-xs text-muted-foreground">{r.seat}</p>}</td><td className="whitespace-nowrap px-3 py-3 tabular-nums">{r.siret || <span className="text-destructive">À compléter</span>}</td><td className="px-3 py-3 tabular-nums">{r.orders}</td><td className="whitespace-nowrap px-3 py-3 tabular-nums">{fmt(r.base)}</td><td className="whitespace-nowrap px-3 py-3 font-semibold tabular-nums">{fmt(r.commission)}</td></tr>)}</tbody>
-      {rows.length > 0 && <tfoot className="border-t font-semibold"><tr><td className="px-3 py-3" colSpan={5}>Total {monthLabel(month)}</td><td className="whitespace-nowrap px-3 py-3 tabular-nums">{fmt(total)}</td></tr></tfoot>}</table>
+    {data && <div className="mt-4 overflow-x-auto"><table className="w-full text-left text-sm"><thead className="border-b text-muted-foreground"><tr>{["Restaurant", "Raison sociale", "SIRET", "Commandes", "Encaissé TTC", "Commission", "Facture Zoho"].map((h) => <th key={h} className="whitespace-nowrap px-3 py-3 font-medium">{h}</th>)}</tr></thead>
+      <tbody className="divide-y">{rows.map((r) => <tr key={r.restaurantId}><td className="px-3 py-3 font-medium">{r.name}</td><td className="px-3 py-3">{r.company || <span className="text-destructive">À compléter</span>}{r.seat && <p className="text-xs text-muted-foreground">{r.seat}</p>}</td><td className="whitespace-nowrap px-3 py-3 tabular-nums">{r.siret || <span className="text-destructive">À compléter</span>}</td><td className="px-3 py-3 tabular-nums">{r.orders}</td><td className="whitespace-nowrap px-3 py-3 tabular-nums">{fmt(r.base)}</td><td className="whitespace-nowrap px-3 py-3 font-semibold tabular-nums">{fmt(r.commission)}</td><td className="whitespace-nowrap px-3 py-3">{zohoBy[r.restaurantId] ? <a href={zohoBy[r.restaurantId]!.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-medium text-primary underline-offset-4 hover:underline">{zohoBy[r.restaurantId]!.invoiceNumber}<ExternalLink className="size-3.5" /></a> : <span className="text-muted-foreground">{zohoQ.isLoading ? "…" : "Non créée"}</span>}{zohoBy[r.restaurantId] && <p className="text-xs text-muted-foreground">{zStatus(zohoBy[r.restaurantId]!.status)}</p>}</td></tr>)}</tbody>
+      {rows.length > 0 && <tfoot className="border-t font-semibold"><tr><td className="px-3 py-3" colSpan={5}>Total {monthLabel(month)}</td><td className="whitespace-nowrap px-3 py-3 tabular-nums">{fmt(total)}</td><td /></tr></tfoot>}</table>
       {!rows.length && <p className="py-6 text-muted-foreground">Aucune commission enregistrée en {monthLabel(month)}.</p>}
       <p className="mt-3 text-xs text-muted-foreground">Mois calendaire heure de Paris, commandes réglées hors tests. Les informations légales viennent de la fiche de chaque restaurant (pages légales). Montants indicatifs : ce n'est pas une facture. L'export Zoho crée des brouillons (un par client, daté du dernier jour du mois, sans taxe : ajoutez la TVA dans Zoho).</p></div>}
   </section>;
