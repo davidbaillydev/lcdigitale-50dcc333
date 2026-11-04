@@ -99,3 +99,17 @@ describe("vue journalière agence", () => {
     expect(periodRange("yesterday", now)).toEqual({ from: "2026-11-01", to: "2026-11-01" });
   });
 });
+
+import { monthRange, monthlyCommissions } from "@/lib/agency-gains";
+describe("commissions mensuelles", () => {
+  it("couvre le mois complet, plafonné à aujourd'hui", () => {
+    expect(monthRange("2026-02", new Date("2026-11-04T08:00:00Z"))).toEqual({ from: "2026-02-01", to: "2026-02-28" });
+    expect(monthRange("2026-11", new Date("2026-11-04T08:00:00Z"))).toEqual({ from: "2026-11-01", to: "2026-11-04" });
+  });
+  it("ne compte que les commissions Mollie réglées, par restaurant", () => {
+    const base = { restaurant_id: "r1", status: "done", payment_status: "paid", payment_ref: "mollie:tr_1", total: 100, platform_fee: 7, created_at: "2026-10-02T10:00:00Z" };
+    const rows = [base, { ...base, id: "b", payment_status: "unpaid" }, { ...base, id: "c", payment_ref: "pi_1" }] as never;
+    const out = monthlyCommissions(rows, [{ restaurantId: "r1", name: "Wok", legal: { company: "SARL Wok", siret: "123" } }]);
+    expect(out).toEqual([expect.objectContaining({ company: "SARL Wok", siret: "123", orders: 1, base: 100, commission: 7 })]);
+  });
+});
