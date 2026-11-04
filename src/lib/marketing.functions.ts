@@ -65,7 +65,7 @@ export const savePromo = createServerFn({ method: "POST" })
     const agency = await isAgency(context.supabase, context.userId);
     if (!agency && scope) throw new Error("Le ciblage par catégorie ou article est réservé à l'agence");
     const row: Record<string, unknown> = { restaurant_id: data.restaurantId, code: normalizeCode(data.code), kind: data.kind, value: data.value, min_order: data.min_order, starts_at: data.starts_at, ends_at: data.ends_at, active: data.active };
-    if (agency && data.scope !== undefined) row.scope = scope; // un gérant ne modifie jamais le ciblage existant
+    if (agency && data.scope !== undefined) row["scope"] = scope; // un gérant ne modifie jamais le ciblage existant
     const db = await admin();
     const { error } = data.id
       ? await db.from("restaurant_promo_codes").update(row).eq("id", data.id).eq("restaurant_id", data.restaurantId)

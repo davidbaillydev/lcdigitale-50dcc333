@@ -35,7 +35,7 @@ export function eligibleSubtotal(scope: PromoScope, lines: { id: string; total: 
 
 /** Lignes du panier pour l'aperçu d'un code ciblé (le serveur recalcule à la commande). */
 export function promoLines(
-  catalog: { itemsById: Record<string, import("./menu").MenuItem> },
+  catalog: { itemsById: Record<string, import("./menu").MenuItem | undefined> },
   lines: { itemId: string; qty: number; sel: import("./menu").Selections }[],
   price: (item: import("./menu").MenuItem, sel: import("./menu").Selections) => number,
 ) {
