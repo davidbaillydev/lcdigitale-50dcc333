@@ -1,11 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { monthlyCommissions, monthRange, parisDay, zohoReference, lastDayOfMonth, type GainOrderRow } from "@/lib/agency-gains";
+import { monthlyCommissions, monthRange, parisDay, zohoReference, lastDayOfMonth, monthLabel, INVOICE_ITEM_NAME, invoiceItemDescription, invoiceNotes, type GainOrderRow } from "@/lib/agency-gains";
 import { zoho, zohoInvoiceUrl } from "@/lib/zoho-books.server";
 
 const input = z.object({ month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/) });
-const monthLabel = (m: string) => new Date(`${m}-15T12:00:00Z`).toLocaleDateString("fr-FR", { month: "long", year: "numeric", timeZone: "UTC" });
 
 export type ZohoInvoiceStatus = { restaurantId: string; invoiceId: string; invoiceNumber: string; status: string; total: number; url: string };
 type ZInvoice = { invoice_id: string; invoice_number: string; status: string; total: number; reference_number: string };
@@ -105,8 +104,9 @@ export const createZohoDraftInvoices = createServerFn({ method: "POST" })
         if (contact.created) report.contactsCreated++;
         const res = await zoho<{ invoice: ZInvoice }>("/invoices", { method: "POST", body: {
           customer_id: contact.id, date: lastDayOfMonth(data.month), reference_number: reference,
-          line_items: [{ name: "Commission plateforme LC Digitale", description: `Commission sur ${r.orders} paiements en ligne – ${monthLabel(data.month)} (${r.name})`, rate: r.commission, quantity: 1 }],
-          notes: r.siret ? `SIRET client : ${r.siret}` : undefined,
+          line_items: [{ name: INVOICE_ITEM_NAME, description: invoiceItemDescription(data.month, r.name, r.orders), rate: r.commission, quantity: 1 }],
+          notes: invoiceNotes(r.siret),
+
         } });
         existing.push(res.invoice);
         report.created++;

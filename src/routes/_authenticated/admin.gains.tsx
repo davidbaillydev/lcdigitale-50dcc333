@@ -8,7 +8,7 @@ import { Crumbs } from "@/components/Crumbs";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/lib/theme";
 import { getAgencyGains } from "@/lib/agency-gains.functions";
-import { dailyGains, periodRange, monthRange, recentMonths } from "@/lib/agency-gains";
+import { dailyGains, periodRange, monthRange, recentMonths, monthLabel, INVOICE_ITEM_NAME, invoiceItemDescription, invoiceNotes } from "@/lib/agency-gains";
 import { modeEnabled, onlinePaymentEnabled, paymentEnabled, type Restaurant } from "@/lib/shop";
 import { serviceFeeDefaults } from "@/lib/service-fee";
 import { platformFeeDefaults, PLATFORM_FEE_CHANNELS } from "@/lib/platform-fee";
@@ -43,7 +43,6 @@ function Rules({ config }: { config: Restaurant["config"] & { platformFee?: unkn
     </dl><p className="mt-3 text-xs text-muted-foreground">Commission appliquée aux paiements Mollie Connect éligibles, pas aux simples clés API ni au TPE. Les frais client sont inclus dans le montant du restaurant, pas un gain agence supplémentaire.</p></div>
   </div>;
 }
-const monthLabel = (m: string) => new Date(`${m}-15T12:00:00Z`).toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
 const csvCell = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
 const csvAmount = (n: number) => n.toFixed(2).replace(".", ",");
 function download(blob: Blob, name: string) {
@@ -79,7 +78,7 @@ function MonthlyCommissions() {
     const [y = 0, m = 1] = month.split("-").map(Number);
     const invoiceDate = new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10);
     const head = ["Invoice Number", "Invoice Date", "Invoice Status", "Customer Name", "Currency Code", "Item Name", "Item Desc", "Quantity", "Item Price", "Notes"];
-    const lines = [head, ...rows.map((r, i) => [`COM-${month.replace("-", "")}-${String(i + 1).padStart(3, "0")}`, invoiceDate, "Draft", r.company || r.name, "EUR", "Commission plateforme LC Digitale", `Commission sur ${r.orders} paiements en ligne – ${monthLabel(month)} (${r.name})`, 1, r.commission.toFixed(2), r.siret ? `SIRET client : ${r.siret}` : ""])];
+    const lines = [head, ...rows.map((r, i) => [`COM-${month.replace("-", "")}-${String(i + 1).padStart(3, "0")}`, invoiceDate, "Draft", r.company || r.name, "EUR", INVOICE_ITEM_NAME, invoiceItemDescription(month, r.name, r.orders), 1, r.commission.toFixed(2), invoiceNotes(r.siret)])];
     download(new Blob(["\ufeff" + lines.map((l) => l.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }), `zoho-factures-${month}.csv`);
   };
   return <section aria-label="Commissions mensuelles" className="rounded-lg border bg-card p-5">
