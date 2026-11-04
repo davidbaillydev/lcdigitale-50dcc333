@@ -9,7 +9,7 @@ export async function zoho<T = Record<string, unknown>>(path: string, init?: { m
   const res = await fetch(`${GATEWAY_URL}${path}?${qs}`, {
     method: init?.method ?? "GET",
     headers: { Authorization: `Bearer ${lovable}`, "X-Connection-Api-Key": key, "Content-Type": "application/json" },
-    body: init?.body ? JSON.stringify(init.body) : undefined,
+    body: init?.body ? JSON.stringify(init.body) : null,
   });
   const text = await res.text();
   let json: Record<string, unknown> = {};
