@@ -5,7 +5,7 @@ export const ZOHO_ORG_ID = "20111953185";
 export async function zoho<T = Record<string, unknown>>(path: string, init?: { method?: string; body?: unknown; query?: Record<string, string> }): Promise<T> {
   const lovable = process.env["LOVABLE_API_KEY"], key = process.env["ZOHO_BOOKS_API_KEY"];
   if (!lovable || !key) throw new Error("Connexion Zoho Books non configurée.");
-  const qs = new URLSearchParams({ organization_id: ZOHO_ORG_ID, ...(init?.query ?? {}) });
+  const qs = new URLSearchParams({ organization_id: ZOHO_ORG_ID, ...(init?.query ?? {}) } as Record<string, string>);
   const res = await fetch(`${GATEWAY_URL}${path}?${qs}`, {
     method: init?.method ?? "GET",
     headers: { Authorization: `Bearer ${lovable}`, "X-Connection-Api-Key": key, "Content-Type": "application/json" },
