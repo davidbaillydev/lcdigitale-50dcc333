@@ -81,7 +81,7 @@ async function createCalculatedOrder(supabaseAdmin: Awaited<typeof import("@/int
     const { data: rRow } = await supabaseAdmin.from("restaurants").select(RESTAURANT_COLUMNS).eq("slug", data.restaurant).eq("active", true).maybeSingle();
     const r = rRow as unknown as Restaurant | null;
     if (!r) throw new Error("Restaurant introuvable");
-    if (ordersPaused(r)) throw new Error(ORDERS_PAUSED_MSG);
+    if (ordersPaused(r) && !testUserId) throw new Error(ORDERS_PAUSED_MSG);
     const catalog = withOptions(getCatalog(r), await loadOptionData(supabaseAdmin, r.id));
 
     const dineIn = data.mode === "dine_in";
@@ -97,9 +97,9 @@ async function createCalculatedOrder(supabaseAdmin: Awaited<typeof import("@/int
     } else if (!modeEnabled(r, "pickup") && !modeEnabled(r, "delivery")) throw new Error("Commandes en ligne désactivées pour le moment.");
     else if (!modeEnabled(r, data.mode as "pickup" | "delivery")) throw new Error("Ce mode de commande n'est pas proposé.");
     else if (data.asap) {
-      if (!timingOf(r).asap) throw new Error("Les commandes « Dès que possible » ne sont pas proposées.");
-      if (!isOpenNow(r, data.mode as "pickup" | "delivery")) throw new Error("Le restaurant est fermé pour le moment : choisissez un horaire.");
-      data.slot = asapSlot(r, data.mode as "pickup" | "delivery");
+      if (!testUserId && !timingOf(r).asap) throw new Error("Les commandes « Dès que possible » ne sont pas proposées.");
+      if (!testUserId && !isOpenNow(r, data.mode as "pickup" | "delivery")) throw new Error("Le restaurant est fermé pour le moment : choisissez un horaire.");
+      data.slot = testUserId ? new Date().toISOString() : asapSlot(r, data.mode as "pickup" | "delivery");
     } else if (!timingOf(r).scheduled) throw new Error("Les commandes planifiées ne sont pas proposées.");
     else if (!isValidSlot(r, data.mode as "pickup" | "delivery", data.slot)) throw new Error("Ce créneau n'est plus disponible, merci d'en choisir un autre.");
     if (data.mode === "delivery") {
@@ -130,7 +130,7 @@ async function createCalculatedOrder(supabaseAdmin: Awaited<typeof import("@/int
     const items = data.lines.map((l) => {
       const item = catalog.itemsById[l.itemId];
       if (!item) throw new Error("Article inconnu");
-      assertItemAvailable(item, availabilityDate);
+      if (!testUserId) assertItemAvailable(item, availabilityDate);
       if (soldOut.has(item.id)) throw new Error(`« ${item.name} » est momentanément épuisé. Retirez-le de votre panier.`);
       const err = validateSelections(item, l.sel);
       if (err) throw new Error(err);
@@ -142,7 +142,13 @@ async function createCalculatedOrder(supabaseAdmin: Awaited<typeof import("@/int
     let city: string | null = null;
     let zoneName: string | null = null;
     const geo = r.delivery.geoZones ?? [];
-    if (data.mode === "delivery" && geo.length) {
+    if (data.mode === "delivery" && testUserId) {
+      if (!data.address || data.address.length < 5) throw new Error("Adresse de livraison requise.");
+      const z0 = r.delivery.zones?.find((z) => z.cp === data.postal_code) ?? r.delivery.zones?.[0];
+      fee = r.delivery.fee != null ? deliveryFee(r, subtotal) : Number(geo[0]?.fee ?? 0);
+      city = z0?.city ?? null;
+      zoneName = z0 ? null : geo[0]?.name ?? null;
+    } else if (data.mode === "delivery" && geo.length) {
       if (data.lat == null || data.lng == null) throw new Error("Vérifiez votre adresse de livraison sur la carte.");
       const { findZone, zoneFee } = await import("./geo");
       const zone = findZone([data.lat, data.lng], geo);

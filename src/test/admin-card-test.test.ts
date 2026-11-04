@@ -45,8 +45,10 @@ describe("CB Test (Admin)", () => {
     try { await invoke(); expect(m.insert).toHaveBeenCalledWith(expect.objectContaining({ subtotal: 20, delivery_fee: 2.5, service_fee: 1.4, total: 23.9 })); }
     finally { restaurant.config.serviceFee.kind = "fixed"; restaurant.config.serviceFee.value = 1; }
   });
-  it("refuse une adresse hors zone", async () => { await expect(invoke({ ...input, postal_code: "75001" })).rejects.toThrow("hors de notre zone"); expect(m.insert).not.toHaveBeenCalled(); });
-  it("refuse le minimum de livraison non atteint", async () => { await expect(invoke({ ...input, lines: [{ itemId: "dish", qty: 1, sel: {} }] })).rejects.toThrow("Minimum"); expect(m.insert).not.toHaveBeenCalled(); });
+  it("accepte une adresse hors zone sans carte avec les frais par défaut", async () => { await invoke({ ...input, postal_code: "75001" }); expect(m.insert).toHaveBeenCalledWith(expect.objectContaining({ delivery_fee: 2.5, is_test: true })); });
+  it("ignore le minimum de livraison", async () => { await invoke({ ...input, lines: [{ itemId: "dish", qty: 1, sel: {} }] }); expect(m.insert).toHaveBeenCalledWith(expect.objectContaining({ subtotal: 10, is_test: true })); });
+  it("accepte une commande test restaurant fermé (15h30, horaires vides)", async () => { restaurant.opening = {} as typeof restaurant.opening; try { await invoke(); expect(m.insert).toHaveBeenCalled(); } finally { restaurant.opening = { "4": [[0, 1440]] }; } });
+  it("accepte une commande test restaurant en pause", async () => { (restaurant.config as Record<string, unknown>)["ordersPaused"] = true; try { await invoke(); expect(m.insert).toHaveBeenCalled(); } finally { delete (restaurant.config as Record<string, unknown>)["ordersPaused"]; } });
   it("interdit la facture pour un paiement simulé", async () => {
     const db = { from: (table: string) => { const q = { select: () => q, eq: () => q, maybeSingle: async () => ({ data: table === "orders" ? { is_test: true } : null }) }; return q; }, rpc: vi.fn() };
     await expect(issueForOrder(db as unknown as Parameters<typeof issueForOrder>[0], "test")).rejects.toThrow("aucune facture"); expect(db.rpc).not.toHaveBeenCalled();
