@@ -2,12 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { RefreshCw, ChevronRight } from "lucide-react";
+import { RefreshCw, ChevronRight, Download } from "lucide-react";
 import { Crumbs } from "@/components/Crumbs";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/lib/theme";
 import { getAgencyGains } from "@/lib/agency-gains.functions";
-import { dailyGains, periodRange } from "@/lib/agency-gains";
+import { dailyGains, periodRange, monthRange, recentMonths } from "@/lib/agency-gains";
 import { modeEnabled, onlinePaymentEnabled, paymentEnabled, type Restaurant } from "@/lib/shop";
 import { serviceFeeDefaults } from "@/lib/service-fee";
 import { platformFeeDefaults, PLATFORM_FEE_CHANNELS } from "@/lib/platform-fee";
@@ -42,6 +42,47 @@ function Rules({ config }: { config: Restaurant["config"] & { platformFee?: unkn
     </dl><p className="mt-3 text-xs text-muted-foreground">Commission appliquée aux paiements Mollie Connect éligibles, pas aux simples clés API ni au TPE. Les frais client sont inclus dans le montant du restaurant, pas un gain agence supplémentaire.</p></div>
   </div>;
 }
+const monthLabel = (m: string) => new Date(`${m}-15T12:00:00Z`).toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+const csvCell = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+const csvAmount = (n: number) => n.toFixed(2).replace(".", ",");
+function download(blob: Blob, name: string) {
+  const url = URL.createObjectURL(blob), a = document.createElement("a");
+  a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 30_000);
+}
+function MonthlyCommissions() {
+  const months = useMemo(() => recentMonths(24), []);
+  const [month, setMonth] = useState<string>(months[1] ?? months[0] ?? "");
+  const { from, to } = useMemo(() => monthRange(month), [month]);
+  const fetchGains = useServerFn(getAgencyGains);
+  const { data, isLoading, error } = useQuery({ queryKey: ["agency-gains", from, to], queryFn: () => fetchGains({ data: { from, to } }) });
+  const rows = data?.monthly ?? [];
+  const total = rows.reduce((s, r) => s + r.commission, 0);
+  const exportCsv = () => {
+    const head = ["Mois", "Restaurant", "Raison sociale", "SIRET", "Siège social", "TVA intracom.", "Commandes avec commission", "Montant encaissé TTC", "Commission agence"];
+    const lines = [head, ...rows.map((r) => [monthLabel(month), r.name, r.company, r.siret, r.seat, r.vat, r.orders, csvAmount(r.base), csvAmount(r.commission)])];
+    const blob = new Blob(["\ufeff" + lines.map((l) => l.map(csvCell).join(";")).join("\r\n")], { type: "text/csv;charset=utf-8" });
+    download(blob, `commissions-${month}.csv`);
+  };
+  const exportZoho = () => {
+    const [y = 0, m = 1] = month.split("-").map(Number);
+    const invoiceDate = new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10);
+    const head = ["Invoice Number", "Invoice Date", "Invoice Status", "Customer Name", "Currency Code", "Item Name", "Item Desc", "Quantity", "Item Price", "Notes"];
+    const lines = [head, ...rows.map((r, i) => [`COM-${month.replace("-", "")}-${String(i + 1).padStart(3, "0")}`, invoiceDate, "Draft", r.company || r.name, "EUR", "Commission plateforme LC Digitale", `Commission sur ${r.orders} paiements en ligne – ${monthLabel(month)} (${r.name})`, 1, r.commission.toFixed(2), r.siret ? `SIRET client : ${r.siret}` : ""])];
+    download(new Blob(["\ufeff" + lines.map((l) => l.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }), `zoho-factures-${month}.csv`);
+  };
+  return <section aria-label="Commissions mensuelles" className="rounded-lg border bg-card p-5">
+    <div className="flex flex-wrap items-end gap-4"><div className="mr-auto"><h2 className="text-2xl">Commissions par mois</h2><p className="mt-1 text-sm text-muted-foreground">Pour préparer vos factures mensuelles : commission Mollie enregistrée par restaurant, avec ses informations légales.</p></div>
+      <label className="text-sm">Mois<select aria-label="Mois" className="mt-1 h-12 w-full rounded-md border border-input bg-background px-3 capitalize text-foreground" value={month} onChange={(e) => setMonth(e.target.value)}>{months.map((m) => <option key={m} value={m}>{monthLabel(m)}</option>)}</select></label>
+      <Button variant="outline" className="h-12" disabled={!rows.length} onClick={exportCsv}><Download />Récapitulatif (CSV)</Button><Button variant="outline" className="h-12" disabled={!rows.length} onClick={exportZoho}><Download />Zoho Invoice (CSV)</Button></div>
+    {isLoading && <p role="status" className="mt-4">Chargement…</p>}{error && <p role="alert" className="mt-4 text-destructive">Impossible de charger les commissions.</p>}
+    {data && <div className="mt-4 overflow-x-auto"><table className="w-full text-left text-sm"><thead className="border-b text-muted-foreground"><tr>{["Restaurant", "Raison sociale", "SIRET", "Commandes", "Encaissé TTC", "Commission"].map((h) => <th key={h} className="whitespace-nowrap px-3 py-3 font-medium">{h}</th>)}</tr></thead>
+      <tbody className="divide-y">{rows.map((r) => <tr key={r.restaurantId}><td className="px-3 py-3 font-medium">{r.name}</td><td className="px-3 py-3">{r.company || <span className="text-destructive">À compléter</span>}{r.seat && <p className="text-xs text-muted-foreground">{r.seat}</p>}</td><td className="whitespace-nowrap px-3 py-3 tabular-nums">{r.siret || <span className="text-destructive">À compléter</span>}</td><td className="px-3 py-3 tabular-nums">{r.orders}</td><td className="whitespace-nowrap px-3 py-3 tabular-nums">{fmt(r.base)}</td><td className="whitespace-nowrap px-3 py-3 font-semibold tabular-nums">{fmt(r.commission)}</td></tr>)}</tbody>
+      {rows.length > 0 && <tfoot className="border-t font-semibold"><tr><td className="px-3 py-3" colSpan={5}>Total {monthLabel(month)}</td><td className="whitespace-nowrap px-3 py-3 tabular-nums">{fmt(total)}</td></tr></tfoot>}</table>
+      {!rows.length && <p className="py-6 text-muted-foreground">Aucune commission enregistrée en {monthLabel(month)}.</p>}
+      <p className="mt-3 text-xs text-muted-foreground">Mois calendaire heure de Paris, commandes réglées hors tests. Les informations légales viennent de la fiche de chaque restaurant (pages légales). Montants indicatifs : ce n'est pas une facture. L'export Zoho crée des brouillons (un par client, daté du dernier jour du mois, sans taxe : ajoutez la TVA dans Zoho).</p></div>}
+  </section>;
+}
 function Page() {
   const [period, setPeriod] = useState("30"), [restaurant, setRestaurant] = useState("all"), [page, setPage] = useState(0);
   const { from, to } = useMemo(() => periodRange(period), [period]);
@@ -56,6 +97,7 @@ function Page() {
   return <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6">
     <div className="flex items-center gap-2"><Crumbs page="Gains agence" /><span className="mr-auto" /><ThemeToggle /></div>
     <header className="flex flex-wrap items-end gap-4"><div className="mr-auto"><h1 className="text-4xl sm:text-5xl">Gains agence</h1><p className="mt-2 text-muted-foreground">Paiements, frais et répartition des montants</p></div><Button variant="outline" className="h-12" disabled={isFetching} onClick={() => void refetch()}><RefreshCw className={isFetching ? "animate-spin" : ""} />Actualiser</Button></header>
+    <MonthlyCommissions />
     <div className="flex flex-wrap items-end gap-4 border-y py-4"><div className="flex flex-wrap gap-2" role="group" aria-label="Période">{PERIODS.map((p) => <Button key={p.key} variant={period === p.key ? "default" : "outline"} aria-pressed={period === p.key} className="h-12" onClick={() => { setPeriod(p.key); setPage(0); }}>{p.label}</Button>)}</div><label className="min-w-0 flex-1 text-sm sm:max-w-xs">Restaurant<select aria-label="Restaurant" className="mt-1 h-12 w-full rounded-md border border-input bg-background px-3 text-foreground" value={restaurant} onChange={(e) => { setRestaurant(e.target.value); setPage(0); }}><option value="all">Tous les restaurants</option>{data?.restaurants.map((r) => <option key={r.restaurantId} value={r.restaurantId}>{r.name}</option>)}</select></label></div>
     <p className="text-sm text-muted-foreground">Commandes créées du {dateLabel(`${from}T12:00:00Z`)} au {dateLabel(`${to}T12:00:00Z`)} (jours heure de Paris). Commandes test, annulées et en attente de paiement exclues. Les montants payés suivent l’état de règlement enregistré.</p>
     {isLoading && <p role="status">Chargement des montants…</p>}{error && <p role="alert" className="text-destructive">{error instanceof Error ? error.message : "Impossible de charger les montants."}</p>}

@@ -165,3 +165,38 @@ export function periodRange(key: string, now = new Date()): { from: string; to: 
   if (key === "month") return { from: `${today.slice(0, 7)}-01`, to: today };
   return { from: shift((Number(key) || 30) - 1), to: today };
 }
+
+/** Bornes (Paris) d'un mois "YYYY-MM" : du 1er au dernier jour, plafonné à aujourd'hui. */
+export function monthRange(month: string, now = new Date()): { from: string; to: string } {
+  const [y = 0, m = 1] = month.split("-").map(Number);
+  const last = new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10);
+  const today = parisDay(now);
+  return { from: `${month}-01`, to: last < today ? last : today };
+}
+
+/** Les N derniers mois (Paris), du plus récent au plus ancien. */
+export function recentMonths(n: number, now = new Date()): string[] {
+  const [y = 0, m = 1] = parisDay(now).split("-").map(Number);
+  return Array.from({ length: n }, (_, i) => new Date(Date.UTC(y, m - 1 - i, 1)).toISOString().slice(0, 7));
+}
+
+export type MonthlyCommissionRow = {
+  restaurantId: string; name: string; company: string; siret: string; seat: string; vat: string;
+  orders: number; base: number; commission: number;
+};
+
+/** Commission Mollie enregistrée par restaurant (commandes réglées, snapshots historiques). */
+export function monthlyCommissions(rows: GainOrderRow[], restaurants: { restaurantId: string; name: string; legal?: { company?: string; siret?: string; seat?: string; vat?: string } | null }[]): MonthlyCommissionRow[] {
+  return restaurants.map((r) => {
+    const own = rows.filter((o) => o.restaurant_id === r.restaurantId && !o.is_test && !EXCLUDED_STATUSES.has(o.status)
+      && ["paid", "partially_refunded", "refunded"].includes(o.payment_status ?? "")
+      && paymentProvider(o.payment_ref) === "Mollie" && Number(o.platform_fee ?? 0) > 0);
+    return {
+      restaurantId: r.restaurantId, name: r.name,
+      company: r.legal?.company ?? "", siret: r.legal?.siret ?? "", seat: r.legal?.seat ?? "", vat: r.legal?.vat ?? "",
+      orders: own.length,
+      base: round2(own.reduce((s, o) => s + Number(o.total ?? 0), 0)),
+      commission: round2(own.reduce((s, o) => s + Number(o.platform_fee ?? 0), 0)),
+    };
+  }).filter((r) => r.commission > 0).sort((a, b) => b.commission - a.commission);
+}
