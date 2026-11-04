@@ -188,6 +188,19 @@ export type MonthlyCommissionRow = {
 /** Commission Mollie enregistrée par restaurant (commandes réglées, snapshots historiques). */
 /** Référence Zoho stable par restaurant et par mois : évite les doublons de factures. */
 export const zohoReference = (month: string, restaurantId: string) => `COM-${month.replace("-", "")}-${restaurantId.replace(/-/g, "").slice(0, 8).toUpperCase()}`;
+
+/** "octobre 2026" pour "2026-10". */
+export const monthLabel = (m: string) => new Date(`${m}-15T12:00:00Z`).toLocaleDateString("fr-FR", { month: "long", year: "numeric", timeZone: "UTC" });
+
+/** Intitulé de la ligne de prestation facturée aux restaurants. */
+export const INVOICE_ITEM_NAME = "Frais de service & utilisation plateforme digitale";
+export const invoiceItemDescription = (month: string, restaurantName: string, orders: number) =>
+  `Frais de service sur ${orders} commandes en ligne réglées – ${monthLabel(month)} (${restaurantName})`;
+
+/** Mention d'acquittement : le montant a déjà été retenu à la source. */
+export const ACQUITTEMENT_NOTE = "Facture pour information comptable – Montant déjà retenu sur les encaissements en ligne de la période (aucun règlement à effectuer de votre part).";
+export const invoiceNotes = (siret: string) => [ACQUITTEMENT_NOTE, siret && `SIRET client : ${siret}`].filter(Boolean).join("\n");
+
 /** Dernier jour du mois "YYYY-MM" au format YYYY-MM-DD. */
 export function lastDayOfMonth(month: string) {
   const [y = 0, m = 1] = month.split("-").map(Number);
