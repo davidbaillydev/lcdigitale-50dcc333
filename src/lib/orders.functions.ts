@@ -130,7 +130,7 @@ async function createCalculatedOrder(supabaseAdmin: Awaited<typeof import("@/int
     const items = data.lines.map((l) => {
       const item = catalog.itemsById[l.itemId];
       if (!item) throw new Error("Article inconnu");
-      assertItemAvailable(item, availabilityDate);
+      if (!testUserId) assertItemAvailable(item, availabilityDate);
       if (soldOut.has(item.id)) throw new Error(`« ${item.name} » est momentanément épuisé. Retirez-le de votre panier.`);
       const err = validateSelections(item, l.sel);
       if (err) throw new Error(err);
@@ -145,7 +145,7 @@ async function createCalculatedOrder(supabaseAdmin: Awaited<typeof import("@/int
     if (data.mode === "delivery" && testUserId) {
       if (!data.address || data.address.length < 5) throw new Error("Adresse de livraison requise.");
       const z0 = r.delivery.zones?.find((z) => z.cp === data.postal_code) ?? r.delivery.zones?.[0];
-      fee = Number(r.delivery.fee ?? 0) || Number(geo[0]?.fee ?? 0) || 0;
+      fee = r.delivery.fee != null ? deliveryFee(r, subtotal) : Number(geo[0]?.fee ?? 0);
       city = z0?.city ?? null;
       zoneName = z0 ? null : geo[0]?.name ?? null;
     } else if (data.mode === "delivery" && geo.length) {
