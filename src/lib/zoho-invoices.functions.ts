@@ -25,7 +25,7 @@ async function loadMonth(supabase: any, month: string) {
   for (let offset = 0; ; offset += 1000) {
     const { data: orders, error } = await supabase.from("orders")
       .select("id, order_number, restaurant_id, service_fee, total, status, created_at, payment_status, payment_method, payment_ref, platform_fee, refunded_amount, delivery_fee, discount, source, mode")
-      .eq("is_test", false).gte("created_at", `${from}T00:00:00.000Z`).lte("created_at", `${to}T23:59:59.999Z`).order("id").range(offset, offset + 999);
+      .eq("is_test", false).gte("created_at", new Date(Date.parse(`${from}T00:00:00.000Z`) - 86_400_000).toISOString()).lte("created_at", `${to}T23:59:59.999Z`).order("id").range(offset, offset + 999);
     if (error) throw new Error("Impossible de charger les commandes.");
     rows.push(...(orders ?? []));
     if ((orders ?? []).length < 1000) break;
