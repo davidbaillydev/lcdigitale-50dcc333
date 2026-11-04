@@ -391,7 +391,7 @@ function Checkout() {
           <h2 className="text-3xl">Récapitulatif</h2>
           <CartLines />
           {!payment && <CartSuggestions className="mb-3" />}
-          {!payment && <div className="mb-3"><PromoCodeField slug={restaurant.slug} subtotal={subtotal} channel="web" email={f.email} phone={f.phone} onChange={(d, code) => setPromo({ d, code })} /></div>}
+          {!payment && <div className="mb-3"><PromoCodeField lines={promoLines(catalog, lines, unitPrice)} slug={restaurant.slug} subtotal={subtotal} channel="web" email={f.email} phone={f.phone} onChange={(d, code) => setPromo({ d, code })} /></div>}
           <div className="space-y-1 border-t border-border pt-3 text-sm">
             <div className="flex justify-between"><span>Sous-total</span><span>{euro(subtotal)}</span></div>
             {discount > 0 && <div className="flex justify-between text-primary"><span>{promo.d?.label}</span><span>-{euro(discount)}</span></div>}

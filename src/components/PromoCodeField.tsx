@@ -8,7 +8,8 @@ import { cn } from "@/lib/utils";
 export type AppliedDiscount = { discount: number; code: string | null; label: string };
 
 /** Saisie du code promo + détection automatique de l'offre de premier achat (aperçu, recalculé à la commande). */
-export function PromoCodeField({ slug, subtotal, channel, email, phone, onChange, large }: {
+export function PromoCodeField({ slug, subtotal, channel, email, phone, onChange, large, lines }: {
+  lines?: { id: string; total: number }[];
   slug: string; subtotal: number; channel: "web" | "kiosk"; email?: string; phone?: string;
   onChange: (d: AppliedDiscount | null, code: string | undefined) => void; large?: boolean;
 }) {
@@ -21,7 +22,7 @@ export function PromoCodeField({ slug, subtotal, channel, email, phone, onChange
   useEffect(() => {
     if (!subtotal) { setRes(null); onChange(null, undefined); return; }
     const t = setTimeout(() => {
-      check({ data: { slug, subtotal, channel, code, email: email || undefined, phone: phone || undefined } })
+      check({ data: { slug, subtotal, channel, code, email: email || undefined, phone: phone || undefined, lines } })
         .then((r) => {
           if (r.error) { setErr(r.error); setCode(undefined); return; }
           const d = r.discount > 0 ? r : null;
@@ -29,7 +30,7 @@ export function PromoCodeField({ slug, subtotal, channel, email, phone, onChange
         }).catch(() => {});
     }, 400);
     return () => clearTimeout(t);
-  }, [slug, subtotal, channel, code, email, phone, check]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [slug, subtotal, channel, code, email, phone, check, JSON.stringify(lines)]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const apply = () => { const c = normalizeCode(input); setErr(null); if (c) setCode(c); };
   const remove = () => { setCode(undefined); setInput(""); setErr(null); };

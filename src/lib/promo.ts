@@ -32,3 +32,12 @@ export function eligibleSubtotal(scope: PromoScope, lines: { id: string; total: 
   const sum = lines.filter((l) => items.has(l.id) || cats.has(categoryIdOf(l.id) ?? "")).reduce((s, l) => s + l.total, 0);
   return Math.round(sum * 100) / 100;
 }
+
+/** Lignes du panier pour l'aperçu d'un code ciblé (le serveur recalcule à la commande). */
+export function promoLines(
+  catalog: { itemsById: Record<string, import("./menu").MenuItem> },
+  lines: { itemId: string; qty: number; sel: import("./menu").Selections }[],
+  price: (item: import("./menu").MenuItem, sel: import("./menu").Selections) => number,
+) {
+  return lines.flatMap((l) => { const it = catalog.itemsById[l.itemId]; return it ? [{ id: l.itemId, total: Math.round(price(it, l.sel) * l.qty * 100) / 100 }] : []; });
+}
