@@ -45,6 +45,11 @@ function Rules({ config }: { config: Restaurant["config"] & { platformFee?: unkn
 const monthLabel = (m: string) => new Date(`${m}-15T12:00:00Z`).toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
 const csvCell = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
 const csvAmount = (n: number) => n.toFixed(2).replace(".", ",");
+function download(blob: Blob, name: string) {
+  const url = URL.createObjectURL(blob), a = document.createElement("a");
+  a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 30_000);
+}
 function MonthlyCommissions() {
   const months = useMemo(() => recentMonths(24), []);
   const [month, setMonth] = useState(months[1] ?? months[0]);
@@ -57,18 +62,25 @@ function MonthlyCommissions() {
     const head = ["Mois", "Restaurant", "Raison sociale", "SIRET", "Siège social", "TVA intracom.", "Commandes avec commission", "Montant encaissé TTC", "Commission agence"];
     const lines = [head, ...rows.map((r) => [monthLabel(month), r.name, r.company, r.siret, r.seat, r.vat, r.orders, csvAmount(r.base), csvAmount(r.commission)])];
     const blob = new Blob(["\ufeff" + lines.map((l) => l.map(csvCell).join(";")).join("\r\n")], { type: "text/csv;charset=utf-8" });
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `commissions-${month}.csv`; a.click(); URL.revokeObjectURL(a.href);
+    download(blob, `commissions-${month}.csv`);
+  };
+  const exportZoho = () => {
+    const [y, m] = month.split("-").map(Number);
+    const invoiceDate = new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10);
+    const head = ["Invoice Number", "Invoice Date", "Invoice Status", "Customer Name", "Currency Code", "Item Name", "Item Desc", "Quantity", "Item Price", "Notes"];
+    const lines = [head, ...rows.map((r, i) => [`COM-${month.replace("-", "")}-${String(i + 1).padStart(3, "0")}`, invoiceDate, "Draft", r.company || r.name, "EUR", "Commission plateforme LC Digitale", `Commission sur ${r.orders} paiements en ligne – ${monthLabel(month)} (${r.name})`, 1, r.commission.toFixed(2), r.siret ? `SIRET client : ${r.siret}` : ""])];
+    download(new Blob(["\ufeff" + lines.map((l) => l.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }), `zoho-factures-${month}.csv`);
   };
   return <section aria-label="Commissions mensuelles" className="rounded-lg border bg-card p-5">
     <div className="flex flex-wrap items-end gap-4"><div className="mr-auto"><h2 className="text-2xl">Commissions par mois</h2><p className="mt-1 text-sm text-muted-foreground">Pour préparer vos factures mensuelles : commission Mollie enregistrée par restaurant, avec ses informations légales.</p></div>
       <label className="text-sm">Mois<select aria-label="Mois" className="mt-1 h-12 w-full rounded-md border border-input bg-background px-3 capitalize text-foreground" value={month} onChange={(e) => setMonth(e.target.value)}>{months.map((m) => <option key={m} value={m}>{monthLabel(m)}</option>)}</select></label>
-      <Button variant="outline" className="h-12" disabled={!rows.length} onClick={exportCsv}><Download />Exporter (CSV)</Button></div>
+      <Button variant="outline" className="h-12" disabled={!rows.length} onClick={exportCsv}><Download />Récapitulatif (CSV)</Button><Button variant="outline" className="h-12" disabled={!rows.length} onClick={exportZoho}><Download />Zoho Invoice (CSV)</Button></div>
     {isLoading && <p role="status" className="mt-4">Chargement…</p>}{error && <p role="alert" className="mt-4 text-destructive">Impossible de charger les commissions.</p>}
     {data && <div className="mt-4 overflow-x-auto"><table className="w-full text-left text-sm"><thead className="border-b text-muted-foreground"><tr>{["Restaurant", "Raison sociale", "SIRET", "Commandes", "Encaissé TTC", "Commission"].map((h) => <th key={h} className="whitespace-nowrap px-3 py-3 font-medium">{h}</th>)}</tr></thead>
       <tbody className="divide-y">{rows.map((r) => <tr key={r.restaurantId}><td className="px-3 py-3 font-medium">{r.name}</td><td className="px-3 py-3">{r.company || <span className="text-destructive">À compléter</span>}{r.seat && <p className="text-xs text-muted-foreground">{r.seat}</p>}</td><td className="whitespace-nowrap px-3 py-3 tabular-nums">{r.siret || <span className="text-destructive">À compléter</span>}</td><td className="px-3 py-3 tabular-nums">{r.orders}</td><td className="whitespace-nowrap px-3 py-3 tabular-nums">{fmt(r.base)}</td><td className="whitespace-nowrap px-3 py-3 font-semibold tabular-nums">{fmt(r.commission)}</td></tr>)}</tbody>
       {rows.length > 0 && <tfoot className="border-t font-semibold"><tr><td className="px-3 py-3" colSpan={5}>Total {monthLabel(month)}</td><td className="whitespace-nowrap px-3 py-3 tabular-nums">{fmt(total)}</td></tr></tfoot>}</table>
       {!rows.length && <p className="py-6 text-muted-foreground">Aucune commission enregistrée en {monthLabel(month)}.</p>}
-      <p className="mt-3 text-xs text-muted-foreground">Mois calendaire heure de Paris, commandes réglées hors tests. Les informations légales viennent de la fiche de chaque restaurant (pages légales). Montants indicatifs : ce n'est pas une facture.</p></div>}
+      <p className="mt-3 text-xs text-muted-foreground">Mois calendaire heure de Paris, commandes réglées hors tests. Les informations légales viennent de la fiche de chaque restaurant (pages légales). Montants indicatifs : ce n'est pas une facture. L'export Zoho crée des brouillons (un par client, daté du dernier jour du mois, sans taxe : ajoutez la TVA dans Zoho).</p></div>}
   </section>;
 }
 function Page() {
