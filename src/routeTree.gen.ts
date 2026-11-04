@@ -37,6 +37,7 @@ import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminSlugRouteImport } from './routes/_authenticated/admin.$slug'
 import { Route as AuthenticatedAdminAdministrateursRouteImport } from './routes/_authenticated/admin.administrateurs'
 import { Route as AuthenticatedAdminClientsRouteImport } from './routes/_authenticated/admin.clients'
+import { Route as AuthenticatedAdminCommandeTestRouteImport } from './routes/_authenticated/admin.commande-test'
 import { Route as AuthenticatedAdminEmailsRouteImport } from './routes/_authenticated/admin.emails'
 import { Route as AuthenticatedAdminGainsRouteImport } from './routes/_authenticated/admin.gains'
 import { Route as AuthenticatedAdminLicencesRouteImport } from './routes/_authenticated/admin.licences'
@@ -205,6 +206,12 @@ const AuthenticatedAdminClientsRoute =
   AuthenticatedAdminClientsRouteImport.update({
     id: '/clients',
     path: '/clients',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminCommandeTestRoute =
+  AuthenticatedAdminCommandeTestRouteImport.update({
+    id: '/commande-test',
+    path: '/commande-test',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminEmailsRoute =
@@ -397,6 +404,7 @@ export interface FileRoutesByFullPath {
   '/admin/$slug': typeof AuthenticatedAdminSlugRoute
   '/admin/administrateurs': typeof AuthenticatedAdminAdministrateursRoute
   '/admin/clients': typeof AuthenticatedAdminClientsRoute
+  '/admin/commande-test': typeof AuthenticatedAdminCommandeTestRoute
   '/admin/emails': typeof AuthenticatedAdminEmailsRoute
   '/admin/gains': typeof AuthenticatedAdminGainsRoute
   '/admin/licences': typeof AuthenticatedAdminLicencesRoute
@@ -452,6 +460,7 @@ export interface FileRoutesByTo {
   '/admin/$slug': typeof AuthenticatedAdminSlugRoute
   '/admin/administrateurs': typeof AuthenticatedAdminAdministrateursRoute
   '/admin/clients': typeof AuthenticatedAdminClientsRoute
+  '/admin/commande-test': typeof AuthenticatedAdminCommandeTestRoute
   '/admin/emails': typeof AuthenticatedAdminEmailsRoute
   '/admin/gains': typeof AuthenticatedAdminGainsRoute
   '/admin/licences': typeof AuthenticatedAdminLicencesRoute
@@ -511,6 +520,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/$slug': typeof AuthenticatedAdminSlugRoute
   '/_authenticated/admin/administrateurs': typeof AuthenticatedAdminAdministrateursRoute
   '/_authenticated/admin/clients': typeof AuthenticatedAdminClientsRoute
+  '/_authenticated/admin/commande-test': typeof AuthenticatedAdminCommandeTestRoute
   '/_authenticated/admin/emails': typeof AuthenticatedAdminEmailsRoute
   '/_authenticated/admin/gains': typeof AuthenticatedAdminGainsRoute
   '/_authenticated/admin/licences': typeof AuthenticatedAdminLicencesRoute
@@ -570,6 +580,7 @@ export interface FileRouteTypes {
     | '/admin/$slug'
     | '/admin/administrateurs'
     | '/admin/clients'
+    | '/admin/commande-test'
     | '/admin/emails'
     | '/admin/gains'
     | '/admin/licences'
@@ -625,6 +636,7 @@ export interface FileRouteTypes {
     | '/admin/$slug'
     | '/admin/administrateurs'
     | '/admin/clients'
+    | '/admin/commande-test'
     | '/admin/emails'
     | '/admin/gains'
     | '/admin/licences'
@@ -683,6 +695,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/$slug'
     | '/_authenticated/admin/administrateurs'
     | '/_authenticated/admin/clients'
+    | '/_authenticated/admin/commande-test'
     | '/_authenticated/admin/emails'
     | '/_authenticated/admin/gains'
     | '/_authenticated/admin/licences'
@@ -938,6 +951,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminClientsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/commande-test': {
+      id: '/_authenticated/admin/commande-test'
+      path: '/commande-test'
+      fullPath: '/admin/commande-test'
+      preLoaderRoute: typeof AuthenticatedAdminCommandeTestRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/emails': {
       id: '/_authenticated/admin/emails'
       path: '/emails'
@@ -1141,6 +1161,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminSlugRoute: typeof AuthenticatedAdminSlugRoute
   AuthenticatedAdminAdministrateursRoute: typeof AuthenticatedAdminAdministrateursRoute
   AuthenticatedAdminClientsRoute: typeof AuthenticatedAdminClientsRoute
+  AuthenticatedAdminCommandeTestRoute: typeof AuthenticatedAdminCommandeTestRoute
   AuthenticatedAdminEmailsRoute: typeof AuthenticatedAdminEmailsRoute
   AuthenticatedAdminGainsRoute: typeof AuthenticatedAdminGainsRoute
   AuthenticatedAdminLicencesRoute: typeof AuthenticatedAdminLicencesRoute
@@ -1154,6 +1175,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminAdministrateursRoute:
     AuthenticatedAdminAdministrateursRoute,
   AuthenticatedAdminClientsRoute: AuthenticatedAdminClientsRoute,
+  AuthenticatedAdminCommandeTestRoute: AuthenticatedAdminCommandeTestRoute,
   AuthenticatedAdminEmailsRoute: AuthenticatedAdminEmailsRoute,
   AuthenticatedAdminGainsRoute: AuthenticatedAdminGainsRoute,
   AuthenticatedAdminLicencesRoute: AuthenticatedAdminLicencesRoute,

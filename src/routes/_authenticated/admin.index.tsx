@@ -103,6 +103,7 @@ function Console() {
         </div>
         <Button variant="secondary" asChild><Link to="/espace/tableau-de-bord">Ventes & statistiques</Link></Button>
         <Button variant="secondary" asChild><Link to="/espace"><ChefHat />Écrans cuisine</Link></Button>
+        <Button variant="secondary" asChild><Link to="/admin/commande-test">Commande test livraison</Link></Button>
         <Button variant="secondary" asChild><Link to="/espace/factures">Factures</Link></Button>
         <Button variant="secondary" asChild><Link to="/admin/qrcodes">QR codes</Link></Button>
         <Button variant="secondary" asChild><Link to="/admin/clients">Clients</Link></Button>
