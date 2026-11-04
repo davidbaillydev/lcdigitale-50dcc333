@@ -48,7 +48,7 @@ export const Route = createFileRoute("/$slug/commande")({
 });
 
 function Checkout() {
-  const { lines, subtotal, clear, restaurant, qr, track } = useCart();
+  const { lines, subtotal, clear, restaurant, qr, track, catalog } = useCart();
   useEffect(() => { if (lines.length) track("checkout_started", "Coordonnées & mode de retrait"); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const DELIVERY = restaurant.delivery;
   const navigate = useNavigate();

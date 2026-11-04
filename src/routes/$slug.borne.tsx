@@ -25,7 +25,7 @@ import { BrandLogo } from "@/lib/brand";
 import { ThemeToggle } from "@/lib/theme";
 import { RestaurantBanner } from "@/components/RestaurantBanner";
 import { PromoCodeField, type AppliedDiscount } from "@/components/PromoCodeField";
-import { announcementText } from "@/lib/promo";
+import { announcementText, promoLines } from "@/lib/promo";
 import { isSimple, useSuggestions } from "@/components/CartSuggestions";
 import { assertItemAvailable, isItemAvailable, itemScheduleLabel } from "@/lib/shop";
 import { useMenuClock } from "@/hooks/use-menu-clock";
