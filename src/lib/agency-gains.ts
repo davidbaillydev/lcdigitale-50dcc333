@@ -168,7 +168,7 @@ export function periodRange(key: string, now = new Date()): { from: string; to: 
 
 /** Bornes (Paris) d'un mois "YYYY-MM" : du 1er au dernier jour, plafonné à aujourd'hui. */
 export function monthRange(month: string, now = new Date()): { from: string; to: string } {
-  const [y, m] = month.split("-").map(Number);
+  const [y = 0, m = 1] = month.split("-").map(Number);
   const last = new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10);
   const today = parisDay(now);
   return { from: `${month}-01`, to: last < today ? last : today };
@@ -176,7 +176,7 @@ export function monthRange(month: string, now = new Date()): { from: string; to:
 
 /** Les N derniers mois (Paris), du plus récent au plus ancien. */
 export function recentMonths(n: number, now = new Date()): string[] {
-  const [y, m] = parisDay(now).split("-").map(Number);
+  const [y = 0, m = 1] = parisDay(now).split("-").map(Number);
   return Array.from({ length: n }, (_, i) => new Date(Date.UTC(y, m - 1 - i, 1)).toISOString().slice(0, 7));
 }
 

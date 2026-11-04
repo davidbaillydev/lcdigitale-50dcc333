@@ -65,7 +65,7 @@ function MonthlyCommissions() {
     download(blob, `commissions-${month}.csv`);
   };
   const exportZoho = () => {
-    const [y, m] = month.split("-").map(Number);
+    const [y = 0, m = 1] = month.split("-").map(Number);
     const invoiceDate = new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10);
     const head = ["Invoice Number", "Invoice Date", "Invoice Status", "Customer Name", "Currency Code", "Item Name", "Item Desc", "Quantity", "Item Price", "Notes"];
     const lines = [head, ...rows.map((r, i) => [`COM-${month.replace("-", "")}-${String(i + 1).padStart(3, "0")}`, invoiceDate, "Draft", r.company || r.name, "EUR", "Commission plateforme LC Digitale", `Commission sur ${r.orders} paiements en ligne – ${monthLabel(month)} (${r.name})`, 1, r.commission.toFixed(2), r.siret ? `SIRET client : ${r.siret}` : ""])];
