@@ -52,7 +52,7 @@ function download(blob: Blob, name: string) {
 }
 function MonthlyCommissions() {
   const months = useMemo(() => recentMonths(24), []);
-  const [month, setMonth] = useState(months[1] ?? months[0]);
+  const [month, setMonth] = useState<string>(months[1] ?? months[0] ?? "");
   const { from, to } = useMemo(() => monthRange(month), [month]);
   const fetchGains = useServerFn(getAgencyGains);
   const { data, isLoading, error } = useQuery({ queryKey: ["agency-gains", from, to], queryFn: () => fetchGains({ data: { from, to } }) });
