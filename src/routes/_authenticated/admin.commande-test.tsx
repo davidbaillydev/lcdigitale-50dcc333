@@ -73,8 +73,8 @@ function OrderForm({ slug }: { slug: string }) {
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF({ ...f, [k]: e.target.value });
 
   const submit = async () => {
-    if (!lines.length) return toast.error("Ajoutez au moins un plat.");
-    if (!f.address.trim() || !/^\d{5}$/.test(f.postal_code.trim())) return toast.error("Adresse et code postal (5 chiffres) obligatoires.");
+    if (!lines.length) { toast.error("Ajoutez au moins un plat."); return; }
+    if (!f.address.trim() || !/^\d{5}$/.test(f.postal_code.trim())) { toast.error("Adresse et code postal (5 chiffres) obligatoires."); return; }
     setBusy(true);
     try {
       const res = await create({ data: { restaurant: slug, mode: "delivery", asap: true, slot: "", ...f, payment_method: "online", cgv: true, lines: lines.map(({ itemId, qty, sel }) => ({ itemId, qty, sel })) } }) as { id: string; order_number: number };
