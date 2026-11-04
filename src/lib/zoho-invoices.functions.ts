@@ -88,6 +88,8 @@ async function findOrCreateContact(r: { name: string; company: string; email: st
   return { id: created.contact.contact_id, created: true };
 }
 
+type ZFull = ZInvoice & { customer_id: string; date: string; balance: number; line_items?: { line_item_id: string }[] };
+
 export const createZohoDraftInvoices = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => input.parse(d))
@@ -95,21 +97,45 @@ export const createZohoDraftInvoices = createServerFn({ method: "POST" })
     await assertAgency(context.supabase, context.userId);
     const rows = await loadMonth(context.supabase, data.month);
     const existing = await existingInvoices(data.month);
-    const report = { created: 0, skipped: 0, contactsCreated: 0, errors: [] as { name: string; message: string }[] };
+    const report = { created: 0, updated: 0, paid: 0, alreadyPaid: 0, contactsCreated: 0, errors: [] as { name: string; message: string }[] };
     for (const r of rows) {
       const reference = zohoReference(data.month, r.restaurantId);
-      if (existing.some((i) => i.reference_number === reference)) { report.skipped++; continue; }
+      const found = existing.find((i) => i.reference_number === reference);
+      const line = { name: INVOICE_ITEM_NAME, description: invoiceItemDescription(data.month, r.name, r.orders), rate: r.commission, quantity: 1 };
       try {
-        const contact = await findOrCreateContact(r);
-        if (contact.created) report.contactsCreated++;
-        const res = await zoho<{ invoice: ZInvoice }>("/invoices", { method: "POST", body: {
-          customer_id: contact.id, date: lastDayOfMonth(data.month), reference_number: reference,
-          line_items: [{ name: INVOICE_ITEM_NAME, description: invoiceItemDescription(data.month, r.name, r.orders), rate: r.commission, quantity: 1 }],
-          notes: invoiceNotes(r.siret),
-
-        } });
-        existing.push(res.invoice);
-        report.created++;
+        let inv: ZFull;
+        if (found) {
+          const cur = (await zoho<{ invoice: ZFull }>(`/invoices/${found.invoice_id}`)).invoice;
+          if (cur.status === "paid") { report.alreadyPaid++; continue; }
+          const res = await zoho<{ invoice: ZFull }>(`/invoices/${found.invoice_id}`, { method: "PUT", body: {
+            customer_id: cur.customer_id, date: lastDayOfMonth(data.month), reference_number: reference,
+            line_items: [{ ...(cur.line_items?.[0] ? { line_item_id: cur.line_items[0].line_item_id } : {}), ...line }],
+            notes: invoiceNotes(r.siret),
+          } });
+          inv = res.invoice; report.updated++;
+        } else {
+          const contact = await findOrCreateContact(r);
+          if (contact.created) report.contactsCreated++;
+          const res = await zoho<{ invoice: ZFull }>("/invoices", { method: "POST", body: {
+            customer_id: contact.id, date: lastDayOfMonth(data.month), reference_number: reference,
+            line_items: [line], notes: invoiceNotes(r.siret),
+          } });
+          inv = res.invoice; report.created++;
+        }
+        // Acquittement : envoyé (sans e-mail) puis paiement « retenu à la source ».
+        if (inv.status === "draft") await zoho(`/invoices/${inv.invoice_id}/status/sent`, { method: "POST" });
+        const balance = Number(inv.balance ?? inv.total ?? 0);
+        if (balance > 0) {
+          await zoho("/customerpayments", { method: "POST", body: {
+            customer_id: inv.customer_id, payment_mode: "others", amount: balance, date: inv.date,
+            reference_number: reference, description: "Retenu à la source sur les encaissements en ligne",
+            invoices: [{ invoice_id: inv.invoice_id, amount_applied: balance }],
+          } });
+        }
+        report.paid++;
+        const fresh = (await zoho<{ invoice: ZFull }>(`/invoices/${inv.invoice_id}`)).invoice;
+        const idx = existing.findIndex((i) => i.invoice_id === fresh.invoice_id);
+        if (idx >= 0) existing[idx] = fresh; else existing.push(fresh);
       } catch (e) {
         report.errors.push({ name: r.name, message: e instanceof Error ? e.message : "Erreur inconnue" });
       }
