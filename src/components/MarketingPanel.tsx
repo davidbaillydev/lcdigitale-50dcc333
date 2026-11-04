@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 
-const blank = { code: "", kind: "percent" as "percent" | "fixed", value: 10, min_order: 0, starts: "", ends: "", active: true };
+const blank = { categories: [] as string[], items: [] as string[], code: "", kind: "percent" as "percent" | "fixed", value: 10, min_order: 0, starts: "", ends: "", active: true };
 const toLocal = (iso: string | null) => (iso ? iso.slice(0, 10) : "");
 
 export function MarketingPanel({ restaurantId, marketing, onSaved }: { restaurantId: string; marketing?: Marketing | undefined; onSaved?: () => void }) {
@@ -25,7 +25,12 @@ export function MarketingPanel({ restaurantId, marketing, onSaved }: { restauran
   const list = useServerFn(listPromos);
   const savePc = useServerFn(savePromo);
   const del = useServerFn(deletePromo);
-  const { data: promos, refetch } = useQuery({ queryKey: ["promos", restaurantId], queryFn: () => list({ data: { restaurantId } }) });
+  const { data: pdata, refetch } = useQuery({ queryKey: ["promos", restaurantId], queryFn: () => list({ data: { restaurantId } }) });
+  const promos = pdata?.promos; const agency = !!pdata?.agency; const targets = pdata?.targets ?? [];
+  const scopeText = (p: PromoCode) => { const c = p.scope?.categories ?? [], i = p.scope?.items ?? []; if (!c.length && !i.length) return null;
+    const names = [...c.map((id) => targets.find((t) => t.id === id)?.label ?? id), ...i.map((id) => targets.flatMap((t) => t.items).find((x) => x.id === id)?.name ?? id)];
+    return `Sur : ${names.slice(0, 4).join(", ")}${names.length > 4 ? ` +${names.length - 4}` : ""}`; };
+  const tog = (k: "categories" | "items", id: string) => setF((x) => ({ ...x, [k]: x[k].includes(id) ? x[k].filter((v) => v !== id) : [...x[k], id] }));
   const [f, setF] = useState(blank);
   const [editId, setEditId] = useState<string | undefined>();
 
@@ -37,11 +42,11 @@ export function MarketingPanel({ restaurantId, marketing, onSaved }: { restauran
   const submitPromo = async () => {
     try {
       await savePc({ data: { restaurantId, id: editId, code: f.code, kind: f.kind, value: Number(f.value), min_order: Number(f.min_order),
-        starts_at: f.starts ? new Date(`${f.starts}T00:00:00`).toISOString() : null, ends_at: f.ends ? new Date(`${f.ends}T23:59:59`).toISOString() : null, active: f.active } });
+        starts_at: f.starts ? new Date(`${f.starts}T00:00:00`).toISOString() : null, ends_at: f.ends ? new Date(`${f.ends}T23:59:59`).toISOString() : null, active: f.active, ...(agency ? { scope: { categories: f.categories, items: f.items } } : {}) } });
       toast.success(editId ? "Code modifié" : "Code créé"); setF(blank); setEditId(undefined); refetch();
     } catch (e) { toast.error(e instanceof Error ? e.message : "Erreur"); }
   };
-  const edit = (p: PromoCode) => { setEditId(p.id); setF({ code: p.code, kind: p.kind, value: Number(p.value), min_order: Number(p.min_order), starts: toLocal(p.starts_at), ends: toLocal(p.ends_at), active: p.active }); };
+  const edit = (p: PromoCode) => { setEditId(p.id); setF({ code: p.code, kind: p.kind, value: Number(p.value), min_order: Number(p.min_order), starts: toLocal(p.starts_at), ends: toLocal(p.ends_at), active: p.active, categories: p.scope?.categories ?? [], items: p.scope?.items ?? [] }); };
   const toggle = async (p: PromoCode) => {
     await savePc({ data: { restaurantId, id: p.id, code: p.code, kind: p.kind, value: Number(p.value), min_order: Number(p.min_order), starts_at: p.starts_at ? new Date(p.starts_at).toISOString() : null, ends_at: p.ends_at ? new Date(p.ends_at).toISOString() : null, active: !p.active } });
     refetch();
@@ -83,6 +88,22 @@ export function MarketingPanel({ restaurantId, marketing, onSaved }: { restauran
           <label className="flex items-center gap-2 text-sm"><Switch checked={f.active} onCheckedChange={(v) => setF({ ...f, active: v })} /> Actif</label>
           <div className="sm:col-span-2"><Label className="text-xs">Valable du</Label><Input type="date" value={f.starts} onChange={(e) => setF({ ...f, starts: e.target.value })} /></div>
           <div className="sm:col-span-2"><Label className="text-xs">au</Label><Input type="date" value={f.ends} onChange={(e) => setF({ ...f, ends: e.target.value })} /></div>
+          {agency && targets.length > 0 && (
+            <details className="rounded-md border border-border p-3 sm:col-span-6">
+              <summary className="cursor-pointer text-sm font-medium">Limiter à des catégories ou articles (agence) — {f.categories.length + f.items.length ? `${f.categories.length} catégorie(s), ${f.items.length} article(s)` : "toute la commande"}</summary>
+              <p className="mt-2 text-xs text-muted-foreground">La remise ne s'applique qu'aux articles cochés (ou à toute leur catégorie). Rien de coché = toute la commande. Un montant fixe est plafonné au total des articles concernés.</p>
+              <div className="mt-2 max-h-80 space-y-2 overflow-y-auto">
+                {targets.map((t) => (
+                  <div key={t.id}>
+                    <label className="flex min-h-11 items-center gap-2 text-sm font-semibold"><input type="checkbox" className="h-5 w-5" checked={f.categories.includes(t.id)} onChange={() => tog("categories", t.id)} /> {t.label} (toute la catégorie)</label>
+                    {!f.categories.includes(t.id) && <div className="ml-7 grid gap-x-4 sm:grid-cols-2">
+                      {t.items.map((i) => <label key={i.id} className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" className="h-5 w-5" checked={f.items.includes(i.id)} onChange={() => tog("items", i.id)} /> {i.name}</label>)}
+                    </div>}
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
           <div className="flex items-end gap-2 sm:col-span-2">
             <Button className="flex-1" onClick={submitPromo} disabled={f.code.trim().length < 3}>{editId ? "Modifier" : "Créer le code"}</Button>
             {editId && <Button variant="ghost" onClick={() => { setEditId(undefined); setF(blank); }}>Annuler</Button>}
@@ -94,6 +115,7 @@ export function MarketingPanel({ restaurantId, marketing, onSaved }: { restauran
             <li key={p.id} className="flex flex-wrap items-center gap-3 p-3 text-sm">
               <span className="font-mono font-bold">{p.code}</span>
               <span>{discountLabel(p.kind, Number(p.value))}</span>
+              {scopeText(p) && <span className="rounded bg-secondary px-2 text-secondary-foreground">{scopeText(p)}</span>}
               {Number(p.min_order) > 0 && <span className="text-muted-foreground">dès {Number(p.min_order)} €</span>}
               {(p.starts_at || p.ends_at) && <span className="text-muted-foreground">{p.starts_at ? `du ${new Date(p.starts_at).toLocaleDateString("fr-FR")} ` : ""}{p.ends_at ? `au ${new Date(p.ends_at).toLocaleDateString("fr-FR")}` : ""}</span>}
               <span className="text-muted-foreground">{p.uses} utilisation(s)</span>

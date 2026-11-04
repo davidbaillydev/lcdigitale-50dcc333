@@ -1,11 +1,11 @@
-import { computeDiscount, discountLabel, normalizeCode, type DiscountKind, type Marketing } from "./promo";
+import { eligibleSubtotal, isScoped, computeDiscount, discountLabel, normalizeCode, type DiscountKind, type Marketing } from "./promo";
 
 export type DiscountResult = { discount: number; code: string | null; label: string; error?: string };
 
 /** Calcule la remise côté serveur : code promo prioritaire, sinon offre de premier achat (site uniquement). */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function resolveDiscount(db: any, r: { id: string; config: { marketing?: Marketing } }, subtotal: number,
-  opts: { code?: string | null | undefined; email?: string | null | undefined; phone?: string | null | undefined; channel: "web" | "kiosk" }): Promise<DiscountResult> {
+  opts: { code?: string | null | undefined; email?: string | null | undefined; phone?: string | null | undefined; channel: "web" | "kiosk"; lines?: { id: string; total: number }[] | undefined; categoryIdOf?: ((itemId: string) => string | undefined) | undefined }): Promise<DiscountResult> {
   const code = opts.code ? normalizeCode(opts.code) : "";
   if (code) {
     const { data: p } = await db.from("restaurant_promo_codes").select("*").eq("restaurant_id", r.id).eq("code", code).maybeSingle();
@@ -14,7 +14,12 @@ export async function resolveDiscount(db: any, r: { id: string; config: { market
     if ((p.starts_at && new Date(p.starts_at).getTime() > now) || (p.ends_at && new Date(p.ends_at).getTime() < now))
       return { discount: 0, code: null, label: "", error: "Ce code promo n'est plus valable." };
     if (subtotal < Number(p.min_order)) return { discount: 0, code: null, label: "", error: `Code valable dès ${Number(p.min_order).toFixed(2).replace(".", ",")} € de commande.` };
-    return { discount: computeDiscount(p.kind as DiscountKind, Number(p.value), subtotal), code, label: `Code ${code} (${discountLabel(p.kind, Number(p.value))})` };
+    let base = subtotal;
+    if (isScoped(p.scope)) {
+      base = eligibleSubtotal(p.scope, opts.lines ?? [], opts.categoryIdOf ?? (() => undefined));
+      if (base <= 0) return { discount: 0, code: null, label: "", error: "Ce code ne s'applique à aucun article de votre panier." };
+    }
+    return { discount: computeDiscount(p.kind as DiscountKind, Number(p.value), base), code, label: `Code ${code} (${discountLabel(p.kind, Number(p.value))})` };
   }
   const f = r.config.marketing?.firstOrder;
   if (opts.channel !== "web" || !f?.enabled || subtotal < (f.minOrder ?? 0)) return { discount: 0, code: null, label: "" };

@@ -183,6 +183,13 @@
       "when": 1793693055365,
       "tag": "0025_enable_pg_cron",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1793791201565,
+      "tag": "0026_promo_code_scope",
+      "breakpoints": true
     }
   ]
 }

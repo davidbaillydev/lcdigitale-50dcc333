@@ -25,7 +25,7 @@ import { BrandLogo } from "@/lib/brand";
 import { ThemeToggle } from "@/lib/theme";
 import { RestaurantBanner } from "@/components/RestaurantBanner";
 import { PromoCodeField, type AppliedDiscount } from "@/components/PromoCodeField";
-import { announcementText } from "@/lib/promo";
+import { announcementText, promoLines } from "@/lib/promo";
 import { isSimple, useSuggestions } from "@/components/CartSuggestions";
 import { assertItemAvailable, isItemAvailable, itemScheduleLabel } from "@/lib/shop";
 import { useMenuClock } from "@/hooks/use-menu-clock";
@@ -357,7 +357,7 @@ function Kiosk() {
         <div className="flex flex-1 flex-col items-center justify-center gap-8 p-10">
           <h2 className="font-display text-6xl">Comment souhaitez-vous payer ?</h2>
           <div className="w-full max-w-2xl">
-            <PromoCodeField large slug={restaurant.slug} subtotal={subtotal} channel="kiosk" onChange={(d, code) => setPromo({ d, code })} />
+            <PromoCodeField lines={promoLines(catalog, lines, unitPrice)} large slug={restaurant.slug} subtotal={subtotal} channel="kiosk" onChange={(d, code) => setPromo({ d, code })} />
           </div>
           {promo.d && <p className="text-2xl text-primary">{promo.d.label} : -{euro(promo.d.discount)}</p>}
           {serviceFee > 0 && <p className="text-2xl">{serviceFeeLabel(restaurant.config.serviceFee)} : {euro(serviceFee)}</p>}

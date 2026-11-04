@@ -1,7 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { normalizeCode } from "./promo";
+import { normalizeCode, type PromoScope } from "./promo";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function isAgency(supabase: any, userId: string) {
+  const { data } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
+  return !!data;
+}
+const scopeSchema = z.object({ categories: z.array(z.string().max(100)).max(200), items: z.array(z.string().max(100)).max(500) }).nullable().optional();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function assertManager(supabase: any, userId: string, restaurantId: string) {
@@ -14,7 +21,8 @@ async function admin() {
   return supabaseAdmin as any;
 }
 
-export type PromoCode = { id: string; code: string; kind: "percent" | "fixed"; value: number; min_order: number; starts_at: string | null; ends_at: string | null; active: boolean; uses: number };
+export type PromoCode = { id: string; code: string; kind: "percent" | "fixed"; value: number; min_order: number; starts_at: string | null; ends_at: string | null; active: boolean; uses: number; scope: PromoScope };
+export type PromoTargets = { id: string; label: string; items: { id: string; name: string }[] }[];
 
 export const listPromos = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -22,8 +30,15 @@ export const listPromos = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     await assertManager(context.supabase, context.userId, data.restaurantId);
     const { data: rows } = await (await admin()).from("restaurant_promo_codes")
-      .select("id, code, kind, value, min_order, starts_at, ends_at, active, uses").eq("restaurant_id", data.restaurantId).order("created_at", { ascending: false });
-    return (rows ?? []) as PromoCode[];
+      .select("id, code, kind, value, min_order, starts_at, ends_at, active, uses, scope").eq("restaurant_id", data.restaurantId).order("created_at", { ascending: false });
+    const agency = await isAgency(context.supabase, context.userId);
+    let targets: PromoTargets = [];
+    if (agency) {
+      const { data: r } = await (await admin()).from("restaurants").select("menu, menu_key").eq("id", data.restaurantId).single();
+      const { getCatalog } = await import("./catalogs");
+      targets = getCatalog(r).categories.map((c) => ({ id: c.id, label: c.label, items: c.items.map((i) => ({ id: i.id, name: i.name })) }));
+    }
+    return { promos: (rows ?? []) as PromoCode[], agency, targets };
   });
 
 const promoSchema = z.object({
@@ -36,6 +51,7 @@ const promoSchema = z.object({
   starts_at: z.string().datetime().nullable(),
   ends_at: z.string().datetime().nullable(),
   active: z.boolean(),
+  scope: scopeSchema,
 });
 
 export const savePromo = createServerFn({ method: "POST" })
@@ -45,7 +61,11 @@ export const savePromo = createServerFn({ method: "POST" })
     await assertManager(context.supabase, context.userId, data.restaurantId);
     if (data.kind === "percent" && data.value > 100) throw new Error("Un pourcentage ne peut pas dépasser 100 %");
     if (data.starts_at && data.ends_at && data.starts_at > data.ends_at) throw new Error("La date de fin est avant la date de début");
-    const row = { restaurant_id: data.restaurantId, code: normalizeCode(data.code), kind: data.kind, value: data.value, min_order: data.min_order, starts_at: data.starts_at, ends_at: data.ends_at, active: data.active };
+    const scope = data.scope && (data.scope.categories.length || data.scope.items.length) ? data.scope : null;
+    const agency = await isAgency(context.supabase, context.userId);
+    if (!agency && scope) throw new Error("Le ciblage par catégorie ou article est réservé à l'agence");
+    const row: Record<string, unknown> = { restaurant_id: data.restaurantId, code: normalizeCode(data.code), kind: data.kind, value: data.value, min_order: data.min_order, starts_at: data.starts_at, ends_at: data.ends_at, active: data.active };
+    if (agency && data.scope !== undefined) row["scope"] = scope; // un gérant ne modifie jamais le ciblage existant
     const db = await admin();
     const { error } = data.id
       ? await db.from("restaurant_promo_codes").update(row).eq("id", data.id).eq("restaurant_id", data.restaurantId)
@@ -88,11 +108,15 @@ export const checkDiscount = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({
     slug: z.string().max(40), code: z.string().max(30).optional(), subtotal: z.number().min(0).max(10000),
     email: z.string().max(255).optional(), phone: z.string().max(20).optional(), channel: z.enum(["web", "kiosk"]),
+    lines: z.array(z.object({ id: z.string().max(100), total: z.number().min(0).max(10000) })).max(200).optional(),
   }).parse(d))
   .handler(async ({ data }) => {
     const db = await admin();
-    const { data: r } = await db.from("restaurants").select("id, config").eq("slug", data.slug).eq("active", true).maybeSingle();
+    const { data: r } = await db.from("restaurants").select("id, config, menu, menu_key").eq("slug", data.slug).eq("active", true).maybeSingle();
     if (!r) throw new Error("Restaurant introuvable");
     const { resolveDiscount } = await import("./promo.server");
-    return resolveDiscount(db, r, data.subtotal, { code: data.code, email: data.email, phone: data.phone, channel: data.channel });
+    const { getCatalog } = await import("./catalogs");
+    const cats = getCatalog(r).categories;
+    return resolveDiscount(db, r, data.subtotal, { code: data.code, email: data.email, phone: data.phone, channel: data.channel,
+      lines: data.lines, categoryIdOf: (id: string) => cats.find((c) => c.items.some((i) => i.id === id))?.id });
   });

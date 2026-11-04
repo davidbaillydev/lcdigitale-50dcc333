@@ -1,0 +1,1 @@
+ALTER TABLE public.restaurant_promo_codes ADD COLUMN scope jsonb;

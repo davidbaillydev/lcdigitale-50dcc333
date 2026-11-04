@@ -12,7 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useCart } from "@/lib/cart";
-import { euro } from "@/lib/menu";
+import { euro, unitPrice } from "@/lib/menu";
+import { promoLines } from "@/lib/promo";
 import { useTable } from "@/lib/table";
 import { findZone, zoneFee, type GeoZone } from "@/lib/geo";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
@@ -48,7 +49,7 @@ export const Route = createFileRoute("/$slug/commande")({
 });
 
 function Checkout() {
-  const { lines, subtotal, clear, restaurant, qr, track } = useCart();
+  const { lines, subtotal, clear, restaurant, qr, track, catalog } = useCart();
   useEffect(() => { if (lines.length) track("checkout_started", "Coordonnées & mode de retrait"); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const DELIVERY = restaurant.delivery;
   const navigate = useNavigate();
@@ -391,7 +392,7 @@ function Checkout() {
           <h2 className="text-3xl">Récapitulatif</h2>
           <CartLines />
           {!payment && <CartSuggestions className="mb-3" />}
-          {!payment && <div className="mb-3"><PromoCodeField slug={restaurant.slug} subtotal={subtotal} channel="web" email={f.email} phone={f.phone} onChange={(d, code) => setPromo({ d, code })} /></div>}
+          {!payment && <div className="mb-3"><PromoCodeField lines={promoLines(catalog, lines, unitPrice)} slug={restaurant.slug} subtotal={subtotal} channel="web" email={f.email} phone={f.phone} onChange={(d, code) => setPromo({ d, code })} /></div>}
           <div className="space-y-1 border-t border-border pt-3 text-sm">
             <div className="flex justify-between"><span>Sous-total</span><span>{euro(subtotal)}</span></div>
             {discount > 0 && <div className="flex justify-between text-primary"><span>{promo.d?.label}</span><span>-{euro(discount)}</span></div>}

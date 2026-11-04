@@ -1393,6 +1393,7 @@ export type Database = {
           kind: string
           min_order: number
           restaurant_id: string
+          scope: Json | null
           starts_at: string | null
           updated_at: string
           uses: number
@@ -1407,6 +1408,7 @@ export type Database = {
           kind: string
           min_order?: number
           restaurant_id: string
+          scope?: Json | null
           starts_at?: string | null
           updated_at?: string
           uses?: number
@@ -1421,6 +1423,7 @@ export type Database = {
           kind?: string
           min_order?: number
           restaurant_id?: string
+          scope?: Json | null
           starts_at?: string | null
           updated_at?: string
           uses?: number

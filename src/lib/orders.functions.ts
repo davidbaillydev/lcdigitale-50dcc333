@@ -52,6 +52,9 @@ function backParam(returnTo?: string, ref?: string): string {
   } catch { return ""; }
 }
 
+function categoryIdOf(catalog: ReturnType<typeof getCatalog>) {
+  return (itemId: string) => catalog.categories.find((c) => c.items.some((i) => i.id === itemId))?.id;
+}
 function categoryOf(catalog: ReturnType<typeof getCatalog>, itemId: string) {
   return catalog.categories.find((c) => c.items.some((i) => i.id === itemId))?.label;
 }
@@ -160,7 +163,7 @@ async function createCalculatedOrder(supabaseAdmin: Awaited<typeof import("@/int
       if (min != null && subtotal < min) throw new Error(`Minimum de commande à emporter : ${min} €`);
     }
     const { resolveDiscount } = await import("./promo.server");
-    const promo = await resolveDiscount(supabaseAdmin, r, subtotal, { code: data.promo_code, email: data.email, phone: data.phone, channel: "web" });
+    const promo = await resolveDiscount(supabaseAdmin, r, subtotal, { code: data.promo_code, email: data.email, phone: data.phone, channel: "web", lines: items, categoryIdOf: categoryIdOf(catalog) });
     const serviceFee = computeServiceFee(r.config.serviceFee, subtotal, data.mode as ServiceFeeChannel);
     if (promo.error) throw new Error(promo.error);
 
@@ -304,7 +307,7 @@ export const createKioskOrder = createServerFn({ method: "POST" })
       if (min != null && subtotal < min) throw new Error(`Minimum de commande à emporter : ${min} €`);
     }
     const { resolveDiscount } = await import("./promo.server");
-    const promo = await resolveDiscount(supabaseAdmin, r, subtotal, { code: data.promo_code, channel: "kiosk" });
+    const promo = await resolveDiscount(supabaseAdmin, r, subtotal, { code: data.promo_code, channel: "kiosk", lines: items, categoryIdOf: categoryIdOf(catalog) });
     const serviceFee = computeServiceFee(r.config.serviceFee, subtotal, "kiosk");
     if (promo.error) throw new Error(promo.error);
     const { data: row, error } = await supabaseAdmin
