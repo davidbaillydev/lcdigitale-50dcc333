@@ -88,4 +88,4 @@ Verified on a temporary restaurant, now deactivated: upload and reload persisten
 - [x] Vue « Gains agence » (/admin/gains) : frais de service, commandes validées et CA par restaurant, périodes 7/30/90 jours et mois en cours, graphique par jour ; fonction serveur réservée à l'agence, 4 tests réussis, page vérifiée connectée (100 commandes, 2 263,34 € de CA sur 30 jours, 0 € de frais car aucun restaurant n'a activé les frais de service).
 - [x] Tunnel livraison : autocomplétion BAN, remplissage auto + validation zone immédiate, bandeau statut visible, boutons tactiles ; 4 tests réussis, parcours vérifié à l’écran (livrable Colomiers + hors zone Paris, ordinateur et mobile).
 - [x] Gains agence : export mensuel CSV récapitulatif + CSV Zoho Invoice
-- [ ] Campagnes : vagues manuelles de 100 à 300 e-mails, progression et contrôles serveur, tests et vérification sans envoi réel.
+- [x] Campagnes : vagues manuelles de 100 à 300 e-mails, progression persistante/reprise, verrou serveur et consentement revérifié ; 19 tests réussis, compilation OK, contrôles ordinateur/mobile vérifiés connecté sur Wok & Sushi ; aucun envoi réel ni publication.
