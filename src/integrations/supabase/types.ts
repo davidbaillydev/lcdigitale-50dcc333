@@ -946,6 +946,53 @@ export type Database = {
           },
         ]
       }
+      restaurant_campaign_waves: {
+        Row: {
+          created_at: string
+          created_by: string
+          error: string | null
+          id: string
+          payload: Json
+          remaining_ids: string[]
+          restaurant_id: string
+          sent: number
+          sent_emails: string[]
+          state: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          error?: string | null
+          id: string
+          payload: Json
+          remaining_ids?: string[]
+          restaurant_id: string
+          sent?: number
+          sent_emails?: string[]
+          state?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          error?: string | null
+          id?: string
+          payload?: Json
+          remaining_ids?: string[]
+          restaurant_id?: string
+          sent?: number
+          sent_emails?: string[]
+          state?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_campaign_waves_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurant_campaigns: {
         Row: {
           created_at: string

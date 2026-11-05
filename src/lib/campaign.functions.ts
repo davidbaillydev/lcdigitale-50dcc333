@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { greetingText } from "@/lib/email-templates";
+import { selectWave, waveSizeSchema } from "@/lib/campaign-waves";
 
 const GATEWAY = "https://connector-gateway.lovable.dev/brevo";
 const SENDER = { email: "contact@lcdigitale.fr" };
@@ -15,6 +16,8 @@ const schema = z.object({
   ctaLabel: z.string().trim().max(40).optional(),
   origin: z.string().url().max(200).regex(/^https?:\/\/[^/]+$/),
   testEmail: z.string().email().max(255).optional(),
+  waveSize: waveSizeSchema,
+  campaignId: z.string().uuid(),
 });
 
 async function brevo(body: unknown) {
@@ -64,27 +67,54 @@ export const sendCampaign = createServerFn({ method: "POST" })
       return { sent: 1, test: true };
     }
 
-    const recipients: { id: string; email: string; name: string | null }[] = [];
-    for (let i = 0; i < data.customerIds.length; i += 500) {
-      const { data: rows } = await supabaseAdmin.from("restaurant_customers").select("id, email, name")
-        .eq("restaurant_id", data.restaurantId).eq("marketing_consent", true).not("email", "is", null).in("id", data.customerIds.slice(i, i + 500));
-      recipients.push(...((rows ?? []) as typeof recipients));
-    }
-    if (!recipients.length) throw new Error("Aucun client consentant avec email dans la sélection.");
+    const payload = { subject: data.subject, body: data.body, ctaUrl: data.ctaUrl || "", ctaLabel: data.ctaLabel ?? "", origin: data.origin };
+    const { error: initError } = await supabaseAdmin.from("restaurant_campaign_waves").upsert({
+      id: data.campaignId, restaurant_id: data.restaurantId, payload,
+      remaining_ids: [...new Set(data.customerIds)], created_by: context.userId,
+    }, { onConflict: "id", ignoreDuplicates: true });
+    if (initError) throw initError;
+    const { data: campaign, error: loadError } = await supabaseAdmin.from("restaurant_campaign_waves")
+      .select("*").eq("id", data.campaignId).eq("restaurant_id", data.restaurantId).single();
+    if (loadError || !campaign) throw new Error("Campagne introuvable.");
+    const saved = campaign.payload as Record<string, unknown>;
+    if (Object.entries(payload).some(([key, value]) => saved[key] !== value)) throw new Error("Le contenu de cette campagne ne peut plus être modifié.");
+    if (campaign.state === "done") return { sent: 0, test: false, error: null, totalSent: campaign.sent, remaining: 0 };
+    const { data: claimed, error: claimError } = await supabaseAdmin.from("restaurant_campaign_waves")
+      .update({ state: "sending", error: null }).eq("id", campaign.id).eq("state", "idle").eq("sent", campaign.sent).select("id").maybeSingle();
+    if (claimError) throw claimError;
+    if (!claimed) throw new Error("Envoi déjà en cours ou à vérifier dans Brevo avant de poursuivre.");
 
-    let sent = 0, error: string | null = null;
+    let submitted = false;
     try {
-      for (let i = 0; i < recipients.length; i += 500) {
-        await brevo({ ...base, messageVersions: recipients.slice(i, i + 500).map((c) => ({
+      const rows: { id: string; email: string; name: string | null }[] = [];
+      for (let i = 0; i < campaign.remaining_ids.length; i += 500) {
+        const result = await supabaseAdmin.from("restaurant_customers").select("id, email, name")
+          .eq("restaurant_id", data.restaurantId).eq("marketing_consent", true).not("email", "is", null)
+          .in("id", campaign.remaining_ids.slice(i, i + 500));
+        if (result.error) throw result.error;
+        rows.push(...((result.data ?? []) as typeof rows));
+      }
+      const { recipients, remainingIds } = selectWave(campaign.remaining_ids, rows, data.waveSize, campaign.sent_emails);
+      if (recipients.length) {
+        submitted = true;
+        await brevo({ ...base, messageVersions: recipients.map((c) => ({
           to: [{ email: c.email, ...(c.name ? { name: c.name } : {}) }],
           params: { greeting: greetingText(c.name), unsub: `${data.origin}/desabonnement?c=${c.id}&t=${unsubToken(c.id)}` },
         })) });
-        sent += Math.min(500, recipients.length - i);
       }
-    } catch (e) { error = (e as Error).message; }
-    await supabaseAdmin.from("restaurant_campaigns").insert({ restaurant_id: data.restaurantId, subject: data.subject, recipients: sent, status: error ? (sent ? "partial" : "failed") : "sent", error, created_by: context.userId });
-    if (error && !sent) throw new Error(error);
-    return { sent, test: false, error };
+      const totalSent = campaign.sent + recipients.length;
+      const { error: saveError } = await supabaseAdmin.from("restaurant_campaign_waves").update({
+        remaining_ids: remainingIds, sent_emails: [...campaign.sent_emails, ...recipients.map((c) => c.email)],
+        sent: totalSent, state: remainingIds.length ? "idle" : "done",
+      }).eq("id", campaign.id);
+      if (saveError) throw saveError;
+      if (recipients.length) await supabaseAdmin.from("restaurant_campaigns").insert({ restaurant_id: data.restaurantId, subject: data.subject, recipients: recipients.length, status: "sent", created_by: context.userId });
+      return { sent: recipients.length, test: false, error: null, totalSent, remaining: remainingIds.length };
+    } catch (e) {
+      const error = (e as Error).message;
+      await supabaseAdmin.from("restaurant_campaign_waves").update({ state: submitted ? "uncertain" : "idle", error }).eq("id", campaign.id);
+      throw new Error(submitted ? `${error} — Vérifiez cette vague dans Brevo avant tout nouvel envoi.` : error);
+    }
   });
 
 /** Désabonnement public via lien signé */
