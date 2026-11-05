@@ -390,11 +390,11 @@ function CampaignPanel({ restaurantId, targets }: { restaurantId: string; target
         {waves.map((w) => {
           const payload = w.payload as Record<string, unknown>;
           return <div key={w.id} className="flex flex-wrap items-center gap-2 border-t border-border py-2">
-            <span className="min-w-0 flex-1 break-words">{String(payload.subject ?? "Campagne")} · {w.sent} transmis · {w.remaining_ids.length} restant(s) · {w.state === "done" ? "Terminée" : w.state === "idle" ? "En pause" : "À vérifier"}</span>
+            <span className="min-w-0 flex-1 break-words">{String(payload["subject"] ?? "Campagne")} · {w.sent} transmis · {w.remaining_ids.length} restant(s) · {w.state === "done" ? "Terminée" : w.state === "idle" ? "En pause" : "À vérifier"}</span>
             <Button variant="secondary" size="sm" disabled={busy || w.id === campaignId} onClick={() => {
               setCampaignId(w.id); attemptId.current = w.id;
-              setSubject(String(payload.subject ?? "")); setBody(String(payload.body ?? ""));
-              setCtaUrl(String(payload.ctaUrl ?? "")); setCtaLabel(String(payload.ctaLabel ?? ""));
+              setSubject(String(payload["subject"] ?? "")); setBody(String(payload["body"] ?? ""));
+              setCtaUrl(String(payload["ctaUrl"] ?? "")); setCtaLabel(String(payload["ctaLabel"] ?? ""));
             }}>{w.state === "idle" ? "Reprendre" : "Consulter"}</Button>
           </div>;
         })}
