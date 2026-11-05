@@ -29,11 +29,11 @@ describe("Vagues de campagnes", () => {
   it("removes unsubscribed or removed clients on the next wave", () => {
     const first = selectWave(ids, rows, 100);
     const next = selectWave(first.remainingIds, rows.filter((r) => r.id !== "c100"), 100);
-    expect(next.recipients[0].id).toBe("c101");
+    expect(next.recipients[0]?.id).toBe("c101");
     expect(next.remainingIds).not.toContain("c100");
   });
   it("deduplicates IDs and normalized emails, including earlier waves", () => {
-    const customers = [rows[0], { id: "duplicate", email: " CLIENT0@example.com ", name: null }, rows[1], { id: "invalid", email: "bad", name: null }];
+    const customers = [{ id: "c0", email: "client0@example.com", name: null }, { id: "duplicate", email: " CLIENT0@example.com ", name: null }, { id: "c1", email: "client1@example.com", name: null }, { id: "invalid", email: "bad", name: null }];
     const next = selectWave(["c0", "duplicate", "c1", "c1", "invalid"], customers, 100, ["client0@example.com"]);
     expect(next.recipients.map((r) => r.id)).toEqual(["c1"]);
   });

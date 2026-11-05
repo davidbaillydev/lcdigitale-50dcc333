@@ -47,10 +47,10 @@ describe("Authenticated campaign send handler", () => {
     expect(await invoke({ data, context })).toMatchObject({ sent: 100, remaining: 550 });
     expect(campaign.sent).toBe(100);
     expect(campaign.state).toBe("idle");
-    const first = JSON.parse(mocks.fetch.mock.calls[0][1].body).messageVersions;
+    const first = JSON.parse(mocks.fetch.mock.calls[0]?.[1]?.body ?? "{}").messageVersions;
     expect(first).toHaveLength(100);
     await invoke({ data, context });
-    const next = JSON.parse(mocks.fetch.mock.calls[1][1].body).messageVersions;
+    const next = JSON.parse(mocks.fetch.mock.calls[1]?.[1]?.body ?? "{}").messageVersions;
     expect(next[0].to[0].email).toBe("c100@example.com");
     expect(campaign.sent).toBe(200);
   });
@@ -77,7 +77,7 @@ describe("Authenticated campaign send handler", () => {
   it("rechecks consent before delivering", async () => {
     mocks.consentRows = clients.slice(1);
     await invoke({ data, context });
-    const versions = JSON.parse(mocks.fetch.mock.calls[0][1].body).messageVersions;
+    const versions = JSON.parse(mocks.fetch.mock.calls[0]?.[1]?.body ?? "{}").messageVersions;
     expect(versions[0].to[0].email).toBe("c1@example.com");
     expect(versions).toHaveLength(100);
   });

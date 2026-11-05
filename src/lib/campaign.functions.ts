@@ -76,14 +76,11 @@ export const sendCampaign = createServerFn({ method: "POST" })
     const { data: campaign, error: loadError } = await supabaseAdmin.from("restaurant_campaign_waves")
       .select("*").eq("id", data.campaignId).eq("restaurant_id", data.restaurantId).single();
     if (loadError || !campaign) throw new Error("Campagne introuvable.");
-    if (JSON.stringify(campaign.payload) !== JSON.stringify(JSON.parse(JSON.stringify(payload)))) {
-      // jsonb key order is not stable: compare fields rather than serialized ordering.
-      const saved = campaign.payload as Record<string, unknown>;
-      if (Object.entries(payload).some(([key, value]) => saved[key] !== value)) throw new Error("Le contenu de cette campagne ne peut plus être modifié.");
-    }
+    const saved = campaign.payload as Record<string, unknown>;
+    if (Object.entries(payload).some(([key, value]) => saved[key] !== value)) throw new Error("Le contenu de cette campagne ne peut plus être modifié.");
     if (campaign.state === "done") return { sent: 0, test: false, error: null, totalSent: campaign.sent, remaining: 0 };
     const { data: claimed, error: claimError } = await supabaseAdmin.from("restaurant_campaign_waves")
-      .update({ state: "sending", error: null }).eq("id", campaign.id).eq("state", "idle").select("id").maybeSingle();
+      .update({ state: "sending", error: null }).eq("id", campaign.id).eq("state", "idle").eq("sent", campaign.sent).select("id").maybeSingle();
     if (claimError) throw claimError;
     if (!claimed) throw new Error("Envoi déjà en cours ou à vérifier dans Brevo avant de poursuivre.");
 
