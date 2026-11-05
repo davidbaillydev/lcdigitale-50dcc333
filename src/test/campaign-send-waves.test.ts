@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ rpc: vi.fn(), from: vi.fn(), fetch: vi.fn(), updates: vi.fn(), audit: vi.fn(), claimed: true, consentRows: [] as { id: string; email: string; name: null }[] }));
 vi.mock("@tanstack/react-start", () => ({ createServerFn: () => {
   let validate = (d: unknown) => d;
-  const b = { middleware: () => b, inputValidator: (fn: typeof validate) => { validate = fn; return b; }, handler: (h: (d: unknown) => unknown) => (args: { data: unknown; context: unknown }) => h({ ...args, data: validate(args.data) }) };
+  const b = { middleware: () => b, inputValidator: (fn: typeof validate) => { validate = fn; return b; }, handler: (h: (d: unknown) => unknown) => async (args: { data: unknown; context: unknown }) => h({ ...args, data: validate(args.data) }) };
   return b;
 } }));
 vi.mock("@/integrations/supabase/auth-middleware", () => ({ requireSupabaseAuth: {} }));
