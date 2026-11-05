@@ -3,7 +3,7 @@ import { Crumbs } from "@/components/Crumbs";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
-import { FileDown, FileSpreadsheet, RefreshCw, Trash2, Upload } from "lucide-react";
+import { FileDown, FileSpreadsheet, RefreshCw, Send, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useStaff } from "@/hooks/use-staff";
@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useServerFn } from "@tanstack/react-start";
 import { sendCampaign } from "@/lib/campaign.functions";
 import { customerActivity } from "@/lib/customers.functions";
+import { waveSizeSchema } from "@/lib/campaign-waves";
 
 export const Route = createFileRoute("/_authenticated/espace/$slug/clients")({
   head: () => ({
@@ -200,7 +201,7 @@ function Page() {
         <p className="text-xs text-muted-foreground">La liste de diffusion ne contient que les clients ayant donné leur consentement et disposant d'un email (RGPD).</p>
       </section>
 
-      {isAgency ? <CampaignPanel restaurantId={r.id} targets={rows.filter((c) => c.marketing_consent && c.email)} />
+      {isAgency ? <CampaignPanel key={r.id} restaurantId={r.id} targets={rows.filter((c) => c.marketing_consent && c.email)} />
         : <section className="rounded-xl border border-border bg-card p-4"><h2 className="text-2xl">Campagnes email et SMS</h2><p className="text-sm text-muted-foreground">Option disponible dans votre contrat LC Digitale. Contactez votre agence pour l'activer : elle prépare et envoie les campagnes pour vous.</p></section>}
 
       <div className={`admin-customers overflow-x-auto rounded-lg border border-border ${isFetching ? "opacity-60" : ""}`}>
@@ -325,35 +326,79 @@ function CampaignPanel({ restaurantId, targets }: { restaurantId: string; target
   const [ctaLabel, setCtaLabel] = useState("Commander");
   const [test, setTest] = useState("");
   const [busy, setBusy] = useState(false);
+  const [waveSize, setWaveSize] = useState(100);
+  const [campaignId, setCampaignId] = useState<string | null>(null);
+  const attemptId = useRef<string | null>(null);
+  const { data: waves, refetch: refetchWaves } = useQuery({
+    queryKey: ["campaign-waves", restaurantId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("restaurant_campaign_waves").select("id, payload, sent, remaining_ids, state, error, created_at")
+        .eq("restaurant_id", restaurantId).order("created_at", { ascending: false }).limit(20);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const current = waves?.find((w) => w.id === campaignId);
+  const remaining = current?.remaining_ids.length ?? targets.length;
+  const nextCount = Math.min(waveSize, remaining);
+  const waveValid = waveSizeSchema.safeParse(waveSize).success;
+  const blocked = current && current.state !== "idle";
   const { data: history, refetch } = useQuery({
     queryKey: ["campaigns", restaurantId],
     queryFn: async () => (await supabase.from("restaurant_campaigns").select("id, subject, recipients, status, error, created_at").eq("restaurant_id", restaurantId).order("created_at", { ascending: false }).limit(20)).data ?? [],
   });
   const go = async (testEmail?: string) => {
-    if (!testEmail && !confirm(`Envoyer « ${subject} » à ${targets.length} client(s) consentant(s) ?`)) return;
+    if (busy || !waveValid || (!testEmail && blocked)) return;
+    if (!testEmail && !confirm(`Envoyer une vague de ${nextCount} e-mail(s) maximum pour « ${subject} » ? Les vagues suivantes attendront votre validation.`)) return;
     setBusy(true);
     try {
-      const res = await send({ data: { restaurantId, customerIds: testEmail ? [targets[0]?.id ?? restaurantId] : targets.map((c) => c.id), subject, body, ctaUrl: ctaUrl || "", ctaLabel, origin: window.location.origin, ...(testEmail ? { testEmail } : {}) } });
+      const id = campaignId ?? attemptId.current ?? crypto.randomUUID();
+      if (!testEmail) { attemptId.current = id; setCampaignId(id); }
+      const res = await send({ data: { restaurantId, campaignId: id, waveSize, customerIds: testEmail ? [targets[0]?.id ?? restaurantId] : (current?.remaining_ids.length ? current.remaining_ids : targets.map((c) => c.id)), subject, body, ctaUrl: ctaUrl || "", ctaLabel, origin: window.location.origin, ...(testEmail ? { testEmail } : {}) } });
       if (res.test) toast.success(`Email de test envoyé à ${testEmail}`);
-      else { if (res.error) toast.warning(`${res.sent} envoyé(s), puis erreur : ${res.error}`); else toast.success(`Campagne envoyée à ${res.sent} client(s)`); refetch(); }
-    } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
+      else { toast.success(`${res.sent} e-mail(s) transmis à Brevo pour cette vague`); refetch(); }
+    } catch (e) { toast.error((e as Error).message); } finally { await refetchWaves(); setBusy(false); }
   };
   const ready = subject.trim().length >= 3 && body.trim().length >= 5;
   return (
-    <section className="space-y-3 rounded-xl border border-border bg-card p-4">
+    <section className="space-y-3 rounded-lg border border-border bg-card p-4" aria-label="Campagne email">
       <h2 className="text-2xl">Campagne email (Brevo)</h2>
       <p className="text-sm text-muted-foreground">Destinataires : les <b>{targets.length}</b> client(s) consentant(s) avec email correspondant au ciblage ci-dessus. Un lien de désabonnement est ajouté automatiquement.</p>
-      <Input placeholder="Objet — ex. -15 % ce week-end sur les plateaux" value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={150} />
-      <Textarea placeholder="Votre message…" rows={6} value={body} onChange={(e) => setBody(e.target.value)} maxLength={5000} />
+      <Input disabled={busy || !!campaignId} placeholder="Objet — ex. -15 % ce week-end sur les plateaux" value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={150} />
+      <Textarea disabled={busy || !!campaignId} placeholder="Votre message…" rows={6} value={body} onChange={(e) => setBody(e.target.value)} maxLength={5000} />
       <div className="grid gap-2 sm:grid-cols-2">
-        <Input placeholder="Lien du bouton (ex. adresse de votre page de commande)" value={ctaUrl} onChange={(e) => setCtaUrl(e.target.value)} />
-        <Input placeholder="Texte du bouton" value={ctaLabel} onChange={(e) => setCtaLabel(e.target.value)} maxLength={40} />
+        <Input disabled={busy || !!campaignId} placeholder="Lien du bouton (ex. adresse de votre page de commande)" value={ctaUrl} onChange={(e) => setCtaUrl(e.target.value)} />
+        <Input disabled={busy || !!campaignId} placeholder="Texte du bouton" value={ctaLabel} onChange={(e) => setCtaLabel(e.target.value)} maxLength={40} />
       </div>
+      <div className="flex flex-wrap items-end gap-4">
+        <label className="space-y-1 text-sm font-medium">E-mails par vague (100 à 300)
+          <Input className="w-32" aria-label="E-mails par vague" type="number" min={100} max={300} step={1} value={waveSize} disabled={busy} onChange={(e) => setWaveSize(Number(e.target.value))} />
+        </label>
+        <p className="text-sm tabular-nums"><b>{current?.sent ?? 0}</b> transmis à Brevo · <b>{remaining}</b> restant(s)</p>
+        {campaignId && <Button variant="ghost" disabled={busy} onClick={() => { setCampaignId(null); attemptId.current = null; }}>Nouvelle campagne</Button>}
+      </div>
+      {!waveValid && <p className="text-sm text-destructive">Choisissez un nombre entier entre 100 et 300.</p>}
+      {current?.error && <p role="alert" className="break-words text-sm text-destructive">{current.error}</p>}
+      {current && (current.state === "uncertain" || current.state === "sending") && <p role="alert" className="text-sm text-destructive">Vague en cours ou à vérifier dans Brevo : nouvel envoi bloqué pour éviter les doublons.</p>}
       <div className="flex flex-wrap items-center gap-2">
         <Input className="max-w-xs" type="email" placeholder="Votre email pour un test" value={test} onChange={(e) => setTest(e.target.value)} />
         <Button variant="secondary" disabled={busy || !ready || !test.includes("@")} onClick={() => go(test)}>Envoyer un test</Button>
-        <Button className="ml-auto" disabled={busy || !ready || !targets.length} onClick={() => go()}>{busy ? "Envoi…" : `Envoyer à ${targets.length} client(s)`}</Button>
+        <Button className="min-h-12 w-full sm:ml-auto sm:w-auto" disabled={busy || !ready || !waveValid || !remaining || !!blocked} onClick={() => go()}><Send />{busy ? "Envoi…" : `Envoyer la vague · ${nextCount} maximum`}</Button>
       </div>
+      {!!waves?.length && <div className="space-y-2 text-sm">
+        <p className="font-semibold">Campagnes par vagues</p>
+        {waves.map((w) => {
+          const payload = w.payload as Record<string, unknown>;
+          return <div key={w.id} className="flex flex-wrap items-center gap-2 border-t border-border py-2">
+            <span className="min-w-0 flex-1 break-words">{String(payload.subject ?? "Campagne")} · {w.sent} transmis · {w.remaining_ids.length} restant(s) · {w.state === "done" ? "Terminée" : w.state === "idle" ? "En pause" : "À vérifier"}</span>
+            <Button variant="secondary" size="sm" disabled={busy || w.id === campaignId} onClick={() => {
+              setCampaignId(w.id); attemptId.current = w.id;
+              setSubject(String(payload.subject ?? "")); setBody(String(payload.body ?? ""));
+              setCtaUrl(String(payload.ctaUrl ?? "")); setCtaLabel(String(payload.ctaLabel ?? ""));
+            }}>{w.state === "idle" ? "Reprendre" : "Consulter"}</Button>
+          </div>;
+        })}
+      </div>}
       {!!history?.length && (
         <div className="text-sm"><p className="font-semibold">Historique</p>
           {history.map((h) => <p key={h.id} className="border-t border-border py-1">{new Date(h.created_at).toLocaleString("fr-FR")} · {h.subject} · {h.recipients} destinataire(s) · {h.status === "sent" ? "Envoyée" : h.status === "partial" ? "Partielle" : "Échec"}{h.error ? ` — ${h.error}` : ""}</p>)}
