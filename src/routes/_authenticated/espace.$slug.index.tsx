@@ -134,7 +134,12 @@ function Kitchen() {
   const [moving, setMoving] = useState<string | null>(null);
   const printingBase = printingDefaults((restaurant?.config as { printing?: Partial<PrintingConfig> } | null)?.printing);
   const [deviceWidth, setDeviceWidth] = useTicketWidth(printingBase.width);
-  const printing = { ...printingBase, width: deviceWidth };
+  // Mode rush : force l'impression auto du ticket de caisse sur cet appareil (mémorisé localement).
+  const rushKey = `lc-rush-receipt:${slug}`;
+  const [rush, setRush] = useState(false);
+  useEffect(() => { try { setRush(localStorage.getItem(rushKey) === "1"); } catch { /* stockage indisponible */ } }, [rushKey]);
+  const toggleRush = () => setRush((v) => { const n = !v; try { if (n) localStorage.setItem(rushKey, "1"); else localStorage.removeItem(rushKey); } catch { /* ignore */ } toast.success(n ? "Mode rush activé : ticket de caisse imprimé automatiquement" : "Mode rush désactivé"); return n; });
+  const printing = { ...printingBase, width: deviceWidth, ...(rush ? { autoReceipt: true, auto: true } : {}) };
   const [printState, setPrintState] = useState<Record<string, "ok" | "failed">>({});
   const [logs, setLogs] = useState<Record<string, PrintLog[]>>({});
   const [openLog, setOpenLog] = useState<string | null>(null);
@@ -436,6 +441,9 @@ function Kitchen() {
         <PrinterSetup compact width={printing.width} shop={{ name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null, slug, customDomains: (restaurant?.config as Restaurant["config"] | null)?.customDomains }} />
         <Button size="sm" variant="outline" onClick={() => setDeviceWidth(printing.width === 80 ? 58 : 80)} aria-label={`Rouleau ${printing.width} mm — basculer en ${printing.width === 80 ? 58 : 80} mm`} title="Changer le format de rouleau sur cet appareil">
           <Printer className="h-4 w-4" />{printing.width} mm · {autoPrintLabel(printing)}
+        </Button>
+        <Button size="sm" variant={rush ? "default" : "outline"} onClick={toggleRush} aria-pressed={rush} title="Imprime automatiquement le ticket de caisse à chaque nouvelle commande sur cet appareil">
+          <Printer className="h-4 w-4" />{rush ? "Mode rush : caisse auto ✓" : "Mode rush"}
         </Button>
         </nav>
             </section>
