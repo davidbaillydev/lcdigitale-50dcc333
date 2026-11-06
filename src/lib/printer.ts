@@ -15,6 +15,8 @@ export function getPrinter(): PrinterConfig | null {
   try { return JSON.parse(localStorage.getItem(KEY) ?? "null"); } catch { return null; }
 }
 export function savePrinter(p: PrinterConfig | null) {
+  const prev = getPrinter();
+  if (!p || !prev || prev.type !== p.type || prev.name !== p.name || prev.host !== p.host || prev.port !== p.port) resetConnections(p);
   if (p) localStorage.setItem(KEY, JSON.stringify(p)); else localStorage.removeItem(KEY);
 }
 
@@ -28,8 +30,22 @@ export const support = () => ({
 // ---- Bluetooth (BLE) ----
 let btDevice: any = null;
 let btChar: any = null;
+let port: any = null;
+
+/** Oublie les connexions mémorisées (ancienne imprimante) ; garde celles détectées pour `keep`. */
+export function resetConnections(keep?: PrinterConfig | null) {
+  if (btDevice && !(keep?.type === "bluetooth" && btDevice.name === keep.name)) {
+    try { btDevice.gatt?.disconnect?.(); } catch { /* déjà déconnectée */ }
+    btDevice = null; btChar = null;
+  }
+  if (port && keep?.type !== "usb") {
+    const old = port; port = null;
+    old.close?.().catch?.(() => {});
+  }
+}
 export async function detectBluetooth(): Promise<string> {
   const bt = (navigator as any).bluetooth;
+  resetConnections(null);
   btDevice = await bt.requestDevice({ acceptAllDevices: true, optionalServices: BT_SERVICES });
   btChar = null;
   await btCharacteristic();
@@ -37,6 +53,7 @@ export async function detectBluetooth(): Promise<string> {
 }
 async function btCharacteristic() {
   if (btChar && btDevice?.gatt?.connected) return btChar;
+  btChar = null;
   if (!btDevice) {
     const devs: any[] = (await (navigator as any).bluetooth?.getDevices?.()) ?? [];
     const name = getPrinter()?.name;
@@ -61,8 +78,8 @@ async function sendBluetooth(data: Uint8Array) {
 }
 
 // ---- USB / série ----
-let port: any = null;
 export async function detectUsb(): Promise<string> {
+  resetConnections(null);
   port = await (navigator as any).serial.requestPort();
   const i = port.getInfo?.() ?? {};
   return i.usbVendorId ? `Imprimante USB ${i.usbVendorId.toString(16)}:${(i.usbProductId ?? 0).toString(16)}` : "Imprimante USB";
