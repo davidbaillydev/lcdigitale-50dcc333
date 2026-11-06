@@ -52,8 +52,6 @@ export async function detectBluetooth(): Promise<string> {
   return btDevice.name || "Imprimante Bluetooth";
 }
 async function btCharacteristic() {
-  const saved = getPrinter()?.name;
-  if (btDevice && saved && btDevice.name && btDevice.name !== saved) resetConnections(null);
   if (btChar && btDevice?.gatt?.connected) return btChar;
   btChar = null;
   if (!btDevice) {
