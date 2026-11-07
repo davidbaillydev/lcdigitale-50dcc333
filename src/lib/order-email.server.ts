@@ -68,7 +68,7 @@ export async function sendRestaurantNewOrder(admin: Admin, orderId: string, orig
   const n = notificationsOf(r.config);
   if (!n.restaurant) return { sent: false, reason: "disabled" };
   const [{ data: members, error: memberError }, { data: agencies, error: agencyError }] = await Promise.all([
-    n.team ? admin.from("restaurant_members").select("user_id, role, notification_roles").eq("restaurant_id", o.restaurant_id) : Promise.resolve({ data: [], error: null }),
+    n.team ? admin.from("restaurant_members").select("user_id, role, notification_roles, notification_modes").eq("restaurant_id", o.restaurant_id) : Promise.resolve({ data: [], error: null }),
     n.agency ? admin.from("user_roles").select("user_id").eq("role", "admin") : Promise.resolve({ data: [], error: null }),
   ]);
   if (memberError || agencyError) throw new Error(memberError?.message || agencyError?.message);
@@ -79,7 +79,7 @@ export async function sendRestaurantNewOrder(admin: Admin, orderId: string, orig
     return [id, data.user?.email] as const;
   })));
   const recipients = notificationRecipients({ enabled: n.restaurant, mode: o.mode, fallback: n.email || r.email, team: n.team, agency: n.agency,
-    members: (members ?? []).map((m) => ({ email: emails.get(m.user_id), roles: [...m.notification_roles, ...(m.role === "manager" ? ["responsable"] : [])] })),
+    members: (members ?? []).map((m) => ({ email: emails.get(m.user_id), roles: [...m.notification_roles, ...(m.role === "manager" ? ["responsable"] : [])], modes: m.notification_modes })),
     agencyEmails: (agencies ?? []).map((m) => emails.get(m.user_id)),
   });
   if (!recipients.length) return { sent: false, reason: "no_email" };

@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { notificationRolesSchema } from "./order-notification-roles";
+import { notificationRolesSchema, orderModeSchema } from "./order-notification-roles";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function assertManager(supabase: any, userId: string, restaurantId: string) {
@@ -21,11 +21,11 @@ export const listStaff = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     await assertManager(context.supabase, context.userId, data.restaurantId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: members, error } = await supabaseAdmin.from("restaurant_members").select("user_id, role, notification_roles").eq("restaurant_id", data.restaurantId);
+    const { data: members, error } = await supabaseAdmin.from("restaurant_members").select("user_id, role, notification_roles, notification_modes").eq("restaurant_id", data.restaurantId);
     if (error) throw new Error(error.message);
     const ids = [...new Set((members ?? []).map((m) => m.user_id))];
     const users = await Promise.all(ids.map((id) => supabaseAdmin.auth.admin.getUserById(id).then((r) => r.data.user)));
-    return ids.map((id, i) => ({ id, email: users[i]?.email ?? "", roles: (members ?? []).filter((m) => m.user_id === id).map((m) => m.role), notificationRoles: [...new Set((members ?? []).filter((m) => m.user_id === id).flatMap((m) => m.notification_roles))] }));
+    return ids.map((id, i) => { const mine = (members ?? []).filter((m) => m.user_id === id); return { id, email: users[i]?.email ?? "", roles: mine.map((m) => m.role), notificationRoles: [...new Set(mine.flatMap((m) => m.notification_roles))], notificationModes: mine.find((m) => m.notification_modes)?.notification_modes ?? null }; });
   });
 
 /** Invite un restaurateur par email (crée le compte si besoin) et le rattache à ce restaurant. */
@@ -63,11 +63,12 @@ export const setStaffRole = createServerFn({ method: "POST" })
     await assertAgency(context.supabase, context.userId);
     if (data.userId === context.userId && data.role === "manager" && !data.grant) throw new Error("Vous ne pouvez pas retirer votre propre accès gérant");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: existing } = await supabaseAdmin.from("restaurant_members").select("notification_roles").eq("restaurant_id", data.restaurantId).eq("user_id", data.userId);
+    const { data: existing } = await supabaseAdmin.from("restaurant_members").select("notification_roles, notification_modes").eq("restaurant_id", data.restaurantId).eq("user_id", data.userId);
     const notification_roles = [...new Set((existing ?? []).flatMap((m) => m.notification_roles))];
+    const notification_modes = (existing ?? []).find((m) => m.notification_modes)?.notification_modes ?? null;
     const result = data.grant
       ? await supabaseAdmin.from("restaurant_members").upsert(
-        { restaurant_id: data.restaurantId, user_id: data.userId, role: data.role, notification_roles },
+        { restaurant_id: data.restaurantId, user_id: data.userId, role: data.role, notification_roles, notification_modes },
         { onConflict: "restaurant_id,user_id,role" },
       )
       : await supabaseAdmin.from("restaurant_members").delete().eq("restaurant_id", data.restaurantId).eq("user_id", data.userId).eq("role", data.role);
@@ -78,12 +79,12 @@ export const setStaffRole = createServerFn({ method: "POST" })
 /** Fonctions de notification, distinctes des permissions d'accès. */
 export const setStaffNotificationRoles = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ restaurantId: z.string().uuid(), userId: z.string().uuid(), roles: notificationRolesSchema }).parse(d))
+  .inputValidator((d: unknown) => z.object({ restaurantId: z.string().uuid(), userId: z.string().uuid(), roles: notificationRolesSchema, modes: z.array(orderModeSchema).max(3) }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAgency(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await supabaseAdmin.from("restaurant_members")
-      .update({ notification_roles: [...new Set(data.roles)] }).eq("restaurant_id", data.restaurantId).eq("user_id", data.userId).select("id");
+      .update({ notification_roles: [...new Set(data.roles)], notification_modes: [...new Set(data.modes)] }).eq("restaurant_id", data.restaurantId).eq("user_id", data.userId).select("id");
     if (error) throw new Error(error.message);
     if (!rows?.length) throw new Error("Ce compte n'appartient pas à ce restaurant");
     return { ok: true };

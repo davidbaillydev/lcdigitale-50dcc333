@@ -7,7 +7,8 @@ import { toast } from "sonner";
 import { Copy, KeyRound, Link2 } from "lucide-react";
 import { useStaff } from "@/hooks/use-staff";
 import { getActivationLink, getLoginCode, inviteMember, listStaff, setStaffRole, setStaffNotificationRoles } from "@/lib/staff.functions";
-import { notificationRoleLabels, type NotificationRole } from "@/lib/order-notification-roles";
+import { defaultModes, notificationRoleLabels, orderModeLabels, type NotificationRole, type OrderMode } from "@/lib/order-notification-roles";
+import { Checkbox } from "@/components/ui/checkbox";
 import { hasKitchenPin, setKitchenPin } from "@/lib/kitchen-pin.functions";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -75,12 +76,22 @@ function Team() {
     catch (e) { toast.error(e instanceof Error ? e.message : "Erreur"); }
   };
 
-  const toggleNotification = async (userId: string, current: string[], role: NotificationRole, grant: boolean) => {
+  const saveNotify = async (userId: string, roles: NotificationRole[], modes: OrderMode[]) => {
     setSavingNotifications(userId);
-    const roles = (grant ? [...new Set([...current, role])] : current.filter((r) => r !== role)).filter((r): r is NotificationRole => r === "responsable" || r === "livreur" || r === "caissier");
-    try { await setNotifications({ data: { restaurantId: rid, userId, roles } }); await qc.invalidateQueries({ queryKey: ["staff", rid] }); toast.success("Destinataires enregistrés"); }
+    try { await setNotifications({ data: { restaurantId: rid, userId, roles, modes } }); await qc.invalidateQueries({ queryKey: ["staff", rid] }); toast.success("Destinataires enregistrés"); }
     catch (e) { toast.error(e instanceof Error ? e.message : "Erreur"); }
     finally { setSavingNotifications(null); }
+  };
+  const rolesOf = (u: { roles: string[]; notificationRoles: string[] }) => u.notificationRoles.filter((r): r is NotificationRole => r in notificationRoleLabels);
+  const modesOf = (u: { roles: string[]; notificationRoles: string[]; notificationModes: string[] | null }) =>
+    (u.notificationModes ?? defaultModes([...u.notificationRoles, ...(u.roles.includes("manager") ? ["responsable"] : [])])).filter((m): m is OrderMode => m in orderModeLabels);
+  const toggleNotification = (u: { id: string; roles: string[]; notificationRoles: string[]; notificationModes: string[] | null }, role: NotificationRole, grant: boolean) => {
+    const roles = grant ? [...new Set([...rolesOf(u), role])] : rolesOf(u).filter((r) => r !== role);
+    void saveNotify(u.id, roles, u.notificationModes ? modesOf(u) : defaultModes(roles));
+  };
+  const toggleMode = (u: { id: string; roles: string[]; notificationRoles: string[]; notificationModes: string[] | null }, mode: OrderMode, on: boolean) => {
+    const modes = on ? [...new Set([...modesOf(u), mode])] : modesOf(u).filter((m) => m !== mode);
+    void saveNotify(u.id, rolesOf(u), modes);
   };
 
   const copyLink = async (userId: string) => {
@@ -117,9 +128,17 @@ function Team() {
             <label className="flex items-center gap-2 text-sm">Gérant <Switch checked={u.roles.includes("manager")} onCheckedChange={(v) => toggle(u.id, "manager", v)} /></label>
             <div className="col-span-2 grid w-full gap-3 border-t border-border pt-3 sm:grid-cols-3">
               {(Object.entries(notificationRoleLabels) as [NotificationRole, string][]).map(([role, label]) => (
-                <label key={role} className="flex min-h-11 items-center justify-between gap-2 text-sm">{label}<Switch aria-label={`${label} — ${u.email}`} disabled={savingNotifications === u.id} checked={u.notificationRoles.includes(role)} onCheckedChange={(v) => toggleNotification(u.id, u.notificationRoles, role, v)} /></label>
+                <label key={role} className="flex min-h-11 items-center justify-between gap-2 text-sm">{label}<Switch aria-label={`${label} — ${u.email}`} disabled={savingNotifications === u.id} checked={u.notificationRoles.includes(role)} onCheckedChange={(v) => toggleNotification(u, role, v)} /></label>
               ))}
             </div>
+            <fieldset className="col-span-2 w-full">
+              <legend className="mb-1 text-xs text-muted-foreground">Reçoit les e-mails des commandes :</legend>
+              <div className="flex flex-wrap gap-x-5 gap-y-1">
+                {(Object.entries(orderModeLabels) as [OrderMode, string][]).map(([mode, label]) => (
+                  <label key={mode} className="flex min-h-11 items-center gap-2 text-sm"><Checkbox aria-label={`${label} — ${u.email}`} disabled={savingNotifications === u.id} checked={modesOf(u).includes(mode)} onCheckedChange={(v) => toggleMode(u, mode, v === true)} />{label}</label>
+                ))}
+              </div>
+            </fieldset>
           </li>
         ))}
       </ul>
