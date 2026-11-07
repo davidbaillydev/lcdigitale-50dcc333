@@ -94,7 +94,7 @@ export const createPosOrder = createServerFn({ method: "POST" })
     const subtotal = Math.round(items.reduce((a, i) => a + i.total, 0) * 100) / 100;
     const discount = directDiscount(subtotal, data.discount);
     const total = Math.round((subtotal-discount)*100)/100;
-    const payments = validatePosPayments(total, data.payments);
+    const payments = validatePosPayments(total, data.payments.map((p)=>({method:p.method,amount:p.amount,...(p.given !== undefined ? {given:p.given} : {})})));
     const tender = payments[0];
     if (!tender) throw new Error("Règlement manquant.");
     const vat = vatBreakdown({ items, total, discount });
