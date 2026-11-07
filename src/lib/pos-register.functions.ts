@@ -2,11 +2,14 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { RESTAURANT_COLUMNS, type Restaurant, assertItemAvailable } from "./shop";
-import { posEnabled, posPaymentMethod, changeDue, zReport, type PosTender, type ZOrder } from "./pos-register";
+import { posEnabled, posPaymentMethod, validatePosPayments, directDiscount, type PosPayment, type PosDiscount, type PosTender } from "./pos-register";
+import { vatBreakdown, defaultVatRate } from "./ticket-vat";
 import type { TicketOrder } from "./ticket";
 import type { ZReport } from "./pos-register";
 
-export type PosReceipt = TicketOrder & { id: string; pos_receipt_number: number; pos_tender: PosTender; status: string };
+export type PosReceipt = TicketOrder & { id: string; pos_receipt_number: number; pos_tender: PosTender; pos_payments: PosPayment[] | null; pos_discount: PosDiscount | null; status: string };
+export const posLinesSchema = z.array(z.object({ itemId: z.string().max(80), qty: z.number().int().min(1).max(50), sel: z.record(z.string(), z.array(z.string().max(80)).max(30)) })).min(1).max(60);
+export const posDiscountSchema = z.object({ type: z.enum(["percent", "fixed"]), value: z.number().positive().max(10000), reason: z.string().trim().min(3).max(200) });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function guard(supabase: any, userId: string, restaurantId: string) {
@@ -30,14 +33,9 @@ export const getPosState = createServerFn({ method: "POST" })
     const { data: s } = await admin.from("pos_sessions").select("*").eq("restaurant_id", data.restaurantId).is("closed_at", null).maybeSingle();
     let live = null;
     if (s) {
-      const o = [];
-      for (let offset = 0; ; offset += 500) {
-        const { data: page, error } = await admin.from("orders").select("total, status, pos_tender").eq("pos_session_id", s.id).order("id").range(offset, offset + 499);
-        if (error) throw new Error("Lecture des ventes impossible.");
-        o.push(...(page ?? []));
-        if ((page?.length ?? 0) < 500) break;
-      }
-      live = zReport((o ?? []) as unknown as ZOrder[], Number(s.opening_float), null);
+      const { data: report, error } = await admin.rpc("pos_session_report", { _session_id: s.id });
+      if (error) throw new Error("Lecture des ventes impossible.");
+      live = report as unknown as ZReport;
     }
     const { data: last } = await admin.from("pos_sessions").select("id, z_number, opened_at, closed_at, z_report").eq("restaurant_id", data.restaurantId).not("closed_at", "is", null).order("closed_at", { ascending: false }).limit(10);
     return { session: s, live, history: last ?? [] };
@@ -59,7 +57,7 @@ export const closePosSession = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { admin } = await guard(context.supabase, context.userId, data.restaurantId);
     const { data: result, error } = await admin.rpc("close_pos_register", { _restaurant_id: data.restaurantId, _user_id: context.userId, _counted_cash: data.countedCash });
-    if (error) throw new Error("Clôture impossible : actualisez la caisse et réessayez.");
+    if (error) throw new Error(error.message.includes("paniers") ? "Reprenez les paniers en attente avant de clôturer." : "Clôture impossible : actualisez la caisse et réessayez.");
     return result as unknown as { z_number: number; report: ZReport; opened_at: string; closed_at: string };
   });
 
@@ -69,8 +67,9 @@ export const createPosOrder = createServerFn({ method: "POST" })
     mode: z.enum(["pickup", "dine_in"]),
     requestId: z.string().uuid(),
     customer_name: z.string().trim().max(60).optional(),
-    lines: z.array(z.object({ itemId: z.string().max(80), qty: z.number().int().min(1).max(50), sel: z.record(z.string(), z.array(z.string().max(80)).max(30)) })).min(1).max(60),
-    tender: z.object({ method: z.enum(["cash", "card", "meal_voucher"]), given: z.number().min(0).max(10000).optional() }),
+    lines: posLinesSchema,
+    discount: posDiscountSchema.nullable().optional(),
+    payments: z.array(z.object({ method: z.enum(["cash","card","meal_voucher"]), amount: z.number().positive().max(10000), given: z.number().min(0).max(10000).optional() })).min(1).max(10),
   }).parse(d))
   .handler(async ({ data, context }) => {
     const { r, admin } = await guard(context.supabase, context.userId, data.restaurantId);
@@ -90,20 +89,20 @@ export const createPosOrder = createServerFn({ method: "POST" })
       const err = validateSelections(item, l.sel);
       if (err) throw new Error(err);
       const category = catalog.categories.find((c) => c.items.some((i) => i.id === item.id))?.label;
-      return orderLine(item, l.sel, l.qty, category);
+      return { ...orderLine(item, l.sel, l.qty, category), vatRate: item.vatRate ?? defaultVatRate(r.legal?.vatRate) };
     });
-    const total = Math.round(items.reduce((a, i) => a + i.total, 0) * 100) / 100;
-    const tender: PosTender = { method: data.tender.method };
-    if (data.tender.method === "cash") {
-      const given = data.tender.given ?? total;
-      const change = changeDue(total, given);
-      if (change == null) throw new Error("Montant remis insuffisant.");
-      tender.given = given; tender.change = change;
-    }
+    const subtotal = Math.round(items.reduce((a, i) => a + i.total, 0) * 100) / 100;
+    const discount = directDiscount(subtotal, data.discount);
+    const total = Math.round((subtotal-discount)*100)/100;
+    const payments = validatePosPayments(total, data.payments.map((p)=>({method:p.method,amount:p.amount,...(p.given !== undefined ? {given:p.given} : {})})));
+    const tender = payments[0];
+    if (!tender) throw new Error("Règlement manquant.");
+    const vat = vatBreakdown({ items, total, discount });
     const { data: row, error } = await admin.from("orders").insert({
       restaurant_id: r.id, customer_name: data.customer_name || "Comptoir", phone: "-", mode: data.mode, slot: now.toISOString(),
-      items: items as never, subtotal: total, delivery_fee: 0, service_fee: 0, discount: 0, total,
-      payment_method: posPaymentMethod(data.tender.method), payment_status: "paid", source: "pos",
+      items: items as never, subtotal, delivery_fee: 0, service_fee: 0, discount, total,
+      pos_payments: payments as never, pos_discount: (data.discount ?? null) as never, pos_vat: vat as never,
+      payment_method: posPaymentMethod(payments.every((p) => p.method === "card") ? "card" : "cash"), payment_status: "paid", source: "pos",
       status: "accepted", pos_session_id: s.id, pos_tender: tender as never, pos_request_id: data.requestId,
     }).select("*").single();
     if (error) {

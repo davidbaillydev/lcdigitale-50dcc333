@@ -512,7 +512,9 @@ export type Database = {
           payment_status: string
           phone: string
           platform_fee: number
+          pos_discount: Json | null
           pos_error: string | null
+          pos_payments: Json | null
           pos_receipt_number: number | null
           pos_ref: string | null
           pos_request_id: string | null
@@ -520,6 +522,7 @@ export type Database = {
           pos_status: string | null
           pos_synced_at: string | null
           pos_tender: Json | null
+          pos_vat: Json | null
           postal_code: string | null
           promo_code: string | null
           qr_mode: string | null
@@ -574,7 +577,9 @@ export type Database = {
           payment_status?: string
           phone: string
           platform_fee?: number
+          pos_discount?: Json | null
           pos_error?: string | null
+          pos_payments?: Json | null
           pos_receipt_number?: number | null
           pos_ref?: string | null
           pos_request_id?: string | null
@@ -582,6 +587,7 @@ export type Database = {
           pos_status?: string | null
           pos_synced_at?: string | null
           pos_tender?: Json | null
+          pos_vat?: Json | null
           postal_code?: string | null
           promo_code?: string | null
           qr_mode?: string | null
@@ -636,7 +642,9 @@ export type Database = {
           payment_status?: string
           phone?: string
           platform_fee?: number
+          pos_discount?: Json | null
           pos_error?: string | null
+          pos_payments?: Json | null
           pos_receipt_number?: number | null
           pos_ref?: string | null
           pos_request_id?: string | null
@@ -644,6 +652,7 @@ export type Database = {
           pos_status?: string | null
           pos_synced_at?: string | null
           pos_tender?: Json | null
+          pos_vat?: Json | null
           postal_code?: string | null
           promo_code?: string | null
           qr_mode?: string | null
@@ -686,6 +695,121 @@ export type Database = {
             columns: ["restaurant_id"]
             isOneToOne: false
             referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pos_cash_events: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string
+          id: string
+          kind: string
+          order_id: string | null
+          reason: string
+          request_id: string
+          restaurant_id: string
+          session_id: string
+          snapshot: Json | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by: string
+          id?: string
+          kind: string
+          order_id?: string | null
+          reason: string
+          request_id: string
+          restaurant_id: string
+          session_id: string
+          snapshot?: Json | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string
+          id?: string
+          kind?: string
+          order_id?: string | null
+          reason?: string
+          request_id?: string
+          restaurant_id?: string
+          session_id?: string
+          snapshot?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_cash_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pos_cash_events_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pos_cash_events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "pos_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pos_parked_carts: {
+        Row: {
+          created_at: string
+          created_by: string
+          draft: Json
+          id: string
+          label: string
+          recalled_at: string | null
+          request_id: string
+          restaurant_id: string
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          draft: Json
+          id?: string
+          label: string
+          recalled_at?: string | null
+          request_id: string
+          restaurant_id: string
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          draft?: Json
+          id?: string
+          label?: string
+          recalled_at?: string | null
+          request_id?: string
+          restaurant_id?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_parked_carts_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pos_parked_carts_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "pos_sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -1757,6 +1881,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      pos_session_report: {
+        Args: { _counted?: number; _session_id: string }
+        Returns: Json
+      }
       record_refund: {
         Args: {
           _amount: number
@@ -1791,6 +1919,16 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      void_pos_sale: {
+        Args: {
+          _order_id: string
+          _reason: string
+          _request_id: string
+          _restaurant_id: string
+          _user_id: string
+        }
+        Returns: Json
       }
     }
     Enums: {

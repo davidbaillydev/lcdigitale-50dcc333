@@ -13,6 +13,8 @@ export type TicketKind = "kitchen" | "receipt";
 export type TicketOrder = {
   pos_receipt_number?: number | null;
   pos_tender?: { method: "cash" | "card" | "meal_voucher"; given?: number; change?: number } | null;
+  pos_payments?: import("./pos-register").PosPayment[] | null;
+  pos_discount?: import("./pos-register").PosDiscount | null;
   is_test?: boolean;
   order_number: number; customer_name?: string | null; phone?: string | null; email?: string | null; mode: string;
   address?: string | null; city?: string | null; slot: string; created_at?: string; asap?: boolean; first_name?: string | null; last_name?: string | null;
@@ -271,7 +273,8 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
   </body></html>`;
 }
 
-export function receiptTenderLines(o: Pick<TicketOrder, "pos_tender">): string[] {
+export function receiptTenderLines(o: Pick<TicketOrder, "pos_tender" | "pos_payments" | "pos_discount">): string[] {
+  if (o.pos_payments?.length) return [...(o.pos_discount ? [`Motif remise : ${o.pos_discount.reason}`] : []), ...o.pos_payments.flatMap((t) => [ `${t.method === "cash" ? "Espèces" : t.method === "card" ? "Carte bancaire" : "Titres restaurant"} : ${eur(t.amount)}`, ...(t.method === "cash" ? [`Remis : ${eur(t.given)}`, `Rendu : ${eur(t.change)}`] : [])])];
   const t = o.pos_tender;
   if (!t) return [];
   return [t.method === "cash" ? "Espèces" : t.method === "card" ? "Carte bancaire" : "Titres restaurant", ...(t.method === "cash" ? [`Remis : ${eur(t.given)}`, `Rendu : ${eur(t.change)}`] : [])];
