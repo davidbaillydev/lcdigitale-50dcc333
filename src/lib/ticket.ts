@@ -4,6 +4,7 @@ import { allergenLabel } from "./allergens";
 import type { Catalog } from "./catalogs";
 import type { OptionData } from "./menu-options";
 import { ticketLegalLines, vatBreakdown, vatRateLabel, type TicketLegal, type VatRow } from "./ticket-vat";
+import { shortReceiptHash } from "./pos-integrity";
 
 /** Nom commercial inchangé ; la taille choisie reste visible. */
 export const itemTitle = (it: { name: string; size?: { name: string } | null }) => (it.size ? `${it.name} [${it.size.name}]` : it.name);
@@ -12,6 +13,8 @@ export type TicketWidth = 80 | 58;
 export type TicketKind = "kitchen" | "receipt";
 export type TicketOrder = {
   pos_receipt_number?: number | null;
+  pos_fiscal_hash?: string | null;
+  pos_vat?: VatRow[] | null;
   pos_tender?: { method: "cash" | "card" | "meal_voucher"; given?: number; change?: number } | null;
   pos_payments?: import("./pos-register").PosPayment[] | null;
   pos_discount?: import("./pos-register").PosDiscount | null;
@@ -152,6 +155,7 @@ export function ticketOptions(it: TicketOrder["items"][number], shop?: TicketSho
 }
 /** Ventilation par taux : taux figé de la ligne, sinon carte, sinon défaut ; aucune si franchise en base. */
 export function ticketVat(o: TicketOrder, shop?: TicketShop): VatRow[] {
+  if (o.source === "pos" && o.pos_vat) return o.pos_vat;
   if (shop?.legal?.vatExemption?.trim()) return [];
   const itemRates = shop?.catalog ? Object.fromEntries(Object.entries(shop.catalog.itemsById).map(([k, v]) => [k, v?.vatRate])) : undefined;
   return vatBreakdown(o, { defaultRate: shop?.vatRate, ...(itemRates ? { itemRates } : {}) });
@@ -260,6 +264,7 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
     ${f.prices ? vatRows.map((v) => `<div class="row"><span>TVA (${vatRateLabel(v.rate)} incluse)</span><span>${eur(v.vat)}</span></div>`).join("") : ""}
     ${f.prices ? `<div class="row l"><span>TOTAL</span><span>${eur(totals.total)}</span></div>` : ""}
     ${kind === "receipt" ? receiptTenderLines(o).map((l) => `<div>${esc(l)}</div>`).join("") : ""}
+    ${kind === "receipt" ? receiptIntegrityLines(o).map((l) => `<div class="c">${esc(l)}</div>`).join("") : ""}
     ${f.prices && kind === "receipt" && vatRows.length ? `<table class="vat"><tr><th>Taux</th><th>HT</th><th>TVA</th><th>TTC</th></tr>${vatRows.map((v) => `<tr><td>${vatRateLabel(v.rate)}</td><td>${eur(v.ht)}</td><td>${eur(v.vat)}</td><td>${eur(v.ttc)}</td></tr>`).join("")}${vatRows.length > 1 ? `<tr class="tot"><td>Total</td><td>${eur(vatRows.reduce((s, v) => s + v.ht, 0))}</td><td>${eur(totals.vat)}</td><td>${eur(totals.total)}</td></tr>` : ""}</table>` : ""}
     ${f.paid ? `<div class="box"><span><span class="ck">${isPaid(o) ? "✓" : ""}</span>Payé</span><span><span class="ck">${isPaid(o) ? "" : "✓"}</span>Impayé</span></div>` : ""}
     ${f.qc && kind === "kitchen" ? `<hr><div class="l">Contrôle emballage</div><div><span class="ck"></span>Articles conformes</div><div><span class="ck"></span>Tous les articles</div><div><span class="ck"></span>Couverts / sauces</div><div>Visa :</div><div class="sig"></div>` : ""}
@@ -271,6 +276,12 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
     ${legal.map((l) => `<div class="c legal">${esc(l)}</div>`).join("")}
     <div class="c" style="margin-top:6px">${new Date().toLocaleString("fr-FR")}</div>
   </body></html>`;
+}
+
+export function receiptIntegrityLines(o: Pick<TicketOrder, "source" | "pos_fiscal_hash" | "created_at">): string[] {
+  if (o.source !== "pos") return [];
+  const short = shortReceiptHash(o.pos_fiscal_hash);
+  return [...(o.created_at ? [`Vente : ${new Date(o.created_at).toLocaleString("fr-FR", { timeZone: "Europe/Paris" })}`] : []), short ? `Contrôle SHA-256 : ${short}` : "Ticket antérieur au chaînage", "Caisse non certifiée — conformité non attestée"];
 }
 
 export function receiptTenderLines(o: Pick<TicketOrder, "pos_tender" | "pos_payments" | "pos_discount">): string[] {

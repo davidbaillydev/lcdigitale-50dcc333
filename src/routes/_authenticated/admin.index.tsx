@@ -110,6 +110,7 @@ function Console() {
         <Button variant="secondary" asChild><Link to="/admin/statistiques">Conversion & abandons</Link></Button>
         <Button variant="secondary" asChild><Link to="/admin/gains">Gains agence</Link></Button>
         <Button variant="secondary" asChild><Link to="/admin/licences"><Tablet />Licences bornes</Link></Button>
+        <Button variant="secondary" asChild><Link to="/admin/inalterabilite">Inaltérabilité caisse</Link></Button>
         <Button variant="secondary" asChild><Link to="/admin/emails">Aperçu des e-mails</Link></Button>
         <Button variant="secondary" asChild><Link to="/admin/administrateurs"><Users /> Administrateurs</Link></Button>
         <Button className="min-w-0" onClick={() => setForm({ ...EMPTY })}><Plus /> Nouveau restaurant</Button>

@@ -512,8 +512,10 @@ export type Database = {
           payment_status: string
           phone: string
           platform_fee: number
+          pos_created_by: string | null
           pos_discount: Json | null
           pos_error: string | null
+          pos_fiscal_hash: string | null
           pos_payments: Json | null
           pos_receipt_number: number | null
           pos_ref: string | null
@@ -577,8 +579,10 @@ export type Database = {
           payment_status?: string
           phone: string
           platform_fee?: number
+          pos_created_by?: string | null
           pos_discount?: Json | null
           pos_error?: string | null
+          pos_fiscal_hash?: string | null
           pos_payments?: Json | null
           pos_receipt_number?: number | null
           pos_ref?: string | null
@@ -642,8 +646,10 @@ export type Database = {
           payment_status?: string
           phone?: string
           platform_fee?: number
+          pos_created_by?: string | null
           pos_discount?: Json | null
           pos_error?: string | null
+          pos_fiscal_hash?: string | null
           pos_payments?: Json | null
           pos_receipt_number?: number | null
           pos_ref?: string | null
@@ -759,6 +765,171 @@ export type Database = {
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "pos_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pos_fiscal_archives: {
+        Row: {
+          content_text: string
+          created_at: string
+          created_by: string
+          hash: string
+          id: string
+          restaurant_id: string
+        }
+        Insert: {
+          content_text: string
+          created_at?: string
+          created_by: string
+          hash: string
+          id?: string
+          restaurant_id: string
+        }
+        Update: {
+          content_text?: string
+          created_at?: string
+          created_by?: string
+          hash?: string
+          id?: string
+          restaurant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_fiscal_archives_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pos_fiscal_receipts: {
+        Row: {
+          created_at: string
+          hash: string
+          id: string
+          order_id: string
+          payload_text: string
+          previous_hash: string
+          restaurant_id: string
+          sequence: number
+        }
+        Insert: {
+          created_at?: string
+          hash: string
+          id?: string
+          order_id: string
+          payload_text: string
+          previous_hash: string
+          restaurant_id: string
+          sequence: number
+        }
+        Update: {
+          created_at?: string
+          hash?: string
+          id?: string
+          order_id?: string
+          payload_text?: string
+          previous_hash?: string
+          restaurant_id?: string
+          sequence?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_fiscal_receipts_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pos_fiscal_receipts_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pos_integrity_heads: {
+        Row: {
+          event_hash: string
+          event_number: number
+          legacy_last_number: number
+          receipt_hash: string
+          receipt_number: number
+          restaurant_id: string
+          starts_at: string
+        }
+        Insert: {
+          event_hash?: string
+          event_number?: number
+          legacy_last_number?: number
+          receipt_hash?: string
+          receipt_number?: number
+          restaurant_id: string
+          starts_at?: string
+        }
+        Update: {
+          event_hash?: string
+          event_number?: number
+          legacy_last_number?: number
+          receipt_hash?: string
+          receipt_number?: number
+          restaurant_id?: string
+          starts_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_integrity_heads_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: true
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pos_jet: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          event_type: string
+          hash: string
+          id: string
+          payload_text: string
+          previous_hash: string
+          restaurant_id: string
+          sequence: number
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          event_type: string
+          hash: string
+          id?: string
+          payload_text: string
+          previous_hash: string
+          restaurant_id: string
+          sequence: number
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          event_type?: string
+          hash?: string
+          id?: string
+          payload_text?: string
+          previous_hash?: string
+          restaurant_id?: string
+          sequence?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_jet_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
             referencedColumns: ["id"]
           },
         ]
@@ -1881,6 +2052,16 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      pos_append_jet: {
+        Args: {
+          _actor: string
+          _details: Json
+          _restaurant: string
+          _type: string
+        }
+        Returns: undefined
+      }
+      pos_integrity_snapshot: { Args: { _restaurant: string }; Returns: Json }
       pos_session_report: {
         Args: { _counted?: number; _session_id: string }
         Returns: Json
