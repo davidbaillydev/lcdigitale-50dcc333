@@ -1,7 +1,7 @@
 // Encodeur ESC/POS : transforme une commande en octets pour imprimante thermique.
 import { allergenLabel } from "./allergens";
 import { ticketLegalLines, vatRateLabel } from "./ticket-vat";
-import { ticketVat, isPaid, isPreorder, itemTitle, modeLabel, payLabel, settlementNote, ticketCustomer, ticketFields, ticketOptions, ticketTiming, ticketTotals, ticketWebsite, type TicketFieldsIn, type TicketKind, type TicketOrder, type TicketShop, type TicketWidth } from "./ticket";
+import { receiptTenderLines, ticketVat, isPaid, isPreorder, itemTitle, modeLabel, payLabel, settlementNote, ticketCustomer, ticketFields, ticketOptions, ticketTiming, ticketTotals, ticketWebsite, type TicketFieldsIn, type TicketKind, type TicketOrder, type TicketShop, type TicketWidth } from "./ticket";
 
 const CP858: Record<string, number> = {
   "Ç": 0x80, "ü": 0x81, "é": 0x82, "â": 0x83, "ä": 0x84, "à": 0x85, "ç": 0x87, "ê": 0x88, "ë": 0x89, "è": 0x8a,
@@ -60,7 +60,8 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
   const hr = "-".repeat(cols);
   e.align(1);
   (isPreorder(kind, o) ? e.bold(true).line("BON DE PRE-COMMANDE").line("A REGLER EN CAISSE").bold(false) : e.line(kind === "kitchen" ? "TICKET CUISINE" : "TICKET CLIENT")).line(hr);
-  e.bold(true).size(2, 2).line(`N° ${o.order_number}`).size(1, 1).align(0);
+  e.bold(true).size(2, 2).line(`N° ${kind === "receipt" ? o.pos_receipt_number ?? o.order_number : o.order_number}`).size(1, 1).align(0);
+  if (kind === "receipt" && o.pos_receipt_number != null) e.line(`Commande n° ${o.order_number}`);
   e.inverse(true);
   wrap(payLabel(o.payment_method, isPaid(o), o.is_test), cols).forEach((l) => e.line(l.padEnd(cols)));
   e.inverse(false).line().inverse(true).line(lr(timing.label, timing.value, cols)).inverse(false).line().inverse(true);
@@ -102,6 +103,7 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
   const vatRows = ticketVat(o, shop);
   if (f.prices) for (const v of vatRows) e.line(lr(`TVA (${vatRateLabel(v.rate)} incluse)`, eur(v.vat), cols));
   if (f.prices) e.bold(true).size(1, 2).line(lr("TOTAL", eur(totals.total), cols)).size(1, 1).bold(false);
+  if (kind === "receipt") receiptTenderLines(o).forEach((l) => e.line(l));
   if (f.prices && kind === "receipt" && vatRows.length) {
     const w = Math.floor((cols - 6) / 3);
     const row = (a: string, b: string, c: string, d: string) => a.padEnd(6).slice(0, 6) + b.padStart(w) + c.padStart(w) + d.padStart(cols - 6 - 2 * w);
@@ -124,4 +126,16 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
   e.line(new Date().toLocaleString("fr-FR"));
   e.raw(0x0a, 0x0a, 0x0a, 0x1d, 0x56, 0x42, 0x00); // avance + coupe
   return new Uint8Array(e.b);
+}
+
+/** Impulsion tiroir sur broche 2 (ESC p), uniquement après un encaissement espèces. */
+export function cashDrawerPulse(): Uint8Array {
+  return new Uint8Array([0x1b, 0x70, 0, 25, 250]);
+}
+
+/** Rapport thermique dédié, sans imprimer l'écran de caisse. */
+export function reportEscpos(lines: string[], width: TicketWidth): Uint8Array {
+  const e = new Enc().raw(0x1b, 0x40, 0x1b, 0x74, 19);
+  for (const line of lines) wrap(line, width === 80 ? 48 : 32).forEach((part) => e.line(part));
+  return new Uint8Array(e.raw(10, 10, 10, 0x1d, 0x56, 0x42, 0).b);
 }
