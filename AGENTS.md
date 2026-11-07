@@ -42,3 +42,4 @@
 - Integrated counter POS (/espace/$slug/caisse) is a strict opt-in subscription module (`enabled_features.pos === true`, agency-written; legacy `config.pos.enabled === true` still honoured, absent = off, Hiboutik unchanged); sales insert source pos, paid, linked to a pos_sessions row whose Z report is computed server-side. Why: no impact on existing restaurants; not NF525-certified yet.
 - Kiosk card payments resolve the provider account per restaurant, then an optional per-kiosk reader from config.kioskReaders selected by ?borne=<id> (remembered on the device); unknown/no id falls back to the restaurant reader. Why: one physical terminal per kiosk without changing counter/QR flows.
 - Zoho commission drafts: agency-checked; dedupe via per-restaurant/month reference_number read from Zoho. Why: no duplicates.
+- POS hashes/JET are DB-atomic; exports agency-only, legacy explicit, attestation unsigned. Why: integrity is not compliance.
