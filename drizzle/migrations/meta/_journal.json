@@ -232,6 +232,13 @@
       "when": 1794043407771,
       "tag": "0032_pos_configuration_audit_coverage",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1794090673073,
+      "tag": "0033_team_order_notification_roles",
+      "breakpoints": true
     }
   ]
 }

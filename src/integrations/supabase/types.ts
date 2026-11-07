@@ -362,6 +362,41 @@ export type Database = {
           },
         ]
       }
+      order_notification_deliveries: {
+        Row: {
+          created_at: string
+          id: string
+          order_id: string
+          recipient_email: string
+          state: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          order_id: string
+          recipient_email: string
+          state?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          order_id?: string
+          recipient_email?: string
+          state?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_notification_deliveries_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_print_logs: {
         Row: {
           auto: boolean
@@ -1621,6 +1656,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          notification_roles: string[]
           restaurant_id: string
           role: string
           user_id: string
@@ -1628,6 +1664,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          notification_roles?: string[]
           restaurant_id: string
           role: string
           user_id: string
@@ -1635,6 +1672,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          notification_roles?: string[]
           restaurant_id?: string
           role?: string
           user_id?: string
