@@ -6,7 +6,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Copy, KeyRound, Link2 } from "lucide-react";
 import { useStaff } from "@/hooks/use-staff";
-import { getActivationLink, inviteMember, listStaff, setStaffRole } from "@/lib/staff.functions";
+import { getActivationLink, getLoginCode, inviteMember, listStaff, setStaffRole } from "@/lib/staff.functions";
 import { hasKitchenPin, setKitchenPin } from "@/lib/kitchen-pin.functions";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -45,6 +45,12 @@ function Team() {
   const [busy, setBusy] = useState(false);
   const linkFn = useServerFn(getActivationLink);
   const [link, setLink] = useState<{ email: string; link: string } | null>(null);
+  const codeFn = useServerFn(getLoginCode);
+  const [code, setCode] = useState<{ email: string; code: string } | null>(null);
+  const makeCode = async (userId: string) => {
+    try { setCode(await codeFn({ data: { restaurantId: rid, userId } })); }
+    catch (e) { toast.error(e instanceof Error ? e.message : "Erreur"); }
+  };
   const pinCheck = useServerFn(hasKitchenPin);
   const pinSave = useServerFn(setKitchenPin);
   const { data: pinState, refetch: refetchPin } = useQuery({ queryKey: ["pin", rid], queryFn: () => pinCheck({ data: { restaurantId: rid } }), enabled: canManage });
@@ -96,10 +102,17 @@ function Team() {
             <span className="col-span-2 min-w-0 break-words font-medium sm:mr-auto">{u.email}</span>
             <label className="flex items-center gap-2 text-sm">Cuisine <Switch checked={u.roles.includes("kitchen")} onCheckedChange={(v) => toggle(u.id, "kitchen", v)} /></label>
             <Button size="sm" variant="ghost" onClick={() => copyLink(u.id)} title="Lien d'activation à partager (SMS, WhatsApp…)"><Link2 /> Lien</Button>
+            <Button size="sm" variant="ghost" onClick={() => makeCode(u.id)} title="Code de connexion à 6 chiffres"><KeyRound /> Code</Button>
             <label className="flex items-center gap-2 text-sm">Gérant <Switch checked={u.roles.includes("manager")} onCheckedChange={(v) => toggle(u.id, "manager", v)} /></label>
           </li>
         ))}
       </ul>
+      {code && <div className="mt-4 rounded-xl border border-primary bg-primary/5 p-4">
+        <p className="text-sm">Code de connexion pour <strong>{code.email}</strong> (usage unique, valable environ 1 h) :</p>
+        <p className="mt-2 font-mono text-4xl tracking-[0.3em]">{code.code}</p>
+        <p className="mt-2 text-sm text-muted-foreground">Le restaurateur va sur la page de connexion, choisit « Se connecter avec un code », saisit son email puis ce code.</p>
+        <Button size="sm" className="mt-2" onClick={() => { navigator.clipboard?.writeText(`Connexion LC Digitale : ${window.location.origin}/connexion — choisissez « Se connecter avec un code », email ${code.email}, code ${code.code}`); toast.success("Message copié"); }}><Copy /> Copier le message</Button>
+      </div>}
       {link && <div className="mt-4 rounded-xl border border-primary bg-primary/5 p-4">
         <p className="text-sm">Lien d'activation pour <strong>{link.email}</strong> — à transmettre directement au restaurateur :</p>
         <div className="mt-2 flex gap-2"><Input readOnly value={link.link} onFocus={(e) => e.target.select()} aria-label="Lien d'activation" /><Button size="icon" onClick={() => { navigator.clipboard?.writeText(link.link); toast.success("Lien copié"); }} aria-label="Copier"><Copy /></Button></div>
