@@ -1,0 +1,2 @@
+ALTER TABLE public.restaurant_members ADD COLUMN notification_modes text[];
+ALTER TABLE public.restaurant_members ADD CONSTRAINT restaurant_members_notification_modes_check CHECK (notification_modes IS NULL OR notification_modes <@ ARRAY['delivery','pickup','dine_in']::text[]);

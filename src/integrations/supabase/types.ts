@@ -1656,6 +1656,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          notification_modes: string[] | null
           notification_roles: string[]
           restaurant_id: string
           role: string
@@ -1664,6 +1665,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          notification_modes?: string[] | null
           notification_roles?: string[]
           restaurant_id: string
           role: string
@@ -1672,6 +1674,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          notification_modes?: string[] | null
           notification_roles?: string[]
           restaurant_id?: string
           role?: string
