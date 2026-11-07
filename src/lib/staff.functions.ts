@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { notificationRolesSchema } from "./order-notification-roles";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function assertManager(supabase: any, userId: string, restaurantId: string) {
@@ -20,10 +21,11 @@ export const listStaff = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     await assertManager(context.supabase, context.userId, data.restaurantId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: members } = await supabaseAdmin.from("restaurant_members").select("user_id, role").eq("restaurant_id", data.restaurantId);
+    const { data: members, error } = await supabaseAdmin.from("restaurant_members").select("user_id, role, notification_roles").eq("restaurant_id", data.restaurantId);
+    if (error) throw new Error(error.message);
     const ids = [...new Set((members ?? []).map((m) => m.user_id))];
     const users = await Promise.all(ids.map((id) => supabaseAdmin.auth.admin.getUserById(id).then((r) => r.data.user)));
-    return ids.map((id, i) => ({ id, email: users[i]?.email ?? "", roles: (members ?? []).filter((m) => m.user_id === id).map((m) => m.role) }));
+    return ids.map((id, i) => ({ id, email: users[i]?.email ?? "", roles: (members ?? []).filter((m) => m.user_id === id).map((m) => m.role), notificationRoles: [...new Set((members ?? []).filter((m) => m.user_id === id).flatMap((m) => m.notification_roles))] }));
   });
 
 /** Invite un restaurateur par email (crée le compte si besoin) et le rattache à ce restaurant. */
@@ -61,12 +63,29 @@ export const setStaffRole = createServerFn({ method: "POST" })
     await assertAgency(context.supabase, context.userId);
     if (data.userId === context.userId && data.role === "manager" && !data.grant) throw new Error("Vous ne pouvez pas retirer votre propre accès gérant");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    if (data.grant)
-      await supabaseAdmin.from("restaurant_members").upsert(
-        { restaurant_id: data.restaurantId, user_id: data.userId, role: data.role },
+    const { data: existing } = await supabaseAdmin.from("restaurant_members").select("notification_roles").eq("restaurant_id", data.restaurantId).eq("user_id", data.userId);
+    const notification_roles = [...new Set((existing ?? []).flatMap((m) => m.notification_roles))];
+    const result = data.grant
+      ? await supabaseAdmin.from("restaurant_members").upsert(
+        { restaurant_id: data.restaurantId, user_id: data.userId, role: data.role, notification_roles },
         { onConflict: "restaurant_id,user_id,role" },
-      );
-    else await supabaseAdmin.from("restaurant_members").delete().eq("restaurant_id", data.restaurantId).eq("user_id", data.userId).eq("role", data.role);
+      )
+      : await supabaseAdmin.from("restaurant_members").delete().eq("restaurant_id", data.restaurantId).eq("user_id", data.userId).eq("role", data.role);
+    if (result.error) throw new Error(result.error.message);
+    return { ok: true };
+  });
+
+/** Fonctions de notification, distinctes des permissions d'accès. */
+export const setStaffNotificationRoles = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ restaurantId: z.string().uuid(), userId: z.string().uuid(), roles: notificationRolesSchema }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAgency(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows, error } = await supabaseAdmin.from("restaurant_members")
+      .update({ notification_roles: [...new Set(data.roles)] }).eq("restaurant_id", data.restaurantId).eq("user_id", data.userId).select("id");
+    if (error) throw new Error(error.message);
+    if (!rows?.length) throw new Error("Ce compte n'appartient pas à ce restaurant");
     return { ok: true };
   });
 

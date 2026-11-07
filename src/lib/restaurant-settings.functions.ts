@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { RESTAURANT_COLUMNS, type Restaurant } from "./shop";
+import { notificationSettingsSchema } from "./order-notification-roles";
 
 const minutes = z.number().int().min(0).max(1440);
 export const settingsSchema = z.object({
@@ -143,7 +144,7 @@ export const saveNotifications = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({
     restaurantId: z.string().uuid(),
-    notifications: z.object({ received: z.boolean(), confirmed: z.boolean(), restaurant: z.boolean(), email: z.string().trim().email().max(255).optional().or(z.literal("")) }),
+    notifications: notificationSettingsSchema,
   }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: ok } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
