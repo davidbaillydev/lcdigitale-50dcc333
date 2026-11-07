@@ -155,7 +155,7 @@ function Register({ restaurantId, name, slug, restaurant }: { restaurantId: stri
   );
 
   return (
-    <main className="flex h-dvh flex-col">
+    <main className="pos-register flex h-full min-h-0 flex-col">
       <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border p-3">
         <div><p className="font-semibold">{name} — Caisse</p><p className="text-xs text-muted-foreground">Ouverte le {new Date(st.session.opened_at).toLocaleString("fr-FR")} · {st.live?.orders ?? 0} ventes · {euro(st.live?.total ?? 0)}</p></div>
         <div className="flex flex-wrap gap-2">
