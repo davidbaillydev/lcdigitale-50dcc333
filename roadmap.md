@@ -89,3 +89,4 @@ Verified on a temporary restaurant, now deactivated: upload and reload persisten
 - [x] Tunnel livraison : autocomplétion BAN, remplissage auto + validation zone immédiate, bandeau statut visible, boutons tactiles ; 4 tests réussis, parcours vérifié à l’écran (livrable Colomiers + hors zone Paris, ordinateur et mobile).
 - [x] Gains agence : export mensuel CSV récapitulatif + CSV Zoho Invoice
 - [x] Campagnes : vagues manuelles de 100 à 300 e-mails, progression persistante/reprise, verrou serveur et consentement revérifié ; 19 tests réussis, compilation OK, contrôles ordinateur/mobile vérifiés connecté sur Wok & Sushi ; aucun envoi réel ni publication.
+- [ ] Pack caisse : espèces rapides, tickets client automatiques/tiroir, historique réimprimable, X/Z thermiques, journal CSV et numérotation continue sécurisée ; tests et vérification connectée.
