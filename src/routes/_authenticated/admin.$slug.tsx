@@ -69,6 +69,7 @@ function Page() {
           </ol>
           <div className="flex flex-wrap gap-2">
             {posEnabled(r) && <Button asChild className="min-h-12"><Link to="/espace/$slug/caisse" params={{ slug }}><Store /> Caisse comptoir</Link></Button>}
+            {posEnabled(r) && <Button asChild variant="outline" className="min-h-12"><Link to="/admin/inalterabilite">Inaltérabilité & archives</Link></Button>}
             <Button asChild variant="secondary"><Link to="/espace/$slug/carte" params={{ slug }}><UtensilsCrossed /> Carte & import</Link></Button>
             <Button asChild variant="secondary"><Link to="/espace/$slug/equipe" params={{ slug }}><Users /> Équipe & invitations</Link></Button>
             <Button asChild variant="secondary"><Link to="/espace/$slug" params={{ slug }}><ChefHat /> Cuisine</Link></Button>
