@@ -88,3 +88,21 @@ export const getActivationLink = createServerFn({ method: "POST" })
     if (error || !link.properties?.action_link) throw new Error(error?.message ?? "Lien impossible");
     return { link: link.properties.action_link, email };
   });
+
+/** Code de connexion à 6 chiffres (usage unique, ~1 h) à dicter ou envoyer par WhatsApp/SMS. */
+export const getLoginCode = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ restaurantId: z.string().uuid(), userId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAgency(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: member } = await supabaseAdmin.from("restaurant_members").select("user_id").eq("restaurant_id", data.restaurantId).eq("user_id", data.userId).limit(1).maybeSingle();
+    if (!member) throw new Error("Ce compte n'appartient pas à ce restaurant");
+    const { data: u } = await supabaseAdmin.auth.admin.getUserById(data.userId);
+    const email = u.user?.email;
+    if (!email) throw new Error("Compte introuvable");
+    const { data: link, error } = await supabaseAdmin.auth.admin.generateLink({ type: "magiclink", email });
+    const code = link?.properties?.email_otp;
+    if (error || !code) throw new Error(error?.message ?? "Code impossible");
+    return { code, email };
+  });
