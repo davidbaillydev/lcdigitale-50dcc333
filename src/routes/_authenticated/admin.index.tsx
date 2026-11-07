@@ -141,17 +141,29 @@ function Console() {
       </div>
 
       {!rows ? <p className="mt-10 text-center text-muted-foreground">Chargement du réseau…</p> : (
-        <div className="mt-8 grid gap-6 md:grid-cols-2">
-          {rows.filter((r) => `${r.name} ${r.city ?? ""} ${r.slug}`.toLowerCase().includes(q.toLowerCase())).map((r) => (
+        <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+          {rows.filter((r) => `${r.name} ${r.city ?? ""} ${r.slug}`.toLowerCase().includes(q.toLowerCase())).map((r) => { const pos = rows.indexOf(r); return (
             <article key={r.id} draggable={!q} onDragStart={(e) => { setDragId(r.id); e.dataTransfer.effectAllowed = "move"; }} onDragEnd={() => setDragId(null)}
               onDragOver={(e) => { if (dragId) e.preventDefault(); }} onDrop={(e) => { e.preventDefault(); if (dragId) move(dragId, r.id); setDragId(null); }}
-              className={`admin-restaurant-card group flex flex-col rounded-xl border border-border bg-card p-4 transition-shadow hover:shadow-md sm:p-5 ${dragId === r.id ? "opacity-50" : ""}`}>
-              <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3 sm:gap-4">
-                {r.logo_url ? <BrandLogo src={r.logo_url} name={r.name} className="h-12 w-12 shrink-0 rounded-lg object-contain sm:h-14 sm:w-14" />
-                  : <div style={brandVars(r.brand)} className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary font-display text-2xl text-primary-foreground sm:h-14 sm:w-14">{r.name[0]}</div>}
+              className={`admin-restaurant-card group flex flex-col rounded-xl border border-border bg-card p-3 transition-shadow hover:shadow-md ${dragId === r.id ? "opacity-50" : ""}`}>
+              <div className="mb-2 flex items-center gap-1">
+                {!q && <GripVertical className="h-5 w-5 shrink-0 cursor-grab text-muted-foreground" aria-hidden />}
+                <span className="rounded-md bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground">N° {pos + 1}</span>
+                {!q && <div className="ml-auto flex items-center gap-1">
+                  <Button size="icon" variant="outline" className="h-9 w-9" disabled={pos === 0} onClick={() => move(r.id, -1)} aria-label={`Monter ${r.name}`}><ArrowUp /></Button>
+                  <Button size="icon" variant="outline" className="h-9 w-9" disabled={pos === rows.length - 1} onClick={() => move(r.id, 1)} aria-label={`Descendre ${r.name}`}><ArrowDown /></Button>
+                  <select className="h-9 rounded-md border border-input bg-background px-1 text-sm" value={pos + 1} aria-label={`Position de ${r.name}`}
+                    onChange={(e) => move(r.id, Number(e.target.value) - 1 - pos)}>
+                    {rows.map((_, i) => <option key={i} value={i + 1}>{i + 1}</option>)}
+                  </select>
+                </div>}
+              </div>
+              <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3">
+                {r.logo_url ? <BrandLogo src={r.logo_url} name={r.name} className="h-10 w-10 shrink-0 rounded-lg object-contain" />
+                  : <div style={brandVars(r.brand)} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary font-display text-xl text-primary-foreground">{r.name[0]}</div>}
                 <div className="min-w-0">
                   <div className="flex min-w-0 items-center gap-2">
-                    <h2 className="truncate font-display text-xl font-semibold sm:text-2xl">{r.name}</h2>
+                    <h2 className="truncate font-display text-lg font-semibold">{r.name}</h2>
                     <span style={brandVars(r.brand)} className="hidden shrink-0 gap-0.5 sm:flex" aria-label="Couleurs du restaurant">
                       <span className="h-2.5 w-2.5 rounded-full bg-primary" /><span className="h-2.5 w-2.5 rounded-full bg-accent" />
                     </span>
@@ -160,7 +172,6 @@ function Console() {
                   <p className="mt-1 text-sm"><span className="font-semibold">{r.orders_today}</span> <span className="text-muted-foreground">commande{r.orders_today > 1 ? "s" : ""} aujourd'hui</span></p>
                 </div>
                 <div className="flex items-center gap-1">
-                  {!q && <GripVertical className="hidden h-5 w-5 cursor-grab text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 md:block" aria-hidden />}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button size="icon" variant="ghost" className="h-11 w-11" aria-label={`Actions pour ${r.name}`}><MoreHorizontal /></Button>
@@ -187,7 +198,7 @@ function Console() {
                 </div>
               </div>
 
-              <div className="mt-4 grid gap-3 rounded-lg bg-muted/50 p-3 sm:grid-cols-2 sm:items-center">
+              <div className="mt-3 grid gap-2 rounded-lg bg-muted/50 p-2">
                 <label className="flex min-h-11 items-center gap-3 text-sm">
                   <Switch checked={r.active} onCheckedChange={async (v) => {
                     setRows((p) => p?.map((x) => (x.id === r.id ? { ...x, active: v } : x)) ?? null);
@@ -202,11 +213,11 @@ function Console() {
                 <OrdersPausedToggle restaurant={{ id: r.id, config: r.config }} className="w-full" />
               </div>
 
-              <div className="admin-card-actions mt-4 flex flex-wrap items-center gap-2">
+              <div className="admin-card-actions mt-3 flex flex-wrap items-center gap-2">
                 <Button size="sm" className="min-h-10 flex-1 sm:flex-none" asChild><Link to="/espace/$slug" params={{ slug: r.slug }}><ChefHat /> Cuisine</Link></Button>
                 <Button size="sm" variant="secondary" className="min-h-10 flex-1 sm:flex-none" asChild><Link to="/admin/$slug" params={{ slug: r.slug }}><Settings /> Réglages</Link></Button>
                 <TooltipProvider delayDuration={200}>
-                  <div className="ml-auto hidden items-center gap-0.5 lg:flex" role="toolbar" aria-label={`Raccourcis ${r.name}`}>
+                  <div className="ml-auto hidden items-center gap-0.5 2xl:flex" role="toolbar" aria-label={`Raccourcis ${r.name}`}>
                     {([
                       [<ExternalLink key="i" />, "Voir le site", `/${r.slug}`, true],
                       [<Tablet key="i" />, "Ouvrir la borne", `/${r.slug}/borne`, true],
@@ -224,7 +235,7 @@ function Console() {
                 <div className="w-full sm:w-auto lg:ml-0"><WhatsAppAccess restaurant={r} compact origin={publicDomain} /></div>
               </div>
             </article>
-          ))}
+          ); })}
         </div>
       )}
 

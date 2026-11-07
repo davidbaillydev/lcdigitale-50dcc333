@@ -21,7 +21,7 @@ function publicClient() {
 }
 
 export const listRestaurants = createServerFn({ method: "GET" }).handler(async () => {
-  const { data } = await publicClient().from("restaurants").select(RESTAURANT_COLUMNS).eq("active", true).order("name");
+  const { data } = await publicClient().from("restaurants").select(RESTAURANT_COLUMNS).eq("active", true).order("sort_order").order("name");
   return (data ?? []) as unknown as Restaurant[];
 });
 
