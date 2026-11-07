@@ -6,7 +6,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Copy, KeyRound, Link2 } from "lucide-react";
 import { useStaff } from "@/hooks/use-staff";
-import { getActivationLink, getLoginCode, inviteMember, listStaff, setStaffRole } from "@/lib/staff.functions";
+import { getActivationLink, getLoginCode, inviteMember, listStaff, setStaffRole, setStaffNotificationRoles } from "@/lib/staff.functions";
+import { notificationRoleLabels, type NotificationRole } from "@/lib/order-notification-roles";
 import { hasKitchenPin, setKitchenPin } from "@/lib/kitchen-pin.functions";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -35,6 +36,8 @@ function Team() {
   const canManage = restaurant?.role === "agency";
   const list = useServerFn(listStaff);
   const setRole = useServerFn(setStaffRole);
+  const setNotifications = useServerFn(setStaffNotificationRoles);
+  const [savingNotifications, setSavingNotifications] = useState<string | null>(null);
   const qc = useQueryClient();
   const rid = restaurant?.id ?? "";
   const { data } = useQuery({ queryKey: ["staff", rid], queryFn: () => list({ data: { restaurantId: rid } }), enabled: canManage });
@@ -72,6 +75,14 @@ function Team() {
     catch (e) { toast.error(e instanceof Error ? e.message : "Erreur"); }
   };
 
+  const toggleNotification = async (userId: string, current: string[], role: NotificationRole, grant: boolean) => {
+    setSavingNotifications(userId);
+    const roles = (grant ? [...new Set([...current, role])] : current.filter((r) => r !== role)).filter((r): r is NotificationRole => r === "responsable" || r === "livreur" || r === "caissier");
+    try { await setNotifications({ data: { restaurantId: rid, userId, roles } }); await qc.invalidateQueries({ queryKey: ["staff", rid] }); toast.success("Destinataires enregistrés"); }
+    catch (e) { toast.error(e instanceof Error ? e.message : "Erreur"); }
+    finally { setSavingNotifications(null); }
+  };
+
   const copyLink = async (userId: string) => {
     if (!confirm("Créer un nouveau lien d'activation ? Le lien envoyé précédemment par email ne fonctionnera plus.")) return;
     try { const r = await linkFn({ data: { restaurantId: rid, userId, origin: window.location.origin } }); setLink(r); await navigator.clipboard?.writeText(r.link).catch(() => {}); toast.success("Lien copié"); }
@@ -104,6 +115,11 @@ function Team() {
             <Button size="sm" variant="ghost" onClick={() => copyLink(u.id)} title="Lien d'activation à partager (SMS, WhatsApp…)"><Link2 /> Lien</Button>
             <Button size="sm" variant="ghost" onClick={() => makeCode(u.id)} title="Code de connexion à 6 chiffres"><KeyRound /> Code</Button>
             <label className="flex items-center gap-2 text-sm">Gérant <Switch checked={u.roles.includes("manager")} onCheckedChange={(v) => toggle(u.id, "manager", v)} /></label>
+            <div className="col-span-2 grid w-full gap-3 border-t border-border pt-3 sm:grid-cols-3">
+              {(Object.entries(notificationRoleLabels) as [NotificationRole, string][]).map(([role, label]) => (
+                <label key={role} className="flex min-h-11 items-center justify-between gap-2 text-sm">{label}<Switch aria-label={`${label} — ${u.email}`} disabled={savingNotifications === u.id} checked={u.notificationRoles.includes(role)} onCheckedChange={(v) => toggleNotification(u.id, u.notificationRoles, role, v)} /></label>
+              ))}
+            </div>
           </li>
         ))}
       </ul>
