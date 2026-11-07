@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useCallback, useEffect, useState } from "react";
-import { ArrowDown, ArrowUp, BookOpen, ChefHat, Contact, GripVertical, ExternalLink, LogOut, MoreHorizontal, Pencil, Plus, Settings, Tablet, Users } from "lucide-react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { ArrowDown, ArrowUp, BarChart3, BookOpen, ChefHat, ChevronDown, Contact, Globe, GripVertical, ExternalLink, FileText, Landmark, LogOut, Mail, MoreHorizontal, Pencil, Plus, QrCode, Search, Settings, ShieldCheck, ShoppingBag, Store, Tablet, Users, Wallet, X } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ThemeToggle } from "@/lib/theme";
 import { OrdersPausedToggle } from "@/components/OrdersPausedToggle";
 import { MenuAiSettings } from "@/components/MenuAiSettings";
@@ -39,6 +39,15 @@ type Form = Omit<AgencyRestaurant, "id" | "orders_today"> & { id?: string };
 const EMPTY: Form = { name: "", slug: "", city: "", address: "", phone: "", email: "", menu_key: MENU_KEYS[0] ?? "", logo_url: null, brand: { primary: "#d4a017", accent: "#c8102e" }, active: true, config: {} };
 const slugify = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
 
+function AgencyMenu({ label, icon, children }: { label: string; icon: ReactNode; children: ReactNode }) {
+  return <DropdownMenu>
+    <DropdownMenuTrigger asChild><Button variant="ghost" className="min-h-11 gap-2 px-3">{icon}{label}<ChevronDown className="size-4 text-muted-foreground" /></Button></DropdownMenuTrigger>
+    <DropdownMenuContent align="start" className="w-64 max-w-[calc(100vw-2rem)] [&_[role=menuitem]]:min-h-12 [&_[role=menuitem]]:px-3">
+      <DropdownMenuLabel>{label}</DropdownMenuLabel><DropdownMenuSeparator />{children}
+    </DropdownMenuContent>
+  </DropdownMenu>;
+}
+
 function Console() {
   const { loading, user, isAgency } = useStaff();
   const navigate = useNavigate();
@@ -47,6 +56,8 @@ function Console() {
   const [rows, setRows] = useState<AgencyRestaurant[] | null>(null);
   const [form, setForm] = useState<Form | null>(null);
   const [q, setQ] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "online" | "offline">("all");
+  const [domainOpen, setDomainOpen] = useState(false);
   const reorder = useServerFn(reorderRestaurants);
   const [dragId, setDragId] = useState<string | null>(null);
   const loadDomain = useServerFn(getAgencyPublicDomain);
@@ -70,7 +81,9 @@ function Console() {
     const i = list.findIndex((x) => x.id === from);
     const j = typeof to === "number" ? i + to : list.findIndex((x) => x.id === to);
     if (i < 0 || j < 0 || j >= list.length || i === j) return;
-    const [it] = list.splice(i, 1); list.splice(j, 0, it!);
+    const [it] = list.splice(i, 1);
+    if (!it) return;
+    list.splice(j, 0, it);
     setRows(list);
     try { await reorder({ data: { ids: list.map((x) => x.id) } }); }
     catch (e) { toast.error((e as Error).message); load(); }
@@ -93,63 +106,95 @@ function Console() {
 
   const active = rows?.filter((r) => r.active).length ?? 0;
   const today = rows?.reduce((s, r) => s + r.orders_today, 0) ?? 0;
+  const filteredRows = rows?.filter((r) =>
+    `${r.name} ${r.city ?? ""} ${r.slug}`.toLowerCase().includes(q.trim().toLowerCase()) &&
+    (statusFilter === "all" || r.active === (statusFilter === "online"))
+  ) ?? [];
+  const canReorder = !q.trim() && statusFilter === "all";
 
   return (
-    <div className="mx-auto max-w-6xl p-6">
-      <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:flex-wrap">
-        <div className="col-span-2 min-w-0 sm:mr-auto">
+    <div className="mx-auto max-w-7xl p-6">
+      <header className="flex flex-col gap-5">
+        <div className="flex flex-wrap items-center gap-3">
+        <div className="mr-auto min-w-0">
           <p className="text-sm font-semibold text-primary">Réseau de restaurants</p>
           <h1 className="text-5xl">Console agence</h1>
         </div>
-        <Button variant="secondary" asChild><Link to="/espace/tableau-de-bord">Ventes & statistiques</Link></Button>
-        <Button variant="secondary" asChild><Link to="/espace"><ChefHat />Écrans cuisine</Link></Button>
-        <Button variant="secondary" asChild><Link to="/admin/commande-test">Commande test livraison</Link></Button>
-        <Button variant="secondary" asChild><Link to="/espace/factures">Factures</Link></Button>
-        <Button variant="secondary" asChild><Link to="/admin/qrcodes">QR codes</Link></Button>
-        <Button variant="secondary" asChild><Link to="/admin/clients">Clients</Link></Button>
-        <Button variant="secondary" asChild><Link to="/admin/statistiques">Conversion & abandons</Link></Button>
-        <Button variant="secondary" asChild><Link to="/admin/gains">Gains agence</Link></Button>
-        <Button variant="secondary" asChild><Link to="/admin/licences"><Tablet />Licences bornes</Link></Button>
-        <Button variant="secondary" asChild><Link to="/admin/inalterabilite">Inaltérabilité caisse</Link></Button>
-        <Button variant="secondary" asChild><Link to="/admin/emails">Aperçu des e-mails</Link></Button>
-        <Button variant="secondary" asChild><Link to="/admin/administrateurs"><Users /> Administrateurs</Link></Button>
-        <Button className="min-w-0" onClick={() => setForm({ ...EMPTY })}><Plus /> Nouveau restaurant</Button>
+        <Button className="min-h-12 max-sm:order-last max-sm:w-full" onClick={() => setForm({ ...EMPTY })}><Plus /> Nouveau restaurant</Button>
+        <div className="flex items-center gap-1">
+        <TooltipProvider><Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="size-11" aria-label="Domaine public" onClick={() => setDomainOpen(true)}><Globe /></Button></TooltipTrigger><TooltipContent>Domaine public</TooltipContent></Tooltip></TooltipProvider>
         <ThemeToggle />
         <Button variant="ghost" size="icon" onClick={async () => { await supabase.auth.signOut(); navigate({ to: "/connexion", replace: true }); }} aria-label="Déconnexion"><LogOut /></Button>
+        </div>
+        </div>
+        <nav aria-label="Navigation agence" className="flex flex-wrap gap-1 border-t border-border pt-3">
+          <AgencyMenu label="Opérations" icon={<ChefHat />}>
+            <DropdownMenuItem asChild><Link to="/espace"><ChefHat />Écrans cuisine</Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Link to="/admin/commande-test"><ShoppingBag />Commande test livraison</Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Link to="/admin/clients"><Contact />Clients</Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Link to="/admin/qrcodes"><QrCode />QR codes</Link></DropdownMenuItem>
+          </AgencyMenu>
+          <AgencyMenu label="Finance & Ventes" icon={<Landmark />}>
+            <DropdownMenuItem asChild><Link to="/espace/tableau-de-bord"><BarChart3 />Ventes & statistiques</Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Link to="/admin/statistiques"><ShoppingBag />Conversion & abandons</Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Link to="/espace/factures"><FileText />Factures</Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Link to="/admin/gains"><Wallet />Gains agence</Link></DropdownMenuItem>
+          </AgencyMenu>
+          <AgencyMenu label="Outils & Agence" icon={<Settings />}>
+            <DropdownMenuItem asChild><Link to="/admin/licences"><Tablet />Licences bornes</Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Link to="/admin/inalterabilite"><ShieldCheck />Inaltérabilité caisse</Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Link to="/admin/emails"><Mail />Aperçu des e-mails</Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Link to="/admin/administrateurs"><Users />Administrateurs</Link></DropdownMenuItem>
+          </AgencyMenu>
+        </nav>
       </header>
-      <Input className="mt-6" placeholder="Rechercher un restaurant (nom, ville, adresse web)…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher" />
-
-      <section className="mt-6 rounded-lg border border-border bg-card p-4 sm:p-6" aria-label="Domaine public">
-        <h2 className="font-display text-2xl font-semibold">Domaine public</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Base des liens partagés (messages WhatsApp, accès livreurs et clients). Elle doit rester identique au domaine publié.</p>
-        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
-          <div className="flex-1 space-y-1">
+      <Dialog open={domainOpen} onOpenChange={setDomainOpen}>
+        <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader><DialogTitle className="pr-8 text-2xl">Domaine public</DialogTitle>
+            <DialogDescription>Base des liens partagés pour les clients, livreurs et messages WhatsApp. Utilisez le domaine publié de la plateforme.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
             <Label htmlFor="public-domain">Adresse du site public</Label>
             <Input id="public-domain" type="url" inputMode="url" placeholder="https://restaurant.lcdigitale.fr" value={domainDraft} onChange={(e) => setDomainDraft(e.target.value)} />
           </div>
-          <Button className="min-h-12" disabled={savingDomain || !domainDraft.trim()} onClick={submitDomain}>{savingDomain ? "Enregistrement…" : "Enregistrer"}</Button>
-        </div>
-        {publicDomain && <p className="mt-2 text-sm text-muted-foreground">Liens générés actuellement sur : <span className="font-medium text-foreground">{publicDomain}</span></p>}
-      </section>
+          {publicDomain && <p className="break-words text-sm text-muted-foreground">Domaine actuel : <span className="font-medium text-foreground">{publicDomain}</span></p>}
+          <DialogFooter className="gap-2"><Button variant="outline" onClick={() => setDomainOpen(false)}>Fermer</Button><Button disabled={savingDomain || !domainDraft.trim()} onClick={submitDomain}>{savingDomain ? "Enregistrement…" : "Enregistrer"}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      <div className="admin-metrics mt-8 grid grid-cols-1 gap-6 sm:grid-cols-3">
-        {[["Restaurants", rows?.length ?? 0], ["En ligne", active], ["Commandes aujourd'hui", today]].map(([l, v]) => (
-          <div key={l} className="border-b border-border pb-5">
-            <p className="text-sm text-muted-foreground">{l}</p><p className="font-display text-4xl">{v}</p>
+      <div className="admin-metrics mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3" aria-label="Chiffres clés du réseau">
+        {([{ label: "Total", value: rows?.length, icon: Store }, { label: "En ligne", value: rows ? active : undefined, icon: Globe }, { label: "Commandes du jour", value: rows ? today : undefined, icon: ShoppingBag }]).map(({ label, value, icon: Icon }) => (
+          <div key={label} className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card p-5 shadow-sm">
+            <div><p className="text-sm font-medium text-muted-foreground">{label}</p><p className="mt-2 font-display text-4xl font-semibold tabular-nums">{value ?? "—"}</p></div>
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-secondary text-primary"><Icon className="size-5" /></div>
           </div>
         ))}
       </div>
 
+      <div className="mt-8 flex flex-col gap-3 border-b border-border pb-4 lg:flex-row lg:items-center">
+        <div className="relative min-w-0 flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input className="min-h-12 pl-10 pr-12" placeholder="Rechercher par nom, ville ou adresse web…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher" />
+          {q && <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 size-10 -translate-y-1/2" aria-label="Effacer la recherche" onClick={() => setQ("")}><X /></Button>}
+        </div>
+        <div role="group" aria-label="Filtrer les restaurants" className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1 lg:flex">
+          {([{ value: "all", label: "Tous", count: rows?.length }, { value: "online", label: "En ligne", count: rows ? active : undefined }, { value: "offline", label: "Hors ligne", count: rows ? rows.length - active : undefined }] as const).map((filter) =>
+            <Button key={filter.value} variant={statusFilter === filter.value ? "secondary" : "ghost"} aria-pressed={statusFilter === filter.value} onClick={() => setStatusFilter(filter.value)} className={`min-h-11 gap-2 px-3 ${statusFilter === filter.value ? "shadow-sm" : "text-muted-foreground"}`}>{filter.label}<span className="text-xs tabular-nums text-muted-foreground">{filter.count ?? "—"}</span></Button>
+          )}
+        </div>
+      </div>
+      {rows && <p className="mt-3 text-sm text-muted-foreground" aria-live="polite">{filteredRows.length} restaurant{filteredRows.length > 1 ? "s" : ""} affiché{filteredRows.length > 1 ? "s" : ""} sur {rows.length}</p>}
       {!rows ? <p className="mt-10 text-center text-muted-foreground">Chargement du réseau…</p> : (
-        <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-          {rows.filter((r) => `${r.name} ${r.city ?? ""} ${r.slug}`.toLowerCase().includes(q.toLowerCase())).map((r) => { const pos = rows.indexOf(r); return (
-            <article key={r.id} draggable={!q} onDragStart={(e) => { setDragId(r.id); e.dataTransfer.effectAllowed = "move"; }} onDragEnd={() => setDragId(null)}
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+          {filteredRows.length === 0 && <div className="col-span-full py-12 text-center"><Search className="mx-auto mb-3 size-7 text-muted-foreground" /><h2 className="text-xl font-semibold">Aucun restaurant trouvé</h2><Button variant="link" className="mt-2" onClick={() => { setQ(""); setStatusFilter("all"); }}>Réinitialiser les filtres</Button></div>}
+          {filteredRows.map((r) => { const pos = rows.indexOf(r); return (
+            <article key={r.id} draggable={canReorder} onDragStart={(e) => { setDragId(r.id); e.dataTransfer.effectAllowed = "move"; }} onDragEnd={() => setDragId(null)}
               onDragOver={(e) => { if (dragId) e.preventDefault(); }} onDrop={(e) => { e.preventDefault(); if (dragId) move(dragId, r.id); setDragId(null); }}
               className={`admin-restaurant-card group flex flex-col rounded-xl border border-border bg-card p-3 transition-shadow hover:shadow-md ${dragId === r.id ? "opacity-50" : ""}`}>
               <div className="mb-2 flex items-center gap-1">
-                {!q && <GripVertical className="h-5 w-5 shrink-0 cursor-grab text-muted-foreground" aria-hidden />}
+                {canReorder && <GripVertical className="h-5 w-5 shrink-0 cursor-grab text-muted-foreground" aria-hidden />}
                 <span className="rounded-md bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground">N° {pos + 1}</span>
-                {!q && <div className="ml-auto flex items-center gap-1">
+                {canReorder && <div className="ml-auto flex items-center gap-1">
                   <Button size="icon" variant="outline" className="h-9 w-9" disabled={pos === 0} onClick={() => move(r.id, -1)} aria-label={`Monter ${r.name}`}><ArrowUp /></Button>
                   <Button size="icon" variant="outline" className="h-9 w-9" disabled={pos === rows.length - 1} onClick={() => move(r.id, 1)} aria-label={`Descendre ${r.name}`}><ArrowDown /></Button>
                   <select className="h-9 rounded-md border border-input bg-background px-1 text-sm" value={pos + 1} aria-label={`Position de ${r.name}`}
@@ -188,7 +233,7 @@ function Console() {
                       <DropdownMenuItem asChild className="min-h-11"><Link to="/espace/$slug/clients" params={{ slug: r.slug }}><Contact /> Clients</Link></DropdownMenuItem>
                       <DropdownMenuItem asChild className="min-h-11"><Link to="/admin/$slug" params={{ slug: r.slug }}><Settings /> Réglages</Link></DropdownMenuItem>
                       <DropdownMenuItem className="min-h-11" onSelect={() => setForm({ ...r })}><Pencil /> Modifier l'identité</DropdownMenuItem>
-                      {!q && <>
+                      {canReorder && <>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem className="min-h-11" disabled={rows[0]?.id === r.id} onSelect={() => move(r.id, -1)}><ArrowUp /> Monter</DropdownMenuItem>
                         <DropdownMenuItem className="min-h-11" disabled={rows[rows.length - 1]?.id === r.id} onSelect={() => move(r.id, 1)}><ArrowDown /> Descendre</DropdownMenuItem>
