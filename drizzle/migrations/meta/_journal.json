@@ -225,6 +225,13 @@
       "when": 1794042993246,
       "tag": "0031_pos_integrity_chains_and_jet",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1794043407771,
+      "tag": "0032_pos_configuration_audit_coverage",
+      "breakpoints": true
     }
   ]
 }
