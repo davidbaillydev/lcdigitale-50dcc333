@@ -5,6 +5,20 @@ export type PosTenderMethod = "cash" | "card" | "meal_voucher";
 export type PosTender = { method: PosTenderMethod; given?: number; change?: number };
 
 export const POS_TENDER_LABELS: Record<PosTenderMethod, string> = { cash: "Espèces", card: "Carte bancaire", meal_voucher: "Titres restaurant" };
+export const CASH_QUICK_AMOUNTS = [5, 10, 20, 50] as const;
+
+export type PosClosure = { z_number: number | null; opened_at: string; closed_at: string | null; z_report: unknown };
+
+/** Export exhaustif du journal, valeurs numériques françaises et champs CSV échappés. */
+export function posClosuresCsv(rows: PosClosure[]): string {
+  const cell = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const money = (v: number | null) => v == null ? "" : v.toFixed(2).replace(".", ",");
+  const header = ["Numéro Z", "Ouverture", "Clôture", "Ventes", "Annulées", "Total TTC", "Espèces", "Carte bancaire", "Titres restaurant", "Fond de caisse", "Espèces attendues", "Espèces comptées", "Écart espèces"];
+  return "\uFEFF" + [header, ...rows.map((row) => {
+    const r = row.z_report as ZReport;
+    return [row.z_number, row.opened_at, row.closed_at, r.orders, r.cancelled, money(r.total), money(r.byMethod.cash.amount), money(r.byMethod.card.amount), money(r.byMethod.meal_voucher.amount), money(r.openingFloat), money(r.expectedCash), money(r.countedCash), money(r.cashDifference)];
+  })].map((row) => row.map(cell).join(";")).join("\r\n");
+}
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 

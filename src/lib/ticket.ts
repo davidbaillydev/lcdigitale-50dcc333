@@ -11,6 +11,8 @@ export const itemTitle = (it: { name: string; size?: { name: string } | null }) 
 export type TicketWidth = 80 | 58;
 export type TicketKind = "kitchen" | "receipt";
 export type TicketOrder = {
+  pos_receipt_number?: number | null;
+  pos_tender?: { method: "cash" | "card" | "meal_voucher"; given?: number; change?: number } | null;
   is_test?: boolean;
   order_number: number; customer_name?: string | null; phone?: string | null; email?: string | null; mode: string;
   address?: string | null; city?: string | null; slot: string; created_at?: string; asap?: boolean; first_name?: string | null; last_name?: string | null;
@@ -238,7 +240,8 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
     .sig { margin-top: 14px; border-bottom: 1px dotted #000; height: 1.4em; }
   </style></head><body>
     <div class="c">${kind === "kitchen" ? "TICKET CUISINE" : isPreorder(kind, o) ? "BON DE PRÉ-COMMANDE - À RÉGLER EN CAISSE" : "TICKET CLIENT"}</div>
-    <hr><div class="c xl">N° ${o.order_number}</div>
+    <hr><div class="c xl">N° ${kind === "receipt" ? o.pos_receipt_number ?? o.order_number : o.order_number}</div>
+    ${kind === "receipt" && o.pos_receipt_number != null ? `<div class="c">Commande n° ${o.order_number}</div>` : ""}
     <div class="band">${payLabel(o.payment_method, isPaid(o), o.is_test)}</div>
     <div class="band row"><span>${esc(timing.label)}</span><span>${esc(timing.value)}</span></div>
     <div class="band">${modeLabel(o.mode)}${o.source === "kiosk" ? " · BORNE" : o.source === "phone" ? " · TÉL IA" : ""}${o.table_label ? ` · TABLE ${esc(o.table_label)}` : ""}${o.room_label ? ` · CHAMBRE ${esc(o.room_label)}` : ""}</div>
@@ -254,6 +257,7 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
     ${f.prices && Number(o.discount) > 0 ? `<div class="row"><span>Remise${o.promo_code ? ` ${esc(o.promo_code)}` : ""}</span><span>-${eur(o.discount)}</span></div>` : ""}
     ${f.prices ? vatRows.map((v) => `<div class="row"><span>TVA (${vatRateLabel(v.rate)} incluse)</span><span>${eur(v.vat)}</span></div>`).join("") : ""}
     ${f.prices ? `<div class="row l"><span>TOTAL</span><span>${eur(totals.total)}</span></div>` : ""}
+    ${kind === "receipt" ? receiptTenderLines(o).map((l) => `<div>${esc(l)}</div>`).join("") : ""}
     ${f.prices && kind === "receipt" && vatRows.length ? `<table class="vat"><tr><th>Taux</th><th>HT</th><th>TVA</th><th>TTC</th></tr>${vatRows.map((v) => `<tr><td>${vatRateLabel(v.rate)}</td><td>${eur(v.ht)}</td><td>${eur(v.vat)}</td><td>${eur(v.ttc)}</td></tr>`).join("")}${vatRows.length > 1 ? `<tr class="tot"><td>Total</td><td>${eur(vatRows.reduce((s, v) => s + v.ht, 0))}</td><td>${eur(totals.vat)}</td><td>${eur(totals.total)}</td></tr>` : ""}</table>` : ""}
     ${f.paid ? `<div class="box"><span><span class="ck">${isPaid(o) ? "✓" : ""}</span>Payé</span><span><span class="ck">${isPaid(o) ? "" : "✓"}</span>Impayé</span></div>` : ""}
     ${f.qc && kind === "kitchen" ? `<hr><div class="l">Contrôle emballage</div><div><span class="ck"></span>Articles conformes</div><div><span class="ck"></span>Tous les articles</div><div><span class="ck"></span>Couverts / sauces</div><div>Visa :</div><div class="sig"></div>` : ""}
@@ -265,6 +269,12 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
     ${legal.map((l) => `<div class="c legal">${esc(l)}</div>`).join("")}
     <div class="c" style="margin-top:6px">${new Date().toLocaleString("fr-FR")}</div>
   </body></html>`;
+}
+
+export function receiptTenderLines(o: Pick<TicketOrder, "pos_tender">): string[] {
+  const t = o.pos_tender;
+  if (!t) return [];
+  return [t.method === "cash" ? "Espèces" : t.method === "card" ? "Carte bancaire" : "Titres restaurant", ...(t.method === "cash" ? [`Remis : ${eur(t.given)}`, `Rendu : ${eur(t.change)}`] : [])];
 }
 
 /** Imprime directement sur l'imprimante ESC/POS de l'appareil si elle est configurée, sinon via le navigateur. */

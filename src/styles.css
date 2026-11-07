@@ -523,6 +523,18 @@
 @media (prefers-reduced-motion: reduce) { .kds-incoming { animation: none; } }
 
 /* Kitchen alone locks the document; each status list owns its scroll. */
+/* Counter register also keeps checkout within the device viewport. */
+html:has(.pos-register), body:has(.pos-register) { height: 100%; overflow: hidden; }
+.admin-workspace:has(.pos-register) { height: 100dvh; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.admin-workspace:has(.pos-register) .admin-masthead { flex-shrink: 0; }
+.admin-workspace:has(.pos-register) .admin-masthead > div { padding-block: 0.75rem; }
+.admin-workspace:has(.pos-register) .admin-content { flex: 1; min-height: 0; overflow: hidden; }
+.admin-content .pos-register section { padding: 0; border: 0; }
+.pos-register > header { flex-shrink: 0; }
+.pos-register > .grid { grid-template-rows: minmax(0, 1fr); }
+@media (max-width: 767px) {
+  .pos-register > .grid { grid-template-rows: minmax(100px, 1fr) minmax(260px, 1fr); }
+}
 html:has(.admin-kitchen), body:has(.admin-kitchen) { height: 100%; overflow: hidden; }
 .admin-workspace:has(.admin-kitchen) { height: 100dvh; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
 .admin-workspace:has(.admin-kitchen) .admin-masthead { flex-shrink: 0; }

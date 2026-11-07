@@ -513,7 +513,9 @@ export type Database = {
           phone: string
           platform_fee: number
           pos_error: string | null
+          pos_receipt_number: number | null
           pos_ref: string | null
+          pos_request_id: string | null
           pos_session_id: string | null
           pos_status: string | null
           pos_synced_at: string | null
@@ -573,7 +575,9 @@ export type Database = {
           phone: string
           platform_fee?: number
           pos_error?: string | null
+          pos_receipt_number?: number | null
           pos_ref?: string | null
+          pos_request_id?: string | null
           pos_session_id?: string | null
           pos_status?: string | null
           pos_synced_at?: string | null
@@ -633,7 +637,9 @@ export type Database = {
           phone?: string
           platform_fee?: number
           pos_error?: string | null
+          pos_receipt_number?: number | null
           pos_ref?: string | null
+          pos_request_id?: string | null
           pos_session_id?: string | null
           pos_status?: string | null
           pos_synced_at?: string | null
@@ -679,6 +685,29 @@ export type Database = {
             foreignKeyName: "orders_restaurant_id_fkey"
             columns: ["restaurant_id"]
             isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pos_receipt_counters: {
+        Row: {
+          last_number: number
+          restaurant_id: string
+        }
+        Insert: {
+          last_number?: number
+          restaurant_id: string
+        }
+        Update: {
+          last_number?: number
+          restaurant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_receipt_counters_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: true
             referencedRelation: "restaurants"
             referencedColumns: ["id"]
           },
@@ -1684,6 +1713,14 @@ export type Database = {
       can_access_restaurant: {
         Args: { _restaurant_id: string; _user_id: string }
         Returns: boolean
+      }
+      close_pos_register: {
+        Args: {
+          _counted_cash: number
+          _restaurant_id: string
+          _user_id: string
+        }
+        Returns: Json
       }
       has_role: {
         Args: {
