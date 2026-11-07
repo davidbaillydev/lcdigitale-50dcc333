@@ -77,7 +77,7 @@ export function posPaymentMethod(m: PosTenderMethod): "counter" | "card_terminal
   return m === "card" ? "card_terminal" : "counter";
 }
 
-export type ZOrder = { total: number; status: string; pos_tender: PosTender | null };
+export type ZOrder = { total: number; status: string; pos_tender: PosTender | null; pos_payments?: PosPayment[]; discount?: number; pos_vat?: VatRow[] };
 export type ZReport = {
   vat?: VatRow[]; vatMissing?: number; cashIn?: number; cashOut?: number; discountTotal?: number; cancelledAmount?: number;
   events?: { kind: "in" | "out" | "void"; amount: number; reason: string; at: string; createdBy: string; orderId: string | null }[];
@@ -92,15 +92,17 @@ export type ZReport = {
 };
 
 /** Ticket Z : totaux par mode de règlement et écart de caisse espèces. */
-export function zReport(orders: ZOrder[], openingFloat: number, countedCash: number | null): ZReport {
+export function zReport(orders: ZOrder[], openingFloat: number, countedCash: number | null, events: NonNullable<ZReport["events"]> = []): ZReport {
   const byMethod = { cash: { count: 0, amount: 0 }, card: { count: 0, amount: 0 }, meal_voucher: { count: 0, amount: 0 } };
-  let n = 0, cancelled = 0, total = 0;
+  let n = 0, cancelled = 0, total = 0, cancelledAmount=0, discountTotal=0;
   for (const o of orders) {
-    if (o.status === "cancelled") { cancelled++; continue; }
-    const m = o.pos_tender?.method ?? "cash";
-    byMethod[m].count++; byMethod[m].amount = r2(byMethod[m].amount + o.total);
+    if (o.status === "cancelled") { cancelled++; cancelledAmount=r2(cancelledAmount+o.total); continue; }
+    for(const p of o.pos_payments ?? [{method:o.pos_tender?.method ?? "cash",amount:o.total}]) { byMethod[p.method].count++; byMethod[p.method].amount=r2(byMethod[p.method].amount+p.amount); }
+    discountTotal=r2(discountTotal+(o.discount ?? 0));
     n++; total = r2(total + o.total);
   }
-  const expectedCash = r2(openingFloat + byMethod.cash.amount);
-  return { orders: n, cancelled, total, byMethod, openingFloat: r2(openingFloat), expectedCash, countedCash, cashDifference: countedCash == null ? null : r2(countedCash - expectedCash) };
+  const cashIn=r2(events.filter((e)=>e.kind==="in").reduce((s,e)=>s+e.amount,0));
+  const cashOut=r2(events.filter((e)=>e.kind==="out").reduce((s,e)=>s+e.amount,0));
+  const expectedCash = r2(openingFloat + byMethod.cash.amount+cashIn-cashOut);
+  return { orders: n, cancelled, cancelledAmount,discountTotal,cashIn,cashOut,events,total, byMethod, openingFloat: r2(openingFloat), expectedCash, countedCash, cashDifference: countedCash == null ? null : r2(countedCash - expectedCash) };
 }

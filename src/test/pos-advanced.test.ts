@@ -1,9 +1,11 @@
 import { describe,expect,it } from "vitest";
-import {directDiscount,validatePosPayments,paymentRemaining,posMonthlyCsv,type ZReport} from "@/lib/pos-register";
+import {directDiscount,validatePosPayments,paymentRemaining,posMonthlyCsv,zReport,type ZReport} from "@/lib/pos-register";
 import {vatBreakdown} from "@/lib/ticket-vat";
 import {receiptOpensDrawer} from "@/lib/pos-print";
 import {sampleOrder} from "@/lib/ticket";
 describe("caisse avancée",()=>{
+ it("entrées sorties modifient le tiroir théorique",()=>{const r=zReport([{total:27,status:"accepted",pos_tender:{method:"cash"},pos_payments:[{method:"cash",amount:10},{method:"card",amount:17}]}],50,75,[{kind:"in",amount:20,reason:"Appoint",at:"2026-11-07",createdBy:"test",orderId:null},{kind:"out",amount:5,reason:"Achat",at:"2026-11-07",createdBy:"test",orderId:null}]);expect(r.cashIn).toBe(20);expect(r.cashOut).toBe(5);expect(r.expectedCash).toBe(75);expect(r.cashDifference).toBe(0);});
+ it("annulation conserve montant annulé et exclut vente du net",()=>{const r=zReport([{total:30,status:"cancelled",pos_tender:{method:"card"}},{total:27,status:"accepted",discount:3,pos_tender:{method:"cash"},pos_payments:[{method:"cash",amount:10},{method:"card",amount:17}]}],50,60);expect(r.cancelled).toBe(1);expect(r.cancelledAmount).toBe(30);expect(r.total).toBe(27);expect(r.byMethod.card.amount).toBe(17);expect(r.discountTotal).toBe(3);});
  it("fractionne 30 euros en 10 espèces et 20 CB avec rendu 10",()=>{const ps=validatePosPayments(30,[{method:"cash",amount:10,given:20},{method:"card",amount:20}]);expect(ps[0]?.change).toBe(10);expect(paymentRemaining(30,ps)).toBe(0);});
  it("affiche 20 restant après 10 euros espèces",()=>expect(paymentRemaining(30,[{method:"cash",amount:10}])).toBe(20));
  it("rejette sous-paiement et sur-paiement",()=>{expect(()=>validatePosPayments(30,[{method:"card",amount:20}])).toThrow();expect(()=>validatePosPayments(30,[{method:"card",amount:40}])).toThrow();});
