@@ -28,6 +28,8 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [otp, setOtp] = useState(false);
+  const [code, setCode] = useState("");
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -39,7 +41,10 @@ function Login() {
       toast.success("Si ce compte existe, un email de réinitialisation vient d'être envoyé.");
       return setForgot(false);
     }
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = otp
+      ? await supabase.auth.verifyOtp({ email: email.trim(), token: code.trim(), type: "email" })
+      : await supabase.auth.signInWithPassword({ email, password });
+    if (otp && error) { setBusy(false); return toast.error("Code incorrect ou expiré. Demandez un nouveau code à l'agence."); }
     if (error || !data.user) { setBusy(false); return toast.error("Identifiants incorrects"); }
     const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: data.user.id, _role: "admin" });
     setBusy(false);
@@ -90,14 +95,25 @@ function Login() {
               <Label htmlFor="em">Email</Label>
               <Input id="em" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
             </div>
-            {!forgot && (
+            {!forgot && otp && (
+              <div className="space-y-2">
+                <Label htmlFor="otp">Code à 6 chiffres</Label>
+                <Input id="otp" inputMode="numeric" autoComplete="one-time-code" maxLength={6} required value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} />
+              </div>
+            )}
+            {!forgot && !otp && (
               <div className="space-y-2">
                 <Label htmlFor="pw">Mot de passe</Label>
                 <Input id="pw" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
               </div>
             )}
             <Button className="min-h-12 w-full" disabled={busy}>{forgot ? "Recevoir le lien" : "Se connecter"}</Button>
-            <button type="button" className="min-h-12 w-full text-sm text-muted-foreground underline" onClick={() => setForgot(!forgot)}>
+            {!forgot && (
+              <button type="button" className="min-h-12 w-full text-sm text-muted-foreground underline" onClick={() => setOtp(!otp)}>
+                {otp ? "Se connecter avec un mot de passe" : "Se connecter avec un code"}
+              </button>
+            )}
+            <button type="button" className="min-h-12 w-full text-sm text-muted-foreground underline" onClick={() => { setForgot(!forgot); setOtp(false); }}>
               {forgot ? "Retour à la connexion" : "Mot de passe oublié ?"}
             </button>
           </div>
