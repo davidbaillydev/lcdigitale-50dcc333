@@ -29,7 +29,7 @@ export function printPosReceipt(order: TicketOrder, shop: TicketShop, reprint = 
   });
 }
 
-export type PosReportTicket = { kind: "X" | "Z"; number?: number; openedAt: string; at: string; report: ZReport };
+export type PosReportTicket = { kind: "X" | "Z"; number?: number | undefined; openedAt: string; at: string; report: ZReport };
 export function posReportLines(shop: TicketShop, ticket: PosReportTicket): string[] {
   const r = ticket.report;
   const eur = (n: number) => n.toFixed(2).replace(".", ",") + " €";
@@ -52,7 +52,7 @@ export function printPosReport(shop: TicketShop, ticket: PosReportTicket): Promi
     }
     return new Promise<boolean>((resolve) => {
       const frame = document.createElement("iframe");
-      frame.hidden = true; document.body.appendChild(frame);
+      frame.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0"; document.body.appendChild(frame);
       const d = frame.contentDocument; const w = frame.contentWindow;
       if (!d || !w) { frame.remove(); resolve(false); return; }
       d.open(); d.write(posReportHtml(lines, width)); d.close();

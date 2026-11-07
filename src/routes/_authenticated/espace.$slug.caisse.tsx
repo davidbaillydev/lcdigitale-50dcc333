@@ -14,7 +14,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { supabase } from "@/integrations/supabase/client";
 import { loadRestaurantAdmin } from "@/lib/restaurant-settings.functions";
 import { getPosState, openPosSession, closePosSession, createPosOrder, getPosReceipts, getPosClosures, type PosReceipt } from "@/lib/pos-register.functions";
-import { posEnabled, changeDue, CASH_QUICK_AMOUNTS, posClosuresCsv, POS_TENDER_LABELS, type PosTenderMethod, type ZReport, type PosClosure } from "@/lib/pos-register";
+import { posEnabled, changeDue, CASH_QUICK_AMOUNTS, posClosuresCsv, POS_TENDER_LABELS, type PosTenderMethod, type ZReport } from "@/lib/pos-register";
+import type { Restaurant } from "@/lib/shop";
 import { printPosReceipt, printPosReport, type PosReportTicket } from "@/lib/pos-print";
 import type { TicketShop } from "@/lib/ticket";
 import { getCatalog } from "@/lib/catalogs";
@@ -53,7 +54,7 @@ function Page() {
   return <Register restaurantId={r.id} name={r.name} slug={slug} restaurant={r} />;
 }
 
-function Register({ restaurantId, name, slug, restaurant }: { restaurantId: string; name: string; slug: string; restaurant: Parameters<typeof getCatalog>[0] }) {
+function Register({ restaurantId, name, slug, restaurant }: { restaurantId: string; name: string; slug: string; restaurant: Restaurant }) {
   const qc = useQueryClient();
   const state = useServerFn(getPosState);
   const open = useServerFn(openPosSession);
@@ -64,7 +65,7 @@ function Register({ restaurantId, name, slug, restaurant }: { restaurantId: stri
   const { data: st } = useQuery({ queryKey: ["pos-state", restaurantId], queryFn: () => state({ data: { restaurantId } }), refetchInterval: 15000 });
   const { data: options } = useQuery({ queryKey: ["pos-options", restaurantId], queryFn: () => loadOptionData(supabase, restaurantId) });
   const catalog = useMemo(() => withOptions(getCatalog(restaurant), options ?? EMPTY_OPTIONS), [restaurant, options]);
-  const shop: TicketShop = { name, address: restaurant.address, phone: restaurant.phone, slug, catalog, optionData: options, legal: restaurant.legal };
+  const shop: TicketShop = { name, address: restaurant.address, phone: restaurant.phone, slug, customDomains: restaurant.config.customDomains, catalog, optionData: options, legal: restaurant.legal };
   const [cat, setCat] = useState<string>("");
   const [lines, setLines] = useState<Line[]>([]);
   const [item, setItem] = useState<string | null>(null);
