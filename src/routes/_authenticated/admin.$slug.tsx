@@ -13,6 +13,7 @@ import { getAgencyPublicDomain } from "@/lib/agency.functions";
 import { RestaurantSettingsForm } from "@/components/RestaurantSettingsForm";
 import { MarketingPanel } from "@/components/MarketingPanel";
 import { NotificationsPanel } from "@/components/NotificationsPanel";
+import type { ComponentProps } from "react";
 import { PaymentProvidersPanel } from "@/components/PaymentProvidersPanel";
 import { PaymentModulesPanel, paymentModulesOf } from "@/components/PaymentModulesPanel";
 import { VapiWebPanel } from "@/components/VapiWebPanel";
@@ -87,7 +88,7 @@ function Page() {
                <PaymentProvidersPanel restaurantId={r.id} modules={paymentModulesOf(r.config)} />
              </SettingsGroup>
              <SettingsGroup name="communication">
-               <NotificationsPanel key={`n-${r.id}`} restaurantId={r.id} notifications={r.config.notifications} defaultEmail={r.email ?? null} onSaved={() => refetch()} />
+               <NotificationsPanel key={`n-${r.id}`} restaurantId={r.id} notifications={(r.config as { notifications?: ComponentProps<typeof NotificationsPanel>["notifications"] }).notifications} defaultEmail={r.email ?? null} onSaved={() => refetch()} />
                <UpsellPanel key={`u-${r.id}`} restaurant={r} onSaved={() => refetch()} />
                <MarketingPanel restaurantId={r.id} marketing={r.config.marketing} onSaved={() => refetch()} />
              </SettingsGroup>
