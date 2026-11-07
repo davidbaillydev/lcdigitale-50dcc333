@@ -1,18 +1,19 @@
 type Admin = Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"];
 
 import { orderReceivedHtml, restaurantNewOrderHtml, orderConfirmedHtml, refundHtml } from "@/lib/email-templates";
-import { notificationRecipients } from "./order-notification-roles";
+import { notificationRecipients, directRecipientSchema, type DirectRecipient } from "./order-notification-roles";
 
 const GATEWAY = "https://connector-gateway.lovable.dev/brevo";
 const FALLBACK_ORIGIN = "https://restaurant.lcdigitale.fr";
 const CONFIRMED = ["accepted", "preparing", "ready", "delivering", "done"];
 const baseOf = (origin?: string | null) => (/^https?:\/\/[^/]+$/.test(origin ?? "") ? origin! : FALLBACK_ORIGIN);
 
-export type NotificationSettings = { received: boolean; confirmed: boolean; restaurant: boolean; team: boolean; agency: boolean; email?: string | undefined };
+export type NotificationSettings = { received: boolean; confirmed: boolean; restaurant: boolean; team: boolean; agency: boolean; email?: string | undefined; recipients?: DirectRecipient[] | undefined };
 /** Interrupteurs de notification (absents = actifs). */
 export function notificationsOf(config: unknown): NotificationSettings {
   const n = ((config as { notifications?: Partial<NotificationSettings> } | null)?.notifications) ?? {};
-  return { received: n.received !== false, confirmed: n.confirmed !== false, restaurant: n.restaurant !== false, team: n.team !== false, agency: n.agency !== false, email: n.email || undefined };
+  return { received: n.received !== false, confirmed: n.confirmed !== false, restaurant: n.restaurant !== false, team: n.team !== false, agency: n.agency !== false, email: n.email || undefined,
+    recipients: Array.isArray(n.recipients) ? n.recipients.flatMap((r) => { const parsed = directRecipientSchema.safeParse(r); return parsed.success ? [parsed.data] : []; }) : undefined };
 }
 
 type Rest = { slug: string; name: string; email: string | null; brand: { accent?: string } | null; config: unknown; logo_url?: string | null; address?: string | null; city?: string | null; phone?: string | null };
@@ -78,7 +79,7 @@ export async function sendRestaurantNewOrder(admin: Admin, orderId: string, orig
     if (error) throw new Error("Impossible de résoudre un destinataire de commande");
     return [id, data.user?.email] as const;
   })));
-  const recipients = notificationRecipients({ enabled: n.restaurant, mode: o.mode, fallback: n.email || r.email, team: n.team, agency: n.agency,
+  const recipients = notificationRecipients({ enabled: n.restaurant, mode: o.mode, fallback: n.email || r.email, recipients: n.recipients, team: n.team, agency: n.agency,
     members: (members ?? []).map((m) => ({ email: emails.get(m.user_id), roles: [...m.notification_roles, ...(m.role === "manager" ? ["responsable"] : [])], modes: m.notification_modes })),
     agencyEmails: (agencies ?? []).map((m) => emails.get(m.user_id)),
   });

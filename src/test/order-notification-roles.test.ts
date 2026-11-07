@@ -20,4 +20,13 @@ describe("destinataires des commandes", () => {
   it("copie agence désactivable et doublons retirés", () => {
     expect(notificationRecipients({ ...base, agency: false, mode: "pickup", members: [{ email: "RESTO@x.fr", roles: ["caissier"] }] })).toEqual(["resto@x.fr"]);
   });
+  it("plusieurs adresses directes ciblées, désactivation et absence de repli après suppression", () => {
+    expect(notificationRecipients({ ...base, team: false, agency: false, mode: "delivery", members: [], recipients: [
+      { email: "a@x.fr", enabled: true, modes: ["delivery"] },
+      { email: "b@x.fr", enabled: true, modes: ["delivery", "pickup"] },
+      { email: "off@x.fr", enabled: false, modes: ["delivery"] },
+      { email: "pickup@x.fr", enabled: true, modes: ["pickup"] },
+    ] })).toEqual(["a@x.fr", "b@x.fr"]);
+    expect(notificationRecipients({ ...base, team: false, agency: false, mode: "delivery", members: [], recipients: [] })).toEqual([]);
+  });
 });
