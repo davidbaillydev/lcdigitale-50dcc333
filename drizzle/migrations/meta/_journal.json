@@ -218,6 +218,13 @@
       "when": 1794033795321,
       "tag": "0030_pos_financial_immutability",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1794042993246,
+      "tag": "0031_pos_integrity_chains_and_jet",
+      "breakpoints": true
     }
   ]
 }
