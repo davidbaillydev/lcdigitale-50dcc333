@@ -1,7 +1,7 @@
 // Encodeur ESC/POS : transforme une commande en octets pour imprimante thermique.
 import { allergenLabel } from "./allergens";
 import { ticketLegalLines, vatRateLabel } from "./ticket-vat";
-import { receiptTenderLines, ticketVat, isPaid, isPreorder, itemTitle, modeLabel, payLabel, settlementNote, ticketCustomer, ticketFields, ticketOptions, ticketTiming, ticketTotals, ticketWebsite, type TicketFieldsIn, type TicketKind, type TicketOrder, type TicketShop, type TicketWidth } from "./ticket";
+import { receiptIntegrityLines, receiptTenderLines, ticketVat, isPaid, isPreorder, itemTitle, modeLabel, payLabel, settlementNote, ticketCustomer, ticketFields, ticketOptions, ticketTiming, ticketTotals, ticketWebsite, type TicketFieldsIn, type TicketKind, type TicketOrder, type TicketShop, type TicketWidth } from "./ticket";
 
 const CP858: Record<string, number> = {
   "Ç": 0x80, "ü": 0x81, "é": 0x82, "â": 0x83, "ä": 0x84, "à": 0x85, "ç": 0x87, "ê": 0x88, "ë": 0x89, "è": 0x8a,
@@ -104,6 +104,7 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
   if (f.prices) for (const v of vatRows) e.line(lr(`TVA (${vatRateLabel(v.rate)} incluse)`, eur(v.vat), cols));
   if (f.prices) e.bold(true).size(1, 2).line(lr("TOTAL", eur(totals.total), cols)).size(1, 1).bold(false);
   if (kind === "receipt") receiptTenderLines(o).forEach((l) => e.line(l));
+  if (kind === "receipt") receiptIntegrityLines(o).forEach((l) => wrap(l, cols).forEach((line) => e.line(line)));
   if (f.prices && kind === "receipt" && vatRows.length) {
     const w = Math.floor((cols - 6) / 3);
     const row = (a: string, b: string, c: string, d: string) => a.padEnd(6).slice(0, 6) + b.padStart(w) + c.padStart(w) + d.padStart(cols - 6 - 2 * w);

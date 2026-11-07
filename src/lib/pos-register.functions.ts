@@ -103,7 +103,7 @@ export const createPosOrder = createServerFn({ method: "POST" })
       items: items as never, subtotal, delivery_fee: 0, service_fee: 0, discount, total,
       pos_payments: payments as never, pos_discount: (data.discount ?? null) as never, pos_vat: vat as never,
       payment_method: posPaymentMethod(payments.every((p) => p.method === "card") ? "card" : "cash"), payment_status: "paid", source: "pos",
-      status: "accepted", pos_session_id: s.id, pos_tender: tender as never, pos_request_id: data.requestId,
+      status: "accepted", pos_session_id: s.id, pos_tender: tender as never, pos_request_id: data.requestId, pos_created_by: context.userId,
     }).select("*").single();
     if (error) {
       if (error.code === "23505") {
