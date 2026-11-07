@@ -26,7 +26,7 @@ export function roleReceivesOrder(roles: readonly string[], mode: string, modes?
 }
 export function notificationRecipients(input: {
   enabled: boolean; mode: string; fallback?: string | null; team: boolean; agency: boolean;
-  members: { email?: string | null; roles: readonly string[]; modes?: readonly string[] | null }[]; agencyEmails: (string | null | undefined)[];
+  members: { email?: string | null | undefined; roles: readonly string[]; modes?: readonly string[] | null }[]; agencyEmails: (string | null | undefined)[];
 }): string[] {
   if (!input.enabled) return [];
   const emails = [input.fallback,
