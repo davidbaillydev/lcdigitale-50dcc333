@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { ArrowDown, ArrowUp, BarChart3, BookOpen, ChefHat, ChevronDown, Contact, Globe, GripVertical, ExternalLink, FileText, Landmark, LogOut, Mail, MoreHorizontal, Pencil, Plus, QrCode, Search, Settings, ShieldCheck, ShoppingBag, Store, Tablet, Trash2, Users, Wallet, X } from "lucide-react";
+import { ArrowDown, ArrowUp, BarChart3, BookOpen, ChefHat, ChevronDown, Contact, Copy, Globe, GripVertical, ExternalLink, FileText, Landmark, LogOut, Mail, MoreHorizontal, Pencil, Plus, QrCode, Search, Settings, ShieldCheck, ShoppingBag, Store, Tablet, Trash2, Users, Wallet, X } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
@@ -21,6 +21,7 @@ import { OrdersPausedToggle } from "@/components/OrdersPausedToggle";
 import { MenuAiSettings } from "@/components/MenuAiSettings";
 import { WhatsAppAccess } from "@/components/WhatsAppAccess";
 import { DeleteRestaurantDialog } from "@/components/DeleteRestaurantDialog";
+import { DuplicateRestaurantDialog } from "@/components/DuplicateRestaurantDialog";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   head: () => ({
@@ -57,6 +58,7 @@ function Console() {
   const [rows, setRows] = useState<AgencyRestaurant[] | null>(null);
   const [form, setForm] = useState<Form | null>(null);
   const [deleting, setDeleting] = useState<AgencyRestaurant | null>(null);
+  const [duplicating, setDuplicating] = useState<AgencyRestaurant | null>(null);
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "online" | "offline">("all");
   const [domainOpen, setDomainOpen] = useState(false);
@@ -235,6 +237,7 @@ function Console() {
                       <DropdownMenuItem asChild className="min-h-11"><Link to="/espace/$slug/clients" params={{ slug: r.slug }}><Contact /> Clients</Link></DropdownMenuItem>
                       <DropdownMenuItem asChild className="min-h-11"><Link to="/admin/$slug" params={{ slug: r.slug }}><Settings /> Réglages</Link></DropdownMenuItem>
                       <DropdownMenuItem className="min-h-11" onSelect={() => setForm({ ...r })}><Pencil /> Modifier l'identité</DropdownMenuItem>
+                      <DropdownMenuItem className="min-h-12" onSelect={() => setDuplicating(r)}><Copy /> Dupliquer le restaurant</DropdownMenuItem>
                       {canReorder && <>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem className="min-h-11" disabled={rows[0]?.id === r.id} onSelect={() => move(r.id, -1)}><ArrowUp /> Monter</DropdownMenuItem>
@@ -289,6 +292,7 @@ function Console() {
       )}
 
       <MenuAiSettings />
+      {duplicating && <DuplicateRestaurantDialog key={duplicating.id} restaurant={duplicating} onClose={() => setDuplicating(null)} onCreated={(slug) => { setDuplicating(null); load(); navigate({ to: "/admin/$slug", params: { slug } }); }} />}
       {deleting && <DeleteRestaurantDialog key={deleting.id} restaurant={deleting} onClose={() => setDeleting(null)} onDeleted={() => { setDeleting(null); load(); }} />}
       <RestaurantDialog form={form} setForm={setForm} onSaved={(slug, created) => { load(); if (created) navigate({ to: "/admin/$slug", params: { slug } }); }} />
     </div>
