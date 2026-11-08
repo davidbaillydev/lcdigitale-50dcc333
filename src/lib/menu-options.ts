@@ -14,18 +14,15 @@ const bySort = <T extends { id: string; sort_order: number }>(a: T, b: T) => a.s
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function loadOptionData(client: SupabaseClient<any>, restaurantId: string): Promise<OptionData> {
-  const [v, g, i, l] = await Promise.all([
-    client.from("product_variants").select("id, product_id, name, price, is_default, is_available, sort_order").eq("restaurant_id", restaurantId),
-    client.from("option_groups").select("id, name, min_selection, max_selection, is_required, sort_order").eq("restaurant_id", restaurantId),
-    client.from("option_items").select("id, group_id, name, price, is_available, sort_order").eq("restaurant_id", restaurantId),
-    client.from("product_option_groups").select("id, product_id, group_id, variant_id").eq("restaurant_id", restaurantId),
-  ]);
+  const { data, error } = await client.rpc("read_restaurant_menu_options", { _restaurant_id: restaurantId });
+  if (error) throw new Error("Lecture des options impossible");
+  const options = data as OptionData | null;
   const num = <T extends { price: unknown }>(rows: T[] | null) => (rows ?? []).map((r) => ({ ...r, price: Number(r.price) }));
   return {
-    variants: (num(v.data as VariantRow[] | null) as VariantRow[]).sort(bySort),
-    groups: ((g.data ?? []) as GroupRow[]).sort(bySort),
-    items: (num(i.data as OptionItemRow[] | null) as OptionItemRow[]).sort(bySort),
-    links: (l.data ?? []) as LinkRow[],
+    variants: num(options?.variants ?? null).sort(bySort),
+    groups: (options?.groups ?? []).sort(bySort),
+    items: num(options?.items ?? null).sort(bySort),
+    links: options?.links ?? [],
   };
 }
 

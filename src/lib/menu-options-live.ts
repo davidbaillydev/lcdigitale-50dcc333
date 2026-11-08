@@ -7,6 +7,7 @@ export function useOptionData(restaurantId: string | undefined): { data: OptionD
   const [data, setData] = useState<OptionData>(EMPTY_OPTIONS);
   const [tick, setTick] = useState(0);
   useEffect(() => {
+    setData(EMPTY_OPTIONS);
     if (!restaurantId) return;
     let alive = true;
     const load = () => loadOptionData(supabase, restaurantId).then((d) => alive && setData(d)).catch(() => {});
@@ -16,7 +17,17 @@ export function useOptionData(restaurantId: string | undefined): { data: OptionD
       ch.on("postgres_changes", { event: "*", schema: "public", table, filter: `restaurant_id=eq.${restaurantId}` }, () => load());
     }
     ch.subscribe();
-    return () => { alive = false; supabase.removeChannel(ch); };
+    const refresh = () => { if (document.visibilityState === "visible") void load(); };
+    const timer = window.setInterval(refresh, 15000);
+    window.addEventListener("online", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      alive = false;
+      window.clearInterval(timer);
+      window.removeEventListener("online", refresh);
+      window.removeEventListener("focus", refresh);
+      supabase.removeChannel(ch);
+    };
   }, [restaurantId, tick]);
   return useMemo(() => ({ data, reload: () => setTick((t) => t + 1) }), [data]);
 }
