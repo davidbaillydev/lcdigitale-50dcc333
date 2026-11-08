@@ -20,7 +20,7 @@ export function CartLines() {
           <li key={l.key} className="flex gap-3 py-3">
             <div className="min-w-0 flex-1">
               <p className="font-semibold">{item.name}{selectedExtras(item, l.sel).size ? ` — Taille ${selectedExtras(item, l.sel).size!.name}` : ""}</p>
-              {selectionLines(item, l.sel).map((d) => (
+              {selectionLines(item, l.sel, euro).map((d) => (
                 <p key={d} className="text-xs text-muted-foreground">{d}</p>
               ))}
               <p className="mt-1 text-sm text-primary">{euro(unitPrice(item, l.sel) * l.qty)}</p>

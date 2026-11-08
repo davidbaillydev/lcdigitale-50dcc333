@@ -1,4 +1,5 @@
 // TPE Cloud de la borne (Stripe Terminal, Mollie POS ou SumUp Solo).
+import { legacyPaymentsSupported } from "../money";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -32,6 +33,7 @@ export async function terminalCandidate(restaurantId: string, kind: TerminalKind
 export async function terminalForRestaurant(restaurantId: string, kioskId?: string | null): Promise<Terminal | null> {
   const db = await admin();
   const { data } = await db.from("restaurants").select("config").eq("id", restaurantId).maybeSingle();
+  if (!data || !legacyPaymentsSupported(data)) return null;
   const chosen = (data?.config as { terminal?: TerminalKind } | null)?.terminal;
   let t: Terminal | null = null;
   if (chosen && TERMINALS.includes(chosen)) t = await terminalCandidate(restaurantId, chosen);

@@ -17,7 +17,7 @@ export function notificationsOf(config: unknown): NotificationSettings {
 }
 
 type Rest = { slug: string; name: string; email: string | null; brand: { accent?: string } | null; config: unknown; logo_url?: string | null; address?: string | null; city?: string | null; phone?: string | null };
-const ORDER_COLS = "id, restaurant_id, is_test, order_number, status, mode, slot, asap, total, items, notes, email, phone, customer_name, first_name, last_name, address, postal_code, city, table_label, payment_method, payment_status, confirmation_email_at, received_email_at, restaurant_email_at, restaurants(slug, name, email, brand, config, logo_url, address, city, phone)";
+const ORDER_COLS = "id, currency, restaurant_id, is_test, order_number, status, mode, slot, asap, total, items, notes, email, phone, customer_name, first_name, last_name, address, postal_code, city, table_label, payment_method, payment_status, confirmation_email_at, received_email_at, restaurant_email_at, restaurants(slug, name, email, brand, config, logo_url, address, city, phone)";
 
 async function load(admin: Admin, orderId: string) {
   const { data: o } = await admin.from("orders").select(ORDER_COLS).eq("id", orderId).maybeSingle();

@@ -77,7 +77,7 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
   const shop = { currency: s.config.currency ?? "EUR", name: restaurant.name, address: restaurant.address, phone: restaurant.phone, slug: restaurant.slug, customDomains: restaurant.config.customDomains };
   const testPrint = async () => {
     setTestResult(null);
-    const ok = await printTickets(sampleOrder(), [previewKind], shop, s.config.printing.width, printingFields(s.config.printing));
+    const ok = await printTickets({ ...sampleOrder(), currency: s.config.currency ?? "EUR" }, [previewKind], shop, s.config.printing.width, printingFields(s.config.printing));
     setTestResult(ok ? "ok" : "failed");
   };
   const [cp, setCp] = useState(""); const [city, setCity] = useState("");
@@ -209,7 +209,7 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
           <p className="mb-2 text-sm font-semibold">Aperçu du {previewKind === "kitchen" ? "ticket cuisine" : "ticket caisse"} ({s.config.printing.width} mm)</p>
           <iframe title={previewKind === "kitchen" ? "Aperçu du ticket cuisine" : "Aperçu du ticket caisse"} className="max-w-full rounded border border-border bg-card"
             style={{ width: `${s.config.printing.width === 80 ? 330 : 250}px`, height: 460 }}
-            srcDoc={ticketHtml(sampleOrder(), previewKind, s.config.printing.width, shop, printingFields(s.config.printing))} />
+            srcDoc={ticketHtml({ ...sampleOrder(), currency: s.config.currency ?? "EUR" }, previewKind, s.config.printing.width, shop, printingFields(s.config.printing))} />
           <div className="mt-3"><PrinterSetup width={s.config.printing.width} shop={shop} /></div>
           <Button type="button" variant="secondary" className="mt-3 w-full" onClick={testPrint}>Imprimer un ticket de test ({previewKind === "kitchen" ? "cuisine" : "caisse"})</Button>
           {testResult === "ok" && <p role="status" className="mt-2 rounded bg-primary/15 p-2 text-sm">Ticket de test envoyé à l'imprimante. Vérifiez qu'il est bien sorti.</p>}

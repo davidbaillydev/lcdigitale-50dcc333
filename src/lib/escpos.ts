@@ -1,4 +1,6 @@
 // Encodeur ESC/POS : transforme une commande en octets pour imprimante thermique.
+import { moneyDecimals } from "./money";
+import { ticketMoney } from "./ticket";
 import { allergenLabel } from "./allergens";
 import { ticketLegalLines, vatRateLabel } from "./ticket-vat";
 import { receiptIntegrityLines, receiptTenderLines, ticketVat, isPaid, isPreorder, itemTitle, modeLabel, payLabel, settlementNote, ticketCustomer, ticketFields, ticketOptions, ticketTiming, ticketTotals, ticketWebsite, type TicketFieldsIn, type TicketKind, type TicketOrder, type TicketShop, type TicketWidth } from "./ticket";
@@ -13,7 +15,7 @@ class Enc {
   b: number[] = [];
   raw(...n: number[]) { this.b.push(...n); return this; }
   text(s: string) {
-    const clean = s.replace(/[’‘‛`´]/g, "'").replace(/[“”]/g, '"').replace(/œ/g, "oe").replace(/Œ/g, "OE");
+    const clean = s.replace(/[\u00a0\u202f]/g, " ").replace(/[’‘‛`´]/g, "'").replace(/[“”]/g, '"').replace(/œ/g, "oe").replace(/Œ/g, "OE");
     for (const ch of clean) {
       const c = ch.charCodeAt(0);
       if (c < 128) this.b.push(c);
@@ -29,7 +31,7 @@ class Enc {
   inverse(on: boolean) { return this.raw(0x1d, 0x42, on ? 1 : 0); }
 }
 
-const eur = (n: unknown) => `${Number(n ?? 0).toFixed(2).replace(".", ",")} €`;
+
 
 function wrap(s: string, cols: number): string[] {
   const out: string[] = []; let cur = "";
@@ -47,6 +49,8 @@ function wrap(s: string, cols: number): string[] {
 const lr = (l: string, r: string, cols: number) => { const sp = cols - l.length - r.length; return sp > 0 ? l + " ".repeat(sp) + r : `${l} ${r}`; };
 
 export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidth, shop: TicketShop, fieldsIn?: TicketFieldsIn): Uint8Array {
+  const currency = o.currency ?? "EUR";
+  const eur = (n: unknown) => ticketMoney(n, currency);
   const cols = width === 80 ? 48 : 32;
   const large = fieldsIn?.textSize === "large";
   const compact = fieldsIn?.textSize === "compact";
@@ -83,7 +87,7 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
     names.forEach((name, i) => e.line(i === 0 ? lr(name, right, itemCols) : name));
     if (large) e.size(1, 1);
     e.bold(large);
-    if (f.options) for (const d of ticketOptions(it, shop)) wrap(d, cols - 2).forEach((l) => e.line(`  ${l}`));
+    if (f.options) for (const d of ticketOptions(it, { ...shop, currency })) wrap(d, cols - 2).forEach((l) => e.line(`  ${l}`));
     e.bold(false);
     if (f.allergens && it.allergens?.length) { e.bold(true); wrap(`  ! ALLERGENES : ${it.allergens.map((a) => allergenLabel(a).toUpperCase()).join(", ")}`, cols).forEach((l) => e.line(l)); e.bold(false); }
   }
@@ -108,7 +112,7 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
   if (f.prices && kind === "receipt" && vatRows.length) {
     const w = Math.floor((cols - 6) / 3);
     const row = (a: string, b: string, c: string, d: string) => a.padEnd(6).slice(0, 6) + b.padStart(w) + c.padStart(w) + d.padStart(cols - 6 - 2 * w);
-    const n = (x: number) => x.toFixed(2).replace(".", ",");
+    const n = (x: number) => x.toFixed(moneyDecimals(currency)).replace(".", ",");
     e.line(hr).line(row("Taux", "HT", "TVA", "TTC"));
     for (const v of vatRows) e.line(row(vatRateLabel(v.rate).replace(" ", ""), n(v.ht), n(v.vat), n(v.ttc)));
     if (vatRows.length > 1) e.bold(true).line(row("Total", n(vatRows.reduce((s, v) => s + v.ht, 0)), n(totals.vat), n(totals.total))).bold(false);

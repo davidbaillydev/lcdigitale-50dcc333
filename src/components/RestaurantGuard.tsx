@@ -51,7 +51,7 @@ export function ManagerOnlyGuard({ children }: { children: ReactNode }) {
     const only = restaurants.length === 1 ? restaurants[0] : undefined;
     return only ? <Navigate to="/espace/$slug" params={{ slug: only.slug }} replace /> : <Navigate to="/espace" replace />;
   }
-  return <MoneyProvider currency={currencyOf({ config: r.config as { currency?: string } | null })}>{children}</MoneyProvider>;
+  return <>{children}</>;
 }
 
 /** Barre de navigation entre les pages du restaurant, filtrée selon le rôle et les modules. */

@@ -17,7 +17,7 @@ import { confirmOnlinePayment } from "@/lib/payments.functions";
 import { useCart } from "@/lib/cart";
 import { postToParent } from "@/lib/embed";
 import { useEffect, useRef, useState } from "react";
-import { euro } from "@/lib/menu";
+import { formatMoney, currencySchema } from "@/lib/money";
 import { fmtTime } from "@/lib/shop";
 import { cn } from "@/lib/utils";
 
@@ -107,6 +107,8 @@ function Tracking() {
     );
   }
 
+  const currency = currencySchema.parse(data.currency ?? "EUR");
+  const euro = (n: number) => formatMoney(n, currency);
   const steps = data.mode === "delivery" ? [
     ...STEPS.slice(0, 3),
     { s: "en_route", label: "En livraison", Icon: Bike },
@@ -141,7 +143,7 @@ function Tracking() {
           </div>
         )}
         {!data.is_test && !["done", "cancelled"].includes(data.status) && <PushOptIn orderId={data.id} />}
-        {!data.is_test && ["accepted", "preparing", "ready", "delivering", "done"].includes(data.status) && <InvoiceDownload orderId={data.id} />}
+        {!data.is_test && currency === "EUR" && ["accepted", "preparing", "ready", "delivering", "done"].includes(data.status) && <InvoiceDownload orderId={data.id} />}
         {!data.is_test && data.review_url && (data.status === "ready" || data.status === "done") && (
           <div className="mt-8 rounded-xl border border-primary bg-primary/10 p-4 text-center">
             <p className="font-semibold">Vous avez aimé ? Votre avis nous aide énormément ★★★★★</p>

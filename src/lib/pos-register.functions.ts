@@ -1,3 +1,4 @@
+import { currencyOf } from "./money";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -99,7 +100,7 @@ export const createPosOrder = createServerFn({ method: "POST" })
     if (!tender) throw new Error("Règlement manquant.");
     const vat = vatBreakdown({ items, total, discount });
     const { data: row, error } = await admin.from("orders").insert({
-      restaurant_id: r.id, customer_name: data.customer_name || "Comptoir", phone: "-", mode: data.mode, slot: now.toISOString(),
+      restaurant_id: r.id, currency: currencyOf(r), customer_name: data.customer_name || "Comptoir", phone: "-", mode: data.mode, slot: now.toISOString(),
       items: items as never, subtotal, delivery_fee: 0, service_fee: 0, discount, total,
       pos_payments: payments as never, pos_discount: (data.discount ?? null) as never, pos_vat: vat as never,
       payment_method: posPaymentMethod(payments.every((p) => p.method === "card") ? "card" : "cash"), payment_status: "paid", source: "pos",

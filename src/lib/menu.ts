@@ -335,14 +335,14 @@ export function selectedExtras(item: MenuItem, sel: Selections): { size: Selecte
 }
 
 /** Toutes les options choisies, une par ligne sous le libellé de leur groupe (panier, borne, récapitulatif). */
-export function selectionLines(item: MenuItem, sel: Selections): string[] {
+export function selectionLines(item: MenuItem, sel: Selections, money: (n: number) => string = euro): string[] {
   const lines: string[] = [];
   for (const g of activeGroups(item, sel)) {
     if (g.kind === "size") continue;
     const label = g.label.replace(/^\d\.\s*/, "");
     for (const id of sel[g.id] ?? []) {
       const c = g.choices.find((x) => x.id === id);
-      if (c) lines.push(`${label} : ${c.label}${g.kind === "extra" && c.price ? ` (+${euro(c.price)})` : ""}`);
+      if (c) lines.push(`${label} : ${c.label}${g.kind === "extra" && c.price ? ` (+${money(c.price)})` : ""}`);
     }
   }
   const removed = (sel[REMOVE_KEY] ?? []).map((id) => removableChoices(item).find((c) => c.id === id)?.label).filter((l): l is string => !!l);
@@ -371,4 +371,5 @@ export function fromPrice(item: MenuItem): number | null {
   return prices.length ? Math.min(...prices) : null;
 }
 
-export { formatMoney as euro } from "./money";
+import { formatMoney as euro } from "./money";
+export { euro };

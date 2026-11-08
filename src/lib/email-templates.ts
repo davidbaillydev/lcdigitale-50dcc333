@@ -1,15 +1,17 @@
 /** Contenu HTML des e-mails transactionnels et marketing — pur, partagé entre l'envoi serveur et l'aperçu agence. */
+import { formatMoney, type Currency } from "./money";
 import { emailLayout, emailButton, escHtml as esc, brandColor, type EmailBrand } from "@/lib/email-layout";
 
 export type EmailLine = { name: string; qty: number; total: number; size?: string; details?: string | string[] };
 export type EmailRestaurant = { slug: string; name: string; brand: { accent?: string } | null; logo_url?: string | null | undefined; address?: string | null | undefined; city?: string | null | undefined; phone?: string | null | undefined };
 export type EmailOrder = {
+  currency?: Currency;
   id: string; order_number: number | string; mode: string; slot: string; asap: boolean; total: number | string; items: unknown;
   notes?: string | null; email?: string | null; phone: string; customer_name: string; first_name: string | null; last_name?: string | null;
   address?: string | null; postal_code?: string | null; city?: string | null; table_label?: string | null; payment_status?: string | null;
 };
 
-const eur = (n: number) => `${Number(n).toFixed(2).replace(".", ",")} €`;
+const eur = (n: number, currency: Currency = "EUR") => formatMoney(Number(n), currency);
 const MODE: Record<string, string> = { delivery: "Livraison", dine_in: "Sur place", pickup: "À emporter" };
 const colorOf = (r: EmailRestaurant) => brandColor(r.brand?.accent, "#007af5");
 const brandOf = (r: EmailRestaurant): EmailBrand => ({ name: r.name, color: colorOf(r), logoUrl: r.logo_url, address: r.address, city: r.city, phone: r.phone });
@@ -18,11 +20,11 @@ export const firstName = (o: { first_name: string | null; customer_name: string 
 /** Formule d'accueil : « Bonjour Alexia, » si un prénom est connu, sinon « Bonjour, » — jamais « Bonjour client, ». */
 export const greetingText = (name?: string | null) => { const first = capFirst((name ?? "").trim().split(" ")[0] ?? ""); return first ? `Bonjour ${esc(first)},` : "Bonjour,"; };
 const lineDetails = (i: EmailLine) => { const d = Array.isArray(i.details) ? i.details.join(", ") : i.details; return d ? `<div style="color:#6b7280;font-size:13px;margin-top:2px">${esc(d)}</div>` : ""; };
-const itemsTable = (items: EmailLine[], total: number) => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;border-collapse:collapse;margin:20px 0;background:#fafafa;border-radius:10px">${items.map((i) => `<tr><td style="padding:10px 14px;border-bottom:1px solid #eeeeee"><b>${i.qty} ×</b> ${esc(i.name)}${i.size ? ` <span style="color:#6b7280">(${esc(i.size)})</span>` : ""}${lineDetails(i)}</td><td style="padding:10px 14px;text-align:right;vertical-align:top;white-space:nowrap;border-bottom:1px solid #eeeeee">${eur(i.total)}</td></tr>`).join("")}
-<tr><td style="padding:12px 14px;font-size:16px"><b>Total TTC</b></td><td style="padding:12px 14px;text-align:right;font-size:16px;white-space:nowrap"><b>${eur(total)}</b></td></tr></table>`;
+const itemsTable = (items: EmailLine[], total: number, currency: Currency = "EUR") => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;border-collapse:collapse;margin:20px 0;background:#fafafa;border-radius:10px">${items.map((i) => `<tr><td style="padding:10px 14px;border-bottom:1px solid #eeeeee"><b>${i.qty} ×</b> ${esc(i.name)}${i.size ? ` <span style="color:#6b7280">(${esc(i.size)})</span>` : ""}${lineDetails(i)}</td><td style="padding:10px 14px;text-align:right;vertical-align:top;white-space:nowrap;border-bottom:1px solid #eeeeee">${eur(i.total, currency)}</td></tr>`).join("")}
+<tr><td style="padding:12px 14px;font-size:16px"><b>Total TTC</b></td><td style="padding:12px 14px;text-align:right;font-size:16px;white-space:nowrap"><b>${eur(total, currency)}</b></td></tr></table>`;
 const infoBox = (rows: [string, string][]) => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;margin:8px 0">${rows.map(([k, v]) => `<tr><td style="padding:4px 0;color:#6b7280;width:38%;vertical-align:top">${k}</td><td style="padding:4px 0;color:#111827;font-weight:bold">${v}</td></tr>`).join("")}</table>`;
 const slotText = (o: { slot: string; asap: boolean }) => o.asap ? "Dès que possible" : new Date(o.slot).toLocaleString("fr-FR", { timeZone: "Europe/Paris", weekday: "long", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
-const items = (o: EmailOrder) => itemsTable((o.items as EmailLine[]) ?? [], Number(o.total));
+const items = (o: EmailOrder) => itemsTable((o.items as EmailLine[]) ?? [], Number(o.total), o.currency ?? "EUR");
 const trackUrl = (base: string, r: EmailRestaurant, o: { id: string }) => `${base}/${r.slug}/suivi/${o.id}`;
 
 export function orderReceivedHtml(o: EmailOrder, r: EmailRestaurant, base: string) {
@@ -52,7 +54,7 @@ export function restaurantNewOrderHtml(o: EmailOrder, r: EmailRestaurant, base: 
     ["Règlement", paid ? "Payé en ligne" : "À encaisser sur place"],
   ];
   return emailLayout(brandOf(r), {
-    preheader: `${MODE[o.mode] ?? o.mode} — ${eur(Number(o.total))}`,
+    preheader: `${MODE[o.mode] ?? o.mode} — ${eur(Number(o.total), o.currency ?? "EUR")}`,
     title: `Nouvelle commande n° ${o.order_number}`,
     body: `${infoBox(rows)}
 ${items(o)}
