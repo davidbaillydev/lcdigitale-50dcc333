@@ -50,7 +50,7 @@ function BannerCarousel({ covers }: { covers: string[] }) {
 }
 
 export const Route = createFileRoute("/")({
-  validateSearch: (search: Record<string, unknown>): { country?: zCountry } => ({ country: countrySchema.optional().catch(undefined).parse(search['country']) }),
+  validateSearch: (search: Record<string, unknown>): { country?: zCountry | undefined } => ({ country: countrySchema.optional().catch(undefined).parse(search['country']) }),
   loaderDeps: ({ search }) => ({ country: search.country }),
   head: ({ loaderData }) => {
     const cover = loaderData?.restaurants.find((r) => r.brand?.coverUrl)?.brand?.coverUrl;
