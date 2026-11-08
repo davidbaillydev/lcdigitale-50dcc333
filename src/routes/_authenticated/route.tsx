@@ -1,5 +1,6 @@
 import { createFileRoute, Link, Outlet, redirect, useRouterState } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { WorkspaceCountryFlag } from "@/components/WorkspaceCountryFlag";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -25,7 +26,7 @@ function AdministrationLayout() {
     <div className={`admin-workspace min-h-screen bg-background text-foreground${isRestaurant ? " restaurant-workspace" : ""}`}>
       <div className="admin-masthead border-b border-border">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-5">
-          <Link to="/" className="workspace-wordmark font-display text-xl font-bold text-primary">LC Digitale<span aria-hidden="true">.</span></Link>
+          <div className="flex min-w-0 flex-wrap items-center gap-2"><Link to="/" className="workspace-wordmark font-display text-xl font-bold text-primary">LC Digitale<span aria-hidden="true">.</span></Link>{isRestaurant && <WorkspaceCountryFlag />}</div>
           <span className="text-sm text-muted-foreground">{isRestaurant ? "Espace restaurateur" : "Administration"}</span>
         </div>
       </div>

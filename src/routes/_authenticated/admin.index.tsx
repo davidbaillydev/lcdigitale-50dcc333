@@ -22,6 +22,9 @@ import { MenuAiSettings } from "@/components/MenuAiSettings";
 import { WhatsAppAccess } from "@/components/WhatsAppAccess";
 import { DeleteRestaurantDialog } from "@/components/DeleteRestaurantDialog";
 import { DuplicateRestaurantDialog } from "@/components/DuplicateRestaurantDialog";
+import { CountrySelect } from "@/components/CountryFlag";
+import { countryOf } from "@/lib/country";
+import type { zCountry } from "@/lib/money";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   head: () => ({
@@ -61,6 +64,7 @@ function Console() {
   const [duplicating, setDuplicating] = useState<AgencyRestaurant | null>(null);
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "online" | "offline">("all");
+  const [countryFilter, setCountryFilter] = useState<zCountry | "all">("all");
   const [domainOpen, setDomainOpen] = useState(false);
   const reorder = useServerFn(reorderRestaurants);
   const [dragId, setDragId] = useState<string | null>(null);
@@ -112,9 +116,10 @@ function Console() {
   const today = rows?.reduce((s, r) => s + r.orders_today, 0) ?? 0;
   const filteredRows = rows?.filter((r) =>
     `${r.name} ${r.city ?? ""} ${r.slug}`.toLowerCase().includes(q.trim().toLowerCase()) &&
-    (statusFilter === "all" || r.active === (statusFilter === "online"))
+    (statusFilter === "all" || r.active === (statusFilter === "online")) &&
+    (countryFilter === "all" || countryOf(r) === countryFilter)
   ) ?? [];
-  const canReorder = !q.trim() && statusFilter === "all";
+  const canReorder = !q.trim() && statusFilter === "all" && countryFilter === "all";
 
   return (
     <div className="mx-auto max-w-7xl p-6">
@@ -181,6 +186,7 @@ function Console() {
           <Input className="min-h-12 pl-10 pr-12" placeholder="Rechercher par nom, ville ou adresse web…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher" />
           {q && <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 size-10 -translate-y-1/2" aria-label="Effacer la recherche" onClick={() => setQ("")}><X /></Button>}
         </div>
+        <div className="w-full lg:w-48"><CountrySelect value={countryFilter} onChange={setCountryFilter} all label="Filtrer par pays" /></div>
         <div role="group" aria-label="Filtrer les restaurants" className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1 lg:flex">
           {([{ value: "all", label: "Tous", count: rows?.length }, { value: "online", label: "En ligne", count: rows ? active : undefined }, { value: "offline", label: "Hors ligne", count: rows ? rows.length - active : undefined }] as const).map((filter) =>
             <Button key={filter.value} variant={statusFilter === filter.value ? "secondary" : "ghost"} aria-pressed={statusFilter === filter.value} onClick={() => setStatusFilter(filter.value)} className={`min-h-11 gap-2 px-3 ${statusFilter === filter.value ? "shadow-sm" : "text-muted-foreground"}`}>{filter.label}<span className="text-xs tabular-nums text-muted-foreground">{filter.count ?? "—"}</span></Button>
@@ -190,7 +196,7 @@ function Console() {
       {rows && <p className="mt-3 text-sm text-muted-foreground" aria-live="polite">{filteredRows.length} restaurant{filteredRows.length > 1 ? "s" : ""} affiché{filteredRows.length > 1 ? "s" : ""} sur {rows.length}</p>}
       {!rows ? <p className="mt-10 text-center text-muted-foreground">Chargement du réseau…</p> : (
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-          {filteredRows.length === 0 && <div className="col-span-full py-12 text-center"><Search className="mx-auto mb-3 size-7 text-muted-foreground" /><h2 className="text-xl font-semibold">Aucun restaurant trouvé</h2><Button variant="link" className="mt-2" onClick={() => { setQ(""); setStatusFilter("all"); }}>Réinitialiser les filtres</Button></div>}
+          {filteredRows.length === 0 && <div className="col-span-full py-12 text-center"><Search className="mx-auto mb-3 size-7 text-muted-foreground" /><h2 className="text-xl font-semibold">Aucun restaurant trouvé</h2><Button variant="link" className="mt-2" onClick={() => { setQ(""); setStatusFilter("all"); setCountryFilter("all"); }}>Réinitialiser les filtres</Button></div>}
           {filteredRows.map((r) => { const pos = rows.indexOf(r); return (
             <article key={r.id} draggable={canReorder} onDragStart={(e) => { setDragId(r.id); e.dataTransfer.effectAllowed = "move"; }} onDragEnd={() => setDragId(null)}
               onDragOver={(e) => { if (dragId) e.preventDefault(); }} onDrop={(e) => { e.preventDefault(); if (dragId) move(dragId, r.id); setDragId(null); }}
