@@ -123,7 +123,7 @@ function Console() {
 
   return (
     <div className="mx-auto max-w-7xl p-6">
-      <header className="flex flex-col gap-5">
+      <header className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center gap-3">
         <div className="mr-auto min-w-0">
           <p className="text-sm font-semibold text-primary">Réseau de restaurants</p>
@@ -136,7 +136,7 @@ function Console() {
         <Button variant="ghost" size="icon" onClick={async () => { await supabase.auth.signOut(); navigate({ to: "/connexion", replace: true }); }} aria-label="Déconnexion"><LogOut /></Button>
         </div>
         </div>
-        <nav aria-label="Navigation agence" className="flex flex-wrap gap-1 border-t border-border pt-3">
+        <nav aria-label="Navigation agence" className="flex flex-wrap gap-1 border-t border-border pt-2">
           <AgencyMenu label="Opérations" icon={<ChefHat />}>
             <DropdownMenuItem asChild><Link to="/espace"><ChefHat />Écrans cuisine</Link></DropdownMenuItem>
             <DropdownMenuItem asChild><Link to="/admin/commande-test"><ShoppingBag />Commande test livraison</Link></DropdownMenuItem>
