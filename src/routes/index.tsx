@@ -6,7 +6,8 @@ import { ThemeToggle } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CountryFlag, CountrySelect } from "@/components/CountryFlag";
-import { countrySchema } from "@/lib/money";
+import { countrySchema, type zCountry } from "@/lib/money";
+import type { Restaurant } from "@/lib/shop";
 import { restaurantsInCountry } from "@/lib/country";
 import { getDirectoryCountry } from "@/lib/directory-country.functions";
 
@@ -49,7 +50,7 @@ function BannerCarousel({ covers }: { covers: string[] }) {
 }
 
 export const Route = createFileRoute("/")({
-  validateSearch: (search: Record<string, unknown>) => ({ country: countrySchema.optional().catch(undefined).parse(search.country) }),
+  validateSearch: (search: Record<string, unknown>): { country?: zCountry } => ({ country: countrySchema.optional().catch(undefined).parse(search['country']) }),
   loaderDeps: ({ search }) => ({ country: search.country }),
   head: ({ loaderData }) => {
     const cover = loaderData?.restaurants.find((r) => r.brand?.coverUrl)?.brand?.coverUrl;
@@ -69,7 +70,7 @@ export const Route = createFileRoute("/")({
     ],
     };
   },
-  loader: async ({ deps }) => {
+  loader: async ({ deps }): Promise<{ restaurants: Restaurant[]; country: zCountry; detected: zCountry | null }> => {
     const [rows, detected] = await Promise.all([listRestaurants(), getDirectoryCountry()]);
     const country = detected ?? deps.country ?? "FR";
     return { restaurants: restaurantsInCountry(rows, country), country, detected };
