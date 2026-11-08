@@ -108,22 +108,15 @@ export const setKioskPin = createServerFn({ method: "POST" })
 export const verifyKioskSwitchPin = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => rid.extend({ pin: z.string().regex(/^\d{4,6}$/) }).parse(d))
   .handler(async ({ data }) => {
+    const { kioskAttemptKey } = await import("./customer-access.server");
+    const callerKey = kioskAttemptKey(data.restaurantId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const kiosk = await supabaseAdmin.from("restaurant_kiosk_pins").select("*").eq("restaurant_id", data.restaurantId).maybeSingle();
-    const table = kiosk.data ? "restaurant_kiosk_pins" as const : "restaurant_kitchen_pins" as const;
-    const row = kiosk.data ?? (await supabaseAdmin.from("restaurant_kitchen_pins").select("*").eq("restaurant_id", data.restaurantId).maybeSingle()).data;
+    const { data: allowed, error } = await supabaseAdmin.rpc("claim_kiosk_pin_attempt", { _caller_key: callerKey });
+    if (error || allowed !== true) return { ok: false, reason: "locked" as const };
+    const kiosk = await supabaseAdmin.from("restaurant_kiosk_pins").select("pin_hash, salt").eq("restaurant_id", data.restaurantId).maybeSingle();
+    const row = kiosk.data ?? (await supabaseAdmin.from("restaurant_kitchen_pins").select("pin_hash, salt").eq("restaurant_id", data.restaurantId).maybeSingle()).data;
     if (!row) return { ok: false, reason: "no_pin" as const };
-    if (row.locked_until && new Date(row.locked_until) > new Date()) return { ok: false, reason: "locked" as const };
     const { timingSafeEqual } = await import("crypto");
     const good = timingSafeEqual(Buffer.from(await hashPin(data.pin, row.salt), "hex"), Buffer.from(row.pin_hash, "hex"));
-    if (good) {
-      await supabaseAdmin.from(table).update({ failed_attempts: 0, locked_until: null }).eq("restaurant_id", data.restaurantId);
-      return { ok: true, reason: null };
-    }
-    const fails = row.failed_attempts + 1;
-    await supabaseAdmin.from(table).update({
-      failed_attempts: fails >= 5 ? 0 : fails,
-      locked_until: fails >= 5 ? new Date(Date.now() + 5 * 60_000).toISOString() : null,
-    }).eq("restaurant_id", data.restaurantId);
-    return { ok: false, reason: fails >= 5 ? "locked" as const : "wrong" as const };
+    return { ok: good, reason: good ? null : "wrong" as const };
   });

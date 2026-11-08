@@ -15,10 +15,12 @@ const STATUS_MSG: Record<string, (n: number, mode: string) => string> = {
   cancelled: (n) => `Commande n° ${n} annulée. Contactez le restaurant pour plus d'informations.`,
 };
 
-/** Client : abonne cet appareil au suivi de sa commande (l'UUID de commande sert de clé d'accès). */
+/** Client : abonne cet appareil au suivi de sa commande (autorisation client signée obligatoire). */
 export const subscribeOrderPush = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid(), endpoint }).parse(d))
   .handler(async ({ data }) => {
+    const { requireCustomerAccess } = await import("./customer-access.server");
+    requireCustomerAccess("order", data.orderId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: o } = await supabaseAdmin.from("orders").select("id, restaurant_id").eq("id", data.orderId).maybeSingle();
     if (!o) throw new Error("Commande introuvable");

@@ -149,6 +149,8 @@ export async function kioskOrder(orderId: string) {
 export const startKioskCardPayment = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid(), kioskId: kioskField }).parse(d))
   .handler(async ({ data }) => {
+    const { requireCustomerAccess } = await import("../customer-access.server");
+    requireCustomerAccess("kiosk", data.orderId);
     const { db, o } = await kioskOrder(data.orderId);
     if (o.payment_status === "paid") return { status: "paid" as const };
     await assertOrdersOpen(o.restaurant_id);
@@ -184,6 +186,8 @@ export const startKioskCardPayment = createServerFn({ method: "POST" })
 export const kioskPaymentStatus = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid(), kioskId: kioskField }).parse(d))
   .handler(async ({ data }) => {
+    const { requireCustomerAccess } = await import("../customer-access.server");
+    requireCustomerAccess("kiosk", data.orderId);
     const { db, o } = await kioskOrder(data.orderId);
     if (o.payment_status === "paid" || o.payment_status === "failed") return { status: o.payment_status as "paid" | "failed" };
     if (!o.payment_ref) return { status: "pending" as const };
@@ -216,6 +220,8 @@ export const kioskPaymentStatus = createServerFn({ method: "POST" })
 export const cancelKioskPayment = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid(), kioskId: kioskField }).parse(d))
   .handler(async ({ data }) => {
+    const { requireCustomerAccess } = await import("../customer-access.server");
+    requireCustomerAccess("kiosk", data.orderId);
     const { db, o } = await kioskOrder(data.orderId);
     if (o.payment_status === "paid") { await releaseKioskOrder(db, o.id); return { status: "paid" as const }; }
     // Jamais d'annulation sur le terminal sans paiement en attente propre à cette commande
@@ -247,6 +253,8 @@ export const cancelKioskPayment = createServerFn({ method: "POST" })
 export const abandonKioskOrder = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
+    const { requireCustomerAccess } = await import("../customer-access.server");
+    requireCustomerAccess("kiosk", data.orderId);
     const db = await admin();
     const { data: o } = await db.from("orders").select("id, source, payment_method, payment_status, payment_ref, status").eq("id", data.orderId).maybeSingle();
     if (!o || o.source !== "kiosk" || o.payment_method !== "card_terminal" || o.status !== "awaiting_payment") return { status: "ignored" as const };

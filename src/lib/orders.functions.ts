@@ -1,3 +1,4 @@
+import { trustedOrigin } from "./trusted-origin";
 import { currencyOf, formatMoney, legacyPaymentsSupported } from "./money";
 import { featuresOf } from "./features";
 import { assertItemAvailable, itemOrderDate } from "./shop";
@@ -79,6 +80,7 @@ export const createAdminTestOrder = createServerFn({ method: "POST" })
   });
 
 async function createCalculatedOrder(supabaseAdmin: Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"], data: z.infer<typeof orderSchema>, testUserId?: string) {
+    data.origin = trustedOrigin(data.origin);
     const { data: rRow } = await supabaseAdmin.from("restaurants").select(RESTAURANT_COLUMNS).eq("slug", data.restaurant).eq("active", true).maybeSingle();
     const r = rRow as unknown as Restaurant | null;
     if (!r) throw new Error("Restaurant introuvable");
@@ -229,10 +231,13 @@ async function createCalculatedOrder(supabaseAdmin: Awaited<typeof import("@/int
       const { notifyNewOrder } = await import("./order-email.server");
       await notifyNewOrder(supabaseAdmin, row.id, data.origin).catch((e) => console.error(e));
     }
+    const { grantAccess, issueAccessToken } = await import("./customer-access.server");
+    grantAccess("order", row.id);
+    const access = issueAccessToken("order", row.id);
     const base = { id: row.id, order_number: row.order_number, clientSecret: null as string | null, redirectUrl: null as string | null, form: null as { action: string; fields: Record<string, string> } | null };
     if (provider === "paypal" || provider === "lyra" || provider === "mollie") {
       const res = await startOnlinePayment(provider, { id: row.id, order_number: row.order_number, total: Number(row.total), restaurant_id: r.id,
-        currency: currencyOf(r), email: data.email || null }, r.name, `${data.origin}/${r.slug}/suivi/${row.id}${backParam(data.returnTo, data.ref)}`, data.mode);
+        currency: currencyOf(r), email: data.email || null }, r.name, `${data.origin}/${r.slug}/suivi/${row.id}?access=${encodeURIComponent(access)}`, data.mode);
       return { ...base, redirectUrl: "redirectUrl" in res ? res.redirectUrl : null, form: "form" in res ? res.form : null };
     }
     if (!stripe) return base;
@@ -249,8 +254,10 @@ async function createCalculatedOrder(supabaseAdmin: Awaited<typeof import("@/int
   }
 
 export const getOrderStatus = createServerFn({ method: "GET" })
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid(), access: z.string().max(1000).optional() }).parse(d))
   .handler(async ({ data }) => {
+    const { requireCustomerAccess } = await import("./customer-access.server");
+    requireCustomerAccess("order", data.id, data.access);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("orders")
@@ -353,6 +360,8 @@ export const createKioskOrder = createServerFn({ method: "POST" })
       const { data: pc } = await supabaseAdmin.from("restaurant_promo_codes").select("id, uses").eq("restaurant_id", r.id).eq("code", promo.code).maybeSingle();
       if (pc) await supabaseAdmin.from("restaurant_promo_codes").update({ uses: pc.uses + 1 }).eq("id", pc.id);
     }
+    const { grantAccess } = await import("./customer-access.server");
+    grantAccess("kiosk", row.id);
     if (cardOnly || qr) return row;
     { const { syncOrderToPos } = await import("./pos.server"); await syncOrderToPos(row.id); }
     if (data.payment_method === "counter") { const { sendRestaurantNewOrder } = await import("./order-email.server"); await sendRestaurantNewOrder(supabaseAdmin, row.id).catch((e) => console.error(e)); }

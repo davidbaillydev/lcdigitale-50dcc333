@@ -1,3 +1,5 @@
+import { issueAccessToken } from "./customer-access.server";
+import { trustedOrigin } from "./trusted-origin";
 type Admin = Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"];
 
 import { orderReceivedHtml, restaurantNewOrderHtml, orderConfirmedHtml, refundHtml } from "@/lib/email-templates";
@@ -7,7 +9,7 @@ import { currencySchema } from "./money";
 const GATEWAY = "https://connector-gateway.lovable.dev/brevo";
 const FALLBACK_ORIGIN = "https://restaurant.lcdigitale.fr";
 const CONFIRMED = ["accepted", "preparing", "ready", "delivering", "done"];
-const baseOf = (origin?: string | null) => (/^https?:\/\/[^/]+$/.test(origin ?? "") ? origin! : FALLBACK_ORIGIN);
+const baseOf = (origin?: string | null) => { try { return trustedOrigin(origin); } catch { return FALLBACK_ORIGIN; } };
 
 export type NotificationSettings = { received: boolean; confirmed: boolean; restaurant: boolean; team: boolean; agency: boolean; email?: string | undefined; recipients?: DirectRecipient[] | undefined };
 /** Interrupteurs de notification (absents = actifs). */
@@ -55,7 +57,7 @@ export async function sendOrderReceived(admin: Admin, orderId: string, origin?: 
   if (!o.email || o.received_email_at || o.status === "awaiting_payment" || o.status === "cancelled") return { sent: false };
   if (!notificationsOf(r.config).received) return { sent: false, reason: "disabled" };
   if (!(await claim(admin, o.id, "received_email_at"))) return { sent: false };
-  const html = orderReceivedHtml(o, r, baseOf(origin));
+  const html = orderReceivedHtml({ ...o, accessToken: issueAccessToken("order", o.id) }, r, baseOf(origin));
   const ok = await brevo({ sender: { email: "contact@lcdigitale.fr", name: r.name }, ...(r.email ? { replyTo: { email: r.email, name: r.name } } : {}), to: [{ email: o.email, name: o.customer_name }], subject: `${r.name} — commande n° ${o.order_number} reçue`, htmlContent: html }, "order-received");
   if (!ok) await release(admin, o.id, "received_email_at");
   return { sent: ok };
@@ -131,7 +133,7 @@ export async function sendOrderConfirmation(admin: Admin, orderId: string, origi
   if (!o.email || o.confirmation_email_at || !CONFIRMED.includes(o.status)) return { sent: false };
   if (!notificationsOf(r.config).confirmed) return { sent: false, reason: "disabled" };
   if (!(await claim(admin, o.id, "confirmation_email_at"))) return { sent: false };
-  const html = orderConfirmedHtml(o, r, baseOf(origin));
+  const html = orderConfirmedHtml({ ...o, accessToken: issueAccessToken("order", o.id) }, r, baseOf(origin));
   const ok = await brevo({ sender: { email: "contact@lcdigitale.fr", name: r.name }, ...(r.email ? { replyTo: { email: r.email, name: r.name } } : {}), to: [{ email: o.email, name: o.customer_name }], subject: `${r.name} — commande n° ${o.order_number} confirmée`, htmlContent: html }, "order-confirmation");
   if (!ok) { await release(admin, o.id, "confirmation_email_at"); return { sent: false, reason: "brevo_error" }; }
   return { sent: true };
@@ -143,7 +145,7 @@ export async function sendRefundEmail(admin: Admin, orderId: string, amount: num
   const { data: o } = await admin.from("orders").select("id, order_number, email, customer_name, first_name, restaurants(slug, name, email, brand, config, logo_url, address, city, phone)").eq("id", orderId).maybeSingle();
   if (!o?.email) return { sent: false };
   const r = o.restaurants as unknown as Rest;
-  const html = refundHtml(o, r, baseOf(origin), amount, creditNote);
+  const html = refundHtml({ ...o, accessToken: issueAccessToken("order", o.id) }, r, baseOf(origin), amount, creditNote);
   const ok = await brevo({ sender: { email: "contact@lcdigitale.fr", name: r.name }, ...(r.email ? { replyTo: { email: r.email, name: r.name } } : {}), to: [{ email: o.email, name: o.customer_name }], subject: `${r.name} — remboursement commande n° ${o.order_number}`, htmlContent: html }, "order-refund");
   return { sent: ok };
 }

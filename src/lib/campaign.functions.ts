@@ -62,8 +62,11 @@ export const sendCampaign = createServerFn({ method: "POST" })
     const base = { sender: { ...SENDER, name: r.name }, ...(r.email ? { replyTo: { email: r.email, name: r.name } } : {}), subject: data.subject, htmlContent: html };
 
     if (data.testEmail) {
+      const { data: account, error: accountError } = await context.supabase.auth.getUser();
+      const email = account.user?.email;
+      if (accountError || !email || !account.user?.email_confirmed_at || email.toLowerCase() !== data.testEmail.toLowerCase()) throw new Error("Le test doit être envoyé à votre propre adresse agence vérifiée.");
       const sample = (await firstNameOfTarget(data.restaurantId, data.customerIds)) ?? "Alexia";
-      await brevo({ ...base, subject: `[TEST] ${data.subject}`, to: [{ email: data.testEmail }], params: { greeting: greetingText(sample), unsub: `${data.origin}/desabonnement` } });
+      await brevo({ ...base, subject: `[TEST] ${data.subject}`, to: [{ email }], params: { greeting: greetingText(sample), unsub: `${data.origin}/desabonnement` } });
       return { sent: 1, test: true };
     }
 

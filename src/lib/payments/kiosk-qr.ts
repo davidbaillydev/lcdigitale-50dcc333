@@ -1,3 +1,4 @@
+import { trustedOrigin } from "../trusted-origin";
 // QR code de paiement sur la borne (paiement sur le téléphone du client).
 import { legacyPaymentsSupported } from "../money";
 import { createServerFn } from "@tanstack/react-start";
@@ -38,26 +39,30 @@ export async function kioskQrOrder(orderId: string) {
 export const startKioskQrPayment = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid(), origin: z.string().url().max(200) }).parse(d))
   .handler(async ({ data }) => {
+    const { requireCustomerAccess } = await import("../customer-access.server");
+    requireCustomerAccess("kiosk", data.orderId);
     const { db, o } = await kioskQrOrder(data.orderId);
     if (o.status !== "awaiting_payment" || o.payment_status !== "pending") throw new Error("Cette commande n'attend plus de paiement");
     if (o.payment_ref) throw new Error("Un QR code a déjà été généré pour cette commande");
-    const u = new URL(data.origin);
-    const origin = u.protocol === "https:" || /^(localhost|127\.0\.0\.1)$/.test(u.hostname) ? u.origin : "https://restaurant.lcdigitale.fr";
+    const origin = trustedOrigin(data.origin);
     const { data: r } = await db.from("restaurants").select("name, slug").eq("id", o.restaurant_id).single();
-    const returnBase = `${origin}/${r!.slug}/suivi/${o.id}`;
+    if (!r) throw new Error("Restaurant introuvable");
+    const { issueAccessToken } = await import("../customer-access.server");
+    const returnBase = `${origin}/${r.slug}/suivi/${o.id}?access=${encodeURIComponent(issueAccessToken("order", o.id))}`;
     const provider = await qrProvider(o.restaurant_id);
     if (provider === "mollie") {
-      const res = await startOnlinePayment("mollie", o, r!.name, returnBase, "kiosk") as { redirectUrl: string };
+      const res = await startOnlinePayment("mollie", o, r.name, returnBase, "kiosk") as { redirectUrl: string };
       return { url: res.redirectUrl };
     }
     if (provider === "stripe") {
       await assertOrdersOpen(o.restaurant_id);
-      const s = (await stripeForRestaurant(o.restaurant_id))!;
+      const s = await stripeForRestaurant(o.restaurant_id);
+      if (!s) throw new Error("Paiement indisponible");
       const cs = await stripeCall("/checkout/sessions", s.secret, {
-        mode: "payment", locale: "fr", success_url: returnBase, cancel_url: `${returnBase}?annule=1`,
+        mode: "payment", locale: "fr", success_url: returnBase, cancel_url: `${returnBase}&annule=1`,
         "line_items[0][quantity]": "1", "line_items[0][price_data][currency]": "eur",
         "line_items[0][price_data][unit_amount]": String(Math.round(Number(o.total) * 100)),
-        "line_items[0][price_data][product_data][name]": `${r!.name} — commande n° ${o.order_number}`.slice(0, 200),
+        "line_items[0][price_data][product_data][name]": `${r.name} — commande n° ${o.order_number}`.slice(0, 200),
         "metadata[order_id]": o.id, "payment_intent_data[metadata][order_id]": o.id,
         expires_at: String(Math.floor(Date.now() / 1000) + 30 * 60),
       }) as { id: string; url?: string };
@@ -72,6 +77,8 @@ export const startKioskQrPayment = createServerFn({ method: "POST" })
 export const kioskQrStatus = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
+    const { requireCustomerAccess } = await import("../customer-access.server");
+    requireCustomerAccess("kiosk", data.orderId);
     const { o } = await kioskQrOrder(data.orderId);
     if (o.payment_status === "paid") return { status: "paid" as const };
     if (o.status === "cancelled" || o.payment_status !== "pending") return { status: "failed" as const };
@@ -85,6 +92,8 @@ export const kioskQrStatus = createServerFn({ method: "POST" })
 export const abandonKioskQr = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
+    const { requireCustomerAccess } = await import("../customer-access.server");
+    requireCustomerAccess("kiosk", data.orderId);
     const { db, o } = await kioskQrOrder(data.orderId);
     if (o.payment_status === "paid") return { status: "paid" as const };
     if (o.status !== "awaiting_payment") return { status: "ignored" as const };

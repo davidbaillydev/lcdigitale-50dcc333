@@ -86,6 +86,8 @@ export const confirmOnlinePayment = createServerFn({ method: "POST" })
     lyra: z.record(z.string().max(60), z.string().max(500)).optional(),
   }).parse(d))
   .handler(async ({ data }) => {
+    const { requireCustomerAccess } = await import("../customer-access.server");
+    requireCustomerAccess("order", data.orderId);
     const db = await admin();
     const { data: o } = await db.from("orders").select("id, restaurant_id, status, total, payment_method, payment_status, payment_ref").eq("id", data.orderId).maybeSingle();
     if (!o || o.payment_method !== "online") throw new Error("Commande introuvable");

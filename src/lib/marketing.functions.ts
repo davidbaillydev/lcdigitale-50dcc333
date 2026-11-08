@@ -117,6 +117,6 @@ export const checkDiscount = createServerFn({ method: "POST" })
     const { resolveDiscount } = await import("./promo.server");
     const { getCatalog } = await import("./catalogs");
     const cats = getCatalog(r).categories;
-    return resolveDiscount(db, r, data.subtotal, { code: data.code, email: data.email, phone: data.phone, channel: data.channel,
+    return resolveDiscount(db, r, data.subtotal, { code: data.code, channel: data.channel,
       lines: data.lines, categoryIdOf: (id: string) => cats.find((c) => c.items.some((i) => i.id === id))?.id });
   });

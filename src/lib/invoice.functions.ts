@@ -14,10 +14,12 @@ export const issueInvoice = createServerFn({ method: "POST" })
     return issueForOrder(supabaseAdmin, o.id);
   });
 
-/** Client : l'identifiant (UUID non devinable) de sa commande, déjà utilisé pour le suivi, sert de clé d'accès. */
+/** Client : accès par autorisation signée créée à la commande. */
 export const getCustomerInvoice = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
+    const { requireCustomerAccess } = await import("./customer-access.server");
+    requireCustomerAccess("order", data.orderId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { issueForOrder } = await import("./invoice.server");
     return issueForOrder(supabaseAdmin, data.orderId);

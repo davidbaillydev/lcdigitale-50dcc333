@@ -30,6 +30,7 @@ export const Route = createFileRoute("/$slug/suivi/$id")({
       { property: "og:description", content: "Suivez votre commande." },
       { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
+      { name: "referrer", content: "no-referrer" },
     ],
   }),
   component: Tracking,
@@ -57,7 +58,9 @@ function Tracking() {
   const { data, isLoading } = useQuery({
     queryKey: ["order", id],
     queryFn: async () => {
-      const o = await fn({ data: { id } });
+      const access = typeof window === "undefined" ? undefined : new URLSearchParams(window.location.search).get("access") ?? undefined;
+      const o = await fn({ data: { id, access } });
+      if (access) { const url = new URL(window.location.href); url.searchParams.delete("access"); window.history.replaceState(null, "", url.pathname + url.search); }
       if (o?.status === "awaiting_payment") {
         // Retour de PayPal (?annule=1) ou de Lyra (paramètres vads_* signés, revérifiés côté serveur)
         const qs = typeof window === "undefined" ? new URLSearchParams() : new URLSearchParams(window.location.search);

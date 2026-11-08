@@ -1,3 +1,4 @@
+import { trustedOrigin } from "./trusted-origin";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -39,7 +40,7 @@ export const inviteMember = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     let userId: string | undefined;
     let invited = false;
-    const { data: inv, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(data.email, { redirectTo: `${data.origin}/reset-password` });
+    const { data: inv, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(data.email, { redirectTo: `${trustedOrigin(data.origin)}/reset-password` });
     if (inv?.user) { userId = inv.user.id; invited = true; }
     else {
       const { data: list } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
@@ -102,7 +103,7 @@ export const getActivationLink = createServerFn({ method: "POST" })
     const { data: u } = await supabaseAdmin.auth.admin.getUserById(data.userId);
     const email = u.user?.email;
     if (!email) throw new Error("Compte introuvable");
-    const redirectTo = `${data.origin}/reset-password`;
+    const redirectTo = `${trustedOrigin(data.origin)}/reset-password`;
     const type = u.user?.email_confirmed_at || u.user?.last_sign_in_at ? "recovery" : "invite";
     const { data: link, error } = await supabaseAdmin.auth.admin.generateLink({ type, email, options: { redirectTo } } as Parameters<typeof supabaseAdmin.auth.admin.generateLink>[0]);
     if (error || !link.properties?.action_link) throw new Error(error?.message ?? "Lien impossible");

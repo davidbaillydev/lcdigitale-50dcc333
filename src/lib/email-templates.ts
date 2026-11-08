@@ -5,6 +5,7 @@ import { emailLayout, emailButton, escHtml as esc, brandColor, type EmailBrand }
 export type EmailLine = { name: string; qty: number; total: number; size?: string; details?: string | string[] };
 export type EmailRestaurant = { slug: string; name: string; brand: { accent?: string } | null; logo_url?: string | null | undefined; address?: string | null | undefined; city?: string | null | undefined; phone?: string | null | undefined };
 export type EmailOrder = {
+  accessToken?: string;
   currency?: Currency;
   id: string; order_number: number | string; mode: string; slot: string; asap: boolean; total: number | string; items: unknown;
   notes?: string | null; email?: string | null; phone: string; customer_name: string; first_name: string | null; last_name?: string | null;
@@ -25,7 +26,7 @@ const itemsTable = (items: EmailLine[], total: number, currency: Currency = "EUR
 const infoBox = (rows: [string, string][]) => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;margin:8px 0">${rows.map(([k, v]) => `<tr><td style="padding:4px 0;color:#6b7280;width:38%;vertical-align:top">${k}</td><td style="padding:4px 0;color:#111827;font-weight:bold">${v}</td></tr>`).join("")}</table>`;
 const slotText = (o: { slot: string; asap: boolean }) => o.asap ? "Dès que possible" : new Date(o.slot).toLocaleString("fr-FR", { timeZone: "Europe/Paris", weekday: "long", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 const items = (o: EmailOrder) => itemsTable((o.items as EmailLine[]) ?? [], Number(o.total), o.currency ?? "EUR");
-const trackUrl = (base: string, r: EmailRestaurant, o: { id: string }) => `${base}/${r.slug}/suivi/${o.id}`;
+const trackUrl = (base: string, r: EmailRestaurant, o: { id: string; accessToken?: string }) => `${base}/${r.slug}/suivi/${o.id}${o.accessToken ? `?access=${encodeURIComponent(o.accessToken)}` : ""}`;
 
 export function orderReceivedHtml(o: EmailOrder, r: EmailRestaurant, base: string) {
   const paid = o.payment_status === "paid";
@@ -74,12 +75,12 @@ export function orderConfirmedHtml(o: EmailOrder, r: EmailRestaurant, base: stri
 ${infoBox([["Commande", `n° ${o.order_number}`], ["Mode", MODE[o.mode] ?? o.mode], ...(o.mode !== "dine_in" ? [["Heure", esc(slotText(o))] as [string, string]] : [])])}
 ${items(o)}
 ${emailButton(track, "Suivre ma commande", color)}
-<p style="text-align:center;font-size:13px;margin:4px 0 0"><a href="${track}?facture=1" style="color:${color}">Télécharger ma facture (PDF)</a></p>`,
+<p style="text-align:center;font-size:13px;margin:4px 0 0"><a href="${track}${track.includes("?") ? "&" : "?"}facture=1" style="color:${color}">Télécharger ma facture (PDF)</a></p>`,
     footer: "Conservez cet e-mail : il donne accès à votre facture. Une question ? Répondez simplement à ce message.",
   });
 }
 
-export function refundHtml(o: { id: string; order_number: number | string; first_name: string | null; customer_name: string }, r: EmailRestaurant, base: string, amount: number, creditNote: string) {
+export function refundHtml(o: { accessToken?: string; id: string; order_number: number | string; first_name: string | null; customer_name: string }, r: EmailRestaurant, base: string, amount: number, creditNote: string) {
   return emailLayout(brandOf(r), {
     preheader: `Remboursement de ${eur(amount)} effectué`,
     title: "Votre remboursement est en route",
