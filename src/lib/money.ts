@@ -35,4 +35,7 @@ export function formatMoney(amount: number, currency: Currency = "EUR"): string 
   const number = amount.toLocaleString("fr-FR", { minimumFractionDigits: digits, maximumFractionDigits: digits }).replace(/[\u00a0\u202f]/g, " ");
   return `${number} ${currencyUnit(currency)}`;
 }
-export const mobileMoneyProviders = ["CinetPay", "Wave", "Airtel Money", "Orange Money", "MTN Mobile Money", "Moov Money"] as const;
+export const mobileMoneyProviders = ["CinetPay", "Wave", "Airtel Money", "Orange Money", "MTN Mobile Money", "Moov Money"] as const;/** Plafond par article pour l'import de carte, selon la devise du restaurant. */
+export const menuImportPriceCeiling = (currency: Currency) => currency === "EUR" || currency === "USD" ? 1000 : currency === "CDF" ? 10_000_000 : 1_000_000;
+export const menuImportCurrencyHint = (currency: Currency) => currency === "EUR" ? "Prix en euros numériques, virgule décimale convertie en point."
+  : `Prix dans la devise de la carte (${currencyUnit(currency)}), nombres sans séparateur de milliers (ex. "2 500 FCFA" → 2500)${moneyDecimals(currency) === 0 ? ", sans décimales" : ", virgule décimale convertie en point"}.`;
