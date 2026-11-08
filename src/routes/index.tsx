@@ -52,6 +52,11 @@ function BannerCarousel({ covers }: { covers: string[] }) {
 export const Route = createFileRoute("/")({
   validateSearch: (search: Record<string, unknown>): { country?: zCountry | undefined } => ({ country: countrySchema.optional().catch(undefined).parse(search['country']) }),
   loaderDeps: ({ search }) => ({ country: search.country }),
+  loader: async ({ deps }): Promise<{ restaurants: Restaurant[]; country: zCountry; detected: zCountry | null }> => {
+    const [rows, detected] = await Promise.all([listRestaurants(), getDirectoryCountry()]);
+    const country = detected ?? deps.country ?? "FR";
+    return { restaurants: restaurantsInCountry(rows, country), country, detected };
+  },
   head: ({ loaderData }) => {
     const cover = loaderData?.restaurants.find((r) => r.brand?.coverUrl)?.brand?.coverUrl;
     return {
@@ -69,11 +74,6 @@ export const Route = createFileRoute("/")({
           ] : []),
     ],
     };
-  },
-  loader: async ({ deps }): Promise<{ restaurants: Restaurant[]; country: zCountry; detected: zCountry | null }> => {
-    const [rows, detected] = await Promise.all([listRestaurants(), getDirectoryCountry()]);
-    const country = detected ?? deps.country ?? "FR";
-    return { restaurants: restaurantsInCountry(rows, country), country, detected };
   },
   errorComponent: () => <p className="p-10 text-center">Impossible de charger les restaurants.</p>,
   component: Home,
