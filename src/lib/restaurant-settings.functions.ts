@@ -10,9 +10,9 @@ const minutes = z.number().int().min(0).max(1440);
 export const settingsSchema = z.object({
   opening: z.record(z.enum(["0", "1", "2", "3", "4", "5", "6"]), z.array(z.tuple([minutes, minutes])).max(4)),
   delivery: z.object({
-    minOrder: z.number().min(0).max(500),
-    fee: z.number().min(0).max(100),
-    freeFrom: z.number().min(0).max(1000),
+    minOrder: z.number().min(0).max(500000),
+    fee: z.number().min(0).max(100000),
+    freeFrom: z.number().min(0).max(1000000),
     zones: z.array(z.object({ cp: z.string().trim().regex(/^\d{5}$/), city: z.string().trim().min(1).max(80) })).max(100),
   }),
   config: z.object({
@@ -25,7 +25,7 @@ export const settingsSchema = z.object({
     ordersPaused: z.boolean().optional(),
     timing: z.object({ asap: z.boolean(), scheduled: z.boolean(), prepMode: z.enum(["auto", "manual"]), defaultPrep: z.number().int().min(5).max(180) }),
     modes: z.object({ pickup: z.boolean(), delivery: z.boolean(), dine_in: z.boolean() }),
-    pickupMinOrder: z.number().min(0).max(500).nullable(),
+    pickupMinOrder: z.number().min(0).max(500000).nullable(),
     payments: z.object({ online: z.boolean().optional(), onlineDeliveryOnly: z.boolean().optional(), on_site: z.boolean(), counter: z.boolean(), card_terminal: z.boolean(), qr: z.boolean().optional() }),
     kiosk: z.object({ cardOnly: z.boolean() }).optional(),
     pos: z.object({ enabled: z.boolean() }).optional(),
@@ -68,6 +68,7 @@ export const saveRestaurantSettings = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertManager(context.supabase, context.userId, data.restaurantId);
     const s = data.settings;
+    if ((s.config.currency ?? "EUR") === "EUR" && (s.delivery.minOrder > 500 || s.delivery.fee > 100 || s.delivery.freeFrom > 1000 || (s.config.pickupMinOrder ?? 0) > 500)) throw new Error("Montant supérieur au plafond EUR.");
     if (!s.config.timing.asap && !s.config.timing.scheduled) throw new Error("Proposez au moins « Dès que possible » ou « Planifiée »");
     if (!s.config.modes.pickup && !s.config.modes.delivery && !s.config.modes.dine_in) throw new Error("Activez au moins un mode de commande");
     for (const ranges of Object.values(s.opening)) for (const [a, b] of ranges) if (a >= b) throw new Error("Une plage horaire a une fin avant son début");

@@ -6,17 +6,17 @@ import { MENU_PHOTO_RE } from "./menu-photos.functions";
 import { itemScheduleSchema } from "./menu-schedule";
 
 const id = z.string().trim().min(1).max(80);
-const choice = z.object({ id, label: z.string().max(120), price: z.number().min(0).max(1000).optional() });
+const choice = z.object({ id, label: z.string().max(120), price: z.number().min(0).max(1000000).optional() });
 const group = z.object({
   id, label: z.string().max(120), min: z.number().int().min(0).max(50), max: z.number().int().min(0).max(50),
-  included: z.number().int().min(0).max(50).optional(), extraPrice: z.number().min(0).max(1000).optional(), choices: z.array(choice).max(100),
+  included: z.number().int().min(0).max(50).optional(), extraPrice: z.number().min(0).max(1000000).optional(), choices: z.array(choice).max(100),
   kind: z.enum(["size", "extra"]).optional(), forSize: id.optional(),
 });
 const tr = z.object({ name: z.string().trim().min(1).max(120), description: z.string().max(500).optional() });
 const translations = z.object({ en: tr.optional(), es: tr.optional(), de: tr.optional() }).optional();
 const labelTr = z.object({ en: z.string().max(80).optional(), es: z.string().max(80).optional(), de: z.string().max(80).optional() }).optional();
 const item = z.object({
-  id, name: z.string().trim().min(1).max(120), desc: z.string().max(500).optional(), price: z.number().min(0).max(1000),
+  id, name: z.string().trim().min(1).max(120), desc: z.string().max(500).optional(), price: z.number().min(0).max(1000000),
   tag: z.string().max(40).optional(), options: z.array(group).max(20).optional(), builder: z.boolean().optional(), hidden: z.boolean().optional(), allergens: z.array(z.enum(ALLERGEN_IDS)).max(14).optional(), vatRate: z.union([z.literal(5.5), z.literal(10), z.literal(20)]).optional(),
   image: z.string().max(200).regex(MENU_PHOTO_RE).optional(), translations, schedule: itemScheduleSchema.optional(),
   removable: z.array(z.string().trim().min(2).max(40)).max(100).optional(),
@@ -34,6 +34,10 @@ export const saveMenu = createServerFn({ method: "POST" })
     if (new Set(ids).size !== ids.length) throw new Error("Deux plats ont le même identifiant");
     if (data.menu?.some((c) => c.items.some((i) => i.image && i.image.match(MENU_PHOTO_RE)?.[1] !== data.restaurantId))) throw new Error("Photo d'un autre restaurant");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: restaurant } = await supabaseAdmin.from("restaurants").select("config").eq("id", data.restaurantId).single();
+    const { currencyOf } = await import("./money");
+    const max = currencyOf(restaurant as unknown as { config: { currency?: string } }) === "EUR" ? 1000 : 1000000;
+    if (data.menu?.some((c) => c.items.some((i) => i.price > max || i.options?.some((g) => (g.extraPrice ?? 0) > max || g.choices.some((v) => (v.price ?? 0) > max))))) throw new Error("Prix supérieur au plafond de la devise.");
     const { error } = await supabaseAdmin.from("restaurants").update({ menu: data.menu }).eq("id", data.restaurantId);
     if (error) throw new Error(error.message);
     return { ok: true };
