@@ -61,6 +61,7 @@ export function OptionGroupsPanel({ restaurantId, data, reload }: { restaurantId
 }
 
 function GroupCard({ g, items, uses, restaurantId, act, reload }: { g: OptionData["groups"][number]; items: OptionData["items"]; uses: number; restaurantId: string; reload: () => void; act: (p: PromiseLike<{ error: { message: string } | null }>, ok?: string) => Promise<void> }) {
+  const currency = useCurrency();
   const [label, setLabel] = useState(""); const [price, setPrice] = useState("");
   const upd = (patch: { name?: string; is_required?: boolean; min_selection?: number; max_selection?: number }) => act(supabase.from("option_groups").update(patch).eq("id", g.id));
   return (
