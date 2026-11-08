@@ -1490,6 +1490,39 @@ export type Database = {
           },
         ]
       }
+      restaurant_deletion_audit: {
+        Row: {
+          approved_test_cleanup: boolean
+          deleted_at: string
+          deleted_by: string
+          deleted_orders: number
+          id: string
+          restaurant_id: string
+          restaurant_name: string
+          restaurant_slug: string
+        }
+        Insert: {
+          approved_test_cleanup?: boolean
+          deleted_at?: string
+          deleted_by: string
+          deleted_orders: number
+          id?: string
+          restaurant_id: string
+          restaurant_name: string
+          restaurant_slug: string
+        }
+        Update: {
+          approved_test_cleanup?: boolean
+          deleted_at?: string
+          deleted_by?: string
+          deleted_orders?: number
+          id?: string
+          restaurant_id?: string
+          restaurant_name?: string
+          restaurant_slug?: string
+        }
+        Relationships: []
+      }
       restaurant_drivers: {
         Row: {
           active: boolean
@@ -2049,6 +2082,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approved_restaurant_test_cleanup: {
+        Args: { _id: string }
+        Returns: boolean
+      }
       can_access_restaurant: {
         Args: { _restaurant_id: string; _user_id: string }
         Returns: boolean
@@ -2059,6 +2096,10 @@ export type Database = {
           _restaurant_id: string
           _user_id: string
         }
+        Returns: Json
+      }
+      delete_agency_restaurant: {
+        Args: { _confirmation: string; _id: string }
         Returns: Json
       }
       has_role: {

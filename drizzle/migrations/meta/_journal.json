@@ -260,6 +260,13 @@
       "when": 1794116530623,
       "tag": "0036_cinetpay_provider_configuration",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1794130044789,
+      "tag": "0037_agency_restaurant_safe_deletion",
+      "breakpoints": true
     }
   ]
 }
