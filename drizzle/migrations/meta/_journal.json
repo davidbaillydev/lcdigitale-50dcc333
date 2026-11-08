@@ -267,6 +267,13 @@
       "when": 1794130044789,
       "tag": "0037_agency_restaurant_safe_deletion",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1794135311366,
+      "tag": "0038_agency_restaurant_duplication",
+      "breakpoints": true
     }
   ]
 }

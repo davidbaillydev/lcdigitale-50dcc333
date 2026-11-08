@@ -9,6 +9,8 @@ import { ThemeToggle } from "@/lib/theme";
 import { BrandLogo } from "@/lib/brand";
 import { automaticRestaurant } from "@/lib/last-restaurant";
 import { useKitchenCounts, ZERO_COUNTS, type KitchenCounts } from "@/components/KitchenOverview";
+import { CountryFlag } from "@/components/CountryFlag";
+import { countryOf } from "@/lib/country";
 
 export const Route = createFileRoute("/_authenticated/espace/")({
   head: () => ({
@@ -62,7 +64,7 @@ function Hub() {
       <header className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-2 px-4 py-3 sm:px-6">
           <div className="mr-auto min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">LC Digitale</p>
+            <p className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase text-primary">LC Digitale{[...new Set(restaurants.map(countryOf))].map((country) => <CountryFlag key={country} country={country} />)}</p>
             <h1 className="font-display text-xl font-semibold leading-tight">Espace restaurants</h1>
           </div>
           {canStats && <Button asChild variant="ghost" size="sm"><Link to="/espace/tableau-de-bord"><BarChart3 /> <span className="hidden sm:inline">Ventes & statistiques</span></Link></Button>}
@@ -107,7 +109,7 @@ function RestaurantCard({ r, c }: { r: StaffRestaurant; c: KitchenCounts }) {
       <div className="flex items-start gap-4">
         <BrandLogo src={r.logo_url} name={r.name} className="h-14 w-14 shrink-0 rounded-lg object-contain" />
         <div className="min-w-0 flex-1">
-          <p className="hyphens-auto font-display text-lg font-semibold leading-tight">{r.name}</p>
+          <p className="flex items-center gap-2 font-display text-lg font-semibold leading-tight"><CountryFlag country={countryOf(r)} /><span className="min-w-0 break-words">{r.name}</span></p>
           <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground"><MapPin aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />{r.city ?? "—"} · {ROLE[r.role]}</p>
           <span className={`mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${online ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
             <span aria-hidden="true" className={`h-2 w-2 rounded-full ${online ? "bg-primary" : "bg-muted-foreground"}`} />

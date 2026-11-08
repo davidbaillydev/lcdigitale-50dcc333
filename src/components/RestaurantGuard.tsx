@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { rememberLastRestaurant } from "@/lib/last-restaurant";
 import { posEnabled } from "@/lib/pos-register";
+import { CountryFlag } from "@/components/CountryFlag";
+import { countryOf } from "@/lib/country";
 
 type Level = "kitchen" | "manager" | "agency";
 const RANK: Record<StaffRestaurant["role"], number> = { kitchen: 0, manager: 1, agency: 2 };
@@ -76,6 +78,7 @@ export function RestaurantNav({ slug, className }: { slug: string; className?: s
   ];
   return (
     <nav aria-label="Pages du restaurant" className={cn("flex gap-2 overflow-x-auto pb-1", className)}>
+      <span className="flex shrink-0 items-center px-1"><CountryFlag country={countryOf(r)} /></span>
       {links.filter((l) => l.show).map((l) => {
         const href = l.to.replace("$slug", slug);
         const active = path.replace(/\/$/, "") === href;
