@@ -253,6 +253,13 @@
       "when": 1794115925773,
       "tag": "0035_restaurant_currency_snapshots",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1794116530623,
+      "tag": "0036_cinetpay_provider_configuration",
+      "breakpoints": true
     }
   ]
 }

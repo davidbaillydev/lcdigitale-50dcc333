@@ -1,0 +1,2 @@
+ALTER TABLE public.restaurant_payment_providers DROP CONSTRAINT restaurant_payment_providers_provider_check;
+ALTER TABLE public.restaurant_payment_providers ADD CONSTRAINT restaurant_payment_providers_provider_check CHECK (provider IN ('sumup','stripe','paypal','lyra','mollie','cinetpay'));
