@@ -27,6 +27,8 @@ export function currencyOf(r?: { config?: { currency?: string } | null } | null)
   return result.success ? result.data : "EUR";
 }
 export const moneyDecimals = (currency: Currency) => currency === "XOF" || currency === "XAF" ? 0 : 2;
+/** Existing gateways are EUR-only until local settlement is integrated and verified. */
+export const legacyPaymentsSupported = (r?: { config?: { currency?: string } | null } | null) => currencyOf(r) === "EUR";
 export const currencyUnit = (currency: Currency) => currency === "EUR" ? "€" : currency === "XOF" || currency === "XAF" ? "FCFA" : currency === "CDF" ? "FC" : "$ US";
 export function formatMoney(amount: number, currency: Currency = "EUR"): string {
   const digits = moneyDecimals(currency);
