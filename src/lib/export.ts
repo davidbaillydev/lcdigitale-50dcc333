@@ -1,6 +1,11 @@
 /** Exports côté navigateur (CSV, Excel, PDF) — appeler uniquement depuis un gestionnaire d'événement. */
 type Row = Record<string, string | number | null | undefined>;
 
+export function safeSpreadsheetCell(value: unknown): string {
+  const s = value == null ? "" : String(value);
+  return /^[\s\u0000-\u001f]*[=+@-]/.test(s) || /^[\t\r\n]/.test(s) ? `'${s}` : s;
+}
+
 function save(blob: Blob, name: string) {
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
@@ -12,7 +17,7 @@ function save(blob: Blob, name: string) {
 export function downloadCSV(name: string, rows: Row[]) {
   const cols = rows.length ? Object.keys(rows[0]!) : [];
   const esc = (v: unknown) => {
-    const s = v == null ? "" : String(v);
+    const s = typeof v === "number" ? String(v) : safeSpreadsheetCell(v);
     return /[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
   const csv = [cols.join(";"), ...rows.map((r) => cols.map((c) => esc(r[c])).join(";"))].join("\n");

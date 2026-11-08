@@ -1,3 +1,4 @@
+import { trustedOrigin } from "../trusted-origin";
 // Mollie : paiement hébergé, Connect OAuth, webhook et suivi des commissions.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -102,7 +103,7 @@ export async function verifyMollieState(state: string): Promise<{ r: string; u: 
   } catch { return null; }
 }
 export function mollieRedirectUri(origin: string) {
-  return /localhost|127\.0\.0\.1/.test(origin) ? `${origin}/api/public/mollie-oauth-callback` : "https://restaurant.lcdigitale.fr/api/public/mollie-oauth-callback";
+  return ["localhost", "127.0.0.1"].includes(new URL(trustedOrigin(origin)).hostname) ? `${trustedOrigin(origin)}/api/public/mollie-oauth-callback` : "https://restaurant.lcdigitale.fr/api/public/mollie-oauth-callback";
 }
 
 /** Génère l'URL d'autorisation Mollie Connect (state signé, valable 15 min). */
@@ -113,7 +114,7 @@ export const startMollieConnect = createServerFn({ method: "POST" })
     await assertManager(context.supabase, context.userId, data.restaurantId);
     const clientId = process.env["MOLLIE_CLIENT_ID"];
     if (!clientId || !process.env["MOLLIE_CLIENT_SECRET"]) throw new Error("Mollie Connect n'est pas configuré sur la plateforme.");
-    const origin = new URL(data.origin).origin;
+    const origin = trustedOrigin(data.origin);
     const b64 = Buffer.from(JSON.stringify({ r: data.restaurantId, u: context.userId, o: origin, e: Date.now() + 15 * 60_000, n: crypto.randomUUID() })).toString("base64url");
     const state = `${b64}.${await signState(b64)}`;
     const scope = "payments.write payments.read refunds.write refunds.read profiles.read organizations.read";

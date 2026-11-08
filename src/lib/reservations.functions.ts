@@ -61,6 +61,8 @@ export const createReservation = createServerFn({ method: "POST" })
       status: stripe ? "pending_card" : "confirmed", no_show_fee: stripe ? s.noShowFee : 0,
     }).select("id").single();
     if (error) throw new Error("Réservation impossible");
+    const { grantAccess } = await import("./customer-access.server");
+    grantAccess("reservation", row.id);
     if (!stripe) return { id: row.id as string, clientSecret: null as string | null };
     const cus = await stripeCall("/customers", stripe.secret, {
       name: data.customer_name, phone: data.phone, ...(data.email ? { email: data.email } : {}),
@@ -79,6 +81,8 @@ export const createReservation = createServerFn({ method: "POST" })
 export const confirmReservation = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
+    const { requireCustomerAccess } = await import("./customer-access.server");
+    requireCustomerAccess("reservation", data.id);
     const db = await admin();
     const { data: res } = await db.from("reservations").select("id, restaurant_id, status, setup_intent, starts_at, party_size, customer_name, no_show_fee").eq("id", data.id).maybeSingle();
     if (!res) throw new Error("Réservation introuvable");

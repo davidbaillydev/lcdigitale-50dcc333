@@ -9,6 +9,7 @@ vi.mock("@/lib/menu-options", () => ({ loadOptionData: async () => ({}), withOpt
 vi.mock("@/lib/payments.functions", () => ({ stripeForRestaurant: m.bank, stripeCall: m.bank, startOnlinePayment: m.bank }));
 vi.mock("@/lib/pos.server", () => ({ syncOrderToPos: m.pos }));
 vi.mock("@/lib/order-email.server", () => ({ notifyNewOrder: m.email }));
+vi.mock("@/lib/customer-access.server", () => ({ grantAccess: vi.fn(), issueAccessToken: () => "test-capability" }));
 vi.mock("@/lib/promo.server", () => ({ resolveDiscount: async () => ({ discount: 0, code: null }) }));
 vi.mock("@/lib/delivery-capacity.server", () => ({ deliveryLoad: async () => ({}), isFull: () => false }));
 vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: { from: (table: string) => {
@@ -50,7 +51,7 @@ describe("CB Test (Admin)", () => {
   it("accepte une commande test restaurant fermé (15h30, horaires vides)", async () => { restaurant.opening = {} as typeof restaurant.opening; try { await invoke(); expect(m.insert).toHaveBeenCalled(); } finally { restaurant.opening = { "4": [[0, 1440]] }; } });
   it("accepte une commande test restaurant en pause", async () => { (restaurant.config as Record<string, unknown>)["ordersPaused"] = true; try { await invoke(); expect(m.insert).toHaveBeenCalled(); } finally { delete (restaurant.config as Record<string, unknown>)["ordersPaused"]; } });
   it("interdit la facture pour un paiement simulé", async () => {
-    const db = { from: (table: string) => { const q = { select: () => q, eq: () => q, maybeSingle: async () => ({ data: table === "orders" ? { is_test: true } : null }) }; return q; }, rpc: vi.fn() };
+    const db = { from: (table: string) => { const q = { select: () => q, eq: () => q, maybeSingle: async () => ({ data: table === "orders" ? { is_test: true, currency: "EUR" } : null }) }; return q; }, rpc: vi.fn() };
     await expect(issueForOrder(db as unknown as Parameters<typeof issueForOrder>[0], "test")).rejects.toThrow("aucune facture"); expect(db.rpc).not.toHaveBeenCalled();
   });
 });

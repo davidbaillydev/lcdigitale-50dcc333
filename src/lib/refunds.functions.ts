@@ -108,10 +108,12 @@ export const listCreditNotes = createServerFn({ method: "POST" })
     return (rows ?? []).map((r) => ({ number: r.credit_note_number, issued_at: r.created_at, data: r.data as unknown as InvoiceData })) as Invoice[];
   });
 
-/** Client : avoirs de sa commande (l'UUID non devinable de la commande sert de clé, comme pour la facture). */
+/** Client : avoirs de sa commande (autorisation client signée obligatoire). */
 export const getCustomerCreditNotes = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
+    const { requireCustomerAccess } = await import("./customer-access.server");
+    requireCustomerAccess("order", data.orderId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows } = await supabaseAdmin.from("order_refunds").select("credit_note_number, created_at, data").eq("order_id", data.orderId).order("created_at");
     return (rows ?? []).map((r) => ({ number: r.credit_note_number, issued_at: r.created_at, data: r.data as unknown as InvoiceData })) as Invoice[];
