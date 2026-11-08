@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { ArrowDown, ArrowUp, BarChart3, BookOpen, ChefHat, ChevronDown, Contact, Copy, Globe, GripVertical, ExternalLink, FileText, Landmark, LogOut, Mail, MoreHorizontal, Pencil, Plus, QrCode, Search, Settings, ShieldCheck, ShoppingBag, Store, Tablet, Trash2, Users, Wallet, X } from "lucide-react";
+import { ArrowDown, ArrowUp, BarChart3, BookOpen, ChefHat, ChevronDown, Contact, Copy, Globe, GripVertical, ExternalLink, FileText, Landmark, LogOut, Mail, MoreHorizontal, Pencil, Plus, QrCode, Search, Settings, ShieldCheck, ShoppingBag, Tablet, Trash2, Users, Wallet, X } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
@@ -189,9 +189,9 @@ function Console() {
           )}
         </div>
       </div>
-      {rows && <p className="mt-3 text-sm text-muted-foreground" aria-live="polite">{filteredRows.length} restaurant{filteredRows.length > 1 ? "s" : ""} affiché{filteredRows.length > 1 ? "s" : ""} sur {rows.length}</p>}
+      {rows && <p className="mt-2 text-sm text-muted-foreground" aria-live="polite">{filteredRows.length} restaurant{filteredRows.length > 1 ? "s" : ""} affiché{filteredRows.length > 1 ? "s" : ""} sur {rows.length}</p>}
       {!rows ? <p className="mt-10 text-center text-muted-foreground">Chargement du réseau…</p> : (
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
           {filteredRows.length === 0 && <div className="col-span-full py-12 text-center"><Search className="mx-auto mb-3 size-7 text-muted-foreground" /><h2 className="text-xl font-semibold">Aucun restaurant trouvé</h2><Button variant="link" className="mt-2" onClick={() => { setQ(""); setStatusFilter("all"); setCountryFilter("all"); }}>Réinitialiser les filtres</Button></div>}
           {filteredRows.map((r) => { const pos = rows.indexOf(r); return (
             <article key={r.id} draggable={canReorder} onDragStart={(e) => { setDragId(r.id); e.dataTransfer.effectAllowed = "move"; }} onDragEnd={() => setDragId(null)}
