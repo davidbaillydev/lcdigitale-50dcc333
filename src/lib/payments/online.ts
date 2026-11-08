@@ -10,7 +10,7 @@ import { handleMolliePayment, mollieCall, mollieForRestaurant } from "./mollie";
 import { handleLyraResult, lyraForRestaurant, lyraSign } from "./lyra";
 
 /** Prépare le paiement en ligne choisi pour une commande déjà enregistrée (appelé par createOrder). */
-export async function startOnlinePayment(provider: "paypal" | "lyra" | "mollie", o: { id: string; order_number: number; total: number; restaurant_id: string; email?: string | null }, restaurantName: string, returnBase: string, channel: PlatformFeeChannel) {
+export async function startOnlinePayment(provider: "paypal" | "lyra" | "mollie", o: { id: string; order_number: number; total: number; restaurant_id: string; currency?: string; email?: string | null }, restaurantName: string, returnBase: string, channel: PlatformFeeChannel) {
   await assertOrdersOpen(o.restaurant_id);
   const db = await admin();
   const amount = Math.round(Number(o.total) * 100);

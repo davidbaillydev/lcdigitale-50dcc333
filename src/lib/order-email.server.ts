@@ -2,6 +2,7 @@ type Admin = Awaited<typeof import("@/integrations/supabase/client.server")>["su
 
 import { orderReceivedHtml, restaurantNewOrderHtml, orderConfirmedHtml, refundHtml } from "@/lib/email-templates";
 import { notificationRecipients, directRecipientSchema, type DirectRecipient } from "./order-notification-roles";
+import { currencySchema } from "./money";
 
 const GATEWAY = "https://connector-gateway.lovable.dev/brevo";
 const FALLBACK_ORIGIN = "https://restaurant.lcdigitale.fr";
@@ -22,7 +23,7 @@ const ORDER_COLS = "id, currency, restaurant_id, is_test, order_number, status, 
 async function load(admin: Admin, orderId: string) {
   const { data: o } = await admin.from("orders").select(ORDER_COLS).eq("id", orderId).maybeSingle();
   if (!o || o.is_test) return null;
-  return { o, r: o.restaurants as unknown as Rest };
+  return { o: { ...o, currency: currencySchema.parse(o.currency) }, r: o.restaurants as unknown as Rest };
 }
 
 /** Réservation atomique : la colonne n'est posée qu'une fois, même si deux appels arrivent ensemble. */
