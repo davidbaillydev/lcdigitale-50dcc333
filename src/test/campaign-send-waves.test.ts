@@ -15,7 +15,7 @@ const clients = Array.from({ length: 650 }, (_, i) => ({ id: `00000000-0000-4000
 const data = { restaurantId: id, campaignId: id, customerIds: clients.map((c) => c.id), subject: "Offre novembre", body: "Message promotion", ctaUrl: "", ctaLabel: "Commander", origin: "https://example.com", waveSize: 100 };
 const payload = { subject: data.subject, body: data.body, ctaUrl: "", ctaLabel: "Commander", origin: data.origin };
 let campaign: { id: string; payload: typeof payload; remaining_ids: string[]; sent_emails: string[]; sent: number; state: string };
-const context = { supabase: { rpc: mocks.rpc }, userId: id };
+const context = { supabase: { rpc: mocks.rpc, auth: { getUser: async () => ({ data: { user: { email: "agency@example.com", email_confirmed_at: "2026-01-01" } }, error: null }) } }, userId: id };
 const invoke = sendCampaign as unknown as (args: { data: unknown; context: typeof context }) => Promise<{ sent: number; remaining: number }>;
 beforeEach(() => {
   vi.resetAllMocks();
@@ -80,5 +80,9 @@ describe("Authenticated campaign send handler", () => {
     const versions = JSON.parse(mocks.fetch.mock.calls[0]?.[1]?.body ?? "{}").messageVersions;
     expect(versions[0].to[0].email).toBe("c1@example.com");
     expect(versions).toHaveLength(100);
+  });
+  it("rejects an arbitrary test email before sending", async () => {
+    await expect(invoke({ data: { ...data, testEmail: "outsider@example.com" }, context })).rejects.toThrow("propre adresse agence vérifiée");
+    expect(mocks.fetch).not.toHaveBeenCalled();
   });
 });

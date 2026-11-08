@@ -10,7 +10,7 @@ vi.mock("@/lib/menu-options", () => ({ loadOptionData: async () => ({}), withOpt
 vi.mock("@/lib/payments.functions", () => ({ stripeForRestaurant: async () => null, stripeCall: vi.fn(), startOnlinePayment: vi.fn() }));
 vi.mock("@/lib/promo.server", () => ({ resolveDiscount: async () => ({ error: "Availability checked" }) }));
 vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: { from: (table: string) => {
-  const q = { select: () => q, eq: () => q, maybeSingle: async () => ({ data: restaurant }), then: (resolve: (d: unknown) => unknown) => Promise.resolve({ data: [], error: null }).then(resolve), insert: mocks.insert, update: mocks.update }; return q;
+  const q = { select: () => q, eq: () => q, single: async () => ({ data: restaurant }), maybeSingle: async () => ({ data: restaurant }), then: (resolve: (d: unknown) => unknown) => Promise.resolve({ data: [], error: null }).then(resolve), insert: mocks.insert, update: mocks.update }; return q;
 } } }));
 import { createKioskOrder, createOrder } from "@/lib/orders.functions";
 import { saveMenu } from "@/lib/menu-admin.functions";
