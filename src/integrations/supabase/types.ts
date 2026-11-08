@@ -527,6 +527,7 @@ export type Database = {
           courier_name: string | null
           courier_status: string | null
           created_at: string
+          currency: string
           customer_name: string
           delivery_fee: number
           delivery_lat: number | null
@@ -594,6 +595,7 @@ export type Database = {
           courier_name?: string | null
           courier_status?: string | null
           created_at?: string
+          currency?: string
           customer_name: string
           delivery_fee?: number
           delivery_lat?: number | null
@@ -661,6 +663,7 @@ export type Database = {
           courier_name?: string | null
           courier_status?: string | null
           created_at?: string
+          currency?: string
           customer_name?: string
           delivery_fee?: number
           delivery_lat?: number | null

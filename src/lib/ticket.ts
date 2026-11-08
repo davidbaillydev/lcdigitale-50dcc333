@@ -1,4 +1,5 @@
 // Impression de tickets thermiques (80 mm / 58 mm) via le dialogue d'impression du navigateur.
+import { formatMoney, type Currency } from "./money";
 import { useEffect, useState } from "react";
 import { allergenLabel } from "./allergens";
 import type { Catalog } from "./catalogs";
@@ -12,6 +13,7 @@ export const itemTitle = (it: { name: string; size?: { name: string } | null }) 
 export type TicketWidth = 80 | 58;
 export type TicketKind = "kitchen" | "receipt";
 export type TicketOrder = {
+  currency?: Currency;
   pos_receipt_number?: number | null;
   pos_fiscal_hash?: string | null;
   pos_vat?: VatRow[] | null;
@@ -28,7 +30,7 @@ export type TicketOrder = {
 };
 
 const esc = (s: unknown) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] ?? c);
-const eur = (n: unknown) => `${Number(n ?? 0).toFixed(2).replace(".", ",")} €`;
+export const ticketMoney = (n: unknown, currency: Currency = "EUR") => formatMoney(Number(n ?? 0), currency);
 const time = (d: string) => new Date(d).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 export const modeLabel = (m: string) => (m === "delivery" ? "LIVRAISON" : m === "dine_in" ? "SUR PLACE" : "À EMPORTER");
 /** Ticket client d'une commande non encore réglée : bon de commande à régler au comptoir. */
@@ -70,7 +72,7 @@ export function autoPrintLabel(p: Pick<PrintingConfig, "autoKitchen" | "autoRece
 }
 /** Style + champs cuisine d'une configuration, prêt à passer aux rendus. */
 export const printingFields = (p: Pick<PrintingConfig, "kitchen" | "textSize" | "font">): TicketFieldsIn => ({ ...p.kitchen, textSize: p.textSize, font: p.font });
-export type TicketShop = { name: string; address?: string | null; phone?: string | null; slug?: string; customDomains?: string[] | undefined; optionData?: OptionData | undefined; catalog?: Catalog | undefined; /** Taux par défaut (mentions légales). */ vatRate?: number | string | null | undefined; legal?: TicketLegal | null | undefined };
+export type TicketShop = { currency?: Currency; name: string; address?: string | null; phone?: string | null; slug?: string; customDomains?: string[] | undefined; optionData?: OptionData | undefined; catalog?: Catalog | undefined; /** Taux par défaut (mentions légales). */ vatRate?: number | string | null | undefined; legal?: TicketLegal | null | undefined };
 export function ticketWebsite(shop: TicketShop) {
   const domain = shop.customDomains?.find((d) => /^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i.test(d));
   return domain ?? (shop.slug ? `restaurant.lcdigitale.fr/${shop.slug}` : "restaurant.lcdigitale.fr");
@@ -130,6 +132,7 @@ function optionGroupLabel(it: TicketOrder["items"][number], optionId: string | u
 }
 /** Un choix par ligne avec son groupe ; prix et noms figés restent inchangés. */
 export function ticketOptions(it: TicketOrder["items"][number], shop?: TicketShop): string[] {
+  const eur = (n: unknown) => ticketMoney(n, shop?.currency ?? "EUR");
   const choices: string[] = [];
   const addChoice = (input: string) => {
     const raw = cleanOptionLabel(input);
@@ -207,6 +210,8 @@ export function useTicketWidth(fallback: TicketWidth): [TicketWidth, (w: TicketW
 
 export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth, shopIn: TicketShop | string, fieldsIn?: TicketFieldsIn) {
   const shop = typeof shopIn === "string" ? { name: shopIn } : shopIn;
+  const currency = o.currency ?? "EUR";
+  const eur = (n: unknown) => ticketMoney(n, currency);
   const restaurant = shop.name;
   const f = ticketFields(kind, fieldsIn);
   const totals = ticketTotals(o, shop);
@@ -217,7 +222,7 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
   const font = TICKET_FONTS[fieldsIn?.font ?? "sans"];
   const items = o.items.map((it) => `
     <div class="row item"><b>${it.qty}x ${esc(itemTitle(it))}</b>${f.prices && it.total != null ? `<span>${eur(it.total)}</span>` : ""}</div>
-    ${(f.options ? ticketOptions(it, shop) : []).map((d) => `<div class="det">${esc(d)}</div>`).join("")}
+    ${(f.options ? ticketOptions(it, { ...shop, currency }) : []).map((d) => `<div class="det">${esc(d)}</div>`).join("")}
     ${f.allergens && it.allergens?.length ? `<div class="alg">⚠ ALLERGÈNES : ${it.allergens.map((a) => esc(allergenLabel(a)).toUpperCase()).join(", ")}</div>` : ""}`).join("");
   const allAlg = [...new Set(o.items.flatMap((i) => i.allergens ?? []))];
   return `<!doctype html><html><head><meta charset="utf-8"><title>Ticket ${o.order_number}</title><style>
@@ -284,7 +289,8 @@ export function receiptIntegrityLines(o: Pick<TicketOrder, "source" | "pos_fisca
   return [...(o.created_at ? [`Vente : ${new Date(o.created_at).toLocaleString("fr-FR", { timeZone: "Europe/Paris" })}`] : []), short ? `Contrôle SHA-256 : ${short}` : "Ticket antérieur au chaînage", "Caisse non certifiée — conformité non attestée"];
 }
 
-export function receiptTenderLines(o: Pick<TicketOrder, "pos_tender" | "pos_payments" | "pos_discount">): string[] {
+export function receiptTenderLines(o: Pick<TicketOrder, "pos_tender" | "pos_payments" | "pos_discount" | "currency">): string[] {
+  const eur = (n: unknown) => ticketMoney(n, o.currency ?? "EUR");
   if (o.pos_payments?.length) return [...(o.pos_discount ? [`Motif remise : ${o.pos_discount.reason}`] : []), ...o.pos_payments.flatMap((t) => [ `${t.method === "cash" ? "Espèces" : t.method === "card" ? "Carte bancaire" : "Titres restaurant"} : ${eur(t.amount)}`, ...(t.method === "cash" ? [`Remis : ${eur(t.given)}`, `Rendu : ${eur(t.change)}`] : [])])];
   const t = o.pos_tender;
   if (!t) return [];

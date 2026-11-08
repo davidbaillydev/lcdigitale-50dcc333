@@ -1,3 +1,4 @@
+import { currencyOf, formatMoney, legacyPaymentsSupported } from "./money";
 import { featuresOf } from "./features";
 import { assertItemAvailable, itemOrderDate } from "./shop";
 import { createServerFn } from "@tanstack/react-start";
@@ -81,6 +82,7 @@ async function createCalculatedOrder(supabaseAdmin: Awaited<typeof import("@/int
     const { data: rRow } = await supabaseAdmin.from("restaurants").select(RESTAURANT_COLUMNS).eq("slug", data.restaurant).eq("active", true).maybeSingle();
     const r = rRow as unknown as Restaurant | null;
     if (!r) throw new Error("Restaurant introuvable");
+    if (!testUserId && data.payment_method === "online" && !legacyPaymentsSupported(r)) throw new Error("Les paiements connectés ne sont pas encore disponibles dans cette devise.");
     if (ordersPaused(r) && !testUserId) throw new Error(ORDERS_PAUSED_MSG);
     const catalog = withOptions(getCatalog(r), await loadOptionData(supabaseAdmin, r.id));
 
@@ -154,19 +156,19 @@ async function createCalculatedOrder(supabaseAdmin: Awaited<typeof import("@/int
       const zone = findZone([data.lat, data.lng], geo);
       if (!zone) throw new Error("Désolé, cette adresse est hors de notre zone de livraison.");
       if (!data.address || data.address.length < 5) throw new Error("Adresse de livraison requise.");
-      if (subtotal < zone.minOrder) throw new Error(`Minimum de commande pour ${zone.name} : ${zone.minOrder} €`);
+      if (subtotal < zone.minOrder) throw new Error(`Minimum de commande pour ${zone.name} : ${formatMoney(zone.minOrder, currencyOf(r))}`);
       fee = zoneFee(zone, subtotal);
       zoneName = zone.name;
     } else if (data.mode === "delivery") {
       const zone = r.delivery.zones.find((z) => z.cp === data.postal_code);
       if (!zone) throw new Error("Désolé, cette adresse est hors de notre zone de livraison.");
       if (!data.address || data.address.length < 5) throw new Error("Adresse de livraison requise.");
-      if (subtotal < r.delivery.minOrder) throw new Error(`Minimum de commande en livraison : ${r.delivery.minOrder} €`);
+      if (subtotal < r.delivery.minOrder) throw new Error(`Minimum de commande en livraison : ${formatMoney(r.delivery.minOrder, currencyOf(r))}`);
       fee = deliveryFee(r, subtotal);
       city = zone.city;
     } else if (data.mode === "pickup") {
       const min = pickupMinOrder(r);
-      if (min != null && subtotal < min) throw new Error(`Minimum de commande à emporter : ${min} €`);
+      if (min != null && subtotal < min) throw new Error(`Minimum de commande à emporter : ${formatMoney(min, currencyOf(r))}`);
     }
     const { resolveDiscount } = await import("./promo.server");
     const promo = await resolveDiscount(supabaseAdmin, r, subtotal, { code: data.promo_code, email: data.email, phone: data.phone, channel: "web", lines: items, categoryIdOf: categoryIdOf(catalog) });
@@ -177,6 +179,7 @@ async function createCalculatedOrder(supabaseAdmin: Awaited<typeof import("@/int
       .from("orders")
       .insert({
         restaurant_id: r.id,
+        currency: currencyOf(r),
         customer_name: `${data.first_name} ${data.last_name}`,
         first_name: data.first_name,
         last_name: data.last_name,
@@ -228,7 +231,8 @@ async function createCalculatedOrder(supabaseAdmin: Awaited<typeof import("@/int
     }
     const base = { id: row.id, order_number: row.order_number, clientSecret: null as string | null, redirectUrl: null as string | null, form: null as { action: string; fields: Record<string, string> } | null };
     if (provider === "paypal" || provider === "lyra" || provider === "mollie") {
-      const res = await startOnlinePayment(provider, { id: row.id, order_number: row.order_number, total: Number(row.total), restaurant_id: r.id, email: data.email || null }, r.name, `${data.origin}/${r.slug}/suivi/${row.id}${backParam(data.returnTo, data.ref)}`, data.mode);
+      const res = await startOnlinePayment(provider, { id: row.id, order_number: row.order_number, total: Number(row.total), restaurant_id: r.id,
+        currency: currencyOf(r), email: data.email || null }, r.name, `${data.origin}/${r.slug}/suivi/${row.id}${backParam(data.returnTo, data.ref)}`, data.mode);
       return { ...base, redirectUrl: "redirectUrl" in res ? res.redirectUrl : null, form: "form" in res ? res.form : null };
     }
     if (!stripe) return base;
@@ -250,7 +254,7 @@ export const getOrderStatus = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("orders")
-      .select("id, is_test, order_number, status, courier_status, mode, slot, total, items, payment_method, payment_status, customer_name, discount, promo_code, delivery_fee, service_fee, table_label, restaurants(slug, config)")
+      .select("id, currency, is_test, order_number, status, courier_status, mode, slot, total, items, payment_method, payment_status, customer_name, discount, promo_code, delivery_fee, service_fee, table_label, restaurants(slug, config)")
       .eq("id", data.id)
       .maybeSingle();
     if (!row) return row;
@@ -281,6 +285,7 @@ export const createKioskOrder = createServerFn({ method: "POST" })
       if (data.payment_method === "counter" && !ft.borne_cash_payment) throw new Error("Le paiement au comptoir n'est pas accepté sur la borne."); }
     const cardOnly = kioskCardOnly(r);
     const qr = data.payment_method === "qr";
+    if ((qr || cardOnly) && !legacyPaymentsSupported(r)) throw new Error("Les paiements connectés ne sont pas encore disponibles dans cette devise.");
     if (qr) {
       // QR code : le client paie sur son téléphone (Mollie/Stripe), validation automatique après paiement.
       if (r.config.payments?.qr !== true) throw new Error("Le paiement par QR code n'est pas proposé.");
@@ -310,7 +315,7 @@ export const createKioskOrder = createServerFn({ method: "POST" })
     const subtotal = Math.round(items.reduce((s, i) => s + i.total, 0) * 100) / 100;
     if (data.mode === "pickup") {
       const min = pickupMinOrder(r);
-      if (min != null && subtotal < min) throw new Error(`Minimum de commande à emporter : ${min} €`);
+      if (min != null && subtotal < min) throw new Error(`Minimum de commande à emporter : ${formatMoney(min, currencyOf(r))}`);
     }
     const { resolveDiscount } = await import("./promo.server");
     const promo = await resolveDiscount(supabaseAdmin, r, subtotal, { code: data.promo_code, channel: "kiosk", lines: items, categoryIdOf: categoryIdOf(catalog) });
@@ -320,6 +325,7 @@ export const createKioskOrder = createServerFn({ method: "POST" })
       .from("orders")
       .insert({
         restaurant_id: r.id,
+        currency: currencyOf(r),
         customer_name: data.customer_name || "Borne",
         phone: "-",
         mode: data.mode,

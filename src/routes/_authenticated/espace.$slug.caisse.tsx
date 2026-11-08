@@ -1,3 +1,5 @@
+import { currencyOf, currencyUnit } from "@/lib/money";
+import { MoneyProvider, useMoney } from "@/lib/money-context";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -20,7 +22,7 @@ import { printPosReceipt, printPosReport, type PosReportTicket } from "@/lib/pos
 import type { TicketShop } from "@/lib/ticket";
 import { getCatalog } from "@/lib/catalogs";
 import { withOptions, loadOptionData, EMPTY_OPTIONS } from "@/lib/menu-options";
-import { euro, unitPrice, type Selections } from "@/lib/menu";
+import { unitPrice, type Selections } from "@/lib/menu";
 import { cn } from "@/lib/utils";
 import { directDiscount, paymentRemaining, posMonthlyCsv, type PosPayment, type PosDiscount } from "@/lib/pos-register";
 import { getParkedCarts, parkPosCart, recallPosCart, addPosCashMovement, voidPosSale } from "@/lib/pos-operations.functions";
@@ -53,10 +55,11 @@ function Page() {
       <Button asChild variant="secondary"><Link to="/espace/$slug" params={{ slug }}>Retour</Link></Button>
     </main>
   );
-  return <Register restaurantId={r.id} name={r.name} slug={slug} restaurant={r} />;
+  return <MoneyProvider currency={currencyOf(r)}><Register restaurantId={r.id} name={r.name} slug={slug} restaurant={r} /></MoneyProvider>;
 }
 
 function Register({ restaurantId, name, slug, restaurant }: { restaurantId: string; name: string; slug: string; restaurant: Restaurant }) {
+  const euro = useMoney();
   const qc = useQueryClient();
   const state = useServerFn(getPosState);
   const open = useServerFn(openPosSession);
@@ -69,7 +72,8 @@ function Register({ restaurantId, name, slug, restaurant }: { restaurantId: stri
   const { data: st } = useQuery({ queryKey: ["pos-state", restaurantId], queryFn: () => state({ data: { restaurantId } }), refetchInterval: 15000 });
   const { data: options } = useQuery({ queryKey: ["pos-options", restaurantId], queryFn: () => loadOptionData(supabase, restaurantId) });
   const catalog = useMemo(() => withOptions(getCatalog(restaurant), options ?? EMPTY_OPTIONS), [restaurant, options]);
-  const shop: TicketShop = { name, address: restaurant.address, phone: restaurant.phone, slug, customDomains: restaurant.config.customDomains, catalog, optionData: options, legal: restaurant.legal };
+  const unit = currencyUnit(currencyOf(restaurant));
+  const shop: TicketShop = { currency: currencyOf(restaurant), name, address: restaurant.address, phone: restaurant.phone, slug, customDomains: restaurant.config.customDomains, catalog, optionData: options, legal: restaurant.legal };
   const [cat, setCat] = useState<string>("");
   const [lines, setLines] = useState<Line[]>([]);
   const [item, setItem] = useState<string | null>(null);
@@ -165,7 +169,7 @@ function Register({ restaurantId, name, slug, restaurant }: { restaurantId: stri
     <main className="mx-auto max-w-xl space-y-6 p-6">
       <Crumbs slug={slug} page="Caisse" />
       <h1 className="text-2xl font-semibold">Ouvrir la caisse</h1>
-      <div className="space-y-2"><Label htmlFor="float">Fond de caisse (€)</Label><Input id="float" inputMode="decimal" className="h-14 text-lg" value={float} onChange={(e) => setFloat(e.target.value)} /></div>
+      <div className="space-y-2"><Label htmlFor="float">Fond de caisse ({unit})</Label><Input id="float" inputMode="decimal" className="h-14 text-lg" value={float} onChange={(e) => setFloat(e.target.value)} /></div>
       <Button className="min-h-14 w-full text-lg" onClick={async () => { try { await open({ data: { restaurantId, openingFloat: Number(float.replace(",", ".")) || 0 } }); refresh(); } catch (e) { toast.error((e as Error).message); } }}><Unlock />Ouvrir la caisse</Button>
       {journalControls}
       {reports}
@@ -218,7 +222,7 @@ function Register({ restaurantId, name, slug, restaurant }: { restaurantId: stri
                 <Button size="icon" variant="secondary" aria-label="Moins" onClick={() => setLines((p) => p.flatMap((x) => x.key !== l.key ? [x] : x.qty > 1 ? [{ ...x, qty: x.qty - 1 }] : []))}><Minus /></Button>
                 <span className="w-6 text-center">{l.qty}</span>
                 <Button size="icon" variant="secondary" aria-label="Plus" onClick={() => setLines((p) => p.map((x) => x.key === l.key ? { ...x, qty: x.qty + 1 } : x))}><Plus /></Button>
-                <span className="w-16 text-right text-sm font-semibold">{euro(l.total)}</span>
+                <span className="min-w-16 shrink-0 text-right text-sm font-semibold">{euro(l.total)}</span>
               </li>
             ))}
           </ul>
@@ -247,7 +251,7 @@ function Register({ restaurantId, name, slug, restaurant }: { restaurantId: stri
           <DialogHeader><DialogTitle>Encaisser {euro(total)}</DialogTitle></DialogHeader>
           <p className="text-xl font-semibold">Reste à payer : {euro(remaining)}</p>
           {payments.map((p,i)=><div key={i} className="flex justify-between gap-2"><span>{POS_TENDER_LABELS[p.method]} · {euro(p.amount)}{p.change ? ` · rendu ${euro(p.change)}` : ""}</span><Button size="icon" variant="ghost" aria-label={`Retirer règlement ${i+1}`} onClick={()=>setPayments((ps)=>ps.filter((_,j)=>j!==i))}><Trash2 /></Button></div>)}
-          <Label htmlFor="part">Part à régler (€)</Label><Input id="part" inputMode="decimal" value={part} placeholder={remaining.toFixed(2)} onChange={(e)=>setPart(e.target.value)} />
+          <Label htmlFor="part">Part à régler ({unit})</Label><Input id="part" inputMode="decimal" value={part} placeholder={remaining.toFixed(2)} onChange={(e)=>setPart(e.target.value)} />
           <div className="grid grid-cols-3 gap-2">
             {([["cash", Banknote], ["card", CreditCard], ["meal_voucher", Ticket]] as const).map(([m, Icon]) => (
               <Button key={m} variant={method === m ? "default" : "secondary"} className="h-20 flex-col" onClick={() => setMethod(m)}><Icon />{POS_TENDER_LABELS[m]}</Button>
@@ -255,9 +259,9 @@ function Register({ restaurantId, name, slug, restaurant }: { restaurantId: stri
           </div>
           {method === "cash" && (
             <div className="space-y-2">
-              <Label htmlFor="given">Montant remis (€)</Label>
+              <Label htmlFor="given">Montant remis ({unit})</Label>
               <Input id="given" inputMode="decimal" className="h-14 text-lg" placeholder={total.toFixed(2)} value={given} onChange={(e) => setGiven(e.target.value)} />
-              <div className="grid grid-cols-3 gap-2"><Button variant="secondary" className="min-h-12" onClick={() => setGiven(partN.toFixed(2))}>Compte juste</Button>{CASH_QUICK_AMOUNTS.map((b) => <Button key={b} variant="secondary" className="min-h-12" onClick={() => setGiven(String(b))}>{b} €</Button>)}</div>
+              <div className="grid grid-cols-3 gap-2"><Button variant="secondary" className="min-h-12" onClick={() => setGiven(partN.toFixed(2))}>Compte juste</Button>{CASH_QUICK_AMOUNTS.map((b) => <Button key={b} variant="secondary" className="min-h-12" onClick={() => setGiven(String(b))}>{euro(b)}</Button>)}</div>
               <p className={cn("text-lg font-semibold", change == null && "text-destructive")}>{change == null ? "Montant insuffisant" : `Rendu : ${euro(change)}`}</p>
             </div>
           )}
@@ -267,16 +271,16 @@ function Register({ restaurantId, name, slug, restaurant }: { restaurantId: stri
         </DialogContent>
       </Dialog>
 
-      <Dialog open={discountOpen} onOpenChange={setDiscountOpen}><DialogContent><DialogHeader><DialogTitle>Remise comptoir</DialogTitle></DialogHeader><div className="flex gap-2">{(["percent","fixed"] as const).map((t)=><Button key={t} variant={t===discountType ? "default" : "secondary"} onClick={()=>setDiscountType(t)}>{t==="percent" ? "%" : "€"}</Button>)}</div><Label htmlFor="discount-value">Valeur de la remise</Label><Input id="discount-value" inputMode="decimal" value={discountValue} onChange={(e)=>setDiscountValue(e.target.value)} /><Label htmlFor="discount-reason">Motif de remise</Label><Input id="discount-reason" value={discountReason} onChange={(e)=>setDiscountReason(e.target.value)} /><Button className="min-h-12" onClick={()=>{try{const d:PosDiscount={type:discountType,value:Number(discountValue.replace(",",".")),reason:discountReason};directDiscount(subtotal,d);setDiscount(d);setDiscountOpen(false);}catch(e){toast.error((e as Error).message);}}}>Appliquer la remise</Button><Button variant="ghost" onClick={()=>{setDiscount(null);setDiscountOpen(false);}}>Retirer la remise</Button></DialogContent></Dialog>
+      <Dialog open={discountOpen} onOpenChange={setDiscountOpen}><DialogContent><DialogHeader><DialogTitle>Remise comptoir</DialogTitle></DialogHeader><div className="flex gap-2">{(["percent","fixed"] as const).map((t)=><Button key={t} variant={t===discountType ? "default" : "secondary"} onClick={()=>setDiscountType(t)}>{t==="percent" ? "%" : unit}</Button>)}</div><Label htmlFor="discount-value">Valeur de la remise</Label><Input id="discount-value" inputMode="decimal" value={discountValue} onChange={(e)=>setDiscountValue(e.target.value)} /><Label htmlFor="discount-reason">Motif de remise</Label><Input id="discount-reason" value={discountReason} onChange={(e)=>setDiscountReason(e.target.value)} /><Button className="min-h-12" onClick={()=>{try{const d:PosDiscount={type:discountType,value:Number(discountValue.replace(",",".")),reason:discountReason};directDiscount(subtotal,d);setDiscount(d);setDiscountOpen(false);}catch(e){toast.error((e as Error).message);}}}>Appliquer la remise</Button><Button variant="ghost" onClick={()=>{setDiscount(null);setDiscountOpen(false);}}>Retirer la remise</Button></DialogContent></Dialog>
       <Dialog open={parkOpen} onOpenChange={setParkOpen}><DialogContent className="max-h-[85dvh] overflow-y-auto"><DialogHeader><DialogTitle>Paniers en attente</DialogTitle></DialogHeader>{lines.length>0 && <><Label htmlFor="park-label">Nom du ticket en attente</Label><Input id="park-label" value={parkLabel} placeholder="Client suivant" onChange={(e)=>setParkLabel(e.target.value)} /><Button className="min-h-12" disabled={busy || !!discountError} onClick={async()=>{setBusy(true);try{await park({data:{restaurantId,requestId:crypto.randomUUID(),label:parkLabel||"Ticket en attente",draft:{mode,lines:lines.map(({itemId,qty,sel})=>({itemId,qty,sel})),discount}}});clearCart();setParkLabel("");setParkOpen(false);qc.invalidateQueries({queryKey:["pos-parked",restaurantId]});}catch(e){toast.error((e as Error).message);}finally{setBusy(false);}}}>Mettre ce panier en attente</Button></>}{parked?.map((p)=><div key={p.id} className="flex items-center justify-between gap-2 border-b border-border py-3"><span>{p.label}</span><Button variant="secondary" className="min-h-12" disabled={lines.length>0 || busy} onClick={async()=>{try{const d=await recall({data:{restaurantId,id:p.id}}) as unknown as {lines:Omit<Line,"key">[];mode:"pickup"|"dine_in";discount:PosDiscount|null};clearCart();setLines(d.lines.map((l)=>({...l,key:l.itemId+JSON.stringify(l.sel)})));setMode(d.mode);setDiscount(d.discount);setParkOpen(false);qc.invalidateQueries({queryKey:["pos-parked",restaurantId]});}catch(e){toast.error((e as Error).message);}}}>Reprendre</Button></div>)}</DialogContent></Dialog>
-      <Dialog open={movement} onOpenChange={setMovement}><DialogContent><DialogHeader><DialogTitle>Mouvement d'espèces</DialogTitle></DialogHeader><div className="flex gap-2">{(["in","out"] as const).map((k)=><Button key={k} variant={movementKind===k ? "default" : "secondary"} onClick={()=>setMovementKind(k)}>{k==="in" ? "Entrée" : "Sortie"}</Button>)}</div><Label htmlFor="movement-amount">Montant du mouvement (€)</Label><Input id="movement-amount" inputMode="decimal" value={movementAmount} onChange={(e)=>setMovementAmount(e.target.value)} /><Label htmlFor="movement-reason">Motif du mouvement</Label><Input id="movement-reason" value={movementReason} onChange={(e)=>setMovementReason(e.target.value)} /><Button className="min-h-12" disabled={busy || movementReason.trim().length<3} onClick={async()=>{setBusy(true);try{await moveCash({data:{restaurantId,requestId:crypto.randomUUID(),kind:movementKind,amount:Number(movementAmount.replace(",",".")),reason:movementReason}});setMovement(false);setMovementAmount("");setMovementReason("");refresh();}catch(e){toast.error((e as Error).message);}finally{setBusy(false);}}}>Enregistrer le mouvement</Button>{st.live?.events?.map((e,i)=><p key={i} className="text-sm">{e.kind} · {euro(e.amount)} · {e.reason}</p>)}</DialogContent></Dialog>
+      <Dialog open={movement} onOpenChange={setMovement}><DialogContent><DialogHeader><DialogTitle>Mouvement d'espèces</DialogTitle></DialogHeader><div className="flex gap-2">{(["in","out"] as const).map((k)=><Button key={k} variant={movementKind===k ? "default" : "secondary"} onClick={()=>setMovementKind(k)}>{k==="in" ? "Entrée" : "Sortie"}</Button>)}</div><Label htmlFor="movement-amount">Montant du mouvement ({unit})</Label><Input id="movement-amount" inputMode="decimal" value={movementAmount} onChange={(e)=>setMovementAmount(e.target.value)} /><Label htmlFor="movement-reason">Motif du mouvement</Label><Input id="movement-reason" value={movementReason} onChange={(e)=>setMovementReason(e.target.value)} /><Button className="min-h-12" disabled={busy || movementReason.trim().length<3} onClick={async()=>{setBusy(true);try{await moveCash({data:{restaurantId,requestId:crypto.randomUUID(),kind:movementKind,amount:Number(movementAmount.replace(",",".")),reason:movementReason}});setMovement(false);setMovementAmount("");setMovementReason("");refresh();}catch(e){toast.error((e as Error).message);}finally{setBusy(false);}}}>Enregistrer le mouvement</Button>{st.live?.events?.map((e,i)=><p key={i} className="text-sm">{e.kind} · {euro(e.amount)} · {e.reason}</p>)}</DialogContent></Dialog>
       <Dialog open={!!voidOrder} onOpenChange={(v)=>{if(!v)setVoidOrder(null);}}><DialogContent><DialogHeader><DialogTitle>Annuler ticket n°{voidOrder?.pos_receipt_number}</DialogTitle></DialogHeader><p className="text-sm text-muted-foreground">Annulation intégrale avant clôture. Rendez les espèces au client ; pour la CB ou les titres, effectuez l'annulation sur le terminal. Aucun remboursement bancaire automatique.</p><Label htmlFor="void-reason">Motif d'annulation</Label><Input id="void-reason" value={voidReason} onChange={(e)=>setVoidReason(e.target.value)} /><Button variant="destructive" className="min-h-12" disabled={busy || voidReason.trim().length<3} onClick={async()=>{if(!voidOrder)return;setBusy(true);try{await voidSale({data:{restaurantId,orderId:voidOrder.id,requestId:crypto.randomUUID(),reason:voidReason}});setVoidOrder(null);setVoidReason("");refresh();qc.invalidateQueries({queryKey:["pos-receipts",restaurantId]});toast.success("Vente annulée et motif conservé.");}catch(e){toast.error((e as Error).message);}finally{setBusy(false);}}}>Confirmer l'annulation</Button></DialogContent></Dialog>
 
       <Dialog open={closing} onOpenChange={setClosing}>
         <DialogContent>
           <DialogHeader><DialogTitle>Clôturer la caisse (ticket Z)</DialogTitle></DialogHeader>
           {st.live && <p className="text-sm">Espèces attendues : <b>{euro(st.live.expectedCash)}</b> (fond {euro(st.live.openingFloat)} + ventes espèces)</p>}
-          <Label htmlFor="counted">Espèces comptées (€)</Label>
+          <Label htmlFor="counted">Espèces comptées ({unit})</Label>
           <Input id="counted" inputMode="decimal" className="h-14 text-lg" value={counted} onChange={(e) => setCounted(e.target.value)} />
           {counted !== "" && st.live && <p>Écart : <b>{euro(Number(counted.replace(",", ".")) - st.live.expectedCash)}</b></p>}
           <Button className="min-h-14" disabled={busy || counted === "" || !Number.isFinite(Number(counted.replace(",", ".")))} onClick={async () => { setBusy(true); try { const res = await close({ data: { restaurantId, countedCash: Number(counted.replace(",", ".")) } }); setZ(res); setClosing(false); setCounted(""); const t: PosReportTicket = { kind: "Z", number: res.z_number, openedAt: res.opened_at, at: res.closed_at, report: res.report }; setReportTicket(t); refresh(); qc.invalidateQueries({ queryKey: ["pos-closures", restaurantId] }); await printReport(t); } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); } }}>Clôturer et imprimer le Z</Button>
@@ -287,6 +291,7 @@ function Register({ restaurantId, name, slug, restaurant }: { restaurantId: stri
 }
 
 function ReportView({ report: r }: { report: ZReport }) {
+  const euro = useMoney();
   return (
     <section className="space-y-2 py-3 text-sm">
       <p>Ventes : {r.orders} · Total {euro(r.total)}</p>

@@ -1,10 +1,11 @@
+import { useMoney } from "@/lib/money-context";
 import { useEffect, useState } from "react";
 import { Minus, Plus, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { activeGroups, euro, groupCost, REMOVE_KEY, removableChoices, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
+import { activeGroups, groupCost, REMOVE_KEY, removableChoices, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
 import { useCart } from "@/lib/cart";
 import { itemImage } from "@/lib/menu-images";
 import { AllergenInfo } from "@/components/Allergens";
@@ -20,6 +21,7 @@ export function ItemDialog({ item, onClose }: { item: MenuItem | null; onClose: 
 }
 
 export function ItemConfigurator({ item, onClose, catalog, onAdd, paused = false }: { item: MenuItem | null; onClose: () => void; catalog: Catalog; onAdd: (id: string, selections: Selections, qty: number) => void; paused?: boolean }) {
+  const euro = useMoney();
   const now = useMenuClock();
   const [sel, setSel] = useState<Selections>({});
   const [qty, setQty] = useState(1);

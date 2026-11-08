@@ -1,4 +1,5 @@
 // QR code de paiement sur la borne (paiement sur le téléphone du client).
+import { legacyPaymentsSupported } from "../money";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { admin, assertOrdersOpen, markPaid } from "./shared";
@@ -8,6 +9,9 @@ import { handleMolliePayment, mollieCall, mollieForRestaurant } from "./mollie";
 
 /** Prestataire en ligne utilisable pour le QR borne : Mollie en priorité, sinon Stripe. */
 export async function qrProvider(restaurantId: string): Promise<"mollie" | "stripe" | null> {
+  const db = await admin();
+  const { data: r } = await db.from("restaurants").select("config").eq("id", restaurantId).maybeSingle();
+  if (!r || !legacyPaymentsSupported(r)) return null;
   if (await mollieForRestaurant(restaurantId)) return "mollie";
   if (await stripeForRestaurant(restaurantId)) return "stripe";
   return null;

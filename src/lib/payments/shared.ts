@@ -1,5 +1,7 @@
 // Socle commun des prestataires de paiement (accès service, lecture des clés, validation commande).
 
+import { legacyPaymentsSupported } from "../money";
+
 export const PROVIDERS = ["sumup", "stripe", "paypal", "lyra", "mollie"] as const;
 export type Provider = (typeof PROVIDERS)[number];
 
@@ -28,6 +30,7 @@ export const PUBLIC_FIELDS = ["merchantCode", "publishableKey", "mode", "siteId"
 export async function assertOrdersOpen(restaurantId: string) {
   const db = await admin();
   const { data } = await db.from("restaurants").select("config").eq("id", restaurantId).maybeSingle();
+  if (data && !legacyPaymentsSupported(data)) throw new Error("Les paiements connectés ne sont pas encore disponibles dans cette devise.");
   if (!data || (data.config as { ordersPaused?: boolean } | null)?.ordersPaused === true) throw new Error("Le restaurant ne prend pas de commandes pour le moment");
 }
 

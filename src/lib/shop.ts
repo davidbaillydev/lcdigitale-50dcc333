@@ -23,6 +23,8 @@ export type Restaurant = {
   opening: Record<string, [number, number][]>;
   delivery: DeliveryConfig;
   config: {
+    country?: import("./money").zCountry;
+    currency?: import("./money").Currency;
     slotMinutes?: number; lead?: { pickup: number; delivery: number }; hoursLabel?: string; tagline?: string;
     /** Domaines personnalisés (ex. commande.monresto.fr) : leur racine ouvre la page du restaurant. */
     customDomains?: string[];

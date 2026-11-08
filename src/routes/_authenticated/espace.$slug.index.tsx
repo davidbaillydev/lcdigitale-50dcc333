@@ -31,7 +31,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useStaff } from "@/hooks/use-staff";
 import { Button } from "@/components/ui/button";
 import { allergenLabel } from "@/lib/allergens";
-import { euro } from "@/lib/menu";
+import { currencyOf, formatMoney } from "@/lib/money";
 import { fmtTime, timingOf, type Restaurant } from "@/lib/shop";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -58,6 +58,7 @@ export const Route = createFileRoute("/_authenticated/espace/$slug/")({
 });
 
 type Order = {
+  currency?: import("@/lib/money").Currency;
   is_test?: boolean;
   id: string; order_number: number; customer_name: string; phone: string; mode: string; address: string | null; city: string | null;
   slot: string; items: { name: string; qty: number; details: string[]; allergens?: string[]; size?: { name: string }; selected_options?: { id: string; name: string; price: number; group?: string }[] }[]; notes: string | null; total: number;
@@ -109,6 +110,7 @@ function Kitchen() {
   const { slug } = Route.useParams();
   const { loading, user, restaurants } = useStaff();
   const restaurant = restaurants.find((r) => r.slug === slug);
+  const euro = (n: number) => formatMoney(n, currencyOf({ config: restaurant?.config as { currency?: string } | null }));
   const isStaff = !!restaurant;
   const isAdmin = restaurant?.role === "agency" || restaurant?.role === "manager";
   const rid = restaurant?.id;
@@ -517,7 +519,7 @@ function Kitchen() {
             {orders.filter((o) => o.status === "pending_approval").map((o) => (
               <li key={o.id} className="kds-incoming rounded-xl border border-primary p-3">
                 <p className="text-xl font-bold">Nouvelle commande {o.table_label ? `Table ${o.table_label}` : o.room_label ? `Chambre ${o.room_label}` : "libre-service"}</p>
-                <p className="font-semibold">N° {o.order_number} · {o.customer_name} · {euro(Number(o.total))}</p>
+                <p className="font-semibold">N° {o.order_number} · {o.customer_name} · {formatMoney(Number(o.total), o.currency ?? "EUR")}</p>
                 <p className="text-sm text-muted-foreground">{o.items.map((i) => `${i.qty}× ${i.name}`).join(", ")}</p>
                 <div className="mt-2 flex gap-2">
                   <Button className="min-h-12 flex-1" onClick={() => move(o, "accepted")}><Check /> Valider & Envoyer en cuisine</Button>
@@ -556,7 +558,7 @@ function Kitchen() {
                       {o.items.map((it, i) => (
                         <li key={i}>
                           <p className="text-lg font-semibold"><span className="text-primary">{it.qty}×</span> {it.size ? <>{it.name.toUpperCase()} <strong className="font-black">[{it.size.name.toUpperCase()}]</strong></> : it.name}</p>
-                          {ticketOptions(it, { name: "", optionData: ticketOptionData }).map((d, j) => <p key={j} className="pl-5 text-sm font-semibold">{d}</p>)}
+                          {ticketOptions(it, { name: "", currency: o.currency ?? "EUR", optionData: ticketOptionData }).map((d, j) => <p key={j} className="pl-5 text-sm font-semibold">{d}</p>)}
                           {!!it.allergens?.length && <p className="pl-5 text-sm font-semibold text-destructive">⚠ {it.allergens.map(allergenLabel).join(", ")}</p>}
                         </li>
                       ))}
@@ -565,7 +567,7 @@ function Kitchen() {
                     {o.mode === "delivery" && <div className="mt-2 space-y-2"><p className="text-sm">{o.address}{o.city ? `, ${o.city}` : ""}</p>{o.courier_status === "en_route" && <p role="status" className="flex items-center gap-2 rounded-md bg-accent p-3 font-semibold text-accent-foreground"><Bike className="h-5 w-5" />En livraison</p>}<DriverSelect orderId={o.id} driverId={o.driver_id ?? null} drivers={drivers} courierStatus={o.courier_status ?? null} /></div>}
                     <div className="mt-2 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-start gap-2 break-words text-sm text-muted-foreground">
                       {o.source === "kiosk" ? <span /> : <a href={`tel:${o.phone}`} className="flex items-center gap-1"><Phone className="h-3 w-3" />{o.phone}</a>}
-                      <span>{euro(Number(o.total))} · {o.is_test ? "CB Test (Admin) · Aucun encaissement" : o.payment_method === "online" && o.payment_status === "paid" ? `Payé en ligne (${String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("mollie:") ? "Mollie" : String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("paypal:") ? "PayPal" : String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("lyra:") ? "Lyra" : "Stripe"})` : o.payment_status === "paid" ? "payé (terminal)" : o.payment_method === "online" ? "payé" : o.payment_method === "card_terminal" ? "CB au comptoir" : o.payment_method === "counter" ? "espèces/TR au comptoir" : "à encaisser"}</span>
+                      <span>{formatMoney(Number(o.total), o.currency ?? "EUR")} · {o.is_test ? "CB Test (Admin) · Aucun encaissement" : o.payment_method === "online" && o.payment_status === "paid" ? `Payé en ligne (${String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("mollie:") ? "Mollie" : String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("paypal:") ? "PayPal" : String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("lyra:") ? "Lyra" : "Stripe"})` : o.payment_status === "paid" ? "payé (terminal)" : o.payment_method === "online" ? "payé" : o.payment_method === "card_terminal" ? "CB au comptoir" : o.payment_method === "counter" ? "espèces/TR au comptoir" : "à encaisser"}</span>
                     </div>
                     <div className="mt-3 flex gap-2">
                       {c.s === "ready" && o.mode === "delivery" ? (

@@ -1,3 +1,4 @@
+import { formatMoney } from "./money";
 import { POS_TENDER_LABELS, type ZReport } from "./pos-register";
 import { getTicketWidth, printTickets, type TicketOrder, type TicketShop, type TicketWidth } from "./ticket";
 import { cashDrawerPulse, reportEscpos, ticketEscpos } from "./escpos";
@@ -32,7 +33,7 @@ export function printPosReceipt(order: TicketOrder, shop: TicketShop, reprint = 
 export type PosReportTicket = { kind: "X" | "Z"; number?: number | undefined; openedAt: string; at: string; report: ZReport };
 export function posReportLines(shop: TicketShop, ticket: PosReportTicket): string[] {
   const r = ticket.report;
-  const eur = (n: number) => n.toFixed(2).replace(".", ",") + " €";
+  const eur = (n: number) => formatMoney(n, shop.currency ?? "EUR");
   const date = (d: string) => new Date(d).toLocaleString("fr-FR", { timeZone: "Europe/Paris" });
   return [shop.name, ...(shop.address ? [shop.address] : []), `TICKET ${ticket.kind}${ticket.number != null ? ` N° ${ticket.number}` : " — INTERMÉDIAIRE"}`, `Ouverture : ${date(ticket.openedAt)}`, `${ticket.kind === "Z" ? "Clôture" : "Lecture"} : ${date(ticket.at)}`, "--------------------------------", `Ventes : ${r.orders} · Annulées : ${r.cancelled}`, `Total TTC : ${eur(r.total)}`, ...Object.entries(r.byMethod).map(([m, v]) => `${POS_TENDER_LABELS[m as keyof typeof POS_TENDER_LABELS]} : ${v.count} / ${eur(v.amount)}`), `Remises : ${eur(r.discountTotal ?? 0)}`, `Annulations : ${eur(r.cancelledAmount ?? 0)}`, `Entrées espèces : ${eur(r.cashIn ?? 0)}`, `Sorties espèces : ${eur(r.cashOut ?? 0)}`, ...(r.vat ?? []).map((v) => `TVA ${v.rate}% : HT ${eur(v.ht)} / TVA ${eur(v.vat)} / TTC ${eur(v.ttc)}`), ...(r.events ?? []).map((e) => `${date(e.at)} ${e.kind} ${eur(e.amount)} : ${e.reason}`), `Fond de caisse : ${eur(r.openingFloat)}`, `Espèces attendues : ${eur(r.expectedCash)}`, ...(r.countedCash == null ? ["Caisse toujours ouverte"] : [`Espèces comptées : ${eur(r.countedCash)}`, `Écart espèces : ${eur(r.cashDifference ?? 0)}`]), "--------------------------------", "Caisse non certifiée NF525"];
 }

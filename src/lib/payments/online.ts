@@ -1,4 +1,5 @@
 // Paiement en ligne du site : démarrage, disponibilité et confirmation multi-prestataires.
+import { legacyPaymentsSupported } from "../money";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { platformFeeFor, type PlatformFeeChannel } from "../platform-fee";
@@ -9,7 +10,7 @@ import { handleMolliePayment, mollieCall, mollieForRestaurant } from "./mollie";
 import { handleLyraResult, lyraForRestaurant, lyraSign } from "./lyra";
 
 /** Prépare le paiement en ligne choisi pour une commande déjà enregistrée (appelé par createOrder). */
-export async function startOnlinePayment(provider: "paypal" | "lyra" | "mollie", o: { id: string; order_number: number; total: number; restaurant_id: string; email?: string | null }, restaurantName: string, returnBase: string, channel: PlatformFeeChannel) {
+export async function startOnlinePayment(provider: "paypal" | "lyra" | "mollie", o: { id: string; order_number: number; total: number; restaurant_id: string; currency?: string; email?: string | null }, restaurantName: string, returnBase: string, channel: PlatformFeeChannel) {
   await assertOrdersOpen(o.restaurant_id);
   const db = await admin();
   const amount = Math.round(Number(o.total) * 100);
@@ -71,8 +72,8 @@ export const onlinePaymentInfo = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ slug: z.string().max(40) }).parse(d))
   .handler(async ({ data }) => {
     const db = await admin();
-    const { data: r } = await db.from("restaurants").select("id").eq("slug", data.slug).eq("active", true).maybeSingle();
-    if (!r) return { stripe: null as string | null, paypal: false, lyra: false, mollie: false };
+    const { data: r } = await db.from("restaurants").select("id, config").eq("slug", data.slug).eq("active", true).maybeSingle();
+    if (!r || !legacyPaymentsSupported(r)) return { stripe: null as string | null, paypal: false, lyra: false, mollie: false };
     const [s, p, l, m] = await Promise.all([stripeForRestaurant(r.id), paypalForRestaurant(r.id), lyraForRestaurant(r.id), mollieForRestaurant(r.id)]);
     return { stripe: s?.publishable ?? null, paypal: !!p, lyra: !!l, mollie: !!m };
   });

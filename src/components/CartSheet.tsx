@@ -1,12 +1,14 @@
+import { useMoney } from "@/lib/money-context";
 import { Link } from "@tanstack/react-router";
 import { Minus, Plus, ShoppingBag } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/lib/cart";
 import { CartSuggestions } from "@/components/CartSuggestions";
-import { euro, selectedExtras, selectionLines, unitPrice } from "@/lib/menu";
+import { selectedExtras, selectionLines, unitPrice } from "@/lib/menu";
 
 export function CartLines() {
+  const euro = useMoney();
   const { lines, setQty, catalog } = useCart();
   if (!lines.length) return <p className="py-10 text-center text-muted-foreground">Votre panier est vide.</p>;
   return (
@@ -18,7 +20,7 @@ export function CartLines() {
           <li key={l.key} className="flex gap-3 py-3">
             <div className="min-w-0 flex-1">
               <p className="font-semibold">{item.name}{selectedExtras(item, l.sel).size ? ` — Taille ${selectedExtras(item, l.sel).size!.name}` : ""}</p>
-              {selectionLines(item, l.sel).map((d) => (
+              {selectionLines(item, l.sel, euro).map((d) => (
                 <p key={d} className="text-xs text-muted-foreground">{d}</p>
               ))}
               <p className="mt-1 text-sm text-primary">{euro(unitPrice(item, l.sel) * l.qty)}</p>
@@ -36,6 +38,7 @@ export function CartLines() {
 }
 
 export function CartSheet() {
+  const euro = useMoney();
   const { count, subtotal, restaurant } = useCart();
   return (
     <Sheet>

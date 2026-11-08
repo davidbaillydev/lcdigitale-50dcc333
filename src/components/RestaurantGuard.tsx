@@ -1,3 +1,5 @@
+import { MoneyProvider } from "@/lib/money-context";
+import { currencyOf } from "@/lib/money";
 import { useEffect, type ReactNode } from "react";
 import { Link, Navigate, useParams, useRouterState } from "@tanstack/react-router";
 import { Loader2, ShieldAlert } from "lucide-react";
@@ -37,7 +39,7 @@ export function RestaurantGuard({ level, children }: { level: Level; children: R
   const r = restaurants.find((x) => x.slug === slug);
   if (!r || !slug) return <Denied message="Ce restaurant ne fait pas partie de vos établissements." />;
   if (RANK[r.role] < NEED[level]) return <Navigate to="/espace/$slug" params={{ slug }} replace />;
-  return <>{children}</>;
+  return <MoneyProvider currency={currencyOf({ config: r.config as { currency?: string } | null })}>{children}</MoneyProvider>;
 }
 
 /** Garde des pages multi-restaurants (factures, tableau de bord) : interdites aux comptes Cuisine seuls. */

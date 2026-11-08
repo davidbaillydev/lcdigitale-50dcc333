@@ -1,3 +1,4 @@
+import { useMoney } from "@/lib/money-context";
 import { safeSession } from "@/lib/safe-storage";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
@@ -12,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useCart } from "@/lib/cart";
-import { euro, unitPrice } from "@/lib/menu";
+import { unitPrice } from "@/lib/menu";
 import { promoLines } from "@/lib/promo";
 import { useTable } from "@/lib/table";
 import { findZone, zoneFee, type GeoZone } from "@/lib/geo";
@@ -49,6 +50,7 @@ export const Route = createFileRoute("/$slug/commande")({
 });
 
 function Checkout() {
+  const euro = useMoney();
   const { lines, subtotal, clear, restaurant, qr, track, catalog } = useCart();
   useEffect(() => { if (lines.length) track("checkout_started", "Coordonnées & mode de retrait"); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const DELIVERY = restaurant.delivery;
@@ -314,7 +316,7 @@ function Checkout() {
                           <CheckCircle2 className="mt-0.5 h-6 w-6 shrink-0 text-primary" />
                           <div>
                             <p className="font-semibold">Bonne nouvelle : nous livrons à cette adresse !</p>
-                            <p className="text-sm text-muted-foreground">{geo.zone.name} · minimum {geo.zone.minOrder} € · frais {zoneFee(geo.zone, subtotal) ? `${zoneFee(geo.zone, subtotal).toFixed(2)} €` : "offerts"}</p>
+                            <p className="text-sm text-muted-foreground">{geo.zone.name} · minimum {euro(geo.zone.minOrder)} · frais {zoneFee(geo.zone, subtotal) ? euro(zoneFee(geo.zone, subtotal)) : "offerts"}</p>
                           </div>
                         </div>
                       : <div role="alert" className="flex items-start gap-3 rounded-xl border-2 border-destructive bg-destructive/10 p-4">
@@ -337,7 +339,7 @@ function Checkout() {
                           <CheckCircle2 className="mt-0.5 h-6 w-6 shrink-0 text-primary" />
                           <div>
                             <p className="font-semibold">Bonne nouvelle : nous livrons à cette adresse !</p>
-                            <p className="text-sm text-muted-foreground">Minimum {DELIVERY.minOrder} € · frais {deliveryFee(restaurant, subtotal) ? `${deliveryFee(restaurant, subtotal).toFixed(2)} €` : "offerts"}</p>
+                            <p className="text-sm text-muted-foreground">Minimum {euro(DELIVERY.minOrder)} · frais {deliveryFee(restaurant, subtotal) ? euro(deliveryFee(restaurant, subtotal)) : "offerts"}</p>
                           </div>
                         </div>
                       : <div role="alert" className="flex items-start gap-3 rounded-xl border-2 border-destructive bg-destructive/10 p-4">
@@ -400,7 +402,7 @@ function Checkout() {
             {mode === "delivery" && <div className="flex justify-between"><span>Livraison</span><span>{fee ? euro(fee) : "Offerte"}</span></div>}
             <div className="flex justify-between pt-2 text-lg font-bold"><span>Total</span><span className="text-primary">{euro(total)}</span></div>
           </div>
-          {belowMin && <p className="mt-3 text-sm text-destructive">{mode === "pickup" ? `Minimum ${pickupMin} € à emporter.` : `Minimum ${geoZones.length ? (geo?.zone?.minOrder ?? 0) : DELIVERY.minOrder} € en livraison.`}</p>}
+          {belowMin && <p className="mt-3 text-sm text-destructive">{mode === "pickup" ? `Minimum ${euro(pickupMin ?? 0)} à emporter.` : `Minimum ${euro(geoZones.length ? (geo?.zone?.minOrder ?? 0) : DELIVERY.minOrder)} en livraison.`}</p>}
           {payment && online.stripe ? (
             <div className="mt-4">
               <Suspense fallback={<p className="py-6 text-center text-sm text-muted-foreground">Chargement du paiement sécurisé…</p>}>

@@ -2,6 +2,7 @@ type Admin = Awaited<typeof import("@/integrations/supabase/client.server")>["su
 
 import { orderReceivedHtml, restaurantNewOrderHtml, orderConfirmedHtml, refundHtml } from "@/lib/email-templates";
 import { notificationRecipients, directRecipientSchema, type DirectRecipient } from "./order-notification-roles";
+import { currencySchema } from "./money";
 
 const GATEWAY = "https://connector-gateway.lovable.dev/brevo";
 const FALLBACK_ORIGIN = "https://restaurant.lcdigitale.fr";
@@ -17,12 +18,12 @@ export function notificationsOf(config: unknown): NotificationSettings {
 }
 
 type Rest = { slug: string; name: string; email: string | null; brand: { accent?: string } | null; config: unknown; logo_url?: string | null; address?: string | null; city?: string | null; phone?: string | null };
-const ORDER_COLS = "id, restaurant_id, is_test, order_number, status, mode, slot, asap, total, items, notes, email, phone, customer_name, first_name, last_name, address, postal_code, city, table_label, payment_method, payment_status, confirmation_email_at, received_email_at, restaurant_email_at, restaurants(slug, name, email, brand, config, logo_url, address, city, phone)";
+const ORDER_COLS = "id, currency, restaurant_id, is_test, order_number, status, mode, slot, asap, total, items, notes, email, phone, customer_name, first_name, last_name, address, postal_code, city, table_label, payment_method, payment_status, confirmation_email_at, received_email_at, restaurant_email_at, restaurants(slug, name, email, brand, config, logo_url, address, city, phone)";
 
 async function load(admin: Admin, orderId: string) {
   const { data: o } = await admin.from("orders").select(ORDER_COLS).eq("id", orderId).maybeSingle();
   if (!o || o.is_test) return null;
-  return { o, r: o.restaurants as unknown as Rest };
+  return { o: { ...o, currency: currencySchema.parse(o.currency) }, r: o.restaurants as unknown as Rest };
 }
 
 /** Réservation atomique : la colonne n'est posée qu'une fois, même si deux appels arrivent ensemble. */
