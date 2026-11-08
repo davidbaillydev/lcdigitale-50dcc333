@@ -212,6 +212,24 @@ export type Database = {
           },
         ]
       }
+      kiosk_pin_attempts: {
+        Row: {
+          attempts: number
+          caller_key: string
+          window_started_at: string
+        }
+        Insert: {
+          attempts?: number
+          caller_key: string
+          window_started_at?: string
+        }
+        Update: {
+          attempts?: number
+          caller_key?: string
+          window_started_at?: string
+        }
+        Relationships: []
+      }
       menu_stock: {
         Row: {
           item_id: string
@@ -2088,6 +2106,10 @@ export type Database = {
       }
       can_access_restaurant: {
         Args: { _restaurant_id: string; _user_id: string }
+        Returns: boolean
+      }
+      claim_kiosk_pin_attempt: {
+        Args: { _caller_key: string }
         Returns: boolean
       }
       close_pos_register: {

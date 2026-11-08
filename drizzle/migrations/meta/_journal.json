@@ -281,6 +281,13 @@
       "when": 1794137609269,
       "tag": "0039_scope_public_menu_option_reads",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1794140240785,
+      "tag": "0040_scope_kiosk_pin_attempts_to_caller",
+      "breakpoints": true
     }
   ]
 }
