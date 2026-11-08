@@ -2102,6 +2102,17 @@ export type Database = {
         Args: { _confirmation: string; _id: string }
         Returns: Json
       }
+      duplicate_agency_restaurant: {
+        Args: {
+          _copy_brand: boolean
+          _copy_opening: boolean
+          _identity: Json
+          _menu: Json
+          _options: Json
+          _source: string
+        }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
