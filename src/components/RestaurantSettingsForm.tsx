@@ -15,6 +15,8 @@ import { PrinterSetup } from "@/components/PrinterSetup";
 import { OrdersPausedToggle } from "@/components/OrdersPausedToggle";
 import { SettingsGroup, useSettingsGroup, type SettingsGroupKey } from "@/components/SettingsWorkspace";
 
+import { countries, countrySchema, currencySchema, currencyLabels, currencyOf, currencyUnit } from "@/lib/money";
+
 const DAYS = [["1", "Lundi"], ["2", "Mardi"], ["3", "Mercredi"], ["4", "Jeudi"], ["5", "Vendredi"], ["6", "Samedi"], ["0", "Dimanche"]] as const;
 const toHHMM = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
 const fromHHMM = (s: string) => { const [h, m] = s.split(":").map(Number); return (h || 0) * 60 + (m || 0); };
@@ -26,6 +28,7 @@ export function initialSettings(r: Restaurant): Settings {
     opening,
     delivery: { minOrder: r.delivery?.minOrder ?? 20, fee: r.delivery?.fee ?? 2.5, freeFrom: r.delivery?.freeFrom ?? 40, zones: r.delivery?.zones ?? [] },
     config: {
+      country: c.country ?? "FR", currency: currencyOf(r),
       slotMinutes: c.slotMinutes ?? 20, lead: c.lead ?? { pickup: 20, delivery: 40 }, hoursLabel: c.hoursLabel ?? "", tagline: c.tagline,
       autoAccept: c.autoAccept ?? false,
       ordersPaused: c.ordersPaused === true,
@@ -67,10 +70,11 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
   const [confirmOnlineOn, setConfirmOnlineOn] = useState(false);
   const activeGroup = useSettingsGroup();
   const [savedSettings, setSavedSettings] = useState(() => JSON.stringify(initialSettings(restaurant)));
+  const unit = currencyUnit(s.config.currency ?? "EUR");
   const dirty = JSON.stringify(s) !== savedSettings;
   const [testResult, setTestResult] = useState<null | "ok" | "failed">(null);
   const [previewKind, setPreviewKind] = useState<"kitchen" | "receipt">("kitchen");
-  const shop = { name: restaurant.name, address: restaurant.address, phone: restaurant.phone, slug: restaurant.slug, customDomains: restaurant.config.customDomains };
+  const shop = { currency: s.config.currency ?? "EUR", name: restaurant.name, address: restaurant.address, phone: restaurant.phone, slug: restaurant.slug, customDomains: restaurant.config.customDomains };
   const testPrint = async () => {
     setTestResult(null);
     const ok = await printTickets(sampleOrder(), [previewKind], shop, s.config.printing.width, printingFields(s.config.printing));
@@ -90,6 +94,13 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
   return (
     <div className="space-y-5">
       <SettingsGroup name="appearance"><RestaurantCoverUpload restaurant={restaurant} onSaved={onSaved} />{agency && <RestaurantBannerUpload restaurant={restaurant} onSaved={onSaved} />}</SettingsGroup>
+      <Section group="service" title="Pays & devise">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2"><Label htmlFor="restaurant-country">Pays / zone</Label><select id="restaurant-country" className="h-12 w-full rounded-md border border-input bg-background px-3" value={s.config.country ?? "FR"} onChange={(e) => { const country = countrySchema.parse(e.target.value); cfg({ country, currency: countries.find((c) => c.code === country)?.currency ?? "EUR" }); }}>{countries.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}</select></div>
+          <div className="space-y-2"><Label htmlFor="restaurant-currency">Devise</Label><select id="restaurant-currency" className="h-12 w-full rounded-md border border-input bg-background px-3" value={s.config.currency ?? "EUR"} onChange={(e) => cfg({ currency: currencySchema.parse(e.target.value) })}>{currencySchema.options.map((c) => <option key={c} value={c}>{c} — {currencyLabels[c]}</option>)}</select></div>
+        </div>
+        <p className="mt-3 text-sm text-muted-foreground">Les montants ne sont pas convertis automatiquement. La devise ne peut plus changer après la première commande. Hors EUR, les paiements connectés restent indisponibles jusqu’à leur intégration locale.</p>
+      </Section>
       <Section group="service" title="Horaires d'ouverture">
         <div className="space-y-3">
           {DAYS.map(([d, label]) => {
@@ -150,10 +161,10 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
         <Toggle label="Appliquer des frais de service" hint="Ajoutés automatiquement au panier, aux tickets et aux factures (TVA au taux par défaut de l'établissement)." checked={sf.enabled} onChange={(v) => set({ enabled: v })} />
         {sf.enabled && <>
           <div className="my-3 flex flex-wrap gap-2">
-            <Button type="button" variant={sf.kind === "fixed" ? "default" : "secondary"} onClick={() => set({ kind: "fixed" })}>Montant fixe (€)</Button>
+            <Button type="button" variant={sf.kind === "fixed" ? "default" : "secondary"} onClick={() => set({ kind: "fixed" })}>Montant fixe ({unit})</Button>
             <Button type="button" variant={sf.kind === "percent" ? "default" : "secondary"} onClick={() => set({ kind: "percent" })}>Pourcentage du sous-total (%)</Button>
           </div>
-          <div className="max-w-xs"><label htmlFor="sfv" className="text-sm font-medium">{sf.kind === "fixed" ? "Montant TTC (€)" : "Pourcentage (%)"}</label>
+          <div className="max-w-xs"><label htmlFor="sfv" className="text-sm font-medium">{sf.kind === "fixed" ? `Montant TTC (${unit})` : "Pourcentage (%)"}</label>
             <input id="sfv" type="number" min={0} max={100} step="0.01" inputMode="decimal" className="mt-1 h-12 w-full rounded-md border border-input bg-background px-3" value={sf.value} onChange={(e) => set({ value: Math.max(0, Math.min(100, Number(e.target.value) || 0)) })} /></div>
           <p className="mt-3 text-sm font-semibold">Appliquer sur</p>
           {([["delivery", "Livraison"], ["pickup", "À emporter"], ["dine_in", "Sur place (site / QR)"], ["kiosk", "Borne"]] as const).map(([k, l]) => (
@@ -251,12 +262,12 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
       <Section group="delivery" title="Livraison">
         <div className="mb-4 rounded-lg border border-border p-3">
           <Toggle label="Montant minimum de commande à emporter" hint="Par défaut, le client peut commander à emporter quel que soit le montant. Activez cette option pour exiger un minimum." checked={s.config.pickupMinOrder != null} onChange={(v) => cfg({ pickupMinOrder: v ? (s.config.pickupMinOrder ?? 10) : null })} />
-          {s.config.pickupMinOrder != null && <div className="mt-2 max-w-48"><Num id="pickup-min" label="Minimum à emporter (€)" step={0.5} value={s.config.pickupMinOrder} onChange={(v) => cfg({ pickupMinOrder: v })} /></div>}
+          {s.config.pickupMinOrder != null && <div className="mt-2 max-w-48"><Num id="pickup-min" label={`Minimum à emporter (${unit})`} step={0.5} value={s.config.pickupMinOrder} onChange={(v) => cfg({ pickupMinOrder: v })} /></div>}
         </div>
         <div className="grid gap-3 sm:grid-cols-3">
-          <Num id="fee" label="Frais de livraison (€)" step={0.5} value={s.delivery.fee} onChange={(v) => del({ fee: v })} />
-          <Num id="min" label="Minimum de commande (€)" value={s.delivery.minOrder} onChange={(v) => del({ minOrder: v })} />
-          <Num id="free" label="Offerte à partir de (€)" value={s.delivery.freeFrom} onChange={(v) => del({ freeFrom: v })} />
+          <Num id="fee" label={`Frais de livraison (${unit})`} step={0.5} value={s.delivery.fee} onChange={(v) => del({ fee: v })} />
+          <Num id="min" label={`Minimum de commande (${unit})`} value={s.delivery.minOrder} onChange={(v) => del({ minOrder: v })} />
+          <Num id="free" label={`Offerte à partir de (${unit})`} value={s.delivery.freeFrom} onChange={(v) => del({ freeFrom: v })} />
         </div>
         <p className="mt-4 font-medium">Zone de livraison (codes postaux)</p>
         <div className="mt-2 flex flex-wrap gap-2">

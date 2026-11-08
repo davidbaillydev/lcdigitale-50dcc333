@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { TicketPreviewDialog } from "@/components/TicketPreviewDialog";
 import { RefundBadge, RefundButton } from "@/components/RefundButton";
-import { euro } from "@/lib/menu";
+import { formatMoney } from "@/lib/money";
 import { modeLabel, isPaid, type TicketOrder, type TicketShop, type TicketKind, type TicketWidth, type TicketFieldsIn } from "@/lib/ticket";
 import { queryKitchenHistory } from "@/lib/kitchen-history";
 
@@ -48,7 +48,7 @@ export function KitchenHistory({ restaurantId, open, onClose, shop, width, field
           {history.isPending && <p role="status" className="py-8 text-center text-muted-foreground">Chargement…</p>}
           {history.isError && <div role="alert" className="py-6 text-center"><p>Impossible de charger les commandes.</p><Button variant="outline" onClick={() => void history.refetch()}>Réessayer</Button></div>}
           {history.data?.orders.map((o) => <article key={o.id} className="rounded-lg border border-border p-4">
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3"><h2 className="min-w-0 break-words text-xl font-semibold">N° {o.order_number} · {o.customer_name}</h2><strong className="shrink-0 whitespace-nowrap text-lg">{euro(Number(o.total))}</strong></div>
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3"><h2 className="min-w-0 break-words text-xl font-semibold">N° {o.order_number} · {o.customer_name}</h2><strong className="shrink-0 whitespace-nowrap text-lg">{formatMoney(Number(o.total), o.currency ?? "EUR")}</strong></div>
             <p className="mt-1 text-sm text-muted-foreground">{new Date(o.created_at).toLocaleString("fr-FR", { timeZone: "Europe/Paris" })} · {statuses[o.status] ?? o.status} · {modeLabel(o.mode)} · {o.is_test ? "CB Test (Admin) · Aucun encaissement" : isPaid(o) ? "Payée" : "Non réglée"}</p>
             <div className="mt-2"><RefundBadge o={o} /></div>
             <p className="mt-2 break-words text-sm">{o.items.map((i) => `${i.qty}× ${i.name}`).join(" · ")}</p>

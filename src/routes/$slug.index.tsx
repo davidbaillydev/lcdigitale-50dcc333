@@ -1,9 +1,10 @@
+import { useMoney } from "@/lib/money-context";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Clock, MapPin, Bike, ShoppingBag, Phone } from "lucide-react";
 import { RestaurantBanner } from "@/components/RestaurantBanner";
 import { getRestaurant } from "@/lib/restaurants.functions";
-import { euro, type MenuItem , fromPrice } from "@/lib/menu";
+import { type MenuItem , fromPrice } from "@/lib/menu";
 import { ItemDialog } from "@/components/ItemDialog";
 import { SiteHeader } from "@/components/SiteHeader";
 import { VapiVoiceWidget } from "@/components/VapiVoiceWidget";
@@ -37,6 +38,7 @@ export const Route = createFileRoute("/$slug/")({
 });
 
 function MenuPage() {
+  const euro = useMoney();
   const now = useMenuClock();
   const [open, setOpen] = useState<MenuItem | null>(null);
   const { count, subtotal, restaurant, catalog, qr } = useCart();
@@ -77,7 +79,7 @@ function MenuPage() {
           <div className="mt-6 flex flex-wrap gap-3 text-sm">
             <span className="flex items-center gap-2 rounded-full bg-card px-3 py-1.5"><ShoppingBag className="h-4 w-4 text-primary" /> À emporter dès {restaurant.config.lead?.pickup ?? 20} min</span>
             {d.zones.length > 0 && (
-              <span className="flex items-center gap-2 rounded-full bg-card px-3 py-1.5"><Bike className="h-4 w-4 text-primary" /> Livraison · {euro(d.fee)} (offerte dès {d.freeFrom} €)</span>
+              <span className="flex items-center gap-2 rounded-full bg-card px-3 py-1.5"><Bike className="h-4 w-4 text-primary" /> Livraison · {euro(d.fee)} (offerte dès {euro(d.freeFrom)})</span>
             )}
             {restaurant.config.hoursLabel && <span className="flex items-center gap-2 rounded-full bg-card px-3 py-1.5"><Clock className="h-4 w-4 text-primary" /> {restaurant.config.hoursLabel}</span>}
           </div>

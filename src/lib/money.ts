@@ -20,6 +20,7 @@ export const countries = [
   { code: "GQ", name: "Guinée équatoriale", currency: "XAF" },
 ] as const;
 export const countrySchema = z.enum(["FR", "SN", "CI", "CM", "GA", "CD", "CG", "BJ", "BF", "TG", "ML", "NE", "TD", "CF", "GQ"]);
+export type zCountry = z.infer<typeof countrySchema>;
 export const currencyLabels: Record<Currency, string> = { EUR: "Euro (€)", XOF: "Franc CFA Afrique de l’Ouest (FCFA)", XAF: "Franc CFA Afrique centrale (FCFA)", CDF: "Franc congolais (FC)", USD: "Dollar américain ($ US)" };
 export function currencyOf(r?: { config?: { currency?: string } | null } | null): Currency {
   const result = currencySchema.safeParse(r?.config?.currency);

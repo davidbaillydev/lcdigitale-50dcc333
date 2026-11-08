@@ -4,6 +4,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { RESTAURANT_COLUMNS, type Restaurant } from "./shop";
 import { notificationSettingsSchema } from "./order-notification-roles";
 
+import { countrySchema, currencySchema } from "./money";
+
 const minutes = z.number().int().min(0).max(1440);
 export const settingsSchema = z.object({
   opening: z.record(z.enum(["0", "1", "2", "3", "4", "5", "6"]), z.array(z.tuple([minutes, minutes])).max(4)),
@@ -14,6 +16,7 @@ export const settingsSchema = z.object({
     zones: z.array(z.object({ cp: z.string().trim().regex(/^\d{5}$/), city: z.string().trim().min(1).max(80) })).max(100),
   }),
   config: z.object({
+    country: countrySchema.optional(), currency: currencySchema.optional(),
     slotMinutes: z.number().int().min(5).max(120),
     lead: z.object({ pickup: z.number().int().min(0).max(240), delivery: z.number().int().min(0).max(240) }),
     hoursLabel: z.string().max(120).optional(),
@@ -87,7 +90,7 @@ export const saveRestaurantSettings = createServerFn({ method: "POST" })
     if (!isAgency) { const p = (cur?.config as { pos?: { enabled?: boolean } } | null)?.pos; if (p) s.config.pos = { enabled: p.enabled === true }; else delete s.config.pos; }
     if (s.config.payments.online === false) s.config.modes.delivery = false;
     if (s.config.kiosk?.cardOnly) { s.config.payments.counter = false; s.config.payments.card_terminal = true; }
-    const { error } = await supabaseAdmin.from("restaurants").update({ opening: s.opening, delivery: { ...s.delivery, ...(geoZones ? { geoZones } : {}), ...(origin ? { origin } : {}), ...(capacity ? { capacity } : {}) } as never, config: { ...s.config, ordersPaused: (cur?.config as { ordersPaused?: boolean } | null)?.ordersPaused === true, ...(marketing ? { marketing } : {}), ...(qr ? { qr } : {}), ...(reservations ? { reservations } : {}), ...(customDomains ? { customDomains } : {}), ...((cur?.config as { platformFee?: unknown } | null)?.platformFee ? { platformFee: (cur?.config as { platformFee?: unknown }).platformFee } : {}), ...((cur?.config as { notifications?: unknown } | null)?.notifications ? { notifications: (cur?.config as { notifications?: unknown }).notifications } : {}), ...((cur?.config as { upsell?: unknown } | null)?.upsell ? { upsell: (cur?.config as { upsell?: unknown }).upsell } : {}) } as never }).eq("id", data.restaurantId);
+    const { error } = await supabaseAdmin.from("restaurants").update({ opening: s.opening, delivery: { ...s.delivery, ...(geoZones ? { geoZones } : {}), ...(origin ? { origin } : {}), ...(capacity ? { capacity } : {}) } as never, config: { ...s.config, currency: s.config.currency ?? (cur?.config as { currency?: string } | null)?.currency ?? "EUR", country: s.config.country ?? (cur?.config as { country?: string } | null)?.country ?? "FR", ...((cur?.config as { paymentModules?: unknown } | null)?.paymentModules ? { paymentModules: (cur?.config as { paymentModules?: unknown }).paymentModules } : {}), ordersPaused: (cur?.config as { ordersPaused?: boolean } | null)?.ordersPaused === true, ...(marketing ? { marketing } : {}), ...(qr ? { qr } : {}), ...(reservations ? { reservations } : {}), ...(customDomains ? { customDomains } : {}), ...((cur?.config as { platformFee?: unknown } | null)?.platformFee ? { platformFee: (cur?.config as { platformFee?: unknown }).platformFee } : {}), ...((cur?.config as { notifications?: unknown } | null)?.notifications ? { notifications: (cur?.config as { notifications?: unknown }).notifications } : {}), ...((cur?.config as { upsell?: unknown } | null)?.upsell ? { upsell: (cur?.config as { upsell?: unknown }).upsell } : {}) } as never }).eq("id", data.restaurantId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -203,7 +206,7 @@ export const savePaymentModules = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({
     restaurantId: z.string().uuid(),
     modules: z.object({
-      stripe: z.boolean(), mollie: z.boolean(), paypal: z.boolean(), lyra: z.boolean(), sumup: z.boolean(),
+      stripe: z.boolean(), mollie: z.boolean(), paypal: z.boolean(), lyra: z.boolean(), sumup: z.boolean(), mobileMoney: z.boolean().optional(),
     }),
   }).parse(d))
   .handler(async ({ data, context }) => {

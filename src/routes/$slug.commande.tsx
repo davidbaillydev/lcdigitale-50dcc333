@@ -1,3 +1,4 @@
+import { useMoney } from "@/lib/money-context";
 import { safeSession } from "@/lib/safe-storage";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
@@ -12,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useCart } from "@/lib/cart";
-import { euro, unitPrice } from "@/lib/menu";
+import { unitPrice } from "@/lib/menu";
 import { promoLines } from "@/lib/promo";
 import { useTable } from "@/lib/table";
 import { findZone, zoneFee, type GeoZone } from "@/lib/geo";
@@ -49,6 +50,7 @@ export const Route = createFileRoute("/$slug/commande")({
 });
 
 function Checkout() {
+  const euro = useMoney();
   const { lines, subtotal, clear, restaurant, qr, track, catalog } = useCart();
   useEffect(() => { if (lines.length) track("checkout_started", "Coordonnées & mode de retrait"); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const DELIVERY = restaurant.delivery;

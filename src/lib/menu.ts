@@ -371,4 +371,4 @@ export function fromPrice(item: MenuItem): number | null {
   return prices.length ? Math.min(...prices) : null;
 }
 
-export const euro = (n: number) => n.toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
+export { formatMoney as euro } from "./money";

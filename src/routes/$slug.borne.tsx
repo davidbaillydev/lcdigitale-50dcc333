@@ -1,3 +1,4 @@
+import { useMoney } from "@/lib/money-context";
 import { useOrdersPaused } from "@/hooks/use-orders-paused";
 import { useWakeLock } from "@/hooks/use-wake-lock";
 import { useKioskLock } from "@/hooks/use-kiosk-lock";
@@ -19,7 +20,7 @@ import { abandonKioskQr, kioskQrAvailable, kioskQrStatus, startKioskQrPayment } 
 import { kioskIdentity, normalizeKioskId } from "@/lib/kiosk-readers";
 import { applyKioskId } from "@/lib/kiosk-switch";
 import { abandonKioskOrder, cancelKioskPayment, kioskPaymentStatus, kioskTerminalAvailable, startKioskCardPayment } from "@/lib/payments.functions";
-import { activeGroups, fromPrice, selectedExtras, selectionLines, euro, groupCost, REMOVE_KEY, removableChoices, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
+import { activeGroups, fromPrice, selectedExtras, selectionLines, groupCost, REMOVE_KEY, removableChoices, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
 import { itemImage } from "@/lib/menu-images";
 import { BrandLogo } from "@/lib/brand";
 import { ThemeToggle } from "@/lib/theme";
@@ -52,6 +53,7 @@ type Step = "welcome" | "menu" | "cart" | "pay" | "terminal" | "qr" | "done";
 type Mode = "dine_in" | "pickup";
 
 function Kiosk() {
+  const euro = useMoney();
   const now = useMenuClock();
   const { restaurant, catalog, lines, add, setQty, clear, count, subtotal, track, resetSession } = useCart();
   const suggestions = useSuggestions(4);
@@ -469,6 +471,7 @@ function Kiosk() {
 }
 
 function KioskItem({ item, image, onClose, onAdd }: { item: MenuItem; image: string | undefined; onClose: () => void; onAdd: (sel: Selections, qty: number) => void }) {
+  const euro = useMoney();
   const now = useMenuClock();
   const unavailable = !!now && !isItemAvailable(item, now);
   const [sel, setSel] = useState<Selections>({});

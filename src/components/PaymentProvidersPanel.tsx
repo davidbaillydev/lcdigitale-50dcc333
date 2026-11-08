@@ -1,3 +1,4 @@
+import { mobileMoneyProviders } from "@/lib/money";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -58,7 +59,7 @@ const META: Record<Provider, { name: string; desc: string; fields: { key: string
   },
 };
 
-export function PaymentProvidersPanel({ restaurantId, modules }: { restaurantId: string; modules?: Partial<Record<Provider, boolean>> }) {
+export function PaymentProvidersPanel({ restaurantId, modules }: { restaurantId: string; modules?: Partial<Record<Provider | "mobileMoney", boolean>> }) {
   const list = useServerFn(listPaymentProviders);
   const { data, refetch } = useQuery({ queryKey: ["pay-providers", restaurantId], queryFn: () => list({ data: { restaurantId } }) });
   const visible = (data ?? []).filter((p) => modules?.[p.provider] !== false);
@@ -69,6 +70,7 @@ export function PaymentProvidersPanel({ restaurantId, modules }: { restaurantId:
       <div className="space-y-4">
         <TerminalChoice restaurantId={restaurantId} />
         <KioskPin restaurantId={restaurantId} />
+        {modules?.mobileMoney && <div className="border-t border-border pt-4"><h3 className="text-xl font-semibold">Mobile Money</h3><div className="mt-3 grid gap-3 sm:grid-cols-2">{mobileMoneyProviders.map((name) => <div key={name} className="rounded-lg border border-border p-3"><p className="font-semibold">{name}</p><p className="mt-1 text-sm text-muted-foreground">À intégrer · Aucun encaissement actif</p><Switch className="mt-2" aria-label={`Activer ${name}`} checked={false} disabled /></div>)}</div></div>}
         {visible.map((p) => <ProviderCard key={p.provider} restaurantId={restaurantId} p={p} onChange={() => refetch()} />)}
         {!visible.length && <p className="text-sm text-muted-foreground">Aucun module de paiement n'est proposé à ce restaurant. L'agence peut les activer dans « Modules de paiement proposés ».</p>}
       </div>

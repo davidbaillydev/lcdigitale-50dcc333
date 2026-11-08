@@ -1,8 +1,9 @@
+import { useMoney } from "@/lib/money-context";
 import { useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useCart } from "@/lib/cart";
-import { euro, fromPrice, type MenuItem } from "@/lib/menu";
+import { fromPrice, type MenuItem } from "@/lib/menu";
 import { useOrdersPaused } from "@/hooks/use-orders-paused";
 import { ItemDialog } from "@/components/ItemDialog";
 import { cn } from "@/lib/utils";
@@ -52,6 +53,7 @@ export function useSuggestions(max = 4): MenuItem[] {
 }
 
 export function CartSuggestions({ className }: { className?: string }) {
+  const euro = useMoney();
   const { add, lines, restaurant } = useCart();
   const paused = useOrdersPaused(restaurant);
   const items = useSuggestions(4);

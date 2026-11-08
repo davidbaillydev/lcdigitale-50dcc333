@@ -1,3 +1,5 @@
+import { MoneyProvider } from "@/lib/money-context";
+import { currencyOf } from "@/lib/money";
 import { safeSession } from "@/lib/safe-storage";
 import { createFileRoute, Link, notFound, Outlet, useRouterState } from "@tanstack/react-router";
 import { CookieConsent } from "@/components/CookieConsent";
@@ -59,13 +61,13 @@ function Layout() {
   if (!staffScreen && embedRequested && !embedFeatureOn) return <EmbedUnavailable restaurant={restaurant} />;
   return (
     <BrandTheme brand={restaurant.brand}>
-      <CartProvider restaurant={restaurant}>
+      <MoneyProvider currency={currencyOf(restaurant)}><CartProvider restaurant={restaurant}>
         <div {...(embed ? { "data-embed": "1" } : {})} className={embed ? "embed-compact" : undefined}>
           {embed && <EmbedCartReset slug={restaurant.slug} />}
           <Outlet />
           {!staffScreen && <CookieConsent slug={restaurant.slug} voice={!!restaurant.is_vapi_web_enabled} compact={embed} />}
         </div>
-      </CartProvider>
+      </CartProvider></MoneyProvider>
     </BrandTheme>
   );
 }
