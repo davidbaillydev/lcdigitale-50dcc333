@@ -207,7 +207,7 @@ export const savePaymentModules = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({
     restaurantId: z.string().uuid(),
     modules: z.object({
-      stripe: z.boolean(), mollie: z.boolean(), paypal: z.boolean(), lyra: z.boolean(), sumup: z.boolean(), mobileMoney: z.boolean().optional(),
+      stripe: z.boolean(), mollie: z.boolean(), paypal: z.boolean(), lyra: z.boolean(), sumup: z.boolean(), mobileMoney: z.boolean().optional(), cinetpay: z.boolean().optional(),
     }),
   }).parse(d))
   .handler(async ({ data, context }) => {

@@ -2,7 +2,7 @@
 
 import { legacyPaymentsSupported } from "../money";
 
-export const PROVIDERS = ["sumup", "stripe", "paypal", "lyra", "mollie"] as const;
+export const PROVIDERS = ["sumup", "stripe", "paypal", "lyra", "mollie", "cinetpay"] as const;
 export type Provider = (typeof PROVIDERS)[number];
 
 export type Row = { restaurant_id: string; provider: Provider; enabled: boolean; credentials: Record<string, string>; settings: Record<string, string> };

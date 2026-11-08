@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { savePaymentModules } from "@/lib/restaurant-settings.functions";
 
-export type PaymentModules = { stripe: boolean; mollie: boolean; paypal: boolean; lyra: boolean; sumup: boolean; mobileMoney: boolean };
+export type PaymentModules = { stripe: boolean; mollie: boolean; paypal: boolean; lyra: boolean; sumup: boolean; mobileMoney: boolean; cinetpay: boolean };
 
-export const DEFAULT_PAYMENT_MODULES: PaymentModules = { stripe: true, mollie: true, paypal: true, lyra: true, sumup: true, mobileMoney: false };
+export const DEFAULT_PAYMENT_MODULES: PaymentModules = { stripe: true, mollie: true, paypal: true, lyra: true, sumup: true, mobileMoney: false, cinetpay: true };
 
 export function paymentModulesOf(config: unknown): PaymentModules {
   const m = (config as { paymentModules?: Partial<PaymentModules> } | null)?.paymentModules ?? {};
@@ -21,7 +21,8 @@ const LABELS: [keyof PaymentModules, string, string][] = [
   ["mollie", "Mollie", "Paiement en ligne (carte, Bancontact, iDEAL), Mollie Connect et terminal Mollie POS de la borne."],
   ["paypal", "PayPal", "Paiement en ligne avec compte PayPal ou carte via PayPal."],
   ["lyra", "Lyra / PayZen", "Paiement par carte sur la page sécurisée de la banque (PayZen, Systempay, Sogecommerce…)."],
-  ["mobileMoney", "Mobile Money — préparation", "CinetPay, Wave, Airtel Money, Orange Money, MTN et Moov. Emplacements uniquement : aucun encaissement activé."],
+  ["cinetpay", "CinetPay", "Identifiants du site, clés sécurisées et vérification d’une transaction existante. Encaissement non activé."],
+  ["mobileMoney", "Mobile Money — préparation", "Wave, Airtel Money, Orange Money, MTN et Moov. Emplacements uniquement : aucun encaissement activé."],
   ["sumup", "SumUp", "Terminal SumUp Solo relié à la borne."],
 ];
 

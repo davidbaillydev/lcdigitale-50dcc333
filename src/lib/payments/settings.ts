@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { PROVIDERS, PUBLIC_FIELDS, admin, assertManager, getRow, mask, type Provider, type Row } from "./shared";
+import { cinetpayCredentialsSchema } from "./cinetpay-config";
 
 /** État des prestataires d'un restaurant (clés masquées). */
 export const listPaymentProviders = createServerFn({ method: "POST" })
@@ -17,7 +18,7 @@ export const listPaymentProviders = createServerFn({ method: "POST" })
       return {
         provider: p,
         enabled: r?.enabled ?? false,
-        credentials: Object.fromEntries(Object.entries(r?.credentials ?? {}).map(([k, v]) => [k, PUBLIC_FIELDS.includes(k) ? v : mask(v)])),
+        credentials: Object.fromEntries(Object.entries(r?.credentials ?? {}).map(([k, v]) => [k, PUBLIC_FIELDS.includes(k) ? v : p === "cinetpay" ? (v ? "••••••••" : "") : mask(v)])),
         settings: r?.settings ?? {},
       };
     });
@@ -39,6 +40,14 @@ export const savePaymentProvider = createServerFn({ method: "POST" })
     // Effacement explicite de clés saisies à la main (jamais les jetons OAuth ni le mode).
     for (const k of data.clear ?? []) if (!k.startsWith("oauth") && k !== "mode") delete credentials[k];
     for (const [k, v] of Object.entries(data.credentials)) if (v) credentials[k] = v;
+    if (data.provider === "cinetpay") {
+      const allowed = new Set(["siteId", "apiKey", "secretKey", "mode"]);
+      if ([...Object.keys(data.credentials), ...(data.clear ?? [])].some((k) => !allowed.has(k))) throw new Error("Champ CinetPay non reconnu.");
+      credentials["mode"] ??= "sandbox";
+      const parsed = cinetpayCredentialsSchema.safeParse(credentials);
+      if (!parsed.success) throw new Error("Renseignez un Site ID numérique, la clé API, la clé secrète et un mode CinetPay valide.");
+      if (data.enabled) throw new Error("CinetPay peut être configuré, mais l’encaissement n’est pas encore intégré.");
+    }
     if (data.enabled && data.provider === "sumup" && (!credentials["apiKey"] || !credentials["merchantCode"]))
       throw new Error("Renseignez la clé API et le code marchand SumUp.");
     if (data.provider === "stripe") {
