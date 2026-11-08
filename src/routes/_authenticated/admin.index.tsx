@@ -122,14 +122,14 @@ function Console() {
   const canReorder = !q.trim() && statusFilter === "all" && countryFilter === "all";
 
   return (
-    <div className="mx-auto max-w-7xl p-6">
-      <header className="flex flex-col gap-4">
+    <div className="mx-auto max-w-7xl p-4 sm:p-6">
+      <header className="flex flex-col gap-3 sm:gap-4">
         <div className="flex flex-wrap items-center gap-3">
         <div className="mr-auto min-w-0">
           <p className="text-sm font-semibold text-primary">Réseau de restaurants</p>
-          <h1 className="text-5xl">Console agence</h1>
+          <h1 className="text-3xl sm:text-5xl">Console agence</h1>
         </div>
-        <Button className="min-h-12 max-sm:order-last max-sm:w-full" onClick={() => setForm({ ...EMPTY })}><Plus /> Nouveau restaurant</Button>
+        <Button className="min-h-11 max-sm:order-last sm:min-h-12" onClick={() => setForm({ ...EMPTY })}><Plus /> Nouveau restaurant</Button>
         <div className="flex items-center gap-1">
         <TooltipProvider><Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="size-11" aria-label="Domaine public" onClick={() => setDomainOpen(true)}><Globe /></Button></TooltipTrigger><TooltipContent>Domaine public</TooltipContent></Tooltip></TooltipProvider>
         <ThemeToggle />
@@ -171,25 +171,27 @@ function Console() {
         </DialogContent>
       </Dialog>
 
-      <div className="mt-5 flex flex-col gap-3 border-b border-border pb-4 lg:flex-row lg:items-center">
+      <div className="mt-4 flex flex-col gap-2 border-b border-border pb-3 lg:flex-row lg:items-center lg:gap-3">
         <div className="relative min-w-0 flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input className="min-h-12 pl-10 pr-12" placeholder="Rechercher par nom, ville ou adresse web…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher" />
+          <Input className="min-h-11 pl-10 pr-12" placeholder="Rechercher par nom, ville ou adresse web…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher" />
           {q && <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 size-10 -translate-y-1/2" aria-label="Effacer la recherche" onClick={() => setQ("")}><X /></Button>}
         </div>
-        {rows && <div className="flex items-center gap-2 self-start rounded-full border border-border bg-card px-3 py-2 text-sm shadow-sm lg:self-auto" aria-label="Commandes du jour">
-          <ShoppingBag className="size-4 shrink-0 text-primary" aria-hidden />
-          <span className="font-semibold tabular-nums">{today}</span>
-          <span className="text-muted-foreground">commande{today > 1 ? "s" : ""} aujourd'hui</span>
-        </div>}
-        <div className="w-full lg:w-48"><CountrySelect value={countryFilter} onChange={setCountryFilter} all label="Filtrer par pays" /></div>
+        <div className="flex items-center gap-2">
+          {rows && <div className="flex shrink-0 items-center gap-2 rounded-full border border-border bg-card px-3 py-2 text-sm shadow-sm" aria-label="Commandes du jour">
+            <ShoppingBag className="size-4 shrink-0 text-primary" aria-hidden />
+            <span className="font-semibold tabular-nums">{today}</span>
+            <span className="text-muted-foreground">commande{today > 1 ? "s" : ""} aujourd'hui</span>
+          </div>}
+          <div className="min-w-0 flex-1 lg:w-48 lg:flex-none"><CountrySelect value={countryFilter} onChange={setCountryFilter} all label="Filtrer par pays" /></div>
+        </div>
         <div role="group" aria-label="Filtrer les restaurants" className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1 lg:flex">
           {([{ value: "all", label: "Tous", count: rows?.length }, { value: "online", label: "En ligne", count: rows ? active : undefined }, { value: "offline", label: "Hors ligne", count: rows ? rows.length - active : undefined }] as const).map((filter) =>
-            <Button key={filter.value} variant={statusFilter === filter.value ? "secondary" : "ghost"} aria-pressed={statusFilter === filter.value} onClick={() => setStatusFilter(filter.value)} className={`min-h-11 gap-2 px-3 ${statusFilter === filter.value ? "shadow-sm" : "text-muted-foreground"}`}>{filter.label}<span className="text-xs tabular-nums text-muted-foreground">{filter.count ?? "—"}</span></Button>
+            <Button key={filter.value} variant={statusFilter === filter.value ? "secondary" : "ghost"} aria-pressed={statusFilter === filter.value} onClick={() => setStatusFilter(filter.value)} className={`min-h-10 gap-2 px-3 lg:min-h-11 ${statusFilter === filter.value ? "shadow-sm" : "text-muted-foreground"}`}>{filter.label}<span className="text-xs tabular-nums text-muted-foreground">{filter.count ?? "—"}</span></Button>
           )}
         </div>
       </div>
-      {rows && <p className="mt-2 text-sm text-muted-foreground" aria-live="polite">{filteredRows.length} restaurant{filteredRows.length > 1 ? "s" : ""} affiché{filteredRows.length > 1 ? "s" : ""} sur {rows.length}</p>}
+      {rows && <p className="mt-2 text-xs text-muted-foreground sm:text-sm" aria-live="polite">{filteredRows.length} restaurant{filteredRows.length > 1 ? "s" : ""} affiché{filteredRows.length > 1 ? "s" : ""} sur {rows.length}</p>}
       {!rows ? <p className="mt-10 text-center text-muted-foreground">Chargement du réseau…</p> : (
         <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
           {filteredRows.length === 0 && <div className="col-span-full py-12 text-center"><Search className="mx-auto mb-3 size-7 text-muted-foreground" /><h2 className="text-xl font-semibold">Aucun restaurant trouvé</h2><Button variant="link" className="mt-2" onClick={() => { setQ(""); setStatusFilter("all"); setCountryFilter("all"); }}>Réinitialiser les filtres</Button></div>}
