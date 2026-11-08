@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { ArrowDown, ArrowUp, BarChart3, BookOpen, ChefHat, ChevronDown, Contact, Globe, GripVertical, ExternalLink, FileText, Landmark, LogOut, Mail, MoreHorizontal, Pencil, Plus, QrCode, Search, Settings, ShieldCheck, ShoppingBag, Store, Tablet, Users, Wallet, X } from "lucide-react";
+import { ArrowDown, ArrowUp, BarChart3, BookOpen, ChefHat, ChevronDown, Contact, Globe, GripVertical, ExternalLink, FileText, Landmark, LogOut, Mail, MoreHorizontal, Pencil, Plus, QrCode, Search, Settings, ShieldCheck, ShoppingBag, Store, Tablet, Trash2, Users, Wallet, X } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
@@ -20,6 +20,7 @@ import { ThemeToggle } from "@/lib/theme";
 import { OrdersPausedToggle } from "@/components/OrdersPausedToggle";
 import { MenuAiSettings } from "@/components/MenuAiSettings";
 import { WhatsAppAccess } from "@/components/WhatsAppAccess";
+import { DeleteRestaurantDialog } from "@/components/DeleteRestaurantDialog";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   head: () => ({
@@ -55,6 +56,7 @@ function Console() {
   const toggle = useServerFn(setRestaurantActive);
   const [rows, setRows] = useState<AgencyRestaurant[] | null>(null);
   const [form, setForm] = useState<Form | null>(null);
+  const [deleting, setDeleting] = useState<AgencyRestaurant | null>(null);
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "online" | "offline">("all");
   const [domainOpen, setDomainOpen] = useState(false);
@@ -238,6 +240,8 @@ function Console() {
                         <DropdownMenuItem className="min-h-11" disabled={rows[0]?.id === r.id} onSelect={() => move(r.id, -1)}><ArrowUp /> Monter</DropdownMenuItem>
                         <DropdownMenuItem className="min-h-11" disabled={rows[rows.length - 1]?.id === r.id} onSelect={() => move(r.id, 1)}><ArrowDown /> Descendre</DropdownMenuItem>
                       </>}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="min-h-12 text-destructive focus:text-destructive" onSelect={() => setDeleting(r)}><Trash2 /> Supprimer le restaurant</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -285,6 +289,7 @@ function Console() {
       )}
 
       <MenuAiSettings />
+      {deleting && <DeleteRestaurantDialog key={deleting.id} restaurant={deleting} onClose={() => setDeleting(null)} onDeleted={() => { setDeleting(null); load(); }} />}
       <RestaurantDialog form={form} setForm={setForm} onSaved={(slug, created) => { load(); if (created) navigate({ to: "/admin/$slug", params: { slug } }); }} />
     </div>
   );
