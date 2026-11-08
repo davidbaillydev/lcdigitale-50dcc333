@@ -1,5 +1,5 @@
 import { useCurrency } from "@/lib/money-context";
-import { currencyUnit, formatMoney } from "@/lib/money";
+import { currencyUnit } from "@/lib/money";
 // Back-office : groupes de suppléments (par restaurant) et tailles / formats + rattachement (par plat).
 import { useState } from "react";
 import { Copy, PackageX, Plus, Trash2, Layers, Ruler } from "lucide-react";
@@ -30,6 +30,7 @@ async function reorder(table: "option_groups" | "option_items" | "product_varian
 
 /** Section « Groupes de suppléments & options » de la page Carte. */
 export function OptionGroupsPanel({ restaurantId, data, reload }: { restaurantId: string; data: OptionData; reload: () => void }) {
+  const currency = useCurrency();
   const [name, setName] = useState("");
   const [toggled, setToggled] = useState<boolean | null>(null);
   const act = (p: PromiseLike<{ error: { message: string } | null }>, ok?: string) => run(p).then(() => { if (ok) toast.success(ok); reload(); }).catch((e) => { fail(e); });
@@ -103,6 +104,7 @@ function GroupCard({ g, items, uses, restaurantId, act, reload }: { g: OptionDat
 
 /** Bloc « Tailles / formats & suppléments » dans la fiche d'un plat. */
 export function ItemOptionsEditor({ restaurantId, productId, data, reload }: { restaurantId: string; productId: string; data: OptionData; reload: () => void }) {
+  const currency = useCurrency();
   const sizes = data.variants.filter((v) => v.product_id === productId);
   const links = data.links.filter((l) => l.product_id === productId);
   const [nm, setNm] = useState(""); const [pr, setPr] = useState("");

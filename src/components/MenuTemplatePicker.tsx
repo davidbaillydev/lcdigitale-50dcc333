@@ -1,5 +1,5 @@
 import { useCurrency } from "@/lib/money-context";
-import { currencyUnit, formatMoney } from "@/lib/money";
+import { formatMoney } from "@/lib/money";
 import { useState } from "react";
 import { Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { applyStructure, type MenuTemplate, type StructureMapping } from "@/lib/
 import type { Category } from "@/lib/menu";
 
 export function MenuTemplatePicker({ templates, menu, onApply, disabled = false }: { templates: MenuTemplate[]; menu: Category[]; onApply: (menu: Category[], count: number) => void; disabled?: boolean }) {
+  const currency = useCurrency();
   const [open, setOpen] = useState(false);
   const [templateId, setTemplateId] = useState("");
   const [mappings, setMappings] = useState<StructureMapping[]>([]);
