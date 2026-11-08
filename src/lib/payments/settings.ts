@@ -44,7 +44,7 @@ export const savePaymentProvider = createServerFn({ method: "POST" })
       const allowed = new Set(["siteId", "apiKey", "secretKey", "mode"]);
       if ([...Object.keys(data.credentials), ...(data.clear ?? [])].some((k) => !allowed.has(k))) throw new Error("Champ CinetPay non reconnu.");
       credentials["mode"] ??= "sandbox";
-      const parsed = cinetpayCredentialsSchema.safeParse(credentials);
+      const parsed = cinetpayCredentialsSchema.partial().safeParse(credentials);
       if (!parsed.success) throw new Error("Renseignez un Site ID numérique, la clé API, la clé secrète et un mode CinetPay valide.");
       if (data.enabled) throw new Error("CinetPay peut être configuré, mais l’encaissement n’est pas encore intégré.");
     }
