@@ -5,6 +5,8 @@ import { listRestaurants } from "@/lib/restaurants.functions";
 import { ThemeToggle } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CountryFlag } from "@/components/CountryFlag";
+import type { zCountry } from "@/lib/money";
 import type { Restaurant } from "@/lib/shop";
 import { restaurantsInCountry } from "@/lib/country";
 import { getDirectoryCountry } from "@/lib/directory-country.functions";
@@ -48,9 +50,10 @@ function BannerCarousel({ covers }: { covers: string[] }) {
 }
 
 export const Route = createFileRoute("/")({
-  loader: async (): Promise<{ restaurants: Restaurant[] }> => {
+  loader: async (): Promise<{ restaurants: Restaurant[]; country: zCountry }> => {
     const [rows, detected] = await Promise.all([listRestaurants(), getDirectoryCountry()]);
-    return { restaurants: restaurantsInCountry(rows, detected ?? "FR") };
+    const country = detected ?? "FR";
+    return { restaurants: restaurantsInCountry(rows, country), country };
   },
   head: ({ loaderData }) => {
     const cover = loaderData?.restaurants.find((r) => r.brand?.coverUrl)?.brand?.coverUrl;
@@ -75,7 +78,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
-  const { restaurants } = Route.useLoaderData();
+  const { restaurants, country } = Route.useLoaderData();
   const [search, setSearch] = useState("");
   const query = search.trim().toLocaleLowerCase("fr");
   const shown = restaurants.filter((r) => `${r.name} ${r.city}`.toLocaleLowerCase("fr").includes(query));
@@ -84,7 +87,7 @@ function Home() {
     <div className="restaurant-directory foodcourt-directory min-h-screen bg-background text-foreground">
       <div className="foodcourt-shell">
         <nav aria-label="Navigation principale" className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-5 sm:flex sm:justify-between">
-          <Link to="/" className="flex min-w-0 items-center gap-2 font-display text-xl font-bold"><span className="truncate">LC Digitale<span className="text-primary">.</span></span></Link>
+          <Link to="/" className="flex min-w-0 items-center gap-2 font-display text-xl font-bold"><span className="truncate">LC Digitale<span className="text-primary">.</span></span><CountryFlag country={country} /></Link>
           <div className="flex shrink-0 items-center gap-2"><Button asChild variant="ghost" className="h-11 gap-2 px-2 sm:px-3"><a href="#espaces-professionnels"><LogIn aria-hidden="true" /><span>Accès pro</span></a></Button><ThemeToggle /></div>
         </nav>
         <header className={`foodcourt-welcome relative overflow-hidden ${covers.length ? "has-cover" : ""}`}>
