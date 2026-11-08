@@ -274,6 +274,13 @@
       "when": 1794135311366,
       "tag": "0038_agency_restaurant_duplication",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1794137609269,
+      "tag": "0039_scope_public_menu_option_reads",
+      "breakpoints": true
     }
   ]
 }

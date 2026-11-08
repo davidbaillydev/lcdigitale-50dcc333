@@ -2162,6 +2162,10 @@ export type Database = {
         Args: { _counted?: number; _session_id: string }
         Returns: Json
       }
+      read_restaurant_menu_options: {
+        Args: { _restaurant_id: string }
+        Returns: Json
+      }
       record_refund: {
         Args: {
           _amount: number
