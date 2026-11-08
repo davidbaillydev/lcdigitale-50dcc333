@@ -10,6 +10,7 @@ export {
 export { kioskQrReady, kioskQrAvailable, startKioskQrPayment, kioskQrStatus, abandonKioskQr } from "./payments/kiosk-qr";
 export { stripeCall, stripeForRestaurant, testStripe } from "./payments/stripe";
 export { testPaypal } from "./payments/paypal";
+export { testCinetpay } from "./payments/cinetpay";
 export {
   MOLLIE_PLATFORM_FEE_RATE, mollieApplicationFee, exchangeMollieCode, mollieForRestaurant, mollieCall, verifyMollieState,
   mollieRedirectUri, startMollieConnect, saveMollieOauth, disconnectMollie, testMollie, handleMolliePayment, listMolliePayments,

@@ -4,9 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { hasKioskPin, setKioskPin } from "@/lib/kitchen-pin.functions";
-import { getKioskTerminal, listMolliePayments, startMollieConnect, disconnectMollie, setKioskTerminal, setKioskReaders, testKioskTerminal, listPaymentProviders, pairSumupReader, savePaymentProvider, testLyra, testMollie, testPaypal, testStripe, testSumup, type Provider } from "@/lib/payments.functions";
+import { getKioskTerminal, listMolliePayments, startMollieConnect, disconnectMollie, setKioskTerminal, setKioskReaders, testKioskTerminal, listPaymentProviders, pairSumupReader, savePaymentProvider, testLyra, testMollie, testPaypal, testStripe, testSumup, testCinetpay, type Provider } from "@/lib/payments.functions";
 
 const MODES: Partial<Record<Provider, { options: [string, string][]; hint?: string }>> = {
+  cinetpay: { options: [["sandbox", "Sandbox / Test"], ["production", "Production"]], hint: "Le mode Test conserve les identifiants sans appeler la production. La connexion se vérifie en Production avec une transaction existante." },
   stripe: { options: [["test", "Test (aucun vrai paiement)"], ["live", "Réel (live)"]], hint: "Apple Pay et Google Pay s'affichent automatiquement s'ils sont activés dans votre compte Stripe." },
   paypal: { options: [["sandbox", "Sandbox (test)"], ["live", "Live (réel)"]], hint: "Identifiants à créer dans PayPal Developer → Apps & Credentials." },
   mollie: { options: [["test", "Test (aucun vrai paiement)"], ["live", "Production"]], hint: "Seule la clé du mode choisi est utilisée pour encaisser et rembourser." },
@@ -18,6 +19,14 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 
 const META: Record<Provider, { name: string; desc: string; fields: { key: string; label: string; secret: boolean; placeholder: string }[]; available: boolean }> = {
+  cinetpay: {
+    name: "CinetPay", desc: "Configuration Mobile Money · Encaissement non activé", available: true,
+    fields: [
+      { key: "siteId", label: "Identifiant du site (Site ID)", secret: false, placeholder: "Site ID du compte CinetPay" },
+      { key: "apiKey", label: "Clé API (API Key)", secret: true, placeholder: "Clé API CinetPay" },
+      { key: "secretKey", label: "Clé secrète (Secret Key)", secret: true, placeholder: "Clé secrète des notifications CinetPay" },
+    ],
+  },
   sumup: {
     name: "SumUp", desc: "Paiement par carte sur le terminal SumUp Solo relié à la borne.", available: true,
     fields: [
@@ -70,7 +79,7 @@ export function PaymentProvidersPanel({ restaurantId, modules }: { restaurantId:
       <div className="space-y-4">
         <TerminalChoice restaurantId={restaurantId} />
         <KioskPin restaurantId={restaurantId} />
-        {modules?.mobileMoney && <div className="border-t border-border pt-4"><h3 className="text-xl font-semibold">Mobile Money</h3><div className="mt-3 grid gap-3 sm:grid-cols-2">{mobileMoneyProviders.map((name) => <div key={name} className="rounded-lg border border-border p-3"><p className="font-semibold">{name}</p><p className="mt-1 text-sm text-muted-foreground">À intégrer · Aucun encaissement actif</p><Switch className="mt-2" aria-label={`Activer ${name}`} checked={false} disabled /></div>)}</div></div>}
+        {modules?.mobileMoney && <div className="border-t border-border pt-4"><h3 className="text-xl font-semibold">Mobile Money</h3><div className="mt-3 grid gap-3 sm:grid-cols-2">{mobileMoneyProviders.filter((name) => name !== "CinetPay").map((name) => <div key={name} className="rounded-lg border border-border p-3"><p className="font-semibold">{name}</p><p className="mt-1 text-sm text-muted-foreground">À intégrer · Aucun encaissement actif</p><Switch className="mt-2" aria-label={`Activer ${name}`} checked={false} disabled /></div>)}</div></div>}
         {visible.map((p) => <ProviderCard key={p.provider} restaurantId={restaurantId} p={p} onChange={() => refetch()} />)}
         {!visible.length && <p className="text-sm text-muted-foreground">Aucun module de paiement n'est proposé à ce restaurant. L'agence peut les activer dans « Modules de paiement proposés ».</p>}
       </div>
@@ -87,6 +96,8 @@ function ProviderCard({ restaurantId, p, onChange }: { restaurantId: string; p: 
   const testS = useServerFn(testStripe);
   const testP = useServerFn(testPaypal);
   const testL = useServerFn(testLyra);
+  const testC = useServerFn(testCinetpay);
+  const [transactionId, setTransactionId] = useState("");
   const pair = useServerFn(pairSumupReader);
   const testM = useServerFn(testMollie);
   const testT = useServerFn(testKioskTerminal);
@@ -111,7 +122,7 @@ function ProviderCard({ restaurantId, p, onChange }: { restaurantId: string; p: 
           <p className="text-xl font-semibold">{m.name} {!m.available && <span className="ml-2 rounded bg-muted px-2 py-0.5 text-xs">Bientôt</span>}</p>
           <p className="text-sm text-muted-foreground">{m.desc}</p>
         </div>
-        <Switch aria-label={`Activer ${m.name}`} disabled={!m.available} checked={enabled} onCheckedChange={setEnabled} />
+        <Switch aria-label={`Activer ${m.name}`} disabled={!m.available || p.provider === "cinetpay"} checked={enabled} onCheckedChange={setEnabled} />
       </div>
       {m.available && (
         <div className="mt-4 space-y-3">
@@ -139,7 +150,8 @@ function ProviderCard({ restaurantId, p, onChange }: { restaurantId: string; p: 
             ))}
           </div>
           {MODES[p.provider] && (() => {
-            const md = MODES[p.provider]!;
+            const md = MODES[p.provider];
+            if (!md) return null;
             return (
               <div className="max-w-xs">
                 <Label htmlFor={`${p.provider}-mode`}>Mode</Label>
@@ -151,11 +163,16 @@ function ProviderCard({ restaurantId, p, onChange }: { restaurantId: string; p: 
               </div>
             );
           })()}
+          {p.provider === "cinetpay" && <div className="max-w-md"><Label htmlFor="cinetpay-transaction">Transaction CinetPay existante (pour le test)</Label><Input id="cinetpay-transaction" value={transactionId} onChange={(e) => setTransactionId(e.target.value)} maxLength={100} autoComplete="off" /></div>}
           <div className="flex flex-wrap gap-2">
             <Button disabled={busy} onClick={() => run(async () => {
               await save({ data: { restaurantId, provider: p.provider, enabled, credentials: creds } });
               setCreds({}); toast.success(`${m.name} enregistré`); onChange();
             })}>Enregistrer</Button>
+            {p.provider === "cinetpay" && <Button variant="secondary" disabled={busy || Object.values(creds).some(Boolean)} onClick={() => run(async () => {
+              const r = await testC({ data: { restaurantId, transactionId: transactionId || undefined } });
+              setResult(r);
+            })}>Tester la connexion</Button>}
             {p.provider === "stripe" && (
               <Button variant="secondary" disabled={busy} onClick={() => run(async () => {
                 const r = await testS({ data: { restaurantId } });
