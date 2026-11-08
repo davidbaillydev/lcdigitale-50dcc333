@@ -5,8 +5,6 @@ import { listRestaurants } from "@/lib/restaurants.functions";
 import { ThemeToggle } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CountryFlag, CountrySelect } from "@/components/CountryFlag";
-import { countrySchema, type zCountry } from "@/lib/money";
 import type { Restaurant } from "@/lib/shop";
 import { restaurantsInCountry } from "@/lib/country";
 import { getDirectoryCountry } from "@/lib/directory-country.functions";
@@ -50,12 +48,9 @@ function BannerCarousel({ covers }: { covers: string[] }) {
 }
 
 export const Route = createFileRoute("/")({
-  validateSearch: (search: Record<string, unknown>): { country?: zCountry | undefined } => ({ country: countrySchema.optional().catch(undefined).parse(search['country']) }),
-  loaderDeps: ({ search }) => ({ country: search.country }),
-  loader: async ({ deps }): Promise<{ restaurants: Restaurant[]; country: zCountry; detected: zCountry | null }> => {
+  loader: async (): Promise<{ restaurants: Restaurant[] }> => {
     const [rows, detected] = await Promise.all([listRestaurants(), getDirectoryCountry()]);
-    const country = detected ?? deps.country ?? "FR";
-    return { restaurants: restaurantsInCountry(rows, country), country, detected };
+    return { restaurants: restaurantsInCountry(rows, detected ?? "FR") };
   },
   head: ({ loaderData }) => {
     const cover = loaderData?.restaurants.find((r) => r.brand?.coverUrl)?.brand?.coverUrl;
@@ -80,8 +75,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
-  const { restaurants, country, detected } = Route.useLoaderData();
-  const navigate = Route.useNavigate();
+  const { restaurants } = Route.useLoaderData();
   const [search, setSearch] = useState("");
   const query = search.trim().toLocaleLowerCase("fr");
   const shown = restaurants.filter((r) => `${r.name} ${r.city}`.toLocaleLowerCase("fr").includes(query));
@@ -90,9 +84,8 @@ function Home() {
     <div className="restaurant-directory foodcourt-directory min-h-screen bg-background text-foreground">
       <div className="foodcourt-shell">
         <nav aria-label="Navigation principale" className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-5 sm:flex sm:justify-between">
-          <Link to="/" search={{ country: detected ? undefined : country }} className="flex min-w-0 items-center gap-2 font-display text-xl font-bold"><span className="truncate">LC Digitale<span className="text-primary">.</span></span><CountryFlag country={country} /></Link>
+          <Link to="/" className="flex min-w-0 items-center gap-2 font-display text-xl font-bold"><span className="truncate">LC Digitale<span className="text-primary">.</span></span></Link>
           <div className="flex shrink-0 items-center gap-2"><Button asChild variant="ghost" className="h-11 gap-2 px-2 sm:px-3"><a href="#espaces-professionnels"><LogIn aria-hidden="true" /><span>Accès pro</span></a></Button><ThemeToggle /></div>
-          {!detected && <div className="col-span-2 w-full sm:w-44"><CountrySelect value={country} label="Pays des restaurants" onChange={(value) => { if (value !== "all") navigate({ search: { country: value } }); }} /></div>}
         </nav>
         <header className={`foodcourt-welcome relative overflow-hidden ${covers.length ? "has-cover" : ""}`}>
           <BannerCarousel covers={covers} />
