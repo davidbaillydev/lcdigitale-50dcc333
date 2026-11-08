@@ -1,3 +1,5 @@
+import { useCurrency } from "@/lib/money-context";
+import { currencyUnit } from "@/lib/money";
 // Back-office : groupes de suppléments (par restaurant) et tailles / formats + rattachement (par plat).
 import { useState } from "react";
 import { Copy, PackageX, Plus, Trash2, Layers, Ruler } from "lucide-react";
@@ -28,6 +30,7 @@ async function reorder(table: "option_groups" | "option_items" | "product_varian
 
 /** Section « Groupes de suppléments & options » de la page Carte. */
 export function OptionGroupsPanel({ restaurantId, data, reload }: { restaurantId: string; data: OptionData; reload: () => void }) {
+  const currency = useCurrency();
   const [name, setName] = useState("");
   const [toggled, setToggled] = useState<boolean | null>(null);
   const act = (p: PromiseLike<{ error: { message: string } | null }>, ok?: string) => run(p).then(() => { if (ok) toast.success(ok); reload(); }).catch((e) => { fail(e); });
@@ -58,6 +61,7 @@ export function OptionGroupsPanel({ restaurantId, data, reload }: { restaurantId
 }
 
 function GroupCard({ g, items, uses, restaurantId, act, reload }: { g: OptionData["groups"][number]; items: OptionData["items"]; uses: number; restaurantId: string; reload: () => void; act: (p: PromiseLike<{ error: { message: string } | null }>, ok?: string) => Promise<void> }) {
+  const currency = useCurrency();
   const [label, setLabel] = useState(""); const [price, setPrice] = useState("");
   const upd = (patch: { name?: string; is_required?: boolean; min_selection?: number; max_selection?: number }) => act(supabase.from("option_groups").update(patch).eq("id", g.id));
   return (
@@ -92,7 +96,7 @@ function GroupCard({ g, items, uses, restaurantId, act, reload }: { g: OptionDat
       </div>
       <form className="mt-2 grid grid-cols-[minmax(0,1fr)_5rem] gap-2 sm:grid-cols-[minmax(0,1fr)_6rem_auto]" onSubmit={(e) => { e.preventDefault(); if (!label.trim()) return; void act(supabase.from("option_items").insert({ group_id: g.id, restaurant_id: restaurantId, name: label.trim(), price: num(price), sort_order: nextOrder(items) })); setLabel(""); setPrice(""); }}>
         <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Ingrédient (ex. Extra cheddar)" aria-label="Nouvel ingrédient" maxLength={80} />
-        <Input value={price} onChange={(e) => setPrice(e.target.value)} inputMode="decimal" placeholder="+ €" aria-label="Prix du nouvel ingrédient" />
+        <Input value={price} onChange={(e) => setPrice(e.target.value)} inputMode="decimal" placeholder={`+ ${currencyUnit(currency)}`} aria-label="Prix du nouvel ingrédient" />
         <Button type="submit" variant="secondary" className="min-h-11"><Plus /> Ajouter</Button>
       </form>
     </div>
@@ -101,6 +105,7 @@ function GroupCard({ g, items, uses, restaurantId, act, reload }: { g: OptionDat
 
 /** Bloc « Tailles / formats & suppléments » dans la fiche d'un plat. */
 export function ItemOptionsEditor({ restaurantId, productId, data, reload }: { restaurantId: string; productId: string; data: OptionData; reload: () => void }) {
+  const currency = useCurrency();
   const sizes = data.variants.filter((v) => v.product_id === productId);
   const links = data.links.filter((l) => l.product_id === productId);
   const [nm, setNm] = useState(""); const [pr, setPr] = useState("");
@@ -131,7 +136,7 @@ export function ItemOptionsEditor({ restaurantId, productId, data, reload }: { r
           </div>
           <div className="mt-2 grid grid-cols-[minmax(0,1fr)_5rem] gap-2 sm:grid-cols-[minmax(0,1fr)_6rem_auto]">
             <Input value={nm} onChange={(e) => setNm(e.target.value)} placeholder="Taille (ex. XL)" aria-label="Nouvelle taille" maxLength={40} />
-            <Input value={pr} onChange={(e) => setPr(e.target.value)} inputMode="decimal" placeholder="Prix €" aria-label="Prix de la nouvelle taille" />
+            <Input value={pr} onChange={(e) => setPr(e.target.value)} inputMode="decimal" placeholder={`Prix ${currencyUnit(currency)}`} aria-label="Prix de la nouvelle taille" />
             <Button type="button" variant="secondary" className="min-h-11" onClick={() => { if (!nm.trim()) return; void act(supabase.from("product_variants").insert({ restaurant_id: restaurantId, product_id: productId, name: nm.trim(), price: num(pr), sort_order: nextOrder(sizes), is_default: !sizes.length })); setNm(""); setPr(""); }}><Plus /> Taille</Button>
           </div>
         </div>
