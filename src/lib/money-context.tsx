@@ -8,4 +8,6 @@ export function MoneyProvider({ currency, children }: { currency: Currency; chil
 export function useMoney() {
   const currency = useContext(MoneyContext);
   return (amount: number) => formatMoney(amount, currency);
+}export function useCurrency() {
+  return useContext(MoneyContext);
 }

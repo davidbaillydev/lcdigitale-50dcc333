@@ -26,6 +26,8 @@ import { setSoldOut, useSoldOut } from "@/lib/stock";
 import { useOptionData } from "@/lib/menu-options-live";
 import { ItemOptionsEditor, OptionGroupsPanel } from "@/components/MenuOptionsEditor";
 import { PRESET_DRINKS } from "@/lib/drinks-preset";
+import { MoneyProvider } from "@/lib/money-context";
+import { currencyOf, currencyUnit, formatMoney, moneyDecimals } from "@/lib/money";
 import { MenuSimulation } from "@/components/MenuSimulation";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MenuTemplatePicker } from "@/components/MenuTemplatePicker";
@@ -57,6 +59,7 @@ function MenuEditor() {
   const r = restaurants.find((x) => x.slug === slug);
   const soldOut = useSoldOut(r?.id);
   const opt = useOptionData(r?.id);
+  const currency = currencyOf(r as { config?: { currency?: string } | null } | undefined);
   const canManage = r?.role === "agency" || r?.role === "manager";
   const load = useServerFn(loadMenu);
   const save = useServerFn(saveMenu);
@@ -141,6 +144,7 @@ function MenuEditor() {
   };
 
   return (
+    <MoneyProvider currency={currency}>
       <div className="admin-menu mx-auto max-w-4xl p-6 pb-28">
         <div className="flex items-center justify-between gap-3"><Crumbs slug={slug} page="Carte" /><ThemeToggle /></div>
       <RestaurantNav slug={slug} className="print:hidden" />
@@ -171,7 +175,7 @@ function MenuEditor() {
             <MenuTemplatePicker templates={templates} menu={candidate} onApply={(next, count) => { setCandidate(next); toast.success(`Structure appliquée à ${count} plat(s) — vérifiez les choix et leurs prix`); }} />
             {!templates.length && <p className="text-sm text-muted-foreground">Aucun modèle disponible. L’agence peut définir un restaurant comme modèle depuis sa fiche ou sa carte.</p>}
             <div className="mt-3 max-h-64 shrink-0 overflow-auto border-y border-border py-2 text-sm">
-              {candidate.map((c) => <div key={c.id} className="mb-3"><strong>{c.label}</strong>{c.items.map((it) => <div key={it.id} className="flex justify-between gap-3 border-b border-border/50 py-1"><span>{it.name}<AllergenBadges ids={it.allergens} className="mt-1" /></span><span className="shrink-0">{it.price.toFixed(2)} €</span></div>)}</div>)}
+              {candidate.map((c) => <div key={c.id} className="mb-3"><strong>{c.label}</strong>{c.items.map((it) => <div key={it.id} className="flex justify-between gap-3 border-b border-border/50 py-1"><span>{it.name}<AllergenBadges ids={it.allergens} className="mt-1" /></span><span className="shrink-0">{formatMoney(it.price, currency)}</span></div>)}</div>)}
             </div>
             <div className="space-y-2 border-l-4 border-primary bg-primary/5 p-3 text-sm">
               <p className="font-semibold">Ajout sans écraser · {menuMergeSummaryText(mergedCandidate.summary)}</p>
@@ -269,8 +273,8 @@ function MenuEditor() {
                         {!!it.options?.length && <p className="text-xs text-muted-foreground">Options conservées : {it.options.map((o) => o.label).join(" · ")}</p>}
                       </div>
                       <div>
-                        <Input type="number" step="0.1" min="0" value={it.price} onChange={(e) => setItem(ci, ii, { price: Math.max(0, Number(e.target.value)) })} aria-label="Prix" />
-                        <span className="text-xs text-muted-foreground">Prix €</span>
+                        <Input type="number" step={moneyDecimals(currency) ? "0.1" : "50"} min="0" value={it.price} onChange={(e) => setItem(ci, ii, { price: Math.max(0, Number(e.target.value)) })} aria-label="Prix" />
+                        <span className="text-xs text-muted-foreground">Prix {currencyUnit(currency)}</span>
                       </div>
                       <div className="flex items-start gap-1">
                         <Button size="sm" variant={soldOut.has(it.id) ? "destructive" : "outline"} className="min-h-10" onClick={async () => { const on = !soldOut.has(it.id); try { await setSoldOut(r!.id, it.id, on); toast.success(on ? `${it.name} : épuisé` : `${it.name} : disponible`); } catch { toast.error("Modification impossible"); } }} title="Effet immédiat sur le site, la borne et le menu QR, sans enregistrer la carte"><PackageX /> {soldOut.has(it.id) ? "Épuisé" : "Marquer épuisé"}</Button>
@@ -305,5 +309,6 @@ function MenuEditor() {
           </div>
         </div>
       </div>
+    </MoneyProvider>
   );
 }
