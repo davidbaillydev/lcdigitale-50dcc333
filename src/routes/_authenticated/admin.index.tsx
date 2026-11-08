@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { ArrowDown, ArrowUp, BarChart3, BookOpen, ChefHat, ChevronDown, Contact, Copy, Globe, GripVertical, ExternalLink, FileText, Landmark, LogOut, Mail, MoreHorizontal, Pencil, Plus, QrCode, Search, Settings, ShieldCheck, ShoppingBag, Store, Tablet, Trash2, Users, Wallet, X } from "lucide-react";
+import { ArrowDown, ArrowUp, BarChart3, BookOpen, ChefHat, ChevronDown, Contact, Copy, Globe, GripVertical, ExternalLink, FileText, Landmark, LogOut, Mail, MoreHorizontal, Pencil, Plus, QrCode, Search, Settings, ShieldCheck, ShoppingBag, Tablet, Trash2, Users, Wallet, X } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
@@ -123,7 +123,7 @@ function Console() {
 
   return (
     <div className="mx-auto max-w-7xl p-6">
-      <header className="flex flex-col gap-5">
+      <header className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center gap-3">
         <div className="mr-auto min-w-0">
           <p className="text-sm font-semibold text-primary">Réseau de restaurants</p>
@@ -136,7 +136,7 @@ function Console() {
         <Button variant="ghost" size="icon" onClick={async () => { await supabase.auth.signOut(); navigate({ to: "/connexion", replace: true }); }} aria-label="Déconnexion"><LogOut /></Button>
         </div>
         </div>
-        <nav aria-label="Navigation agence" className="flex flex-wrap gap-1 border-t border-border pt-3">
+        <nav aria-label="Navigation agence" className="flex flex-wrap gap-1 border-t border-border pt-2">
           <AgencyMenu label="Opérations" icon={<ChefHat />}>
             <DropdownMenuItem asChild><Link to="/espace"><ChefHat />Écrans cuisine</Link></DropdownMenuItem>
             <DropdownMenuItem asChild><Link to="/admin/commande-test"><ShoppingBag />Commande test livraison</Link></DropdownMenuItem>
@@ -171,21 +171,17 @@ function Console() {
         </DialogContent>
       </Dialog>
 
-      <div className="admin-metrics mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3" aria-label="Chiffres clés du réseau">
-        {([{ label: "Total", value: rows?.length, icon: Store }, { label: "En ligne", value: rows ? active : undefined, icon: Globe }, { label: "Commandes du jour", value: rows ? today : undefined, icon: ShoppingBag }]).map(({ label, value, icon: Icon }) => (
-          <div key={label} className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card p-5 shadow-sm">
-            <div><p className="text-sm font-medium text-muted-foreground">{label}</p><p className="mt-2 font-display text-4xl font-semibold tabular-nums">{value ?? "—"}</p></div>
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-secondary text-primary"><Icon className="size-5" /></div>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-8 flex flex-col gap-3 border-b border-border pb-4 lg:flex-row lg:items-center">
+      <div className="mt-5 flex flex-col gap-3 border-b border-border pb-4 lg:flex-row lg:items-center">
         <div className="relative min-w-0 flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input className="min-h-12 pl-10 pr-12" placeholder="Rechercher par nom, ville ou adresse web…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher" />
           {q && <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 size-10 -translate-y-1/2" aria-label="Effacer la recherche" onClick={() => setQ("")}><X /></Button>}
         </div>
+        {rows && <div className="flex items-center gap-2 self-start rounded-full border border-border bg-card px-3 py-2 text-sm shadow-sm lg:self-auto" aria-label="Commandes du jour">
+          <ShoppingBag className="size-4 shrink-0 text-primary" aria-hidden />
+          <span className="font-semibold tabular-nums">{today}</span>
+          <span className="text-muted-foreground">commande{today > 1 ? "s" : ""} aujourd'hui</span>
+        </div>}
         <div className="w-full lg:w-48"><CountrySelect value={countryFilter} onChange={setCountryFilter} all label="Filtrer par pays" /></div>
         <div role="group" aria-label="Filtrer les restaurants" className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1 lg:flex">
           {([{ value: "all", label: "Tous", count: rows?.length }, { value: "online", label: "En ligne", count: rows ? active : undefined }, { value: "offline", label: "Hors ligne", count: rows ? rows.length - active : undefined }] as const).map((filter) =>
@@ -193,9 +189,9 @@ function Console() {
           )}
         </div>
       </div>
-      {rows && <p className="mt-3 text-sm text-muted-foreground" aria-live="polite">{filteredRows.length} restaurant{filteredRows.length > 1 ? "s" : ""} affiché{filteredRows.length > 1 ? "s" : ""} sur {rows.length}</p>}
+      {rows && <p className="mt-2 text-sm text-muted-foreground" aria-live="polite">{filteredRows.length} restaurant{filteredRows.length > 1 ? "s" : ""} affiché{filteredRows.length > 1 ? "s" : ""} sur {rows.length}</p>}
       {!rows ? <p className="mt-10 text-center text-muted-foreground">Chargement du réseau…</p> : (
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
           {filteredRows.length === 0 && <div className="col-span-full py-12 text-center"><Search className="mx-auto mb-3 size-7 text-muted-foreground" /><h2 className="text-xl font-semibold">Aucun restaurant trouvé</h2><Button variant="link" className="mt-2" onClick={() => { setQ(""); setStatusFilter("all"); setCountryFilter("all"); }}>Réinitialiser les filtres</Button></div>}
           {filteredRows.map((r) => { const pos = rows.indexOf(r); return (
             <article key={r.id} draggable={canReorder} onDragStart={(e) => { setDragId(r.id); e.dataTransfer.effectAllowed = "move"; }} onDragEnd={() => setDragId(null)}
