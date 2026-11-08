@@ -36,7 +36,7 @@ export const saveAgencyPublicDomain = createServerFn({ method: "POST" })
 export type AgencyRestaurant = {
   id: string; slug: string; name: string; city: string | null; address: string | null; phone: string | null; email: string | null;
   menu_key: string; logo_url: string | null; brand: { primary?: string; accent?: string; bannerPath?: string }; active: boolean; orders_today: number;
-  config: { ordersPaused?: boolean; serviceFee?: Partial<import("./service-fee").ServiceFeeConfig> };
+  config: { country?: import("./money").zCountry; currency?: import("./money").Currency; ordersPaused?: boolean; serviceFee?: Partial<import("./service-fee").ServiceFeeConfig> };
   delivery?: import("./shop").DeliveryConfig | null;
 };
 
