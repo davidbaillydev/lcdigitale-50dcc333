@@ -10,7 +10,7 @@ vi.mock("@/lib/menu-options", () => ({ loadOptionData: async () => ({}), withOpt
 vi.mock("@/lib/payments.functions", () => ({ stripeForRestaurant: async () => ({}), stripeCall: async () => ({ id: "pi_test", client_secret: "secret_test" }), startOnlinePayment: vi.fn() }));
 vi.mock("@/lib/promo.server", () => ({ resolveDiscount: async () => ({ discount: 0, code: null }) }));
 vi.mock("@/lib/pos.server", () => ({ syncOrderToPos: async () => ({ status: "skipped" }) }));
-vi.mock("@/lib/order-email.server", () => ({ notifyNewOrder: vi.fn() }));
+vi.mock("@/lib/order-email.server", () => ({ notifyNewOrder: async () => ({ sent: false }) }));
 vi.mock("@/lib/customer-access.server", () => ({ grantAccess: vi.fn(), issueAccessToken: () => "test-capability" }));
 vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: { from: () => {
   const q = { select: () => q, eq: () => q, maybeSingle: async () => ({ data: restaurant }), then: (resolve: (d: unknown) => unknown) => Promise.resolve({ data: [], error: null }).then(resolve), insert: mocks.insert, update: () => ({ eq: async () => ({ error: null }) }) }; return q;
