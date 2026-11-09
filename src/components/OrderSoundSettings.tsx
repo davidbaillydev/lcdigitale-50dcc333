@@ -9,17 +9,22 @@ import { ORDER_RINGTONE_CHOICES, playOrderSound, type OrderSound } from "@/lib/o
 export function OrderSoundSettings({ value, onChange }: { value: OrderSound; onChange: (value: OrderSound) => void }) {
   const audio = useRef<AudioContext | null>(null);
   const stop = useRef<(() => void) | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [playing, setPlaying] = useState<OrderSound["ringtone"] | null>(null);
-  useEffect(() => () => { stop.current?.(); void audio.current?.close().catch(() => {}); }, []);
+  const clearTimer = () => { if (timer.current) { clearTimeout(timer.current); timer.current = null; } };
+  useEffect(() => () => { stop.current?.(); clearTimer(); void audio.current?.close().catch(() => {}); }, []);
   const preview = async (ringtone: OrderSound["ringtone"]) => {
-    if (playing === ringtone) { stop.current?.(); stop.current = null; setPlaying(null); return; }
+    if (playing === ringtone) { stop.current?.(); stop.current = null; clearTimer(); setPlaying(null); return; }
     try {
       stop.current?.();
       audio.current ??= new AudioContext();
       await audio.current.resume();
       setPlaying(ringtone);
-      stop.current = playOrderSound(audio.current, { ...value, ringtone }, () => setPlaying((current) => (current === ringtone ? null : current)));
-    } catch { setPlaying(null); toast.error("Son indisponible : vérifiez le volume de votre appareil."); }
+      // Safety net: if the browser never reports the end of playback, the button must not stay on "Arrêter".
+      clearTimer();
+      timer.current = setTimeout(() => setPlaying((current) => (current === ringtone ? null : current)), 8000);
+      stop.current = playOrderSound(audio.current, { ...value, ringtone }, () => { clearTimer(); setPlaying((current) => (current === ringtone ? null : current)); });
+    } catch { clearTimer(); setPlaying(null); toast.error("Son indisponible : vérifiez le volume de votre appareil."); }
   };
   const selected = ORDER_RINGTONE_CHOICES.find((ring) => ring.id === value.ringtone)?.label ?? value.ringtone;
   const listenButton = (ringtone: OrderSound["ringtone"], label: string, wide: boolean) => {
