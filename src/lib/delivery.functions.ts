@@ -104,15 +104,13 @@ export const courierLogin = createServerFn({ method: "POST" })
     const { data: r } = await supabaseAdmin.from("restaurants").select("id, name, slug").eq("slug", data.slug.toLowerCase()).eq("active", true).maybeSingle();
     const { data: row } = r ? await supabaseAdmin.from("restaurant_courier_pins").select("*").eq("restaurant_id", r.id).maybeSingle() : { data: null };
     if (!r || !row) throw new Error("Restaurant ou code incorrect");
-    if (row.locked_until && new Date(row.locked_until) > new Date()) throw new Error("Trop d'essais : réessayez dans quelques minutes");
+    // Throttle per caller (trusted edge IP), never per restaurant: strangers cannot lock out real couriers.
+    const { kioskAttemptKey } = await import("./customer-access.server");
+    const { data: allowed, error: throttleError } = await supabaseAdmin.rpc("claim_kiosk_pin_attempt", { _caller_key: kioskAttemptKey(`courier:${r.id}`) });
+    if (throttleError || allowed !== true) throw new Error("Trop d'essais : réessayez dans quelques minutes");
     const { timingSafeEqual } = await import("crypto");
     const ok = timingSafeEqual(Buffer.from(await hashPin(data.pin, row.salt), "hex"), Buffer.from(row.pin_hash, "hex"));
-    if (!ok) {
-      const fails = row.failed_attempts + 1;
-      await supabaseAdmin.from("restaurant_courier_pins").update({ failed_attempts: fails >= 5 ? 0 : fails, locked_until: fails >= 5 ? new Date(Date.now() + 5 * 60_000).toISOString() : null }).eq("restaurant_id", r.id);
-      throw new Error("Restaurant ou code incorrect");
-    }
-    await supabaseAdmin.from("restaurant_courier_pins").update({ failed_attempts: 0, locked_until: null }).eq("restaurant_id", r.id);
+    if (!ok) throw new Error("Restaurant ou code incorrect");
     const exp = Date.now() + 14 * 3600_000;
     const { data: drivers } = await supabaseAdmin.from("restaurant_drivers").select("id, name").eq("restaurant_id", r.id).eq("active", true).order("name");
     return { token: `${r.id}.${exp}.${await sign(r.id, exp, row.pin_hash)}`, name: r.name, drivers: drivers ?? [] };

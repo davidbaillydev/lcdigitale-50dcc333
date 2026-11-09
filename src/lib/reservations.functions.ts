@@ -107,6 +107,8 @@ export const chargeNoShow = createServerFn({ method: "POST" })
     // Lecture via RLS : vérifie l'accès au restaurant
     const { data: res } = await context.supabase.from("reservations").select("id, restaurant_id, status, stripe_customer, payment_method, no_show_fee, starts_at").eq("id", data.id).maybeSingle();
     if (!res) throw new Error("Réservation introuvable");
+    const { data: manager } = await context.supabase.rpc("is_restaurant_manager", { _user_id: context.userId, _restaurant_id: res.restaurant_id });
+    if (manager !== true) throw new Error("Réservé au gérant");
     if (res.status !== "confirmed") throw new Error("Seule une réservation confirmée peut être déclarée no-show.");
     if (new Date(res.starts_at).getTime() > Date.now()) throw new Error("L'heure de la réservation n'est pas encore passée.");
     const db = await admin();
