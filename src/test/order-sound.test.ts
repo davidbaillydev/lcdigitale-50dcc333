@@ -39,4 +39,26 @@ describe("restaurant sound rules", () => {
     playOrderSound({ createGain } as unknown as AudioContext, { ringtone: "chime", volume: 0, repeatSeconds: 5 });
     expect(createGain).not.toHaveBeenCalled();
   });
+  it("calls back when a preview ends so the listen button can reset", () => {
+    const onEnd = vi.fn();
+    const oscillators: { onended: (() => void) | undefined }[] = [];
+    const param = () => ({ value: 0, setValueAtTime: vi.fn(), linearRampToValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() });
+    const node = () => { const n = { connect: vi.fn(() => n), disconnect: vi.fn() }; return n; };
+    const ctx = { currentTime: 0, destination: {}, createDynamicsCompressor: () => ({ ...node(), threshold: param(), knee: param(), ratio: param(), attack: param(), release: param() }), createGain: () => ({ ...node(), gain: param() }), createOscillator: () => { const o = { ...node(), type: "sine", frequency: { value: 0 }, start: vi.fn(), stop: vi.fn(), onended: undefined as (() => void) | undefined }; oscillators.push(o); return o; } };
+    playOrderSound(ctx as unknown as AudioContext, { ringtone: "welcome", volume: 100, repeatSeconds: 5 }, onEnd);
+    expect(onEnd).not.toHaveBeenCalled();
+    oscillators.forEach((o) => o.onended?.());
+    expect(onEnd).toHaveBeenCalledTimes(1);
+  });
+  it("calls back immediately when the volume is zero", () => {
+    const onEnd = vi.fn();
+    playOrderSound({} as unknown as AudioContext, { ringtone: "chime", volume: 0, repeatSeconds: 5 }, onEnd);
+    expect(onEnd).toHaveBeenCalledTimes(1);
+  });
+  it("makes every listed ringtone previewable", () => {
+    for (const choice of ORDER_RINGTONE_CHOICES) {
+      const playable = ORDER_RINGTONES.some((ring) => ring.id === choice.id) || ORDER_FILE_RINGTONES.some((ring) => ring.id === choice.id && ring.url.length > 0);
+      expect(playable, choice.id).toBe(true);
+    }
+  });
 });
