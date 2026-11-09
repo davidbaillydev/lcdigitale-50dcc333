@@ -1,6 +1,7 @@
 import { z } from "zod";
 import kitchenAlert from "@/assets/sounds/sonnerie_alerte_cuisine.mp3.asset.json";
 import softChime from "@/assets/sounds/sonnerie_carillon_doux.mp3.asset.json";
+import improvedChime from "@/assets/sounds/carillon_lumineux_ameliore.mp3.asset.json";
 
 export const orderSoundSchema = z.object({ ringtone: z.enum(["chime", "welcome", "melody", "kitchen", "carillon"]), volume: z.number().int().min(0).max(100), repeatSeconds: z.number().int().min(3).max(120).default(5) });
 export type OrderSound = z.infer<typeof orderSoundSchema>;
@@ -12,16 +13,17 @@ export const ORDER_RINGTONES = [
 
 /** Recorded ringtones supplied by the agency, played as decoded audio files. */
 export const ORDER_FILE_RINGTONES = [
+  { id: "chime", label: "Carillon lumineux", url: improvedChime.url },
   { id: "kitchen", label: "Alerte cuisine percutante", url: kitchenAlert.url },
   { id: "carillon", label: "Carillon mélodique", url: softChime.url },
 ] as const;
-export const ORDER_RINGTONE_CHOICES: { id: OrderSound["ringtone"]; label: string }[] = [...ORDER_RINGTONES, ...ORDER_FILE_RINGTONES];
+export const ORDER_RINGTONE_CHOICES: { id: OrderSound["ringtone"]; label: string }[] = [...ORDER_RINGTONES, ...ORDER_FILE_RINGTONES.filter((ring) => ring.id !== "chime")];
 
 const buffers = new Map<string, Promise<AudioBuffer>>();
 function playFile(ctx: AudioContext, url: string, volume: number): () => void {
   let stopped = false; let source: AudioBufferSourceNode | null = null;
   let pending = buffers.get(url);
-  if (!pending) { pending = fetch(url).then((r) => r.arrayBuffer()).then((b) => ctx.decodeAudioData(b)); buffers.set(url, pending); pending.catch(() => buffers.delete(url)); }
+  if (!pending) { pending = fetch(url).then((r) => { if (!r.ok) throw new Error("Audio unavailable"); return r.arrayBuffer(); }).then((b) => ctx.decodeAudioData(b)); buffers.set(url, pending); pending.catch(() => buffers.delete(url)); }
   void pending.then((buffer) => {
     if (stopped) return;
     const gain = ctx.createGain(); gain.gain.value = volume / 100;
