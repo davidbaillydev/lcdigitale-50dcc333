@@ -2,8 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { customerOrderStage } from "@/lib/kitchen-status";
+import { isAllowedPushEndpoint } from "@/lib/push-endpoint";
 
-const endpoint = z.string().url().max(1000).refine((u) => u.startsWith("https://"), "Adresse invalide");
+const endpoint = z.string().url().max(1000).refine(isAllowedPushEndpoint, "Adresse invalide");
 
 const STATUS_MSG: Record<string, (n: number, mode: string) => string> = {
   accepted: (n) => `Commande n° ${n} confirmée, elle part en préparation.`,

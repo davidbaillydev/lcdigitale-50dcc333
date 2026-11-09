@@ -24,6 +24,16 @@ export const listPaymentProviders = createServerFn({ method: "POST" })
     });
   });
 
+/** Only these keys may be written by callers; OAuth tokens and anything else stay server-managed. */
+const CALLER_FIELDS: Record<Provider, readonly string[]> = {
+  sumup: ["apiKey", "merchantCode"],
+  stripe: ["publishableKey", "secretKey", "readerId", "mode"],
+  paypal: ["clientId", "secret", "mode"],
+  lyra: ["siteId", "key", "gateway", "mode"],
+  mollie: ["apiKeyTest", "apiKeyLive", "profileId", "terminalId", "mode"],
+  cinetpay: ["siteId", "apiKey", "secretKey", "mode"],
+};
+
 export const credSchema = z.record(z.string().max(40), z.string().trim().max(300));
 
 /** Active/désactive un prestataire et met à jour ses clés (champ vide = clé conservée). */
@@ -37,6 +47,8 @@ export const savePaymentProvider = createServerFn({ method: "POST" })
     await assertManager(context.supabase, context.userId, data.restaurantId);
     const prev = await getRow(data.restaurantId, data.provider);
     const credentials = { ...(prev?.credentials ?? {}) };
+    const fields = CALLER_FIELDS[data.provider];
+    if ([...Object.keys(data.credentials), ...(data.clear ?? [])].some((k) => !fields.includes(k))) throw new Error("Champ de paiement non reconnu.");
     // Effacement explicite de clés saisies à la main (jamais les jetons OAuth ni le mode).
     for (const k of data.clear ?? []) if (!k.startsWith("oauth") && k !== "mode") delete credentials[k];
     for (const [k, v] of Object.entries(data.credentials)) if (v) credentials[k] = v;

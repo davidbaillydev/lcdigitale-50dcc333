@@ -45,7 +45,7 @@ describe("Signed record capabilities", () => {
 describe("Private public-endpoint authorization", () => {
   const endpoints: [string, unknown, unknown, "order" | "kiosk" | "reservation"][] = [
     ["status", getOrderStatus, { id }, "order"], ["invoice", getCustomerInvoice, { orderId: id }, "order"],
-    ["credit notes", getCustomerCreditNotes, { orderId: id }, "order"], ["push", subscribeOrderPush, { orderId: id, endpoint: "https://push.example/endpoint" }, "order"],
+    ["credit notes", getCustomerCreditNotes, { orderId: id }, "order"], ["push", subscribeOrderPush, { orderId: id, endpoint: "https://fcm.googleapis.com/fcm/send/abc" }, "order"],
     ["reservation", confirmReservation, { id }, "reservation"], ["terminal start", startKioskCardPayment, { orderId: id }, "kiosk"],
     ["terminal status", kioskPaymentStatus, { orderId: id }, "kiosk"], ["terminal cancel", cancelKioskPayment, { orderId: id }, "kiosk"],
     ["terminal abandon", abandonKioskOrder, { orderId: id }, "kiosk"], ["QR start", startKioskQrPayment, { orderId: id, origin: "https://restaurant.lcdigitale.fr" }, "kiosk"],

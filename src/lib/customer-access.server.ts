@@ -41,3 +41,15 @@ export function kioskAttemptKey(restaurantId: string) {
   if (!address) throw new Error("Vérification temporairement indisponible.");
   return createHmac("sha256", key()).update(`kiosk-pin:${restaurantId}:${address}`).digest("hex");
 }
+/** Binds a client-chosen cart id to a server-issued HttpOnly owner cookie so a known id cannot overwrite another shopper's row. */
+export function cartSessionKey(clientId: string) {
+  const name = "lc_cart_owner";
+  let owner = (getRequestHeader("cookie") ?? "").split(";").map((v) => v.trim()).find((v) => v.startsWith(`${name}=`))?.slice(name.length + 1);
+  if (!owner || !/^[a-f0-9]{32}$/.test(owner)) {
+    owner = createHmac("sha256", key()).update(`${crypto.randomUUID()}:${Date.now()}`).digest("hex").slice(0, 32);
+    const secure = new URL(getRequest().url).protocol === "https:" ? "; Secure" : "";
+    setResponseHeader("Set-Cookie", `${name}=${owner}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${180 * 86400}${secure}`);
+  }
+  const h = createHmac("sha256", key()).update(`cart:${owner}:${clientId}`).digest("hex");
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-${((parseInt(h.charAt(16), 16) & 3) | 8).toString(16)}${h.slice(17, 20)}-${h.slice(20, 32)}`;
+}

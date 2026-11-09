@@ -1,3 +1,4 @@
+import { isAllowedPushEndpoint } from "./push-endpoint";
 import { VAPID_PUBLIC_KEY } from "./push";
 
 type Admin = Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"];
@@ -15,6 +16,7 @@ async function vapidJwt(audience: string) {
 
 /** Push sans contenu (pas de chiffrement nécessaire) : le service worker récupère ensuite le message. */
 export async function sendEmptyPush(endpoint: string) {
+  if (!isAllowedPushEndpoint(endpoint)) return 410;
   const jwt = await vapidJwt(new URL(endpoint).origin);
   const res = await fetch(endpoint, { method: "POST", headers: { Authorization: `vapid t=${jwt}, k=${VAPID_PUBLIC_KEY}`, TTL: "86400", Urgency: "high", "Content-Length": "0" } });
   return res.status;

@@ -21,8 +21,10 @@ export const trackCartSession = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => schema.parse(d))
   .handler(async ({ data }) => {
     try {
+      const { cartSessionKey } = await import("./customer-access.server");
+      const sessionId = cartSessionKey(data.session_id);
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { data: prev } = await supabaseAdmin.from("cart_sessions").select("restaurant_id,current_step,max_step,traffic_source").eq("session_id", data.session_id).maybeSingle();
+      const { data: prev } = await supabaseAdmin.from("cart_sessions").select("restaurant_id,current_step,max_step,traffic_source").eq("session_id", sessionId).maybeSingle();
       if (prev && (prev.restaurant_id !== data.restaurant_id || prev.current_step === "completed")) return { ok: false };
       if (!prev) {
         const { data: r } = await supabaseAdmin.from("restaurants").select("id").eq("id", data.restaurant_id).eq("active", true).maybeSingle();
@@ -30,7 +32,7 @@ export const trackCartSession = createServerFn({ method: "POST" })
       }
       const rank = STEPS.indexOf(data.step);
       await supabaseAdmin.from("cart_sessions").upsert({
-        session_id: data.session_id,
+        session_id: sessionId,
         restaurant_id: data.restaurant_id,
         channel: data.channel,
         current_step: data.step,
