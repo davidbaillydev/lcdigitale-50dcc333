@@ -51,5 +51,5 @@ export function cartSessionKey(clientId: string) {
     setResponseHeader("Set-Cookie", `${name}=${owner}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${180 * 86400}${secure}`);
   }
   const h = createHmac("sha256", key()).update(`cart:${owner}:${clientId}`).digest("hex");
-  return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-${((parseInt(h[16], 16) & 3) | 8).toString(16)}${h.slice(17, 20)}-${h.slice(20, 32)}`;
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-${((parseInt(h.charAt(16), 16) & 3) | 8).toString(16)}${h.slice(17, 20)}-${h.slice(20, 32)}`;
 }
