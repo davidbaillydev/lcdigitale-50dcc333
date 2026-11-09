@@ -288,6 +288,7 @@ function Kitchen() {
     try {
       if (!audio.current) audio.current = new AudioContext();
       await audio.current.resume(); beep(audio.current); setSound(true); setStarted(true);
+      window.dispatchEvent(new Event("lc-professional-sound-start"));
     } catch { setSound(false); toast.error("Son indisponible : vérifiez le volume et réessayez d’activer le son."); }
   };
 

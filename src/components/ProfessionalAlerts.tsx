@@ -10,6 +10,7 @@ import { orderSoundOf, playOrderSound } from "@/lib/order-sound";
 import { pushSupported, needsInstallForPush, VAPID_PUBLIC_KEY } from "@/lib/push";
 import { registerStaffPush, removeStaffPush } from "@/lib/staff-push.functions";
 import { storeStaffAlertDevice } from "@/lib/staff-alert-device";
+import { isNewOrderAlert, type AlertOrder } from "@/lib/order-alert";
 
 export function ProfessionalAlerts() {
   const { restaurants, user } = useStaff();
@@ -21,6 +22,11 @@ export function ProfessionalAlerts() {
   const [busy, setBusy] = useState(false);
   const register = useServerFn(registerStaffPush);
   const remove = useServerFn(removeStaffPush);
+  useEffect(() => {
+    const start = () => { audio.current ??= new AudioContext(); void audio.current.resume().then(() => setActive(true)).catch(() => {}); };
+    window.addEventListener("lc-professional-sound-start", start);
+    return () => window.removeEventListener("lc-professional-sound-start", start);
+  }, []);
   const enable = async () => {
     setBusy(true);
     try {
@@ -67,13 +73,19 @@ export function ProfessionalAlerts() {
   useEffect(() => {
     if (!active || !ids) return;
     const seen = new Set<string>();
+    const statuses = new Map<string, string>();
+    void supabase.from("orders").select("id, status").in("restaurant_id", ids.split(",")).gte("created_at", new Date(Date.now() - 86400_000).toISOString()).then(({ data }) => {
+      for (const order of data ?? []) { if (!statuses.has(order.id)) statuses.set(order.id, order.status); }
+    });
     const channel = supabase.channel(`professional-alerts-${user?.id}`);
     for (const id of ids.split(",")) {
       channel.on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `restaurant_id=eq.${id}` }, (event) => {
-        const order = event.new as { id?: string; restaurant_id?: string; status?: string; is_test?: boolean; source?: string };
+        const order = event.new as AlertOrder & { restaurant_id?: string };
         const old = event.old as { status?: string };
-        if (!order.id || order.is_test || order.source === "pos" || !["new", "accepted", "pending_approval"].includes(order.status ?? "")) return;
-        if (event.eventType !== "INSERT" && old.status !== "awaiting_payment") return;
+        if (!order.id) return;
+        const previous = old.status ?? statuses.get(order.id);
+        statuses.set(order.id, order.status);
+        if (!isNewOrderAlert(event.eventType, order, previous)) return;
         if (seen.has(order.id)) return; seen.add(order.id);
         const r = latest.current.restaurants.find((item) => item.id === order.restaurant_id);
         if (!r) return;
