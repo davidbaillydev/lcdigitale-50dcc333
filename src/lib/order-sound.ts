@@ -29,7 +29,7 @@ export function playOrderSound(ctx: AudioContext, settings: OrderSound): () => v
   const nodes: OscillatorNode[] = [];
   let remaining = ring.notes.length * 2;
   for (const [frequency, offset] of ring.notes) {
-    for (const [multiple, amplitude] of [[1, 0.65], [2, 0.07]]) {
+    for (const [multiple, amplitude] of [[1, 0.65], [2, 0.07]] as const) {
       const oscillator = ctx.createOscillator();
       const envelope = ctx.createGain();
       const at = ctx.currentTime + offset;

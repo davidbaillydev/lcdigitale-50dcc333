@@ -365,5 +365,6 @@ export const createKioskOrder = createServerFn({ method: "POST" })
     if (cardOnly || qr) return row;
     { const { syncOrderToPos } = await import("./pos.server"); await syncOrderToPos(row.id); }
     if (data.payment_method === "counter") { const { sendRestaurantNewOrder } = await import("./order-email.server"); await sendRestaurantNewOrder(supabaseAdmin, row.id).catch((e) => console.error(e)); }
+    { const { notifyStaffOrder } = await import("./staff-push.server"); await notifyStaffOrder(supabaseAdmin, row.id).catch((e) => console.error("staff push", e)); }
     return row;
   });
