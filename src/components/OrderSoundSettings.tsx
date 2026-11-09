@@ -25,7 +25,7 @@ export function OrderSoundSettings({ value, onChange }: { value: OrderSound; onC
   const listenButton = (ringtone: OrderSound["ringtone"], label: string, wide: boolean) => {
     const isPlaying = playing === ringtone;
     return <Button type="button" variant={isPlaying ? "default" : "outline"} aria-pressed={isPlaying}
-      aria-label={isPlaying ? `Arrêter ${label}` : `Écouter ${label}`} title={isPlaying ? `Arrêter ${label}` : `Écouter ${label}`}
+      aria-label={isPlaying ? `Arrêter ${label}` : wide ? `Écouter la sonnerie sélectionnée (${label})` : `Écouter ${label}`} title={isPlaying ? `Arrêter ${label}` : `Écouter ${label}`}
       onClick={() => void preview(ringtone)} className={wide ? "min-h-12 w-full gap-2" : "min-h-12 shrink-0 gap-2 px-3"}>
       {isPlaying ? <Square className="size-4 shrink-0" /> : <Play className="size-4 shrink-0" />}
       <span className="truncate">{isPlaying ? "Arrêter" : wide ? `Écouter · ${label}` : "Écouter"}</span>
