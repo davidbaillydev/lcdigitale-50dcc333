@@ -18,16 +18,16 @@ describe("livraisons depuis la cuisine", () => {
   });
 });
 describe("rappels sonores cuisine", () => {
-  it("sonne toutes les 10 secondes tant que la commande attend acceptation", () => {
+  it("sonne toutes les 5 secondes par défaut tant que la commande attend acceptation", () => {
     vi.useFakeTimers(); const ring = vi.fn();
     const stop = startKitchenReminder(true, [{ status: "new" }], ring);
-    vi.advanceTimersByTime(30_000); expect(ring).toHaveBeenCalledTimes(3);
+    vi.advanceTimersByTime(15_000); expect(ring).toHaveBeenCalledTimes(3);
     stop(); startKitchenReminder(true, [{ status: "accepted" }], ring);
     vi.advanceTimersByTime(30_000); expect(ring).toHaveBeenCalledTimes(3);
   });
   it("continue pour une autre commande non acceptée", () => {
     vi.useFakeTimers(); const ring = vi.fn();
-    const stop = startKitchenReminder(true, [{ status: "accepted" }, { status: "pending_approval" }], ring);
+    const stop = startKitchenReminder(true, [{ status: "accepted" }, { status: "pending_approval" }], ring, 10_000);
     vi.advanceTimersByTime(20_000); expect(ring).toHaveBeenCalledTimes(2); stop();
   });
   it("respecte la coupure volontaire du son", () => {
