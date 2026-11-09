@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
-import { ORDER_RINGTONES, playOrderSound, type OrderSound } from "@/lib/order-sound";
+import { ORDER_RINGTONE_CHOICES, playOrderSound, type OrderSound } from "@/lib/order-sound";
 
 export function OrderSoundSettings({ value, onChange }: { value: OrderSound; onChange: (value: OrderSound) => void }) {
   const audio = useRef<AudioContext | null>(null);
@@ -20,7 +20,7 @@ export function OrderSoundSettings({ value, onChange }: { value: OrderSound; onC
   };
   return <div className="space-y-4">
     <div className="space-y-2" role="radiogroup" aria-label="Sonnerie des commandes">
-      {ORDER_RINGTONES.map((ring) => <div key={ring.id} className="flex items-center gap-2">
+      {ORDER_RINGTONE_CHOICES.map((ring) => <div key={ring.id} className="flex items-center gap-2">
         <Button type="button" variant={value.ringtone === ring.id ? "default" : "outline"} role="radio" aria-checked={value.ringtone === ring.id} onClick={() => onChange({ ...value, ringtone: ring.id })} className="min-h-12 min-w-0 flex-1 justify-start whitespace-normal"><Volume2 className="shrink-0" />{ring.label}</Button>
         <Button type="button" variant="secondary" size="icon" className="size-12 shrink-0" aria-label={`Écouter ${ring.label}`} title={`Écouter ${ring.label}`} onClick={() => void preview(ring.id)}><Play /></Button>
       </div>)}
