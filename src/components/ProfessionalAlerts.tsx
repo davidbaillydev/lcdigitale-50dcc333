@@ -104,7 +104,7 @@ export function ProfessionalAlerts() {
         // The kitchen owns its repeated alarm; elsewhere (including POS), this player remains mounted.
         if (latest.current.path.replace(/\/$/, "") === `/espace/${r.slug}`) return;
         const ctx = audio.current;
-        if (ctx) void supabase.from("restaurants").select("config").eq("id", r.id).maybeSingle().then(async ({ data }) => {
+        if (ctx) void Promise.resolve(supabase.from("restaurants").select("config").eq("id", r.id).maybeSingle()).then(async ({ data }) => {
           await ctx.resume(); playOrderSound(ctx, orderSoundOf((data?.config ?? r.config) as { orderSound?: unknown }));
         }).catch(() => {});
         toast.info(`${r.name} · Nouvelle commande à traiter`);
