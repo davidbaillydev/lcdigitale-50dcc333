@@ -3,7 +3,8 @@ import { ORDER_FILE_RINGTONES, ORDER_RINGTONE_CHOICES, ORDER_RINGTONES, orderSou
 describe("restaurant sound rules", () => {
   it("retires Carillon lumineux from every ringtone list", () => {
     expect(ORDER_RINGTONE_CHOICES.map((r) => r.id)).toEqual(["carillon", "kitchen", "welcome", "melody"]);
-    expect(ORDER_RINGTONE_CHOICES.some((r) => r.id === "chime" || r.label === "Carillon lumineux")).toBe(false);
+    expect(ORDER_RINGTONE_CHOICES.map((r) => r.id as string)).not.toContain("chime");
+    expect(ORDER_RINGTONE_CHOICES.some((r) => r.label === "Carillon lumineux")).toBe(false);
     expect(ORDER_FILE_RINGTONES.some((ring) => ring.url.includes("carillon_lumineux"))).toBe(false);
   });
   it("keeps the recorded carillon as the default at full volume", () => {
