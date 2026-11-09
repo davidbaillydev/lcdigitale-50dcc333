@@ -20,18 +20,18 @@ export const ORDER_FILE_RINGTONES = [
 export const ORDER_RINGTONE_CHOICES: { id: OrderSound["ringtone"]; label: string }[] = [...ORDER_RINGTONES, ...ORDER_FILE_RINGTONES.filter((ring) => ring.id !== "chime")];
 
 const buffers = new Map<string, Promise<AudioBuffer>>();
-function playFile(ctx: AudioContext, url: string, volume: number): () => void {
+function playFile(ctx: AudioContext, url: string, volume: number, onEnd?: () => void): () => void {
   let stopped = false; let source: AudioBufferSourceNode | null = null;
   let pending = buffers.get(url);
   if (!pending) { pending = fetch(url).then((r) => { if (!r.ok) throw new Error("Audio unavailable"); return r.arrayBuffer(); }).then((b) => ctx.decodeAudioData(b)); buffers.set(url, pending); pending.catch(() => buffers.delete(url)); }
   void pending.then((buffer) => {
-    if (stopped) return;
+    if (stopped) { onEnd?.(); return; }
     const gain = ctx.createGain(); gain.gain.value = volume / 100;
     source = ctx.createBufferSource(); source.buffer = buffer;
     source.connect(gain).connect(ctx.destination);
-    source.onended = () => { source?.disconnect(); gain.disconnect(); };
+    source.onended = () => { source?.disconnect(); gain.disconnect(); onEnd?.(); };
     source.start();
-  }).catch(() => {});
+  }).catch(() => { onEnd?.(); });
   return () => { stopped = true; try { source?.stop(); } catch { /* ended */ } };
 }
 
@@ -41,10 +41,10 @@ export function orderSoundOf(config?: { orderSound?: unknown } | null): OrderSou
 }
 
 /** Rounded, original major melodies. Compression limits overlapping peaks without clipping. */
-export function playOrderSound(ctx: AudioContext, settings: OrderSound): () => void {
-  if (settings.volume === 0) return () => {};
+export function playOrderSound(ctx: AudioContext, settings: OrderSound, onEnd?: () => void): () => void {
+  if (settings.volume === 0) { onEnd?.(); return () => {}; }
   const file = ORDER_FILE_RINGTONES.find((r) => r.id === settings.ringtone);
-  if (file) return playFile(ctx, file.url, settings.volume);
+  if (file) return playFile(ctx, file.url, settings.volume, onEnd);
   const ring = ORDER_RINGTONES.find((r) => r.id === settings.ringtone) ?? ORDER_RINGTONES[0];
   const compressor = ctx.createDynamicsCompressor();
   compressor.threshold.value = -10;
@@ -72,7 +72,7 @@ export function playOrderSound(ctx: AudioContext, settings: OrderSound): () => v
       oscillator.connect(envelope).connect(compressor);
       oscillator.onended = () => {
         oscillator.disconnect(); envelope.disconnect();
-        if (--remaining === 0) { compressor.disconnect(); out.disconnect(); }
+        if (--remaining === 0) { compressor.disconnect(); out.disconnect(); onEnd?.(); }
       };
       oscillator.start(at); oscillator.stop(at + decay + 0.25); nodes.push(oscillator);
     }
