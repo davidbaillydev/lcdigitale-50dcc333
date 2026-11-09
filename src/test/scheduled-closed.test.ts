@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { availableSlots, isValidSlot, scheduledOrderingAllowed, timingOf, type Restaurant } from "@/lib/shop";
 const closed = new Date("2026-11-09T08:00:00Z");
 const open = new Date("2026-11-09T11:00:00Z");
-const restaurant = (allow?: boolean) => ({ config: { timing: { scheduledWhileClosed: allow }, lead: { pickup: 20, delivery: 40 }, slotMinutes: 20 }, opening: { "1": [[690, 870]] } } as Restaurant);
+const restaurant = (allow?: boolean): Restaurant => ({ id: "fixture", slug: "fixture", name: "Fixture", city: null, address: null, phone: null, email: null, menu_key: "vierge", logo_url: null, menu: [], brand: {}, delivery: { minOrder: 0, fee: 0, freeFrom: 0, zones: [] }, config: { timing: allow === undefined ? {} : { scheduledWhileClosed: allow }, lead: { pickup: 20, delivery: 40 }, slotMinutes: 20 }, opening: { "1": [[690, 870]] } });
 describe("scheduled orders received while closed", () => {
   it("preserves existing booking when the preference is absent", () => {
     expect(timingOf(restaurant()).scheduledWhileClosed).toBe(true);

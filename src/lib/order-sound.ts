@@ -3,7 +3,7 @@ import { z } from "zod";
 export const orderSoundSchema = z.object({ ringtone: z.enum(["chime", "welcome", "melody"]), volume: z.number().int().min(0).max(100) });
 export type OrderSound = z.infer<typeof orderSoundSchema>;
 export const ORDER_RINGTONES = [
-  { id: "chime", label: "Carillon lumineux", notes: [[523.25, 0], [659.25, 0.22], [783.99, 0.44], [1046.5, 0.72]] },
+  { id: "chime", label: "Carillon lumineux", notes: [[523.25, 0], [659.25, 0.3], [783.99, 0.6], [1046.5, 0.95]] },
   { id: "welcome", label: "Accueil doux", notes: [[659.25, 0], [783.99, 0.25], [987.77, 0.5], [783.99, 0.85], [1046.5, 1.15]] },
   { id: "melody", label: "Mélodie joyeuse", notes: [[523.25, 0], [783.99, 0.18], [659.25, 0.36], [1046.5, 0.68], [783.99, 0.95], [1046.5, 1.22]] },
 ] as const;
@@ -33,18 +33,19 @@ export function playOrderSound(ctx: AudioContext, settings: OrderSound): () => v
       const oscillator = ctx.createOscillator();
       const envelope = ctx.createGain();
       const at = ctx.currentTime + offset;
+      const decay = settings.ringtone === "chime" ? 2.9 : 2.1;
       oscillator.type = "sine";
       oscillator.frequency.value = frequency * multiple;
       envelope.gain.setValueAtTime(0, at);
-      envelope.gain.linearRampToValueAtTime(amplitude, at + 0.035);
-      envelope.gain.exponentialRampToValueAtTime(0.0001, at + 2.1);
-      envelope.gain.linearRampToValueAtTime(0, at + 2.25);
+      envelope.gain.linearRampToValueAtTime(amplitude, at + 0.045);
+      envelope.gain.exponentialRampToValueAtTime(0.0001, at + decay);
+      envelope.gain.linearRampToValueAtTime(0, at + decay + 0.2);
       oscillator.connect(envelope).connect(compressor);
       oscillator.onended = () => {
         oscillator.disconnect(); envelope.disconnect();
         if (--remaining === 0) { compressor.disconnect(); out.disconnect(); }
       };
-      oscillator.start(at); oscillator.stop(at + 2.3); nodes.push(oscillator);
+      oscillator.start(at); oscillator.stop(at + decay + 0.25); nodes.push(oscillator);
     }
   }
   return () => nodes.forEach((node) => { try { node.stop(); } catch { /* already ended */ } });

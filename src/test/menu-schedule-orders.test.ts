@@ -45,4 +45,14 @@ describe("availability in actual order handlers", () => {
     await (saveMenu as unknown as Invoke)({ data: { restaurantId: id, menu }, context: { supabase: { rpc: mocks.rpc }, userId: id } });
     expect(mocks.update).toHaveBeenCalledWith({ menu });
   });
+  it("enforces closed-time scheduled blocking in the actual web handler", async () => {
+    const original = restaurant.config;
+    const opening = restaurant.opening;
+    restaurant.config = { timing: { scheduledWhileClosed: false } };
+    restaurant.opening = { "1": [[690, 870]] };
+    try {
+      await expect((createOrder as unknown as Invoke)({ data: { restaurant: "fixture", mode: "pickup", asap: false, slot: "2026-10-26T11:10:00Z", first_name: "Test", last_name: "Test", phone: "0600000000", payment_method: "on_site", cgv: true, lines } })).rejects.toThrow("créneau");
+      expect(mocks.insert).not.toHaveBeenCalled();
+    } finally { restaurant.config = original; restaurant.opening = opening; }
+  });
 });

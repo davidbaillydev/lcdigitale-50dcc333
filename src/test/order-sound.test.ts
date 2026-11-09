@@ -11,7 +11,7 @@ describe("restaurant sound rules", () => {
   });
   it("plays the selected melody louder than the former 0.55 × 0.22 gain", () => {
     const ramps: number[] = [];
-    const oscillators: { frequency: { value: number }; onended?: () => void }[] = [];
+    const oscillators: { frequency: { value: number }; onended: (() => void) | undefined }[] = [];
     const param = () => ({ value: 0, setValueAtTime: vi.fn(), linearRampToValueAtTime: (v: number) => ramps.push(v), exponentialRampToValueAtTime: vi.fn() });
     const gains: { gain: ReturnType<typeof param> }[] = [];
     const node = () => { const n = { connect: vi.fn(() => n), disconnect: vi.fn() }; return n; };
