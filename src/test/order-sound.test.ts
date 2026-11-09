@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import { ORDER_RINGTONES, orderSoundOf, playOrderSound } from "@/lib/order-sound";
+import { ORDER_RINGTONE_CHOICES, ORDER_RINGTONES, orderSoundOf, playOrderSound } from "@/lib/order-sound";
 describe("restaurant sound rules", () => {
+  it("offers five ringtones including the two recorded ones", () => {
+    expect(ORDER_RINGTONE_CHOICES.map((r) => r.id)).toEqual(["chime", "welcome", "melody", "kitchen", "carillon"]);
+    expect(orderSoundOf({ orderSound: { ringtone: "kitchen", volume: 80 } })).toEqual({ ringtone: "kitchen", volume: 80 });
+  });
   it("offers exactly three distinct melodies", () => {
     expect(ORDER_RINGTONES).toHaveLength(3);
     expect(new Set(ORDER_RINGTONES.map((r) => JSON.stringify(r.notes))).size).toBe(3);
