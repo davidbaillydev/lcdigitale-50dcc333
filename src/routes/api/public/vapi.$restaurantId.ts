@@ -56,7 +56,7 @@ export const Route = createFileRoute("/api/public/vapi/$restaurantId")({
         }
         if (msg.type !== "tool-calls") return Response.json({ ok: true });
 
-        const { RESTAURANT_COLUMNS, isValidSlot, modeEnabled, deliveryFee } = await import("@/lib/shop");
+        const { RESTAURANT_COLUMNS, isValidSlot, modeEnabled, deliveryFee, timingOf, isOpenNow } = await import("@/lib/shop");
         const { getCatalog } = await import("@/lib/catalogs");
         const { validateSelections, orderLine } = await import("@/lib/menu");
         const { loadOptionData, withOptions } = await import("@/lib/menu-options");
@@ -86,6 +86,7 @@ export const Route = createFileRoute("/api/public/vapi/$restaurantId")({
               const lead = r.config?.lead?.[a.mode] ?? 30;
               const slot = a.slot ?? new Date(Date.now() + lead * 60_000).toISOString();
               if (a.slot && !isValidSlot(r, a.mode, a.slot)) throw new Error("Créneau indisponible, proposez-en un autre.");
+              if (!a.slot && (!timingOf(r).asap || !isOpenNow(r, a.mode))) throw new Error("Le restaurant est fermé ou ne propose pas les commandes immédiates : choisissez un créneau d'ouverture.");
               const items = a.lines.map((l) => {
                 const item = catalog.itemsById[l.itemId];
                 if (!item) throw new Error(`Article inconnu : ${l.itemId}`);
@@ -117,6 +118,7 @@ export const Route = createFileRoute("/api/public/vapi/$restaurantId")({
               }).select("id, order_number").single();
               if (error) { console.error(error); throw new Error("Impossible d'enregistrer la commande."); }
               { const { sendRestaurantNewOrder } = await import("@/lib/order-email.server"); await sendRestaurantNewOrder(supabaseAdmin, row.id).catch((e) => console.error(e)); }
+              { const { notifyStaffOrder } = await import("@/lib/staff-push.server"); await notifyStaffOrder(supabaseAdmin, row.id).catch((e) => console.error("staff push", e)); }
               if (callId) {
                 await supabaseAdmin.from("restaurant_voice_calls").upsert({
                   restaurant_id: r.id, call_id: callId, caller, order_number: row.order_number, status: "commande", updated_at: new Date().toISOString(),

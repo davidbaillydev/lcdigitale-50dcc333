@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { RESTAURANT_COLUMNS, type Restaurant } from "./shop";
 import { notificationSettingsSchema } from "./order-notification-roles";
+import { orderSoundSchema } from "./order-sound";
 
 import { countrySchema, currencySchema } from "./money";
 
@@ -23,7 +24,8 @@ export const settingsSchema = z.object({
     tagline: z.string().max(200).optional(),
     autoAccept: z.boolean(),
     ordersPaused: z.boolean().optional(),
-    timing: z.object({ asap: z.boolean(), scheduled: z.boolean(), prepMode: z.enum(["auto", "manual"]), defaultPrep: z.number().int().min(5).max(180) }),
+    orderSound: orderSoundSchema.optional(),
+    timing: z.object({ asap: z.boolean(), scheduled: z.boolean(), scheduledWhileClosed: z.boolean().optional(), prepMode: z.enum(["auto", "manual"]), defaultPrep: z.number().int().min(5).max(180) }),
     modes: z.object({ pickup: z.boolean(), delivery: z.boolean(), dine_in: z.boolean() }),
     pickupMinOrder: z.number().min(0).max(500000).nullable(),
     payments: z.object({ online: z.boolean().optional(), onlineDeliveryOnly: z.boolean().optional(), on_site: z.boolean(), counter: z.boolean(), card_terminal: z.boolean(), qr: z.boolean().optional() }),

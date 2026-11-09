@@ -14,6 +14,8 @@ import { RestaurantCoverUpload } from "@/components/RestaurantCoverUpload";
 import { PrinterSetup } from "@/components/PrinterSetup";
 import { OrdersPausedToggle } from "@/components/OrdersPausedToggle";
 import { SettingsGroup, useSettingsGroup, type SettingsGroupKey } from "@/components/SettingsWorkspace";
+import { OrderSoundSettings } from "@/components/OrderSoundSettings";
+import { orderSoundOf } from "@/lib/order-sound";
 
 import { countries, countrySchema, currencySchema, currencyLabels, currencyOf, currencyUnit } from "@/lib/money";
 
@@ -32,6 +34,7 @@ export function initialSettings(r: Restaurant): Settings {
       slotMinutes: c.slotMinutes ?? 20, lead: c.lead ?? { pickup: 20, delivery: 40 }, hoursLabel: c.hoursLabel ?? "", tagline: c.tagline,
       autoAccept: c.autoAccept ?? false,
       ordersPaused: c.ordersPaused === true,
+      orderSound: orderSoundOf(c),
       timing: timingOf(r),
       modes: { pickup: c.modes?.pickup !== false, delivery: c.modes?.delivery !== false, dine_in: c.modes?.dine_in !== false },
       pickupMinOrder: typeof c.pickupMinOrder === "number" && c.pickupMinOrder > 0 ? c.pickupMinOrder : null,
@@ -138,6 +141,7 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
         <p className="mt-4 text-sm font-semibold">Moment de la commande</p>
         <Toggle label="Autoriser les commandes « Dès que possible »" checked={s.config.timing.asap} onChange={(v) => cfg({ timing: { ...s.config.timing, asap: v } })} />
         <Toggle label="Autoriser les commandes planifiées" hint="Le client choisit un horaire dans vos heures d'ouverture." checked={s.config.timing.scheduled} onChange={(v) => cfg({ timing: { ...s.config.timing, scheduled: v } })} />
+        <Toggle label="Recevoir les commandes planifiées lorsque le restaurant est fermé" hint="L'horaire choisi reste dans vos heures d'ouverture." checked={s.config.timing.scheduledWhileClosed !== false} onChange={(v) => cfg({ timing: { ...s.config.timing, scheduledWhileClosed: v } })} />
         {!s.config.timing.asap && !s.config.timing.scheduled && <p role="alert" className="text-sm text-destructive">Activez au moins une des deux options.</p>}
         <p className="mt-4 text-sm font-semibold">À l'acceptation en cuisine</p>
         <div className="mt-2 grid gap-2 sm:grid-cols-2">
@@ -154,6 +158,10 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
           <Num id="lp" label="Préparation à emporter (min)" value={s.config.lead.pickup} onChange={(v) => cfg({ lead: { ...s.config.lead, pickup: v } })} />
           <Num id="ld" label="Délai de livraison (min)" value={s.config.lead.delivery} onChange={(v) => cfg({ lead: { ...s.config.lead, delivery: v } })} />
         </div>
+      </Section>
+
+      <Section group="service" title="Son des nouvelles commandes">
+        <OrderSoundSettings value={orderSoundOf(s.config)} onChange={(orderSound) => cfg({ orderSound })} />
       </Section>
 
       {agency && <Section group="payments" title="Frais de service">
