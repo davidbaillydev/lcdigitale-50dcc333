@@ -2,7 +2,7 @@ import { z } from "zod";
 import kitchenAlert from "@/assets/sounds/sonnerie_alerte_cuisine.mp3.asset.json";
 import softChime from "@/assets/sounds/sonnerie_carillon_doux.mp3.asset.json";
 
-export const orderSoundSchema = z.object({ ringtone: z.enum(["chime", "welcome", "melody", "kitchen", "carillon"]), volume: z.number().int().min(0).max(100) });
+export const orderSoundSchema = z.object({ ringtone: z.enum(["chime", "welcome", "melody", "kitchen", "carillon"]), volume: z.number().int().min(0).max(100), repeatSeconds: z.number().int().min(3).max(120).default(5) });
 export type OrderSound = z.infer<typeof orderSoundSchema>;
 export const ORDER_RINGTONES = [
   { id: "chime", label: "Carillon lumineux", notes: [[523.25, 0], [659.25, 0.3], [783.99, 0.6], [1046.5, 0.95]] },
@@ -35,7 +35,7 @@ function playFile(ctx: AudioContext, url: string, volume: number): () => void {
 
 export function orderSoundOf(config?: { orderSound?: unknown } | null): OrderSound {
   const parsed = orderSoundSchema.safeParse(config?.orderSound);
-  return parsed.success ? parsed.data : { ringtone: "chime", volume: 100 };
+  return parsed.success ? parsed.data : { ringtone: "chime", volume: 100, repeatSeconds: 5 };
 }
 
 /** Rounded, original major melodies. Compression limits overlapping peaks without clipping. */

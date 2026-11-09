@@ -14,9 +14,9 @@ export const hasPendingKitchenOrders = (orders: { status: string }[]) =>
   orders.some((o) => o.status === "new" || o.status === "pending_approval");
 
 /** Stop reminders immediately when acceptance is confirmed or sound is disabled. */
-export function startKitchenReminder(enabled: boolean, orders: { status: string }[], ring: () => void) {
+export function startKitchenReminder(enabled: boolean, orders: { status: string }[], ring: () => void, intervalMs = 5_000) {
   if (!enabled || !hasPendingKitchenOrders(orders)) return () => {};
-  const timer = setInterval(ring, 10_000);
+  const timer = setInterval(ring, Math.max(3_000, intervalMs));
   return () => clearInterval(timer);
 }
 /** « Perte » : commande à emporter non récupérée, jamais réglée en ligne ni encaissée. */
