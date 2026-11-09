@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import { ORDER_RINGTONE_CHOICES, ORDER_RINGTONES, orderSoundOf, playOrderSound } from "@/lib/order-sound";
+import { ORDER_FILE_RINGTONES, ORDER_RINGTONE_CHOICES, ORDER_RINGTONES, orderSoundOf, playOrderSound } from "@/lib/order-sound";
 describe("restaurant sound rules", () => {
+  it("uses the improved recording for the existing default chime without adding a duplicate choice", () => {
+    expect(ORDER_FILE_RINGTONES.find((ring) => ring.id === "chime")?.url).toContain("carillon_lumineux_ameliore.mp3");
+    expect(ORDER_RINGTONE_CHOICES.filter((ring) => ring.id === "chime")).toHaveLength(1);
+  });
   it("offers five ringtones including the two recorded ones", () => {
     expect(ORDER_RINGTONE_CHOICES.map((r) => r.id)).toEqual(["chime", "welcome", "melody", "kitchen", "carillon"]);
     expect(orderSoundOf({ orderSound: { ringtone: "kitchen", volume: 80 } })).toEqual({ ringtone: "kitchen", volume: 80, repeatSeconds: 5 });
