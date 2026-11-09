@@ -1,25 +1,25 @@
 import { describe, expect, it, vi } from "vitest";
 import { ORDER_FILE_RINGTONES, ORDER_RINGTONE_CHOICES, ORDER_RINGTONES, orderSoundOf, playOrderSound } from "@/lib/order-sound";
 describe("restaurant sound rules", () => {
-  it("uses the improved recording for the existing default chime without adding a duplicate choice", () => {
-    expect(ORDER_FILE_RINGTONES.find((ring) => ring.id === "chime")?.url).toContain("carillon_lumineux_v3.mp3");
-    expect(ORDER_RINGTONE_CHOICES.filter((ring) => ring.id === "chime")).toHaveLength(1);
+  it("retires Carillon lumineux from every ringtone list", () => {
+    expect(ORDER_RINGTONE_CHOICES.map((r) => r.id)).toEqual(["carillon", "kitchen", "welcome", "melody"]);
+    expect(ORDER_RINGTONE_CHOICES.some((r) => r.id === "chime" || r.label === "Carillon lumineux")).toBe(false);
+    expect(ORDER_FILE_RINGTONES.some((ring) => ring.url.includes("carillon_lumineux"))).toBe(false);
   });
-  it("offers five ringtones including the two recorded ones", () => {
-    expect(ORDER_RINGTONE_CHOICES.map((r) => r.id)).toEqual(["chime", "welcome", "melody", "kitchen", "carillon"]);
-    expect(orderSoundOf({ orderSound: { ringtone: "kitchen", volume: 80 } })).toEqual({ ringtone: "kitchen", volume: 80, repeatSeconds: 5 });
+  it("keeps the recorded carillon as the default at full volume", () => {
+    expect(orderSoundOf()).toEqual({ ringtone: "carillon", volume: 100, repeatSeconds: 5 });
+    expect(orderSoundOf({ orderSound: { ringtone: "invalid", volume: 200 } })).toEqual({ ringtone: "carillon", volume: 100, repeatSeconds: 5 });
+  });
+  it("falls back to the recorded carillon for settings saved with the retired chime", () => {
+    expect(orderSoundOf({ orderSound: { ringtone: "chime", volume: 40, repeatSeconds: 12 } })).toEqual({ ringtone: "carillon", volume: 40, repeatSeconds: 12 });
   });
   it("repeats every 5 seconds by default and keeps a custom interval", () => {
     expect(orderSoundOf().repeatSeconds).toBe(5);
-    expect(orderSoundOf({ orderSound: { ringtone: "chime", volume: 50, repeatSeconds: 20 } }).repeatSeconds).toBe(20);
+    expect(orderSoundOf({ orderSound: { ringtone: "kitchen", volume: 50, repeatSeconds: 20 } }).repeatSeconds).toBe(20);
   });
-  it("offers exactly three distinct melodies", () => {
-    expect(ORDER_RINGTONES).toHaveLength(3);
-    expect(new Set(ORDER_RINGTONES.map((r) => JSON.stringify(r.notes))).size).toBe(3);
-  });
-  it("keeps the current chime as the default at full volume", () => {
-    expect(orderSoundOf()).toEqual({ ringtone: "chime", volume: 100, repeatSeconds: 5 });
-    expect(orderSoundOf({ orderSound: { ringtone: "invalid", volume: 200 } })).toEqual({ ringtone: "chime", volume: 100, repeatSeconds: 5 });
+  it("offers exactly two distinct synthesized melodies", () => {
+    expect(ORDER_RINGTONES).toHaveLength(2);
+    expect(new Set(ORDER_RINGTONES.map((r) => JSON.stringify(r.notes))).size).toBe(2);
   });
   it("plays the selected melody louder than the former 0.55 × 0.22 gain", () => {
     const ramps: number[] = [];
@@ -36,7 +36,7 @@ describe("restaurant sound rules", () => {
   });
   it("respects zero volume", () => {
     const createGain = vi.fn();
-    playOrderSound({ createGain } as unknown as AudioContext, { ringtone: "chime", volume: 0, repeatSeconds: 5 });
+    playOrderSound({ createGain } as unknown as AudioContext, { ringtone: "carillon", volume: 0, repeatSeconds: 5 });
     expect(createGain).not.toHaveBeenCalled();
   });
   it("calls back when a preview ends so the listen button can reset", () => {
@@ -52,7 +52,7 @@ describe("restaurant sound rules", () => {
   });
   it("calls back immediately when the volume is zero", () => {
     const onEnd = vi.fn();
-    playOrderSound({} as unknown as AudioContext, { ringtone: "chime", volume: 0, repeatSeconds: 5 }, onEnd);
+    playOrderSound({} as unknown as AudioContext, { ringtone: "carillon", volume: 0, repeatSeconds: 5 }, onEnd);
     expect(onEnd).toHaveBeenCalledTimes(1);
   });
   it("makes every listed ringtone previewable", () => {
