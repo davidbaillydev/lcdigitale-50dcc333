@@ -1,23 +1,21 @@
 import { z } from "zod";
 import kitchenAlert from "@/assets/sounds/sonnerie_alerte_cuisine.mp3.asset.json";
 import softChime from "@/assets/sounds/sonnerie_carillon_doux.mp3.asset.json";
-import improvedChime from "@/assets/sounds/carillon_lumineux_v3.mp3.asset.json";
 
-export const orderSoundSchema = z.object({ ringtone: z.enum(["chime", "welcome", "melody", "kitchen", "carillon"]), volume: z.number().int().min(0).max(100), repeatSeconds: z.number().int().min(3).max(120).default(5) });
+export const orderSoundSchema = z.object({ ringtone: z.enum(["carillon", "welcome", "melody", "kitchen"]), volume: z.number().int().min(0).max(100), repeatSeconds: z.number().int().min(3).max(120).default(5) });
 export type OrderSound = z.infer<typeof orderSoundSchema>;
 export const ORDER_RINGTONES = [
-  { id: "chime", label: "Carillon lumineux", notes: [[523.25, 0], [659.25, 0.3], [783.99, 0.6], [1046.5, 0.95]] },
   { id: "welcome", label: "Accueil doux", notes: [[659.25, 0], [783.99, 0.25], [987.77, 0.5], [783.99, 0.85], [1046.5, 1.15]] },
   { id: "melody", label: "Mélodie joyeuse", notes: [[523.25, 0], [783.99, 0.18], [659.25, 0.36], [1046.5, 0.68], [783.99, 0.95], [1046.5, 1.22]] },
 ] as const;
 
 /** Recorded ringtones supplied by the agency, played as decoded audio files. */
 export const ORDER_FILE_RINGTONES = [
-  { id: "chime", label: "Carillon lumineux", url: improvedChime.url },
-  { id: "kitchen", label: "Alerte cuisine percutante", url: kitchenAlert.url },
   { id: "carillon", label: "Carillon mélodique", url: softChime.url },
+  { id: "kitchen", label: "Alerte cuisine percutante", url: kitchenAlert.url },
 ] as const;
-export const ORDER_RINGTONE_CHOICES: { id: OrderSound["ringtone"]; label: string }[] = [...ORDER_RINGTONES, ...ORDER_FILE_RINGTONES.filter((ring) => ring.id !== "chime")];
+/** Display order: the default recorded carillon first, then the synthesized melodies and the punchy alert. */
+export const ORDER_RINGTONE_CHOICES: { id: OrderSound["ringtone"]; label: string }[] = [...ORDER_FILE_RINGTONES, ...ORDER_RINGTONES];
 
 const buffers = new Map<string, Promise<AudioBuffer>>();
 function playFile(ctx: AudioContext, url: string, volume: number, onEnd?: () => void): () => void {
@@ -35,9 +33,15 @@ function playFile(ctx: AudioContext, url: string, volume: number, onEnd?: () => 
   return () => { stopped = true; try { source?.stop(); } catch { /* ended */ } };
 }
 
+/** "Carillon lumineux" was retired at the agency's request: settings still pointing to it fall back to the recorded carillon. */
+function migrateRingtone(raw: unknown): unknown {
+  if (raw && typeof raw === "object" && (raw as { ringtone?: unknown }).ringtone === "chime") return { ...raw, ringtone: "carillon" };
+  return raw;
+}
+
 export function orderSoundOf(config?: { orderSound?: unknown } | null): OrderSound {
-  const parsed = orderSoundSchema.safeParse(config?.orderSound);
-  return parsed.success ? parsed.data : { ringtone: "chime", volume: 100, repeatSeconds: 5 };
+  const parsed = orderSoundSchema.safeParse(migrateRingtone(config?.orderSound));
+  return parsed.success ? parsed.data : { ringtone: "carillon", volume: 100, repeatSeconds: 5 };
 }
 
 /** Rounded, original major melodies. Compression limits overlapping peaks without clipping. */
@@ -62,7 +66,7 @@ export function playOrderSound(ctx: AudioContext, settings: OrderSound, onEnd?: 
       const oscillator = ctx.createOscillator();
       const envelope = ctx.createGain();
       const at = ctx.currentTime + offset;
-      const decay = settings.ringtone === "chime" ? 2.9 : 2.1;
+      const decay = 2.1;
       oscillator.type = "sine";
       oscillator.frequency.value = frequency * multiple;
       envelope.gain.setValueAtTime(0, at);
