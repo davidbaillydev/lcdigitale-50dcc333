@@ -1,6 +1,6 @@
 import { z } from "zod";
 import kitchenAlert from "@/assets/sounds/sonnerie_alerte_cuisine.mp3.asset.json";
-import softChime from "@/assets/sounds/sonnerie_carillon_doux.mp3.asset.json";
+import softChime from "@/assets/sounds/carillon_lc_notes_pures.mp3.asset.json";
 
 export const orderSoundSchema = z.object({ ringtone: z.enum(["carillon", "welcome", "melody", "kitchen"]), volume: z.number().int().min(0).max(100), repeatSeconds: z.number().int().min(3).max(120).default(5) });
 export type OrderSound = z.infer<typeof orderSoundSchema>;
