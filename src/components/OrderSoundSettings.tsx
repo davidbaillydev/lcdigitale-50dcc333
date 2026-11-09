@@ -26,5 +26,6 @@ export function OrderSoundSettings({ value, onChange }: { value: OrderSound; onC
       </div>)}
     </div>
     <div className="space-y-3"><Label htmlFor="order-sound-volume">Volume des commandes · {value.volume} %</Label><Slider id="order-sound-volume" aria-label="Volume des commandes" min={0} max={100} step={5} value={[value.volume]} onValueChange={([volume]) => onChange({ ...value, volume: volume ?? 100 })} className="min-h-11" /></div>
+    <div className="space-y-3"><Label htmlFor="order-sound-repeat">Répéter la sonnerie toutes les {value.repeatSeconds} secondes (tant qu'une commande n'est pas acceptée)</Label><Slider id="order-sound-repeat" aria-label="Intervalle de répétition" min={3} max={60} step={1} value={[value.repeatSeconds]} onValueChange={([repeatSeconds]) => onChange({ ...value, repeatSeconds: repeatSeconds ?? 5 })} className="min-h-11" /></div>
   </div>;
 }

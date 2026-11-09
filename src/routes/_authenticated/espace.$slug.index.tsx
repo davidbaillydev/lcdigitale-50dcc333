@@ -280,8 +280,8 @@ function Kitchen() {
     return startKitchenReminder(sound, ordersRef.current, () => {
       const ctx = audio.current;
       if (ctx) void ctx.resume().then(() => beep(ctx)).catch(() => {});
-    });
-  }, [sound, pending]);
+    }, ringRef.current.repeatSeconds * 1000);
+  }, [sound, pending, ringRef.current.repeatSeconds]);
 
   useEffect(() => () => { void audio.current?.close().catch(() => {}); }, []);
   const enableSound = async () => {
