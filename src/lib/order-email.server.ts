@@ -118,7 +118,9 @@ export async function sendRestaurantNewOrder(admin: Admin, orderId: string, orig
 
 /** À appeler après chaque nouvelle commande valide (jamais bloquant). */
 export async function notifyNewOrder(admin: Admin, orderId: string, origin?: string | null) {
+  const { notifyStaffOrder } = await import("./staff-push.server");
   await Promise.all([
+    notifyStaffOrder(admin, orderId).catch((e) => console.error("staff push", e)),
     sendOrderReceived(admin, orderId, origin).catch((e) => console.error("email reçue", e)),
     sendRestaurantNewOrder(admin, orderId, origin).catch((e) => console.error("email restaurant", e)),
   ]);

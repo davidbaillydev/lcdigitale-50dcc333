@@ -32,6 +32,7 @@ export type Restaurant = {
     autoAccept?: boolean;
     /** Réception des commandes suspendue (site, borne, QR, téléphone) */
     ordersPaused?: boolean;
+    orderSound?: import("./order-sound").OrderSound;
     printing?: Partial<import("./ticket").PrintingConfig>;
     modes?: { pickup?: boolean; delivery?: boolean; dine_in?: boolean };
     /** Montant minimum de commande à emporter (€) ; null/absent = pas de minimum. */
@@ -51,12 +52,12 @@ export type Restaurant = {
   };
 };
 
-export type TimingConfig = { asap?: boolean; scheduled?: boolean; prepMode?: "auto" | "manual"; defaultPrep?: number };
+export type TimingConfig = { asap?: boolean; scheduled?: boolean; scheduledWhileClosed?: boolean; prepMode?: "auto" | "manual"; defaultPrep?: number };
 export function timingOf(r: Pick<Restaurant, "config">) {
   const t = r.config?.timing ?? {};
   let asap = t.asap !== false, scheduled = t.scheduled !== false;
   if (!asap && !scheduled) { asap = true; scheduled = true; }
-  return { asap, scheduled, prepMode: t.prepMode === "manual" ? "manual" as const : "auto" as const, defaultPrep: t.defaultPrep ?? 20 };
+  return { asap, scheduled, scheduledWhileClosed: t.scheduledWhileClosed !== false, prepMode: t.prepMode === "manual" ? "manual" as const : "auto" as const, defaultPrep: t.defaultPrep ?? 20 };
 }
 
 export const RESTAURANT_COLUMNS = "id, slug, name, city, address, phone, email, menu_key, logo_url, brand, menu, opening, delivery, config, legal, enabled_features, vapi_assistant_id, vapi_public_key, vapi_phone_number, is_vapi_web_enabled";
@@ -118,6 +119,7 @@ export function itemOrderDate(asap: boolean, slot: string, now = new Date()): Da
 
 /** Créneaux disponibles aujourd'hui (ISO strings) */
 export function availableSlots(r: Restaurant, mode: "pickup" | "delivery", now = new Date()): string[] {
+  if (!scheduledOrderingAllowed(r, now)) return [];
   const step = r.config.slotMinutes ?? 20;
   const lead = r.config.lead ?? { pickup: 20, delivery: 40 };
   const { wd, minutes } = parisParts(now);
@@ -131,9 +133,18 @@ export function availableSlots(r: Restaurant, mode: "pickup" | "delivery", now =
   return out;
 }
 
-export function isValidSlot(r: Restaurant, mode: "pickup" | "delivery", iso: string) {
+export function isValidSlot(r: Restaurant, mode: "pickup" | "delivery", iso: string, now = new Date()) {
   const t = new Date(iso).getTime();
-  return availableSlots(r, mode).some((s) => Math.abs(new Date(s).getTime() - t) < 60000);
+  return availableSlots(r, mode, now).some((s) => Math.abs(new Date(s).getTime() - t) < 60000);
+}
+
+/** Receiving a scheduled order while closed never permits an out-of-hours slot. */
+export function scheduledOrderingAllowed(r: Pick<Restaurant, "config" | "opening">, now = new Date()): boolean {
+  const timing = timingOf(r);
+  if (!timing.scheduled) return false;
+  if (timing.scheduledWhileClosed) return true;
+  const { wd, minutes } = parisParts(now);
+  return (r.opening[String(wd)] ?? []).some(([a, b]) => minutes >= a && minutes < b);
 }
 
 /** Le restaurant est-il ouvert maintenant (et encore assez longtemps pour préparer) ? */

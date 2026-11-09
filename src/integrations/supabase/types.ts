@@ -2074,6 +2074,91 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_push_deliveries: {
+        Row: {
+          created_at: string
+          device_id: string
+          id: string
+          order_id: string
+          read_at: string | null
+          restaurant_id: string
+          title: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          device_id: string
+          id?: string
+          order_id: string
+          read_at?: string | null
+          restaurant_id: string
+          title: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          device_id?: string
+          id?: string
+          order_id?: string
+          read_at?: string | null
+          restaurant_id?: string
+          title?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_push_deliveries_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "staff_push_devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_push_deliveries_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_push_deliveries_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_push_devices: {
+        Row: {
+          endpoint: string
+          expires_at: string
+          id: string
+          restaurant_ids: string[]
+          token_hash: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          endpoint: string
+          expires_at?: string
+          id?: string
+          restaurant_ids?: string[]
+          token_hash: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          endpoint?: string
+          expires_at?: string
+          id?: string
+          restaurant_ids?: string[]
+          token_hash?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

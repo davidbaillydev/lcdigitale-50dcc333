@@ -42,6 +42,8 @@ import { ThemeToggle } from "@/lib/theme";
 import { OrdersPausedToggle } from "@/components/OrdersPausedToggle";
 import { TicketPreviewDialog } from "@/components/TicketPreviewDialog";
 import { KitchenHistory } from "@/components/KitchenHistory";
+import { orderSoundOf, playOrderSound } from "@/lib/order-sound";
+import { useLiveRestaurant } from "@/hooks/use-orders-paused";
 
 export const Route = createFileRoute("/_authenticated/espace/$slug/")({
   head: () => ({
@@ -74,42 +76,14 @@ const COLS = [
   { s: "ready", label: "Prêtes", next: "done", action: "Terminée" },
 ] as const;
 
-/** Carillon d'accueil original : accord majeur, attaque douce et résonance ronde. */
-function beep(ctx: AudioContext) {
-  const out = ctx.createGain();
-  out.gain.value = 0.55;
-  out.connect(ctx.destination);
-  const start = ctx.currentTime;
-  let remaining = 8;
-  // Do–Mi–Sol–Do : aucune harmonique métallique ou dissonante.
-  for (const [frequency, offset] of [[523.25, 0], [659.25, 0.3], [783.99, 0.6], [1046.5, 0.95]] as const) {
-    for (const [multiple, amplitude] of [[1, 0.22], [2, 0.025]] as const) {
-      const oscillator = ctx.createOscillator();
-      const envelope = ctx.createGain();
-      const at = start + offset;
-      oscillator.type = "sine";
-      oscillator.frequency.value = frequency * multiple;
-      envelope.gain.setValueAtTime(0, at);
-      envelope.gain.linearRampToValueAtTime(amplitude, at + 0.045);
-      envelope.gain.exponentialRampToValueAtTime(0.0001, at + 2.9);
-      envelope.gain.linearRampToValueAtTime(0, at + 3.1);
-      oscillator.connect(envelope).connect(out);
-      oscillator.onended = () => {
-        oscillator.disconnect();
-        envelope.disconnect();
-        remaining -= 1;
-        if (remaining === 0) out.disconnect();
-      };
-      oscillator.start(at);
-      oscillator.stop(at + 3.15);
-    }
-  }
-}
-
 function Kitchen() {
   const { slug } = Route.useParams();
   const { loading, user, restaurants } = useStaff();
   const restaurant = restaurants.find((r) => r.slug === slug);
+  const liveSound = useLiveRestaurant({ id: restaurant?.id ?? "", config: (restaurant?.config ?? {}) as Restaurant["config"] });
+  const ringRef = useRef(orderSoundOf(liveSound.config));
+  ringRef.current = orderSoundOf(liveSound.config);
+  const beep = (ctx: AudioContext) => playOrderSound(ctx, ringRef.current);
   const euro = (n: number) => formatMoney(n, currencyOf({ config: restaurant?.config as { currency?: string } | null }));
   const isStaff = !!restaurant;
   const isAdmin = restaurant?.role === "agency" || restaurant?.role === "manager";
@@ -288,7 +262,7 @@ function Kitchen() {
         }
         if ((p.eventType === "INSERT" && n.status !== "awaiting_payment") || becamePaid) {
           toast.success(n.status === "pending_approval" ? `Nouvelle commande ${n.table_label ? `Table ${n.table_label}` : n.room_label ? `Chambre ${n.room_label}` : "libre-service"} · à valider` : `Nouvelle commande n° ${n.order_number}`, n.status === "pending_approval" ? { duration: 15000 } : undefined);
-          if (audio.current && soundRef.current) beep(audio.current);
+          if (audio.current && soundRef.current) { const ctx = audio.current; void ctx.resume().then(() => beep(ctx)).catch(() => {}); }
           if (printRef.current.auto && n.status !== "pending_approval" && !deferred.current.has(n.id)) void printRef.current.doPrint(p.new as Order, printRef.current.kinds, true);
         }
         load();
@@ -314,6 +288,7 @@ function Kitchen() {
     try {
       if (!audio.current) audio.current = new AudioContext();
       await audio.current.resume(); beep(audio.current); setSound(true); setStarted(true);
+      window.dispatchEvent(new Event("lc-professional-sound-start"));
     } catch { setSound(false); toast.error("Son indisponible : vérifiez le volume et réessayez d’activer le son."); }
   };
 
