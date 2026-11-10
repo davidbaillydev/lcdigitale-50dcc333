@@ -18,12 +18,10 @@ export function useOptionData(restaurantId: string | undefined): { data: OptionD
     }
     ch.subscribe();
     const refresh = () => { if (document.visibilityState === "visible") void load(); };
-    const timer = window.setInterval(refresh, 15000);
     window.addEventListener("online", refresh);
     window.addEventListener("focus", refresh);
     return () => {
       alive = false;
-      window.clearInterval(timer);
       window.removeEventListener("online", refresh);
       window.removeEventListener("focus", refresh);
       supabase.removeChannel(ch);
