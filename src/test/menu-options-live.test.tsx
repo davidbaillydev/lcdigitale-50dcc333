@@ -78,8 +78,9 @@ describe("Public options refresh without unrestricted Realtime reads", () => {
     await act(async () => {});
     expect(mocks.realtime).toHaveLength(4);
 
+    const handler = mocks.realtime[0];
     await act(async () => {
-      mocks.realtime[0]();
+      handler?.();
     });
     expect(mocks.load).toHaveBeenCalledTimes(2);
     unmount();
