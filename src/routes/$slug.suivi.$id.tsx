@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { CheckCircle2, ChefHat, PackageCheck, Clock, Printer, Bike } from "lucide-react";
-import { customerOrderStage } from "@/lib/kitchen-status";
+import { customerOrderStage, orderTrackingInterval } from "@/lib/kitchen-status";
 import { printTickets, type TicketOrder } from "@/lib/ticket";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
@@ -72,7 +72,7 @@ function Tracking() {
       }
       return o;
     },
-    refetchInterval: (q) => (q.state.data?.status === "awaiting_payment" ? 3000 : 15000),
+    refetchInterval: (q) => orderTrackingInterval(q.state.data?.status),
   });
   useEffect(() => {
     if (!cleared.current && data && data.payment_method === "online" && data.payment_status === "paid") { cleared.current = true; if (!data.is_test && safeSession.get(`lc-cart-session-${slug}`)) track("completed", "Paiement en ligne confirmé", id); clear(); }
