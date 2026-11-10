@@ -68,7 +68,7 @@ function Login({ slug, onSlug, onDone }: { slug: string; onSlug: (slug: string) 
   };
   if (pending) return (
     <section className="mx-auto max-w-sm space-y-3">
-      <h1 className="text-3xl">Choisir mon profil</h1>
+      <h1 className="sr-only">Accès livreur</h1><h2 className="text-3xl">Choisir mon profil</h2>
       <Button variant="ghost" onClick={() => { setPending(null); setPin(""); }}><ArrowLeft /> Retour au code</Button>
       {pending.drivers.map((d) => <Button key={d.id} variant="secondary" className="min-h-14 w-full text-lg" onClick={() => onDone({ token: pending.token, name: pending.name, slug, me: d.name, driverId: d.id })}><UserRound />{d.name}</Button>)}
     </section>

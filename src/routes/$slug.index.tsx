@@ -68,7 +68,7 @@ function MenuPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent" />
         <div className={`relative mx-auto max-w-6xl px-4 ${embed ? "py-8" : "py-16 sm:py-24"}`}>
           <p className="mb-2 inline-block -rotate-1 brush px-4 py-1 font-display text-xl">{restaurant.city}</p>
-          <h1 className="max-w-xl break-words text-6xl leading-none sm:text-8xl">{restaurant.name}</h1>
+          <h1 className="max-w-xl break-words text-6xl leading-none sm:text-8xl">{restaurant.name}<span className="sr-only"> — menu et commande en ligne</span></h1>
           {restaurant.config.tagline && <p className="mt-3 max-w-md">{restaurant.config.tagline}</p>}
           <p className="mt-4 max-w-md text-muted-foreground">Commandez en ligne, récupérez sur place ou faites-vous livrer.</p>
           {restaurant.vapi_phone_number && (
