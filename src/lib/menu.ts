@@ -286,7 +286,7 @@ export function validateSelections(item: MenuItem, sel: Selections): string | nu
     const picked = sel[g.id] ?? [];
     if (picked.some((id) => !g.choices.find((c) => c.id === id))) return `Choix invalide : ${g.label}`;
     if (picked.some((id) => g.choices.find((c) => c.id === id)?.soldOut)) return `${g.label} : un choix est épuisé`;
-    if (new Set(picked).size !== picked.length) return `Choix en double : ${g.label}`;
+    // Un même choix peut être répété (ex. 2 kebab + 1 tender) tant que le total respecte max.
     if (picked.length < g.min) return g.kind === "size" ? "Choisissez une taille" : `${g.label} : ${g.min} choix minimum`;
     if (picked.length > g.max) return `${g.label} : ${g.max} choix maximum`;
   }
