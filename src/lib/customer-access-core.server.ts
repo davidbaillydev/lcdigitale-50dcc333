@@ -24,7 +24,7 @@ export function validAccessToken(token: string | undefined, scope: Scope, id: st
 }
 export const cookieName = (scope: Scope, id: string) => `lc_${scope}_${id}`;
 /** Lit le jeton dans un en-tête Cookie brut (routes API qui reçoivent `request` directement). */
-export function tokenFromCookieHeader(scope: Scope, id: string, cookieHeader: string | null) {
+export function tokenFromCookieHeader(scope: Scope, id: string, cookieHeader: string | null | undefined) {
   const name = cookieName(scope, id);
   return (cookieHeader ?? "").split(";").map((v) => v.trim()).find((v) => v.startsWith(`${name}=`))?.slice(name.length + 1);
 }
