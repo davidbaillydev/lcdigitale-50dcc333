@@ -18,3 +18,8 @@ export function kitchenDeliveryInfo(order: KitchenDeliveryOrder, origin?: LatLng
   const km = validPoint(origin) && validPoint(destination) ? distanceKm(origin, destination) : null;
   return { address, km, zone: order.zone_name?.trim() || null };
 }
+
+/** Distance lisible sur tous les supports : une décimale, virgule française, « km ». */
+export function formatDeliveryKm(km: number) {
+  return `${km.toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km`;
+}

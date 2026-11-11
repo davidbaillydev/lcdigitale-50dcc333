@@ -222,6 +222,41 @@ describe("independent auto-print for kitchen and receipt", () => {
   });
 });
 
+describe("bloc livraison du ticket", () => {
+  const delivery: TicketOrder = { ...order, mode: "delivery", address: "12 rue des Tests", postal_code: "31770", city: "Colomiers", delivery_lat: 43.61, delivery_lng: 1.26, zone_name: "Centre" };
+  const shop = { name: "Wok & Sushi", origin: [43.600383, 1.246166] as [number, number] };
+
+  it("affiche l'adresse complète, la distance et la zone sur les deux tickets", () => {
+    for (const kind of ["kitchen", "receipt"] as const) {
+      const html = ticketHtml(delivery, kind, 80, shop);
+      const text = decodeEscpos(ticketEscpos(delivery, kind, 80, shop));
+      for (const s of ["Adresse: 12 rue des Tests, 31770 Colomiers", "Distance: 1,5 km", "Zone: Centre"]) {
+        expect(html).toContain(s);
+        expect(text).toContain(s);
+      }
+    }
+  });
+
+  it("omet la distance sans coordonnées côté restaurant ou côté commande", () => {
+    const noOrigin = ticketHtml(delivery, "kitchen", 80, { name: "Wok & Sushi" });
+    expect(noOrigin).toContain("Adresse: 12 rue des Tests, 31770 Colomiers");
+    expect(noOrigin).not.toContain("Distance:");
+    const noCoords = ticketHtml({ ...delivery, delivery_lat: null, delivery_lng: null }, "kitchen", 80, shop);
+    expect(noCoords).not.toContain("Distance:");
+    expect(noCoords).toContain("Zone: Centre");
+  });
+
+  it("reste absent d'une commande à emporter", () => {
+    expect(ticketHtml(order, "kitchen", 80, shop)).not.toContain("Adresse:");
+    expect(ticketHtml({ ...delivery, mode: "pickup" }, "kitchen", 80, shop)).not.toContain("Adresse:");
+  });
+
+  it("signale une adresse manquante au lieu de l'occulter", () => {
+    const html = ticketHtml({ ...delivery, address: null, postal_code: null, city: null }, "kitchen", 80, shop);
+    expect(html).toContain("Adresse non renseignée");
+  });
+});
+
 describe("nettoyage des libellés Supplément", () => {
   it("retire les préfixes Supplément quelle que soit la casse ou l'accent", () => {
     expect(cleanOptionLabel("Supplément : + Kebab")).toBe("Kebab");

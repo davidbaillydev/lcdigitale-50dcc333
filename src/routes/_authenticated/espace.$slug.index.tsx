@@ -133,7 +133,7 @@ function Kitchen() {
   const [preview, setPreview] = useState<{ order: Order; kinds: TicketKind[] } | null>(null);
   const doPrint = useCallback(async (o: Order, kinds: TicketKind[], auto = false) => {
     const optionData = rid ? await queryClient.ensureQueryData(ticketOptionQuery).catch(() => ticketOptionData) : ticketOptionData;
-    const shop = { name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null, slug, customDomains: (restaurant?.config as Restaurant["config"] | null)?.customDomains, optionData, ...ticketVatShop };
+    const shop = { name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null, slug, customDomains: (restaurant?.config as Restaurant["config"] | null)?.customDomains, optionData, origin: deliveryConfig?.origin, ...ticketVatShop };
     const ok = await printTickets(o, kinds, shop, printing.width, printingFields(printing));
     setPrintState((p) => ({ ...p, [o.id]: ok ? "ok" : "failed" }));
     if (rid) {
@@ -146,7 +146,7 @@ function Kitchen() {
       setLogs((p) => ({ ...p, [o.id]: [...(p[o.id] ?? []), entry] }));
     }
     if (!ok) toast.error(`Impression du ticket n° ${o.order_number} échouée`);
-  }, [restaurant, rid, logs, printing.width, printing.kitchen, printing.textSize, printing.font, slug, ticketOptionData, queryClient, ticketLegal]);
+  }, [restaurant, rid, logs, printing.width, printing.kitchen, printing.textSize, printing.font, slug, ticketOptionData, queryClient, ticketLegal, deliveryConfig?.origin]);
   const printRef = useRef({ auto: false, kinds: [] as TicketKind[], doPrint }); printRef.current = { auto: autoPrintKinds(printing).length > 0, kinds: autoPrintKinds(printing), doPrint };
   const [sound, setSound] = useState(false);
   const [started, setStarted] = useState(false);
@@ -598,12 +598,12 @@ function Kitchen() {
           );
         })}
       </div>
-      {rid && <KitchenHistory restaurantId={rid} open={historyOpen && !locked} onClose={() => setHistoryOpen(false)} shop={{ name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null, slug, customDomains: (restaurant?.config as Restaurant["config"] | null)?.customDomains, optionData: ticketOptionData, ...ticketVatShop }} width={printing.width} fields={printingFields(printing)} onPrint={(order, kinds) => doPrint(order as Order, kinds)} />}
+      {rid && <KitchenHistory restaurantId={rid} open={historyOpen && !locked} onClose={() => setHistoryOpen(false)} shop={{ name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null, slug, customDomains: (restaurant?.config as Restaurant["config"] | null)?.customDomains, optionData: ticketOptionData, origin: deliveryConfig?.origin, ...ticketVatShop }} width={printing.width} fields={printingFields(printing)} onPrint={(order, kinds) => doPrint(order as Order, kinds)} />}
       {locked && rid && <KitchenLock restaurantId={rid} name={restaurant?.name ?? ""} onUnlock={() => setLock(false)} />}
       <TicketPreviewDialog
         order={preview?.order ?? null}
         kinds={preview?.kinds ?? ["kitchen"]}
-        shop={{ name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null, slug, customDomains: (restaurant?.config as Restaurant["config"] | null)?.customDomains, optionData: ticketOptionData, ...ticketVatShop }}
+        shop={{ name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null, slug, customDomains: (restaurant?.config as Restaurant["config"] | null)?.customDomains, optionData: ticketOptionData, origin: deliveryConfig?.origin, ...ticketVatShop }}
         width={printing.width}
         kitchen={printingFields(printing)}
         onClose={() => setPreview(null)}

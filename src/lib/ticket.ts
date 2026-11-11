@@ -6,6 +6,8 @@ import type { Catalog } from "./catalogs";
 import type { OptionData } from "./menu-options";
 import { ticketLegalLines, vatBreakdown, vatRateLabel, type TicketLegal, type VatRow } from "./ticket-vat";
 import { shortReceiptHash } from "./pos-integrity";
+import { formatDeliveryKm, kitchenDeliveryInfo } from "./kitchen-delivery";
+import type { LatLng } from "./geo";
 
 /** Nom commercial inchangé ; la taille choisie reste visible. */
 export const itemTitle = (it: { name: string; size?: { name: string } | null }) => (it.size ? `${it.name} [${it.size.name}]` : it.name);
@@ -22,7 +24,8 @@ export type TicketOrder = {
   pos_discount?: import("./pos-register").PosDiscount | null;
   is_test?: boolean;
   order_number: number; customer_name?: string | null; phone?: string | null; email?: string | null; mode: string;
-  address?: string | null; city?: string | null; slot: string; created_at?: string; asap?: boolean; first_name?: string | null; last_name?: string | null;
+  address?: string | null; city?: string | null; postal_code?: string | null; delivery_lat?: number | null; delivery_lng?: number | null; zone_name?: string | null;
+  slot: string; created_at?: string; asap?: boolean; first_name?: string | null; last_name?: string | null;
   items: { id?: string; name: string; qty: number; total?: number; category?: string; details?: string[]; allergens?: string[]; size?: { id?: string; name: string } | null; selected_options?: { id?: string; name: string; price: number; group?: string }[]; vatRate?: number }[];
   notes?: string | null; total: number | string; subtotal?: number | string | null; delivery_fee?: number | string | null; service_fee?: number | string | null;
   discount?: number | string | null; promo_code?: string | null;
@@ -72,7 +75,7 @@ export function autoPrintLabel(p: Pick<PrintingConfig, "autoKitchen" | "autoRece
 }
 /** Style + champs cuisine d'une configuration, prêt à passer aux rendus. */
 export const printingFields = (p: Pick<PrintingConfig, "kitchen" | "textSize" | "font">): TicketFieldsIn => ({ ...p.kitchen, textSize: p.textSize, font: p.font });
-export type TicketShop = { currency?: Currency; name: string; address?: string | null; phone?: string | null; slug?: string; customDomains?: string[] | undefined; optionData?: OptionData | undefined; catalog?: Catalog | undefined; /** Taux par défaut (mentions légales). */ vatRate?: number | string | null | undefined; legal?: TicketLegal | null | undefined };
+export type TicketShop = { currency?: Currency; name: string; address?: string | null; phone?: string | null; slug?: string; customDomains?: string[] | undefined; optionData?: OptionData | undefined; catalog?: Catalog | undefined; /** Taux par défaut (mentions légales). */ vatRate?: number | string | null | undefined; legal?: TicketLegal | null | undefined; /** Coordonnées du restaurant, pour la distance du ticket. */ origin?: LatLng | null | undefined };
 export function ticketWebsite(shop: TicketShop) {
   const domain = shop.customDomains?.find((d) => /^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i.test(d));
   return domain ?? (shop.slug ? `restaurant.lcdigitale.fr/${shop.slug}` : "restaurant.lcdigitale.fr");
@@ -85,6 +88,16 @@ export function ticketCustomer(o: TicketOrder): [string, string][] {
   if (o.email) rows.push(["Email:", o.email]);
   if (o.phone && o.phone !== "-") rows.push(["Téléphone:", o.phone]);
   return rows;
+}
+
+/** Adresse complète, distance et zone du ticket ; mêmes lignes en HTML et en thermique. */
+export function ticketDeliveryLines(o: TicketOrder, shop: TicketShop): string[] {
+  if (o.mode !== "delivery") return [];
+  const info = kitchenDeliveryInfo(o, shop.origin ?? null);
+  const lines: string[] = [info.address ? `Adresse: ${info.address}` : "Adresse non renseignée"];
+  if (info.km !== null) lines.push(`Distance: ${formatDeliveryKm(info.km)}`);
+  if (info.zone) lines.push(`Zone: ${info.zone}`);
+  return lines;
 }
 
 export function printingDefaults(p?: Partial<PrintingConfig> | null): PrintingConfig {
@@ -225,6 +238,8 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
     ${(f.options ? ticketOptions(it, { ...shop, currency }) : []).map((d) => `<div class="det">${esc(d)}</div>`).join("")}
     ${f.allergens && it.allergens?.length ? `<div class="alg">⚠ ALLERGÈNES : ${it.allergens.map((a) => esc(allergenLabel(a)).toUpperCase()).join(", ")}</div>` : ""}`).join("");
   const allAlg = [...new Set(o.items.flatMap((i) => i.allergens ?? []))];
+  const deliveryLines = ticketDeliveryLines(o, shop);
+  const deliveryHtml = deliveryLines.map((l, i) => `<div class="${i === 0 ? "addr" : "det"}">${esc(l)}</div>`).join("");
   return `<!doctype html><html><head><meta charset="utf-8"><title>Ticket ${o.order_number}</title><style>
     @page { size: ${width}mm auto; margin: 0; }
     * { box-sizing: border-box; }
@@ -237,6 +252,7 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
     .item { font-size: ${big + 1}px; font-weight: bold; }
     .cat { margin-top: 8px; font-size: ${big - 3}px; }
     .det { padding-left: 10px; font-size: ${big - 1}px; }
+    .addr { border: 2px solid var(--ticket-ink); padding: 4px 6px; margin-top: 6px; font-weight: bold; font-size: ${big + 1}px; }
     .customer { display: grid; grid-template-columns: auto minmax(0,1fr); gap: 2px 8px; }
     .customer .value { text-align: right; } .section { margin: 12px 0 4px; font-weight: bold; }
     .promo { border: 1px solid var(--ticket-ink); padding: 10px 5px; margin: 12px 0; text-align: center; font-weight: bold; }
@@ -257,7 +273,7 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
     <div class="band row"><span>${esc(timing.label)}</span><span>${esc(timing.value)}</span></div>
     <div class="band">${modeLabel(o.mode)}${o.source === "kiosk" ? " · BORNE" : o.source === "phone" ? " · TÉL IA" : ""}${o.table_label ? ` · TABLE ${esc(o.table_label)}` : ""}${o.room_label ? ` · CHAMBRE ${esc(o.room_label)}` : ""}</div>
     ${f.customer && ticketCustomer(o).length ? `<div class="section">Informations clients:</div><div class="customer">${ticketCustomer(o).map(([label, value]) => `<span>${label}</span><span class="value">${esc(value)}</span>`).join("")}</div>` : ""}
-    ${o.mode === "delivery" && o.address ? `<div class="c">${esc(o.address)}, ${esc(o.city)}</div>` : ""}
+    ${deliveryHtml}
     <div class="section">Articles:</div>${items}
     ${f.allergens && kind === "kitchen" && allAlg.length ? `<div class="note">ALLERGÈNES COMMANDE : ${allAlg.map((a) => esc(allergenLabel(a))).join(", ")}</div>` : ""}
     ${f.notes && o.notes ? `<div class="note">⚠ REMARQUE CLIENT : ${esc(o.notes)}</div>` : ""}

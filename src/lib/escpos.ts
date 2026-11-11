@@ -3,7 +3,7 @@ import { moneyDecimals } from "./money";
 import { ticketMoney } from "./ticket";
 import { allergenLabel } from "./allergens";
 import { ticketLegalLines, vatRateLabel } from "./ticket-vat";
-import { receiptIntegrityLines, receiptTenderLines, ticketVat, isPaid, isPreorder, itemTitle, modeLabel, payLabel, settlementNote, ticketCustomer, ticketFields, ticketOptions, ticketTiming, ticketTotals, ticketWebsite, type TicketFieldsIn, type TicketKind, type TicketOrder, type TicketShop, type TicketWidth } from "./ticket";
+import { receiptIntegrityLines, receiptTenderLines, ticketVat, isPaid, isPreorder, itemTitle, modeLabel, payLabel, settlementNote, ticketCustomer, ticketDeliveryLines, ticketFields, ticketOptions, ticketTiming, ticketTotals, ticketWebsite, type TicketFieldsIn, type TicketKind, type TicketOrder, type TicketShop, type TicketWidth } from "./ticket";
 
 const CP858: Record<string, number> = {
   "Ç": 0x80, "ü": 0x81, "é": 0x82, "â": 0x83, "ä": 0x84, "à": 0x85, "ç": 0x87, "ê": 0x88, "ë": 0x89, "è": 0x8a,
@@ -78,7 +78,11 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
       lines.forEach((v, i) => e.line(lr(i === 0 ? label : "", v, cols)));
     }
   }
-  if (o.mode === "delivery" && o.address) wrap(`${o.address}, ${o.city ?? ""}`, cols).forEach((l) => e.line(l));
+  for (const l of ticketDeliveryLines(o, shop)) {
+    const lines = wrap(l, cols);
+    if (l.startsWith("Adresse:")) { e.bold(true); lines.forEach((x) => e.line(x)); e.bold(false); }
+    else lines.forEach((x) => e.line(x));
+  }
   e.align(0).line().bold(true).line("Articles:").bold(false);
   for (const it of o.items) {
     e.bold(true); if (large) e.size(1, 2);
