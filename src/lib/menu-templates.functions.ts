@@ -17,7 +17,9 @@ export const listMenuTemplates = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await supabaseAdmin.from("menu_structure_templates").select("id, restaurant_id, name, structure, updated_at").order("name");
     if (error) throw new Error("Impossible de charger les modèles de carte");
-    return (rows ?? []) as unknown as MenuTemplate[];
+    // Only agency-published snapshots are returned; the source restaurant is never revealed to non-agency callers.
+    const { data: isAgency } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    return ((rows ?? []) as unknown as MenuTemplate[]).map((t) => (isAgency || t.restaurant_id === data.restaurantId ? t : { ...t, restaurant_id: "" }));
   });
 
 export const publishMenuTemplate = createServerFn({ method: "POST" })
