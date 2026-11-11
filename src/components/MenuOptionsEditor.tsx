@@ -108,7 +108,8 @@ function GroupCard({ g, items, uses, restaurantId, act, reload }: { g: OptionDat
         <Input value={price} onChange={(e) => setPrice(e.target.value)} inputMode="decimal" placeholder={`+ ${currencyUnit(currency)}`} aria-label="Prix du nouvel ingrédient" />
         <Button type="submit" variant="secondary" className="min-h-11"><Plus /> Ajouter</Button>
       </form>
-    </div>
+      </div>
+    </details>
   );
 }
 
