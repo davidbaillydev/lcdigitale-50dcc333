@@ -295,6 +295,13 @@
       "when": 1794219699715,
       "tag": "0041_restaurant_staff_push_alerts",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1794424174611,
+      "tag": "0042_restrict_order_update_columns",
+      "breakpoints": true
     }
   ]
 }

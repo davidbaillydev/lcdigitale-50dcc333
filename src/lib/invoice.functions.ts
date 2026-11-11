@@ -43,8 +43,11 @@ export const updateInvoiceBuyer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => b2bSchema.parse(d))
   .handler(async ({ data, context }) => {
-    const { data: inv } = await context.supabase.from("restaurant_invoices").select("id").eq("id", data.invoiceId).maybeSingle();
+    const { data: inv } = await context.supabase.from("restaurant_invoices").select("id, restaurant_id").eq("id", data.invoiceId).maybeSingle();
     if (!inv) throw new Error("Facture introuvable");
+    // La lecture RLS ne prouve pas le droit d'écrire : seul un gérant (ou l'agence) complète l'identité B2B.
+    const { data: canWrite } = await context.supabase.rpc("is_restaurant_manager", { _user_id: context.userId, _restaurant_id: inv.restaurant_id });
+    if (!canWrite) throw new Error("Réservé au gérant ou à l'agence");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const at = new Date().toISOString();
     const { error } = await supabaseAdmin.from("restaurant_invoices").update({ buyer_b2b: data.buyer, buyer_b2b_updated_at: at, buyer_b2b_by: context.userId }).eq("id", inv.id);
