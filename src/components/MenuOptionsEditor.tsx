@@ -65,7 +65,16 @@ function GroupCard({ g, items, uses, restaurantId, act, reload }: { g: OptionDat
   const [label, setLabel] = useState(""); const [price, setPrice] = useState("");
   const upd = (patch: { name?: string; is_required?: boolean; min_selection?: number; max_selection?: number }) => act(supabase.from("option_groups").update(patch).eq("id", g.id));
   return (
-    <div className="rounded-lg border border-border p-3">
+    <details className="group rounded-lg border border-border">
+      <summary className="flex cursor-pointer flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-sm">
+        <span className="font-medium">{g.name}</span>
+        <span className="text-xs text-muted-foreground">
+          {items.length} supplément(s) · {uses} plat(s) · min {g.min_selection} / max {g.max_selection}{g.is_required ? " · obligatoire" : ""}
+        </span>
+        <span className="ml-auto text-xs font-medium text-primary group-open:hidden">Modifier</span>
+        <span className="ml-auto hidden text-xs font-medium text-primary group-open:inline">Réduire</span>
+      </summary>
+      <div className="border-t border-border p-3">
       <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
         <Input defaultValue={g.name} onBlur={(e) => e.target.value.trim() && e.target.value !== g.name && upd({ name: e.target.value.trim() })} aria-label="Nom du groupe" />
         <Button variant="ghost" className="min-h-12" title="Dupliquer le groupe et ses suppléments" onClick={async () => {
