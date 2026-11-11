@@ -10,7 +10,7 @@ import { applyOutbox, enqueueChange, flushOutbox, isNetworkError, loadSnapshot, 
 import { canMarkNoShow, deliveryStatusPatch, startKitchenReminder, type DeliveryStep } from "@/lib/kitchen-status";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { EMPTY_OPTIONS, loadOptionData } from "@/lib/menu-options";
-import { AlertTriangle, ArrowLeft, ArrowRight, Bell, BellOff, Bike, Check, ChefHat, Lock, LogOut, Maximize, Minimize, MoonStar, PanelTopClose, PanelTopOpen, Phone, Printer, Settings, History, ShoppingBag, Store, Sun, Users, Volume2, VolumeX, WifiOff } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, Bell, BellOff, Bike, Check, ChefHat, Clock, Lock, LogOut, Maximize, Minimize, MoonStar, PanelTopClose, PanelTopOpen, Phone, Printer, Settings, History, ShoppingBag, Store, Sun, Users, Volume2, VolumeX, WifiOff } from "lucide-react";
 import { useKitchenFullscreen } from "@/hooks/use-kitchen-fullscreen";
 import { useWakeLock } from "@/hooks/use-wake-lock";
 import { useKioskLock } from "@/hooks/use-kiosk-lock";
@@ -457,12 +457,16 @@ function Kitchen() {
           </DialogHeader>
           {acceptFor && !acceptFor.asap && <Button size="lg" className="min-h-14 text-lg" onClick={() => { const o = acceptFor; setAcceptFor(null); void move(o, "accepted"); }}>Garder l'heure demandée ({fmtTime(acceptFor.slot)})</Button>}
           {acceptFor && !acceptFor.asap && <p className="text-sm text-muted-foreground">Commande programmée : les délais ci-dessous ne l'avanceront jamais avant {fmtTime(acceptFor.slot)}.</p>}
-          <div className="grid grid-cols-3 gap-2">
-            {[15, 30, 45].map((m) => <Button key={m} size="lg" className="min-h-14 text-lg" onClick={() => confirmAccept(m)}>+{m} min</Button>)}
+          <div className="rounded-xl border-2 border-primary/60 bg-primary/5 p-3">
+            <Label htmlFor="accept-time" className="flex items-center gap-2 text-base font-semibold"><Clock className="h-5 w-5 text-primary" /> Choisir l'heure précise</Label>
+            <div className="mt-2 flex items-end gap-2">
+              <Input id="accept-time" type="time" className="h-14 flex-1 text-center text-2xl font-semibold" value={customTime} onChange={(e) => setCustomTime(e.target.value)} />
+              <Button size="lg" className="min-h-14 text-lg" disabled={!customTime} onClick={() => confirmAccept()}><Check /> Valider</Button>
+            </div>
           </div>
-          <div className="flex items-end gap-2">
-            <div className="flex-1"><Label htmlFor="accept-time">Ou une heure précise</Label><Input id="accept-time" type="time" className="h-12" value={customTime} onChange={(e) => setCustomTime(e.target.value)} /></div>
-            <Button size="lg" className="min-h-12" disabled={!customTime} onClick={() => confirmAccept()}><Check /> Valider</Button>
+          <p className="text-sm text-muted-foreground">Ou un délai rapide :</p>
+          <div className="grid grid-cols-3 gap-2">
+            {[15, 30, 45].map((m) => <Button key={m} variant="outline" size="lg" className="min-h-14 text-lg" onClick={() => confirmAccept(m)}>+{m} min</Button>)}
           </div>
         </DialogContent>
       </Dialog>
