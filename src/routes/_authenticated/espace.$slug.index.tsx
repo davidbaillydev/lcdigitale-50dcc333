@@ -42,6 +42,7 @@ import { ThemeToggle } from "@/lib/theme";
 import { OrdersPausedToggle } from "@/components/OrdersPausedToggle";
 import { TicketPreviewDialog } from "@/components/TicketPreviewDialog";
 import { KitchenHistory } from "@/components/KitchenHistory";
+import { KitchenDeliveryInfo } from "@/components/KitchenDeliveryInfo";
 import { orderSoundOf, playOrderSound } from "@/lib/order-sound";
 import { useLiveRestaurant } from "@/hooks/use-orders-paused";
 
@@ -63,6 +64,7 @@ type Order = {
   currency?: import("@/lib/money").Currency;
   is_test?: boolean;
   id: string; order_number: number; customer_name: string; phone: string; mode: string; address: string | null; city: string | null;
+  postal_code?: string | null; delivery_lat?: number | null; delivery_lng?: number | null; zone_name?: string | null;
   slot: string; items: { name: string; qty: number; details: string[]; allergens?: string[]; size?: { name: string }; selected_options?: { id: string; name: string; price: number; group?: string }[] }[]; notes: string | null; total: number;
   payment_method: string; payment_status?: string; status: string; source?: string; created_at: string; table_label?: string | null; room_label?: string | null; asap?: boolean; driver_id?: string | null; courier_status?: string | null;
 };
@@ -88,6 +90,15 @@ function Kitchen() {
   const isStaff = !!restaurant;
   const isAdmin = restaurant?.role === "agency" || restaurant?.role === "manager";
   const rid = restaurant?.id;
+  const { data: deliveryConfig } = useQuery({
+    queryKey: ["kitchen-delivery-config", rid],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("restaurants").select("delivery").eq("id", rid ?? "").maybeSingle();
+      if (error) throw error;
+      return data?.delivery as Restaurant["delivery"] | null;
+    },
+    enabled: !!rid, staleTime: 15 * 60 * 1000,
+  });
   const queryClient = useQueryClient();
   const ticketOptionQuery = {
     queryKey: ["ticket-option-data", rid],
@@ -529,6 +540,7 @@ function Kitchen() {
                         <p className="text-xs text-muted-foreground">{o.source === "kiosk" ? "BORNE · " : o.source === "phone" ? "TÉLÉPHONE IA · " : ""}{o.mode === "delivery" ? "Livraison" : o.mode === "dine_in" ? (o.room_label ? `ROOM SERVICE · CHAMBRE ${o.room_label}` : o.table_label ? `Sur place · TABLE ${o.table_label}` : "Sur place") : "À emporter"}</p>
                       </div>
                     </div>
+                    {o.mode === "delivery" && <KitchenDeliveryInfo order={o} origin={deliveryConfig?.origin} />}
                     <ul className="mt-3 space-y-1.5 border-t border-border pt-3">
                       {o.items.map((it, i) => (
                         <li key={i}>
@@ -539,7 +551,7 @@ function Kitchen() {
                       ))}
                     </ul>
                     {o.notes && <p className="mt-2 rounded border-l-4 border-primary bg-accent p-3 text-sm font-medium">⚠ {o.notes}</p>}
-                    {o.mode === "delivery" && <div className="mt-2 space-y-2"><p className="text-sm">{o.address}{o.city ? `, ${o.city}` : ""}</p>{o.courier_status === "en_route" && <p role="status" className="flex items-center gap-2 rounded-md bg-accent p-3 font-semibold text-accent-foreground"><Bike className="h-5 w-5" />En livraison</p>}<DriverSelect orderId={o.id} driverId={o.driver_id ?? null} drivers={drivers} courierStatus={o.courier_status ?? null} /></div>}
+                    {o.mode === "delivery" && <div className="mt-2 space-y-2">{o.courier_status === "en_route" && <p role="status" className="flex items-center gap-2 rounded-md bg-accent p-3 font-semibold text-accent-foreground"><Bike className="h-5 w-5" />En livraison</p>}<DriverSelect orderId={o.id} driverId={o.driver_id ?? null} drivers={drivers} courierStatus={o.courier_status ?? null} /></div>}
                     <div className="mt-2 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-start gap-2 break-words text-sm text-muted-foreground">
                       {o.source === "kiosk" ? <span /> : <a href={`tel:${o.phone}`} className="flex items-center gap-1"><Phone className="h-3 w-3" />{o.phone}</a>}
                       <span>{formatMoney(Number(o.total), o.currency ?? "EUR")} · {o.is_test ? "CB Test (Admin) · Aucun encaissement" : o.payment_method === "online" && o.payment_status === "paid" ? `Payé en ligne (${String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("mollie:") ? "Mollie" : String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("paypal:") ? "PayPal" : String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("lyra:") ? "Lyra" : "Stripe"})` : o.payment_status === "paid" ? "payé (terminal)" : o.payment_method === "online" ? "payé" : o.payment_method === "card_terminal" ? "CB au comptoir" : o.payment_method === "counter" ? "espèces/TR au comptoir" : "à encaisser"}</span>
