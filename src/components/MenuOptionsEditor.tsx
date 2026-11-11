@@ -67,7 +67,6 @@ function GroupCard({ g, items, uses, restaurantId, act, reload }: { g: OptionDat
   return (
     <details className="group rounded-lg border border-border">
       <summary className="flex cursor-pointer flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-sm">
-        <span className="font-medium">{g.name}</span>
         <span className="text-xs text-muted-foreground">
           {items.length} supplément(s) · {uses} plat(s) · min {g.min_selection} / max {g.max_selection}{g.is_required ? " · obligatoire" : ""}
         </span>
