@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { activeGroups, groupCost, REMOVE_KEY, removableChoices, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
+import { activeGroups, adjustChoice, groupCost, REMOVE_KEY, removableChoices, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
 import { useCart } from "@/lib/cart";
 import { itemImage } from "@/lib/menu-images";
 import { AllergenInfo } from "@/components/Allergens";
@@ -53,11 +53,12 @@ export function ItemConfigurator({ item, onClose, catalog, onAdd, paused = false
       const cur = prev[g.id] ?? [];
       if (g.kind === "size") return Object.fromEntries([...Object.entries(prev).filter(([k]) => !(item.options ?? []).find((x) => x.id === k)?.forSize), [g.id, [id]]]);
       if (g.max === 1) return { ...prev, [g.id]: [id] };
-      if (cur.includes(id)) return { ...prev, [g.id]: cur.filter((x) => x !== id) };
-      if (cur.length >= g.max) return prev;
-      return { ...prev, [g.id]: [...cur, id] };
+      if (cur.includes(id)) return prev;
+      return { ...prev, [g.id]: adjustChoice(g.max, cur, id, 1) };
     });
   };
+  const adjust = (g: OptionGroup, id: string, delta: 1 | -1) =>
+    setSel((prev) => ({ ...prev, [g.id]: adjustChoice(g.max, prev[g.id] ?? [], id, delta) }));
 
   const stepOk = (g: OptionGroup) => (sel[g.id] ?? []).length >= g.min;
   const isLast = !stepped || step === groups.length - 1;
@@ -108,9 +109,11 @@ export function ItemConfigurator({ item, onClose, catalog, onAdd, paused = false
               <div className="grid grid-cols-2 gap-2">
                 {g.choices.map((c) => {
                   const on = picked.includes(c.id);
+                  const count = picked.filter((x) => x === c.id).length;
+                  const multi = g.kind !== "size" && g.max > 1;
                   return (
+                    <div key={c.id} className="flex flex-col gap-1">
                     <button
-                      key={c.id}
                       type="button"
                       role={g.kind === "size" ? "radio" : "checkbox"}
                       aria-checked={on}
@@ -125,8 +128,16 @@ export function ItemConfigurator({ item, onClose, catalog, onAdd, paused = false
                         {c.label}
                         {c.soldOut ? <span className="block text-xs text-destructive">Épuisé</span> : g.kind === "size" ? <span className="block text-xs text-primary">{euro(c.price ?? 0)}</span> : c.price ? <span className="block text-xs text-primary">+{euro(c.price)}</span> : null}
                       </span>
-                      {on && <Check className="h-4 w-4 shrink-0 text-primary" />}
+                      {on && (multi ? <span className="shrink-0 rounded-full bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground">x{count}</span> : <Check className="h-4 w-4 shrink-0 text-primary" />)}
                     </button>
+                    {multi && on && (
+                      <div className="flex items-center justify-between rounded-lg border border-primary/40">
+                        <button type="button" aria-label={`Retirer un ${c.label}`} onClick={() => adjust(g, c.id, -1)} className="min-h-11 flex-1 text-lg font-bold">−</button>
+                        <span className="text-sm font-semibold" aria-live="polite">{count}</span>
+                        <button type="button" aria-label={`Ajouter un ${c.label}`} disabled={picked.length >= g.max} onClick={() => adjust(g, c.id, 1)} className="min-h-11 flex-1 text-lg font-bold disabled:opacity-30">+</button>
+                      </div>
+                    )}
+                    </div>
                   );
                 })}
               </div>

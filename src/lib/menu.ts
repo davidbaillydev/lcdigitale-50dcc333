@@ -310,7 +310,7 @@ export function unitPrice(item: MenuItem, sel: Selections) {
 export function describeSelections(item: MenuItem, sel: Selections): string[] {
   const lines = activeGroups(item, sel)
     .filter((g) => !g.kind && (sel[g.id] ?? []).length)
-    .map((g) => `${g.label.replace(/^\d\.\s*/, "")} : ${(sel[g.id] ?? []).map((id) => g.choices.find((c) => c.id === id)?.label).join(", ")}`);
+    .map((g) => `${g.label.replace(/^\d\.\s*/, "")} : ${countChoices(sel[g.id] ?? []).map(([id, n]) => `${g.choices.find((c) => c.id === id)?.label}${n > 1 ? ` x${n}` : ""}`).join(", ")}`);
   const removed = (sel[REMOVE_KEY] ?? [])
     .map((id) => removableChoices(item).find((c) => c.id === id)?.label)
     .filter((l): l is string => !!l);
@@ -373,3 +373,17 @@ export function fromPrice(item: MenuItem): number | null {
 
 import { formatMoney as euro } from "./money";
 export { euro };
+
+/** Regroupe les choix identiques en conservant l'ordre : ["a","a","b"] -> [["a",2],["b",1]]. */
+export function countChoices(ids: string[]): [string, number][] {
+  const m = new Map<string, number>();
+  for (const id of ids) m.set(id, (m.get(id) ?? 0) + 1);
+  return [...m.entries()];
+}
+
+/** Ajoute (+1) ou retire (-1) un exemplaire d'un choix dans un groupe à choix multiples, sans dépasser max. */
+export function adjustChoice(max: number, cur: string[], id: string, delta: 1 | -1): string[] {
+  if (delta === 1) return cur.length >= max ? cur : [...cur, id];
+  const i = cur.lastIndexOf(id);
+  return i < 0 ? cur : [...cur.slice(0, i), ...cur.slice(i + 1)];
+}
