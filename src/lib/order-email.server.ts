@@ -1,4 +1,4 @@
-import { issueAccessToken } from "./customer-access.server";
+import { issueAccessToken } from "./customer-access-core.server";
 import { trustedOrigin } from "./trusted-origin";
 type Admin = Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"];
 
