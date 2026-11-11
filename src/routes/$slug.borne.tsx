@@ -20,7 +20,7 @@ import { abandonKioskQr, kioskQrAvailable, kioskQrStatus, startKioskQrPayment } 
 import { kioskIdentity, normalizeKioskId } from "@/lib/kiosk-readers";
 import { applyKioskId } from "@/lib/kiosk-switch";
 import { abandonKioskOrder, cancelKioskPayment, kioskPaymentStatus, kioskTerminalAvailable, startKioskCardPayment } from "@/lib/payments.functions";
-import { activeGroups, fromPrice, selectedExtras, selectionLines, groupCost, REMOVE_KEY, removableChoices, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
+import { activeGroups, adjustChoice, fromPrice, selectedExtras, selectionLines, groupCost, REMOVE_KEY, removableChoices, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
 import { itemImage } from "@/lib/menu-images";
 import { BrandLogo } from "@/lib/brand";
 import { ThemeToggle } from "@/lib/theme";
@@ -487,10 +487,10 @@ function KioskItem({ item, image, onClose, onAdd }: { item: MenuItem; image: str
     const cur = p[g.id] ?? [];
     if (g.kind === "size") return Object.fromEntries([...Object.entries(p).filter(([k]) => !(item.options ?? []).find((x) => x.id === k)?.forSize), [g.id, [id]]]);
     if (g.max === 1) return { ...p, [g.id]: [id] };
-    if (cur.includes(id)) return { ...p, [g.id]: cur.filter((x) => x !== id) };
-    if (cur.length >= g.max) return p;
-    return { ...p, [g.id]: [...cur, id] };
+    if (cur.includes(id)) return p;
+    return { ...p, [g.id]: adjustChoice(g.max, cur, id, 1) };
   });
+  const adjust = (g: OptionGroup, id: string, delta: 1 | -1) => setSel((p) => ({ ...p, [g.id]: adjustChoice(g.max, p[g.id] ?? [], id, delta) }));
   const submit = () => { try { assertItemAvailable(item); } catch (e) { setErr(e instanceof Error ? e.message : "Plat indisponible"); return; } const e = validateSelections(item, sel); if (e) setErr(e); else onAdd(sel, qty); };
   const removable = removableChoices(item);
   const removed = sel[REMOVE_KEY] ?? [];
@@ -520,12 +520,23 @@ function KioskItem({ item, image, onClose, onAdd }: { item: MenuItem; image: str
               <div className="grid grid-cols-3 gap-3">
                 {g.choices.map((c) => {
                   const on = picked.includes(c.id);
+                  const count = picked.filter((x) => x === c.id).length;
+                  const multi = g.kind !== "size" && g.max > 1;
                   return (
-                    <button key={c.id} onClick={() => toggle(g, c.id)} disabled={c.soldOut} role={g.kind === "size" ? "radio" : "checkbox"} aria-checked={on}
+                    <div key={c.id} className="flex flex-col gap-2">
+                    <button onClick={() => toggle(g, c.id)} disabled={c.soldOut} role={g.kind === "size" ? "radio" : "checkbox"} aria-checked={on}
                       className={cn("flex min-h-24 items-center justify-between gap-2 rounded-xl border-2 px-4 py-4 text-left text-xl disabled:opacity-50", on ? "border-primary bg-primary/15" : "border-border bg-card")}>
                       <span>{c.label}{c.soldOut ? <span className="block text-base text-destructive">Épuisé</span> : g.kind === "size" ? <span className="block text-base text-primary">{euro(c.price ?? 0)}</span> : c.price ? <span className="block text-base text-primary">+{euro(c.price)}</span> : null}</span>
-                      {on && <Check className="h-7 w-7 shrink-0 text-primary" />}
+                      {on && (multi ? <span className="shrink-0 rounded-full bg-primary px-3 py-1 text-lg font-bold text-primary-foreground">x{count}</span> : <Check className="h-7 w-7 shrink-0 text-primary" />)}
                     </button>
+                    {multi && on && (
+                      <div className="flex items-center justify-between rounded-xl border-2 border-primary/40">
+                        <button aria-label={`Retirer un ${c.label}`} onClick={() => adjust(g, c.id, -1)} className="min-h-16 flex-1 text-3xl font-bold">−</button>
+                        <span className="text-2xl font-semibold" aria-live="polite">{count}</span>
+                        <button aria-label={`Ajouter un ${c.label}`} disabled={picked.length >= g.max} onClick={() => adjust(g, c.id, 1)} className="min-h-16 flex-1 text-3xl font-bold disabled:opacity-30">+</button>
+                      </div>
+                    )}
+                    </div>
                   );
                 })}
               </div>
