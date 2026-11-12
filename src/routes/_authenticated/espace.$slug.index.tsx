@@ -453,9 +453,9 @@ function Kitchen() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Accepter la commande n° {acceptFor?.order_number}</DialogTitle>
-            <DialogDescription>Quand sera-t-elle prête ? Le client sera informé de cette heure.{acceptFor && !acceptFor.asap ? ` Heure demandée : ${fmtTime(acceptFor.slot)}.` : ""}</DialogDescription>
+            <DialogDescription>Quand sera-t-elle prête ? Le client sera informé de cette heure.{acceptFor && !acceptFor.asap ? ` Heure demandée par le client : ${fmtTime(acceptFor.slot)}.` : ""}</DialogDescription>
           </DialogHeader>
-          {acceptFor && !acceptFor.asap && <Button size="lg" className="min-h-14 text-lg" onClick={() => { const o = acceptFor; setAcceptFor(null); void move(o, "accepted"); }}>Garder l'heure demandée ({fmtTime(acceptFor.slot)})</Button>}
+          {acceptFor && !acceptFor.asap && <Button size="lg" className="min-h-14 text-lg" onClick={() => { const o = acceptFor; setAcceptFor(null); void move(o, "accepted"); }}><Clock className="h-5 w-5" />Garder l'heure demandée par le client ({fmtTime(acceptFor.slot)})</Button>}
           {acceptFor && !acceptFor.asap && <p className="text-sm text-muted-foreground">Commande programmée : les délais ci-dessous ne l'avanceront jamais avant {fmtTime(acceptFor.slot)}.</p>}
           <div className="rounded-xl border-2 border-primary/60 bg-primary/5 p-3">
             <Label htmlFor="accept-time" className="flex items-center gap-2 text-base font-semibold"><Clock className="h-5 w-5 text-primary" /> Choisir l'heure précise</Label>
