@@ -450,23 +450,23 @@ function Kitchen() {
         </div>
       )}
       <Dialog open={!!acceptFor} onOpenChange={(v) => !v && setAcceptFor(null)}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Accepter la commande n° {acceptFor?.order_number}</DialogTitle>
             <DialogDescription>Quand sera-t-elle prête ? Le client sera informé de cette heure.{acceptFor && !acceptFor.asap ? ` Heure demandée par le client : ${fmtTime(acceptFor.slot)}.` : ""}</DialogDescription>
           </DialogHeader>
-          {acceptFor && !acceptFor.asap && <Button size="lg" className="min-h-14 text-lg" onClick={() => { const o = acceptFor; setAcceptFor(null); void move(o, "accepted"); }}><Clock className="h-5 w-5" />Garder l'heure demandée par le client ({fmtTime(acceptFor.slot)})</Button>}
+          {acceptFor && !acceptFor.asap && <Button size="lg" className="h-auto min-h-14 w-full whitespace-normal py-3 text-center leading-snug text-base sm:text-lg" onClick={() => { const o = acceptFor; setAcceptFor(null); void move(o, "accepted"); }}><Clock className="h-5 w-5" />Garder l'heure demandée par le client ({fmtTime(acceptFor.slot)})</Button>}
           {acceptFor && !acceptFor.asap && <p className="text-sm text-muted-foreground">Commande programmée : les délais ci-dessous ne l'avanceront jamais avant {fmtTime(acceptFor.slot)}.</p>}
           <div className="rounded-xl border-2 border-primary/60 bg-primary/5 p-3">
-            <Label htmlFor="accept-time" className="flex items-center gap-2 text-base font-semibold"><Clock className="h-5 w-5 text-primary" /> Choisir l'heure précise</Label>
+            <Label htmlFor="accept-time" className="flex items-center gap-2 text-sm font-semibold sm:text-base"><Clock className="h-4 w-4 shrink-0 text-primary sm:h-5 sm:w-5" /> Choisir l'heure précise</Label>
             <div className="mt-2 flex items-end gap-2">
-              <Input id="accept-time" type="time" className="h-14 flex-1 text-center text-2xl font-semibold" value={customTime} onChange={(e) => setCustomTime(e.target.value)} />
-              <Button size="lg" className="min-h-14 text-lg" disabled={!customTime} onClick={() => confirmAccept()}><Check /> Valider</Button>
+              <Input id="accept-time" type="time" className="h-14 min-w-0 flex-1 text-center text-xl font-semibold sm:text-2xl" value={customTime} onChange={(e) => setCustomTime(e.target.value)} />
+              <Button size="lg" className="h-14 shrink-0 whitespace-nowrap px-3 text-base sm:px-6 sm:text-lg" disabled={!customTime} onClick={() => confirmAccept()}><Check /> Valider</Button>
             </div>
           </div>
           <p className="text-sm text-muted-foreground">Ou un délai rapide :</p>
           <div className="grid grid-cols-3 gap-2">
-            {[15, 30, 45].map((m) => <Button key={m} variant="outline" size="lg" className="min-h-14 text-lg" onClick={() => confirmAccept(m)}>+{m} min</Button>)}
+            {[15, 30, 45].map((m) => <Button key={m} variant="outline" size="lg" className="h-12 min-h-12 px-1 text-base sm:h-14 sm:min-h-14 sm:text-lg" onClick={() => confirmAccept(m)}>+{m} min</Button>)}
           </div>
         </DialogContent>
       </Dialog>
