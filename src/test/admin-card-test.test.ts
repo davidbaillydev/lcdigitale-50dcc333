@@ -54,4 +54,11 @@ describe("CB Test (Admin)", () => {
     const db = { from: (table: string) => { const q = { select: () => q, eq: () => q, maybeSingle: async () => ({ data: table === "orders" ? { is_test: true, currency: "EUR" } : null }) }; return q; }, rpc: vi.fn() };
     await expect(issueForOrder(db as unknown as Parameters<typeof issueForOrder>[0], "test")).rejects.toThrow("aucune facture"); expect(db.rpc).not.toHaveBeenCalled();
   });
+});describe("CB Test (Admin) — tous les modes", () => {
+  it("accepte le retrait sans adresse, même mode désactivé", async () => {
+    await invoke({ ...input, mode: "pickup", address: "", postal_code: "" }); expect(m.insert).toHaveBeenCalledWith(expect.objectContaining({ mode: "pickup", delivery_fee: 0, is_test: true }));
+  });
+  it("accepte sur place avec table 1 par défaut", async () => {
+    await invoke({ ...input, mode: "dine_in", address: "", postal_code: "" }); expect(m.insert).toHaveBeenCalledWith(expect.objectContaining({ mode: "dine_in", table_label: "1", is_test: true }));
+  });
 });

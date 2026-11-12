@@ -90,14 +90,18 @@ async function createCalculatedOrder(supabaseAdmin: Awaited<typeof import("@/int
 
     const dineIn = data.mode === "dine_in";
     { const ft = featuresOf(r.enabled_features);
-      if (dineIn && !ft.qrcode) throw new Error("La commande à table n'est pas proposée.");
-      if (data.mode === "delivery" && !ft.livraison) throw new Error("La livraison n'est pas proposée par ce restaurant.");
+      if (!testUserId && dineIn && !ft.qrcode) throw new Error("La commande à table n'est pas proposée.");
+      if (!testUserId && data.mode === "delivery" && !ft.livraison) throw new Error("La livraison n'est pas proposée par ce restaurant.");
       if (data.source === "embed" && !ft.embed) throw new Error("Le bouton de commande intégré n'est pas activé pour ce restaurant."); }
-    if (dineIn) {
+    if (dineIn && testUserId) {
+      data.table = data.table || "1"; data.slot = new Date().toISOString();
+    } else if (dineIn) {
       const n = Number(data.table);
       if (data.room) { if (!r.config.qr?.room) throw new Error("Le room service n'est pas proposé."); }
       else if (data.qr === "self" && !data.table) { if (!r.config.qr?.self) throw new Error("Le libre-service n'est pas proposé."); }
       else if (!data.table || !(n >= 1 && n <= (r.config.qr?.tables ?? 0))) throw new Error("Table inconnue : scannez à nouveau le QR code de votre table.");
+    } else if (testUserId) {
+      data.slot = data.asap || !data.slot ? new Date().toISOString() : data.slot;
     } else if (!modeEnabled(r, "pickup") && !modeEnabled(r, "delivery")) throw new Error("Commandes en ligne désactivées pour le moment.");
     else if (!modeEnabled(r, data.mode as "pickup" | "delivery")) throw new Error("Ce mode de commande n'est pas proposé.");
     else if (data.asap) {
@@ -116,17 +120,19 @@ async function createCalculatedOrder(supabaseAdmin: Awaited<typeof import("@/int
         data.slot = next; data.asap = false;
       }
     }
-    if (data.payment_method === "online" && !onlinePaymentEnabled(r, data.mode)) throw new Error(onlinePaymentEnabled(r) ? "Le paiement en ligne est réservé à la livraison." : "Le paiement en ligne est désactivé par ce restaurant.");
+    if (!testUserId && data.payment_method === "online" && !onlinePaymentEnabled(r, data.mode)) throw new Error(onlinePaymentEnabled(r) ? "Le paiement en ligne est réservé à la livraison." : "Le paiement en ligne est désactivé par ce restaurant.");
     const { stripeForRestaurant, stripeCall, startOnlinePayment } = await import("./payments.functions");
     const provider = !testUserId && data.payment_method === "online" ? (data.provider ?? "stripe") : null;
     const stripe = provider === "stripe" ? await stripeForRestaurant(r.id) : null;
     if (provider === "stripe" && !stripe) throw new Error("Le paiement en ligne n'est pas disponible pour ce restaurant.");
     if ((provider === "paypal" || provider === "lyra" || provider === "mollie") && !data.origin) throw new Error("Paiement en ligne indisponible.");
+    if (!testUserId) {
     if (!dineIn && !modeEnabled(r, data.mode)) throw new Error(data.mode === "delivery" ? "La livraison n'est pas proposée par ce restaurant." : "La vente à emporter n'est pas proposée.");
     if (data.payment_method === "online" && !onlinePaymentEnabled(r)) throw new Error("Le paiement en ligne est désactivé par ce restaurant.");
     if (!dineIn && data.mode === "delivery" && !onlinePaymentEnabled(r)) throw new Error("La livraison n'est pas proposée par ce restaurant.");
     if (!dineIn && data.mode === "delivery" && data.payment_method === "on_site") throw new Error("La livraison nécessite un paiement en ligne.");
     if (data.payment_method === "on_site" && !paymentEnabled(r, "on_site")) throw new Error("Ce mode de paiement n'est pas accepté.");
+    }
 
     const { data: so } = await supabaseAdmin.from("menu_stock").select("item_id").eq("restaurant_id", r.id).eq("sold_out", true);
     const soldOut = new Set((so ?? []).map((x) => x.item_id));
@@ -168,7 +174,7 @@ async function createCalculatedOrder(supabaseAdmin: Awaited<typeof import("@/int
       if (subtotal < r.delivery.minOrder) throw new Error(`Minimum de commande en livraison : ${formatMoney(r.delivery.minOrder, currencyOf(r))}`);
       fee = deliveryFee(r, subtotal);
       city = zone.city;
-    } else if (data.mode === "pickup") {
+    } else if (data.mode === "pickup" && !testUserId) {
       const min = pickupMinOrder(r);
       if (min != null && subtotal < min) throw new Error(`Minimum de commande à emporter : ${formatMoney(min, currencyOf(r))}`);
     }

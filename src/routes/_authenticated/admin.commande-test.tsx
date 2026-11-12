@@ -19,9 +19,9 @@ import { euro, unitPrice, type Selections } from "@/lib/menu";
 export const Route = createFileRoute("/_authenticated/admin/commande-test")({
   head: () => ({
     meta: [
-      { title: "Commande test livraison (CB Test) — Console agence" },
-      { name: "description", content: "Passer une commande livraison de test payée par CB simulée, réservée à l'agence." },
-      { property: "og:title", content: "Commande test livraison" },
+      { title: "Commande test (Livraison, Retrait, Sur place) — Console agence" },
+      { name: "description", content: "Passer une commande test en livraison, retrait ou sur place, payée par CB simulée, réservée à l'agence." },
+      { property: "og:title", content: "Commande test (Livraison, Retrait, Sur place)" },
       { property: "og:description", content: "Commande test CB simulée envoyée en cuisine et aux livreurs." },
       { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
@@ -29,6 +29,13 @@ export const Route = createFileRoute("/_authenticated/admin/commande-test")({
   }),
   component: Page,
 });
+
+type Mode = "delivery" | "pickup" | "dine_in";
+const MODES: { value: Mode; label: string; cta: string }[] = [
+  { value: "delivery", label: "Livraison", cta: "Commander en livraison (CB Test)" },
+  { value: "pickup", label: "À emporter", cta: "Commander en retrait (CB Test)" },
+  { value: "dine_in", label: "Sur place", cta: "Commander sur place (CB Test)" },
+];
 
 type Line = { key: string; itemId: string; sel: Selections; qty: number };
 
@@ -41,7 +48,7 @@ function Page() {
     <main className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
       <Button variant="ghost" asChild><Link to="/admin"><ArrowLeft />Console agence</Link></Button>
       <div>
-        <h1 className="text-3xl font-semibold">Commande test livraison</h1>
+        <h1 className="text-3xl font-semibold">Commande test (Livraison, Retrait, Sur place)</h1>
         <p className="text-muted-foreground">Commande réelle envoyée en cuisine et aux livreurs, marquée « CB Test (Admin) » : payée par carte simulée, aucun encaissement, exclue des ventes et commissions.</p>
       </div>
       <div className="space-y-2">
@@ -67,6 +74,8 @@ function OrderForm({ slug }: { slug: string }) {
   const [item, setItem] = useState<string | null>(null);
   const [f, setF] = useState({ first_name: "Test", last_name: "Agence", phone: "0600000000", address: "", postal_code: "", notes: "" });
   const [busy, setBusy] = useState(false);
+  const [mode, setMode] = useState<Mode>("delivery");
+  const [table, setTable] = useState("1");
   if (!r || !catalog) return <p className="text-muted-foreground">Chargement de la carte…</p>;
 
   const subtotal = lines.reduce((s, l) => { const it = catalog.itemsById[l.itemId]; return s + (it ? unitPrice(it, l.sel) * l.qty : 0); }, 0);
@@ -74,10 +83,11 @@ function OrderForm({ slug }: { slug: string }) {
 
   const submit = async () => {
     if (!lines.length) { toast.error("Ajoutez au moins un plat."); return; }
-    if (!f.address.trim() || !/^\d{5}$/.test(f.postal_code.trim())) { toast.error("Adresse et code postal (5 chiffres) obligatoires."); return; }
+    if (mode === "dine_in" && !/^\d{1,3}$/.test(table.trim())) { toast.error("Numéro de table invalide."); return; }
+    if (mode === "delivery" && (!f.address.trim() || !/^\d{5}$/.test(f.postal_code.trim()))) { toast.error("Adresse et code postal (5 chiffres) obligatoires."); return; }
     setBusy(true);
     try {
-      const res = await create({ data: { restaurant: slug, mode: "delivery", asap: true, slot: "", ...f, payment_method: "online", cgv: true, lines: lines.map(({ itemId, qty, sel }) => ({ itemId, qty, sel })) } }) as { id: string; order_number: number };
+      const res = await create({ data: { restaurant: slug, mode, asap: true, slot: "", ...f, ...(mode === "delivery" ? {} : { address: "", postal_code: "" }), ...(mode === "dine_in" ? { table: table.trim() } : {}), payment_method: "online", cgv: true, lines: lines.map(({ itemId, qty, sel }) => ({ itemId, qty, sel })) } }) as { id: string; order_number: number };
       toast.success(`Commande test n°${res.order_number} envoyée en cuisine (CB Test).`);
       setLines([]);
       void navigate({ to: "/espace/$slug", params: { slug } });
@@ -102,6 +112,11 @@ function OrderForm({ slug }: { slug: string }) {
         ))}
       </section>
       <aside className="space-y-4 rounded-lg border border-border bg-card p-4 lg:sticky lg:top-4 lg:self-start">
+        <div role="radiogroup" aria-label="Mode de commande" className="grid grid-cols-3 gap-1 rounded-md bg-muted p-1">
+          {MODES.map((m) => (
+            <button key={m.value} type="button" role="radio" aria-checked={mode === m.value} onClick={() => setMode(m.value)} className={`min-h-11 rounded px-1 text-sm font-medium leading-tight ${mode === m.value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}>{m.label}</button>
+          ))}
+        </div>
         <h2 className="font-semibold">Panier test</h2>
         {lines.length === 0 ? <p className="text-sm text-muted-foreground">Aucun plat.</p> : lines.map((l) => {
           const it = catalog.itemsById[l.itemId];
@@ -121,10 +136,14 @@ function OrderForm({ slug }: { slug: string }) {
           <div><Label>Nom</Label><Input value={f.last_name} onChange={set("last_name")} /></div>
         </div>
         <div><Label>Téléphone</Label><Input value={f.phone} onChange={set("phone")} /></div>
-        <div><Label>Adresse de livraison</Label><Input value={f.address} onChange={set("address")} placeholder={r.address ?? ""} /></div>
-        <div><Label>Code postal</Label><Input value={f.postal_code} onChange={set("postal_code")} inputMode="numeric" /></div>
+        {mode === "delivery" && <>
+          <div><Label htmlFor="t-addr">Adresse de livraison *</Label><Input id="t-addr" value={f.address} onChange={set("address")} placeholder={r.address ?? ""} required /></div>
+          <div><Label htmlFor="t-cp">Code postal *</Label><Input id="t-cp" value={f.postal_code} onChange={set("postal_code")} inputMode="numeric" required /></div>
+        </>}
+        {mode === "pickup" && <p className="text-sm text-muted-foreground">Retrait au restaurant : aucune adresse requise.</p>}
+        {mode === "dine_in" && <div><Label htmlFor="t-table">Numéro de table</Label><Input id="t-table" value={table} onChange={(e) => setTable(e.target.value)} inputMode="numeric" /></div>}
         <div><Label>Note</Label><Input value={f.notes} onChange={set("notes")} /></div>
-        <Button className="min-h-12 w-full" disabled={busy} onClick={() => void submit()}><CreditCard />{busy ? "Envoi…" : "Commander en livraison (CB Test)"}</Button>
+        <Button className="min-h-12 w-full" disabled={busy} onClick={() => void submit()}><CreditCard />{busy ? "Envoi…" : MODES.find((m) => m.value === mode)!.cta}</Button>
       </aside>
       <ItemConfigurator item={item ? catalog.itemsById[item] ?? null : null} catalog={catalog} onClose={() => setItem(null)} onAdd={(id, sel, qty) => { setLines([...lines, { key: crypto.randomUUID(), itemId: id, sel, qty }]); setItem(null); }} />
     </div>
