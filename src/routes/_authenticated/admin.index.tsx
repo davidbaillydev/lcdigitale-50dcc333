@@ -139,7 +139,7 @@ function Console() {
         <nav aria-label="Navigation agence" className="flex flex-wrap gap-1 border-t border-border pt-2">
           <AgencyMenu label="Opérations" icon={<ChefHat />}>
             <DropdownMenuItem asChild><Link to="/espace"><ChefHat />Écrans cuisine</Link></DropdownMenuItem>
-            <DropdownMenuItem asChild><Link to="/admin/commande-test"><ShoppingBag />Commande test (Livraison, Retrait, Sur place)</Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Link to="/admin/commande-test"><ShoppingBag />Commande test</Link></DropdownMenuItem>
             <DropdownMenuItem asChild><Link to="/admin/clients"><Contact />Clients</Link></DropdownMenuItem>
             <DropdownMenuItem asChild><Link to="/admin/qrcodes"><QrCode />QR codes</Link></DropdownMenuItem>
           </AgencyMenu>
