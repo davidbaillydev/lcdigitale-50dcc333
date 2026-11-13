@@ -123,6 +123,7 @@ async function createCalculatedOrder(supabaseAdmin: Awaited<typeof import("@/int
     if (!testUserId && data.payment_method === "online" && !onlinePaymentEnabled(r, data.mode)) throw new Error(onlinePaymentEnabled(r) ? "Le paiement en ligne est réservé à la livraison." : "Le paiement en ligne est désactivé par ce restaurant.");
     const { stripeForRestaurant, stripeCall, startOnlinePayment } = await import("./payments.functions");
     const provider = !testUserId && data.payment_method === "online" ? (data.provider ?? "stripe") : null;
+    if (provider && provider !== "mollie" && (await import("./shop")).preauthEnabled(r.config)) throw new Error("Ce restaurant accepte uniquement la carte bancaire avec pré-autorisation (Mollie).");
     const stripe = provider === "stripe" ? await stripeForRestaurant(r.id) : null;
     if (provider === "stripe" && !stripe) throw new Error("Le paiement en ligne n'est pas disponible pour ce restaurant.");
     if ((provider === "paypal" || provider === "lyra" || provider === "mollie") && !data.origin) throw new Error("Paiement en ligne indisponible.");

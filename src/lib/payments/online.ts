@@ -4,6 +4,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { platformFeeFor, type PlatformFeeChannel } from "../platform-fee";
 import { admin, assertOrdersOpen, markPaid } from "./shared";
+import { preauthEnabled } from "../shop";
 import { handleStripeSession, stripeCall, stripeForRestaurant } from "./stripe";
 import { paypalCall, paypalForRestaurant } from "./paypal";
 import { handleMolliePayment, mollieCall, mollieForRestaurant } from "./mollie";
@@ -41,6 +42,8 @@ export async function startOnlinePayment(provider: "paypal" | "lyra" | "mollie",
       ...(publicHook ? { webhookUrl: `${origin}/api/public/mollie-webhook` } : {}),
       locale: "fr_FR", metadata: { order_id: o.id },
       ...(m.profileId ? { profileId: m.profileId } : {}),
+      // Pré-autorisation : carte bancaire uniquement, capture à l'acceptation par le restaurant
+      ...(preauthEnabled(rc?.config) ? { method: "creditcard", captureMode: "manual" } : {}),
       // Commission plateforme (uniquement pour les comptes reliés via Mollie Connect)
       ...(fee > 0 ? { applicationFee: { amount: { currency: "EUR", value: fee.toFixed(2) }, description: "Commission plateforme LCDIGITALE" } } : {}),
     }, `pay_${o.id}`) as { id: string; _links?: { checkout?: { href?: string } } };
@@ -75,6 +78,7 @@ export const onlinePaymentInfo = createServerFn({ method: "POST" })
     const { data: r } = await db.from("restaurants").select("id, config").eq("slug", data.slug).eq("active", true).maybeSingle();
     if (!r || !legacyPaymentsSupported(r)) return { stripe: null as string | null, paypal: false, lyra: false, mollie: false };
     const [s, p, l, m] = await Promise.all([stripeForRestaurant(r.id), paypalForRestaurant(r.id), lyraForRestaurant(r.id), mollieForRestaurant(r.id)]);
+    if (preauthEnabled(r.config)) return { stripe: null as string | null, paypal: false, lyra: false, mollie: !!m, preauth: true };
     return { stripe: s?.publishable ?? null, paypal: !!p, lyra: !!l, mollie: !!m };
   });
 
@@ -92,7 +96,7 @@ export const confirmOnlinePayment = createServerFn({ method: "POST" })
     const db = await admin();
     const { data: o } = await db.from("orders").select("id, restaurant_id, status, total, payment_method, payment_status, payment_ref").eq("id", data.orderId).maybeSingle();
     if (!o || o.payment_method !== "online") throw new Error("Commande introuvable");
-    if (o.payment_status === "paid") return { status: "paid" as const };
+    if (o.payment_status === "paid" || o.payment_status === "authorized") return { status: "paid" as const };
     if (o.payment_status !== "pending") return { status: "failed" as const };
     if (!o.payment_ref) return { status: "failed" as const };
     const ref = String(o.payment_ref);

@@ -37,7 +37,7 @@ export type Restaurant = {
     modes?: { pickup?: boolean; delivery?: boolean; dine_in?: boolean };
     /** Montant minimum de commande à emporter (€) ; null/absent = pas de minimum. */
     pickupMinOrder?: number | null;
-    payments?: { online?: boolean; onlineDeliveryOnly?: boolean; on_site?: boolean; counter?: boolean; card_terminal?: boolean; qr?: boolean };
+    payments?: { online?: boolean; onlineDeliveryOnly?: boolean; preauth?: boolean; on_site?: boolean; counter?: boolean; card_terminal?: boolean; qr?: boolean };
     /** Voie B (BOI-TVA-DECLA-30-10-30 § 37 ex. 4) : borne 100 % carte bancaire, aucun encaissement espèces. */
     kiosk?: { cardOnly?: boolean };
     marketing?: import("./promo").Marketing;
@@ -188,3 +188,6 @@ export function capacityLimit(cap: ReturnType<typeof capacityOf>, activeDrivers:
 /** Clé du créneau de capacité contenant l'heure donnée. */
 export const capacityBucket = (iso: string, minutes: number) => String(Math.floor(new Date(iso).getTime() / (minutes * 60000)));
 export const DELIVERY_FULL_MSG = "Ce créneau de livraison est complet, merci d'en choisir un autre.";
+
+/** Pré-autorisation CB (empreinte, capture à l'acceptation) : option par restaurant, absente = débit immédiat habituel. */
+export const preauthEnabled = (config: unknown) => (config as { payments?: { preauth?: boolean } } | null)?.payments?.preauth === true;

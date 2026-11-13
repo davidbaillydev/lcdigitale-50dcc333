@@ -38,7 +38,7 @@ export function initialSettings(r: Restaurant): Settings {
       timing: timingOf(r),
       modes: { pickup: c.modes?.pickup !== false, delivery: c.modes?.delivery !== false, dine_in: c.modes?.dine_in !== false },
       pickupMinOrder: typeof c.pickupMinOrder === "number" && c.pickupMinOrder > 0 ? c.pickupMinOrder : null,
-      payments: { online: c.payments?.online !== false, onlineDeliveryOnly: c.payments?.onlineDeliveryOnly === true, on_site: c.payments?.on_site !== false, counter: c.payments?.counter !== false, card_terminal: c.payments?.card_terminal !== false, qr: c.payments?.qr === true },
+      payments: { online: c.payments?.online !== false, onlineDeliveryOnly: c.payments?.onlineDeliveryOnly === true, preauth: c.payments?.preauth === true, on_site: c.payments?.on_site !== false, counter: c.payments?.counter !== false, card_terminal: c.payments?.card_terminal !== false, qr: c.payments?.qr === true },
       kiosk: { cardOnly: c.kiosk?.cardOnly === true },
       pos: { enabled: (c as { pos?: { enabled?: boolean } }).pos?.enabled === true },
       printing: printingDefaults(c.printing),
@@ -241,6 +241,7 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
                 </select>
                 {s.config.payments.onlineDeliveryOnly && !s.config.payments.on_site && <p role="alert" className="text-sm text-destructive">Le retrait ne dispose d'aucun paiement accepté. Activez le paiement en mains propres ou choisissez tous les modes.</p>}
               </div>
+              <Toggle label="Pré-autorisation bancaire (empreinte CB)" hint="Carte bancaire uniquement (Mollie). Le montant est bloqué à la commande et débité seulement quand vous cliquez « Accepter ». En cas de refus, d'annulation ou de dépassement des 4 minutes, l'empreinte est relâchée sans débit." checked={s.config.payments.preauth === true} onChange={(v) => cfg({ payments: { ...s.config.payments, preauth: v } })} />
               <p className="pt-1 text-sm text-muted-foreground">Le paiement en ligne par carte sur le site s'active en connectant un prestataire (Stripe, Mollie, PayPal ou Lyra) dans la section « Prestataires de paiement » ci-dessous.</p>
             </div>
           </div>

@@ -78,7 +78,7 @@ function Checkout() {
   const setB = (k: keyof typeof bill) => (e: { target: { value: string } }) => setBill((b) => ({ ...b, [k]: k === "siren" ? e.target.value.replace(/\D/g, "").slice(0, 9) : k === "vatNumber" ? e.target.value.toUpperCase().replace(/\s/g, "") : e.target.value }));
   const proOk = !pro || (bill.company.trim().length >= 2 && /^\d{9}$/.test(bill.siren) && bill.address.trim().length >= 3 && /^\d{5}$/.test(bill.postalCode) && !!bill.city.trim());
   const infoFn = useServerFn(onlinePaymentInfo);
-  const [online, setOnline] = useState<{ stripe: string | null; paypal: boolean; lyra: boolean; mollie: boolean }>({ stripe: null, paypal: false, lyra: false, mollie: false });
+  const [online, setOnline] = useState<{ stripe: string | null; paypal: boolean; lyra: boolean; mollie: boolean; preauth?: boolean }>({ stripe: null, paypal: false, lyra: false, mollie: false });
   const [payment, setPayment] = useState<{ id: string; access: string; clientSecret: string; back?: string | undefined } | null>(null);
   const [promo, setPromo] = useState<{ d: AppliedDiscount | null; code?: string | undefined }>({ d: null });
   const onSiteOk = restaurant.config.payments?.on_site !== false;
@@ -218,7 +218,7 @@ function Checkout() {
   const options = [
     ...(onSiteOk && !isDelivery ? [{ v: "on_site" as const, Icon: Store, t: table ? "À table / au comptoir" : "Au retrait", s: "Espèces, CB ou tickets resto", ok: true }] : []),
     ...(onlineOk ? [{ v: "stripe" as const, Icon: CreditCard, t: "Carte bancaire", s: online.stripe ? "Carte, Apple Pay, Google Pay" : "Non proposé par ce restaurant", ok: !!online.stripe }] : []),
-    ...(onlineOk && online.mollie ? [{ v: "mollie" as const, Icon: CreditCard, t: "Carte · Bancontact · Apple Pay", s: "Page de paiement sécurisée Mollie", ok: true }] : []),
+    ...(onlineOk && online.mollie ? [{ v: "mollie" as const, Icon: CreditCard, t: online.preauth ? "Carte bancaire" : "Carte · Bancontact · Apple Pay", s: online.preauth ? "Montant bloqué, débité seulement quand le restaurant accepte" : "Page de paiement sécurisée Mollie", ok: true }] : []),
     ...(onlineOk && online.paypal ? [{ v: "paypal" as const, Icon: Wallet, t: "PayPal", s: "Compte PayPal ou carte via PayPal", ok: true }] : []),
     ...(onlineOk && online.lyra ? [{ v: "lyra" as const, Icon: Landmark, t: "Carte bancaire (banque)", s: "Page de paiement sécurisée Lyra / PayZen", ok: true }] : []),
   ].filter((o) => o.ok || (!online.paypal && !online.lyra && !online.mollie));

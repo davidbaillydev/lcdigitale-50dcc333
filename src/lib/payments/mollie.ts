@@ -186,12 +186,14 @@ export async function handleMolliePayment(paymentId: string): Promise<"paid" | "
   const db = await admin();
   const { data: o } = await db.from("orders").select("id, restaurant_id, status, total, payment_method, payment_status, payment_ref").eq("payment_ref", `mollie:${paymentId}`).maybeSingle();
   if (!o) return "pending";
+  if (o.payment_status === "authorized") { const { syncAuthorizedMollie } = await import("./preauth"); return syncAuthorizedMollie(o, paymentId); }
   if (o.payment_status !== "pending") return o.payment_status === "paid" ? "paid" : "failed";
   const m = await mollieForRestaurant(o.restaurant_id, false);
   if (!m) return "pending";
   const p = await mollieCall(m.key, `/payments/${encodeURIComponent(paymentId)}`) as { status?: string; amount?: { value?: string; currency?: string }; metadata?: { order_id?: string } };
   if (p.metadata?.order_id !== o.id) throw new Error("Paiement non reconnu");
   if (p.status === "paid" && p.amount?.currency === "EUR" && Number(p.amount?.value) === Number(o.total)) { await markPaid(o); return "paid"; }
+  if (p.status === "authorized" && p.amount?.currency === "EUR" && Number(p.amount?.value) === Number(o.total)) { const { markAuthorized } = await import("./preauth"); await markAuthorized(o); return "paid"; }
   if (MOLLIE_FAIL.includes(p.status ?? "")) {
     await db.from("orders").update({ payment_status: p.status === "expired" ? "expired" : "failed", status: "cancelled", updated_at: new Date().toISOString() }).eq("id", o.id).eq("payment_status", "pending");
     return "failed";

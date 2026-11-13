@@ -29,6 +29,7 @@ import { retryPosSync } from "@/lib/pos.functions";
 import { toast } from "sonner";
 import { AcceptCountdown } from "@/components/AcceptCountdown";
 import { checkOrderDeadline } from "@/lib/order-deadline.functions";
+import { acceptPreauthOrder, releasePreauthOrder } from "@/lib/preauth.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useStaff } from "@/hooks/use-staff";
 import { Button } from "@/components/ui/button";
@@ -256,7 +257,7 @@ function Kitchen() {
       .channel(`orders-kitchen-${rid}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `restaurant_id=eq.${rid}` }, (p) => {
         const n = p.new as Order;
-        const becamePaid = p.eventType === "UPDATE" && n.status !== "awaiting_payment" && (n.payment_method === "online" || n.payment_method === "card_terminal") && n.payment_status === "paid" && !ordersRef.current.some((x) => x.id === n.id);
+        const becamePaid = p.eventType === "UPDATE" && n.status !== "awaiting_payment" && (n.payment_method === "online" || n.payment_method === "card_terminal") && (n.payment_status === "paid" || n.payment_status === "authorized") && !ordersRef.current.some((x) => x.id === n.id);
         // Borne + TPE : le ticket attend l'issue du paiement (Payé, ou bon de pré-commande si échec)
         const kioskCard = n.source === "kiosk" && n.payment_method === "card_terminal";
         if (p.eventType === "UPDATE" && kioskCard && deferred.current.has(n.id) && (n.payment_status === "paid" || n.payment_status === "failed")) {
@@ -328,6 +329,7 @@ function Kitchen() {
   };
 
   const notify = useServerFn(notifyOrderStatus);
+  const acceptPreauth = useServerFn(acceptPreauthOrder), releasePreauth = useServerFn(releasePreauthOrder);
   const notifyRef = useRef(notify); notifyRef.current = notify;
   const queue = (o: Order, status: string, slot?: string, delivery?: ReturnType<typeof deliveryStatusPatch>) => {
     if (!rid) return;
@@ -336,6 +338,16 @@ function Kitchen() {
     toast.info("Hors-ligne : changement enregistré, il sera synchronisé au retour du réseau");
   };
   const move = async (o: Order, status: string, slot?: string) => {
+    if (o.payment_status === "authorized" && (status === "accepted" || status === "cancelled")) {
+      // Empreinte CB : capture à l'acceptation, libération au refus (serveur uniquement, jamais hors-ligne)
+      if (!navigator.onLine) { toast.error("Connexion requise pour débiter ou relâcher l'empreinte bancaire."); return; }
+      try {
+        if (status === "accepted") { await acceptPreauth({ data: { orderId: o.id, ...(slot ? { slot } : {}) } }); toast.success("Paiement débité, commande acceptée."); }
+        else { await releasePreauth({ data: { orderId: o.id } }); toast.success("Empreinte bancaire relâchée : aucun débit pour le client."); }
+        notify({ data: { orderId: o.id, origin: window.location.origin } }).catch(() => {});
+      } catch (e) { toast.error(e instanceof Error ? e.message : "Opération bancaire impossible"); }
+      await load(); return;
+    }
     setOrders((prev) => prev.map((x) => (x.id === o.id ? { ...x, status, ...(slot ? { slot } : {}) } : x)));
     if (!navigator.onLine) { queue(o, status, slot); return; }
     const { error } = await supabase.from("orders").update({ status, ...(slot ? { slot } : {}), updated_at: new Date().toISOString() }).eq("id", o.id);
@@ -562,7 +574,7 @@ function Kitchen() {
                     {o.mode === "delivery" && <div className="mt-2 space-y-2">{o.courier_status === "en_route" && <p role="status" className="flex items-center gap-2 rounded-md bg-accent p-3 font-semibold text-accent-foreground"><Bike className="h-5 w-5" />En livraison</p>}<DriverSelect orderId={o.id} driverId={o.driver_id ?? null} drivers={drivers} courierStatus={o.courier_status ?? null} /></div>}
                     <div className="mt-2 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-start gap-2 break-words text-sm text-muted-foreground">
                       {o.source === "kiosk" ? <span /> : <a href={`tel:${o.phone}`} className="flex items-center gap-1"><Phone className="h-3 w-3" />{o.phone}</a>}
-                      <span>{formatMoney(Number(o.total), o.currency ?? "EUR")} · {o.is_test ? "CB Test (Admin) · Aucun encaissement" : o.payment_method === "online" && o.payment_status === "paid" ? `Payé en ligne (${String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("mollie:") ? "Mollie" : String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("paypal:") ? "PayPal" : String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("lyra:") ? "Lyra" : "Stripe"})` : o.payment_status === "paid" ? "payé (terminal)" : o.payment_method === "online" ? "payé" : o.payment_method === "card_terminal" ? "CB au comptoir" : o.payment_method === "counter" ? "espèces/TR au comptoir" : "à encaisser"}</span>
+                      <span>{formatMoney(Number(o.total), o.currency ?? "EUR")} · {o.is_test ? "CB Test (Admin) · Aucun encaissement" : o.payment_status === "authorized" ? "Empreinte CB · débit à l'acceptation" : o.payment_method === "online" && o.payment_status === "paid" ? `Payé en ligne (${String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("mollie:") ? "Mollie" : String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("paypal:") ? "PayPal" : String((o as { payment_ref?: string | null }).payment_ref ?? "").startsWith("lyra:") ? "Lyra" : "Stripe"})` : o.payment_status === "paid" ? "payé (terminal)" : o.payment_method === "online" ? "payé" : o.payment_method === "card_terminal" ? "CB au comptoir" : o.payment_method === "counter" ? "espèces/TR au comptoir" : "à encaisser"}</span>
                     </div>
                     <div className="mt-3 flex gap-2">
                       {c.s === "ready" && o.mode === "delivery" ? (
