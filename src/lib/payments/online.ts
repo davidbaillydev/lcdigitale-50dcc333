@@ -82,12 +82,13 @@ export const onlinePaymentInfo = createServerFn({ method: "POST" })
 export const confirmOnlinePayment = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({
     orderId: z.string().uuid(),
+    access: z.string().max(1000).optional(),
     cancelled: z.boolean().optional(),
     lyra: z.record(z.string().max(60), z.string().max(500)).optional(),
   }).parse(d))
   .handler(async ({ data }) => {
     const { requireCustomerAccess } = await import("../customer-access.server");
-    requireCustomerAccess("order", data.orderId);
+    requireCustomerAccess("order", data.orderId, data.access);
     const db = await admin();
     const { data: o } = await db.from("orders").select("id, restaurant_id, status, total, payment_method, payment_status, payment_ref").eq("id", data.orderId).maybeSingle();
     if (!o || o.payment_method !== "online") throw new Error("Commande introuvable");

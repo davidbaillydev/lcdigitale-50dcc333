@@ -16,10 +16,10 @@ export const issueInvoice = createServerFn({ method: "POST" })
 
 /** Client : accès par autorisation signée créée à la commande. */
 export const getCustomerInvoice = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
+  .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid(), access: z.string().max(1000).optional() }).parse(d))
   .handler(async ({ data }) => {
     const { requireCustomerAccess } = await import("./customer-access.server");
-    requireCustomerAccess("order", data.orderId);
+    requireCustomerAccess("order", data.orderId, data.access);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { issueForOrder } = await import("./invoice.server");
     return issueForOrder(supabaseAdmin, data.orderId);

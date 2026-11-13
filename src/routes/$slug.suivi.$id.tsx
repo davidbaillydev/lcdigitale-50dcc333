@@ -20,6 +20,7 @@ import { useEffect, useRef, useState } from "react";
 import { formatMoney, currencySchema } from "@/lib/money";
 import { fmtTime } from "@/lib/shop";
 import { cn } from "@/lib/utils";
+import { trackingAccess, retainTrackingAccess } from "@/lib/order-tracking-access";
 
 export const Route = createFileRoute("/$slug/suivi/$id")({
   validateSearch: (search: Record<string, unknown>): { access?: string; back?: string } => ({
@@ -59,19 +60,19 @@ function Tracking() {
     const b = new URLSearchParams(window.location.search).get("back");
     try { if (b && b.length <= 300 && new URL(b).protocol === "https:") setBack(new URL(b).href); } catch { /* ignoré */ }
   }, []);
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["order", id],
     queryFn: async () => {
-      const access = typeof window === "undefined" ? undefined : new URLSearchParams(window.location.search).get("access") ?? undefined;
+      const access = trackingAccess(id);
       const o = await fn({ data: { id, access } });
-      if (access) { const url = new URL(window.location.href); url.searchParams.delete("access"); window.history.replaceState(null, "", url.pathname + url.search); }
+      if (access) retainTrackingAccess(id, access);
       if (o?.status === "awaiting_payment") {
         // Retour de PayPal (?annule=1) ou de Lyra (paramètres vads_* signés, revérifiés côté serveur)
         const qs = typeof window === "undefined" ? new URLSearchParams() : new URLSearchParams(window.location.search);
         const lyra: Record<string, string> = {};
         qs.forEach((v, k) => { if (k.startsWith("vads_") || k === "signature") lyra[k] = v; });
-        const r = await confirm({ data: { orderId: id, cancelled: qs.get("annule") === "1", ...(lyra["signature"] ? { lyra } : {}) } }).catch(() => null);
-        if (r?.status === "paid") return fn({ data: { id } });
+        const r = await confirm({ data: { orderId: id, access, cancelled: qs.get("annule") === "1", ...(lyra["signature"] ? { lyra } : {}) } }).catch(() => null);
+        if (r?.status === "paid") return fn({ data: { id, access } });
         return { ...o, _pay: r?.status ?? "pending" };
       }
       return o;
@@ -95,7 +96,7 @@ function Tracking() {
   }, [data]);
 
   if (isLoading) return <div className="min-h-screen"><SiteHeader /><p className="p-10 text-center text-muted-foreground">Chargement…</p></div>;
-  if (!data) return <div className="min-h-screen"><SiteHeader /><p className="p-10 text-center">Commande introuvable.</p></div>;
+  if (!data) return <div className="min-h-screen"><SiteHeader /><p role="alert" className="p-10 text-center">{error instanceof Error ? error.message : "Commande introuvable."}</p></div>;
 
   if (data.status === "awaiting_payment") {
     const pay = (data as { _pay?: string })._pay;
@@ -183,18 +184,19 @@ function Tracking() {
 function InvoiceDownload({ orderId }: { orderId: string }) {
   const get = useServerFn(getCustomerInvoice);
   const run = async () => {
-    try { const inv = await get({ data: { orderId } }); const { downloadInvoice } = await import("@/lib/invoice"); await downloadInvoice(inv); }
+    try { const inv = await get({ data: { orderId, access: trackingAccess(orderId) } }); const { downloadInvoice } = await import("@/lib/invoice"); await downloadInvoice(inv); }
     catch (e) { toast.error(e instanceof Error ? e.message : "Facture indisponible"); }
   };
   const done = useRef(false);
   useEffect(() => {
     if (done.current || new URLSearchParams(window.location.search).get("facture") !== "1") return;
     done.current = true;
-    window.history.replaceState(null, "", window.location.pathname);
+    const url = new URL(window.location.href); url.searchParams.delete("facture");
+    window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
     run();
   }, []);
   const getNotes = useServerFn(getCustomerCreditNotes);
-  const { data: notes } = useQuery({ queryKey: ["credit-notes", orderId], queryFn: () => getNotes({ data: { orderId } }) });
+  const { data: notes } = useQuery({ queryKey: ["credit-notes", orderId], queryFn: () => getNotes({ data: { orderId, access: trackingAccess(orderId) } }) });
   return (
     <>
       <Button variant="secondary" className="mt-4 min-h-12 w-full" onClick={run}>Télécharger ma facture (PDF / Factur-X)</Button>
@@ -219,7 +221,7 @@ function PushOptIn({ orderId }: { orderId: string }) {
       try {
         const ep = await getPushEndpoint();
         if (!ep) { toast.error("Notifications refusées par l'appareil."); setState("idle"); return; }
-        await sub({ data: { orderId, endpoint: ep } });
+        await sub({ data: { orderId, access: trackingAccess(orderId), endpoint: ep } });
         safeLocal.set(`push-${orderId}`, "1"); setState("on"); toast.success("Notifications activées");
       } catch (e) { toast.error(e instanceof Error ? e.message : "Activation impossible"); setState("idle"); }
     }}>Me prévenir quand ma commande avance</Button>

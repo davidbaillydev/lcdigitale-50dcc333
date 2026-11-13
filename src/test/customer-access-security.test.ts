@@ -7,6 +7,7 @@ vi.mock("@tanstack/react-start", () => ({ createServerFn: () => {
 } }));
 vi.mock("@/integrations/supabase/auth-middleware", () => ({ requireSupabaseAuth: {} }));
 vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: { from: mocks.from, rpc: mocks.rpc } }));
+vi.mock("@/lib/invoice.server", () => ({ issueForOrder: async (_db: unknown, orderId: string) => ({ orderId }) }));
 import { grantAccess, issueAccessToken, validAccessToken, requireCustomerAccess } from "@/lib/customer-access.server";
 import { getOrderStatus } from "@/lib/orders.functions";
 import { getCustomerInvoice } from "@/lib/invoice.functions";
@@ -63,6 +64,24 @@ describe("Private public-endpoint authorization", () => {
     const q = { select: () => q, eq: () => q, maybeSingle: async () => ({ data: { id, status: "accepted", restaurants: { slug: "fixture", config: {} } } }) };
     mocks.from.mockReturnValue(q);
     expect(await (getOrderStatus as unknown as Call)({ data: { id } })).toMatchObject({ id, status: "accepted" });
+  });
+  it.each(endpoints.filter(([, , , scope]) => scope === "order"))("%s rejects a supplied token from another order without cookies", async (_name, fn, data) => {
+    await expect((fn as Call)({ data: { ...(data as object), access: issueAccessToken("order", other) } })).rejects.toThrow("Accès refusé");
+    expect(mocks.from).not.toHaveBeenCalled();
+  });
+  it.each(["on_site", "online"])("reads %s tracking without cookies", async (payment_method) => {
+    const q = { select: () => q, eq: () => q, maybeSingle: async () => ({ data: { id, status: "accepted", payment_method, restaurants: { slug: "fixture", config: {} } } }) };
+    mocks.from.mockReturnValue(q);
+    expect(await (getOrderStatus as unknown as Call)({ data: { id, access: issueAccessToken("order", id) } })).toMatchObject({ id, payment_method });
+  });
+  it("allows all customer actions using the same verified capability without cookies", async () => {
+    const q = { select: () => q, eq: () => q, order: async () => ({ data: [] }), maybeSingle: async () => ({ data: { id, restaurant_id: other, payment_method: "online", payment_status: "paid" } }), upsert: async () => ({ error: null }) };
+    mocks.from.mockReturnValue(q);
+    const access = issueAccessToken("order", id);
+    expect(await (confirmOnlinePayment as unknown as Call)({ data: { orderId: id, access } })).toEqual({ status: "paid" });
+    expect(await (getCustomerInvoice as unknown as Call)({ data: { orderId: id, access } })).toEqual({ orderId: id });
+    expect(await (getCustomerCreditNotes as unknown as Call)({ data: { orderId: id, access } })).toEqual([]);
+    expect(await (subscribeOrderPush as unknown as Call)({ data: { orderId: id, access, endpoint: "https://fcm.googleapis.com/fcm/send/abc" } })).toEqual({ ok: true });
   });
   it("PIN throttling refuses the caller without reading or locking shared PINs", async () => {
     mocks.rpc.mockResolvedValue({ data: false, error: null });

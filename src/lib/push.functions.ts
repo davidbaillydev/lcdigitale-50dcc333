@@ -18,10 +18,10 @@ const STATUS_MSG: Record<string, (n: number, mode: string) => string> = {
 
 /** Client : abonne cet appareil au suivi de sa commande (autorisation client signée obligatoire). */
 export const subscribeOrderPush = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid(), endpoint }).parse(d))
+  .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid(), access: z.string().max(1000).optional(), endpoint }).parse(d))
   .handler(async ({ data }) => {
     const { requireCustomerAccess } = await import("./customer-access.server");
-    requireCustomerAccess("order", data.orderId);
+    requireCustomerAccess("order", data.orderId, data.access);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: o } = await supabaseAdmin.from("orders").select("id, restaurant_id").eq("id", data.orderId).maybeSingle();
     if (!o) throw new Error("Commande introuvable");
