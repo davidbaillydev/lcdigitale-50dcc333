@@ -534,6 +534,7 @@ export type Database = {
       }
       orders: {
         Row: {
+          accept_deadline: string | null
           address: string | null
           asap: boolean
           billing: Json | null
@@ -558,6 +559,7 @@ export type Database = {
           is_test: boolean
           items: Json
           last_name: string | null
+          missed_at: string | null
           mode: string
           notes: string | null
           order_number: number
@@ -602,6 +604,7 @@ export type Database = {
           zone_name: string | null
         }
         Insert: {
+          accept_deadline?: string | null
           address?: string | null
           asap?: boolean
           billing?: Json | null
@@ -626,6 +629,7 @@ export type Database = {
           is_test?: boolean
           items: Json
           last_name?: string | null
+          missed_at?: string | null
           mode: string
           notes?: string | null
           order_number?: number
@@ -670,6 +674,7 @@ export type Database = {
           zone_name?: string | null
         }
         Update: {
+          accept_deadline?: string | null
           address?: string | null
           asap?: boolean
           billing?: Json | null
@@ -694,6 +699,7 @@ export type Database = {
           is_test?: boolean
           items?: Json
           last_name?: string | null
+          missed_at?: string | null
           mode?: string
           notes?: string | null
           order_number?: number

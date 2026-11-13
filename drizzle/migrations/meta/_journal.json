@@ -316,6 +316,13 @@
       "when": 1794560439652,
       "tag": "0044_sms_immutable_recipient_snapshot",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1794602261721,
+      "tag": "0045_order_accept_deadline",
+      "breakpoints": true
     }
   ]
 }

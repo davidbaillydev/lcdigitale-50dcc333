@@ -27,6 +27,8 @@ import { RefundBadge, RefundButton } from "@/components/RefundButton";
 import { PosSyncStatus } from "@/components/PosSyncStatus";
 import { retryPosSync } from "@/lib/pos.functions";
 import { toast } from "sonner";
+import { AcceptCountdown } from "@/components/AcceptCountdown";
+import { checkOrderDeadline } from "@/lib/order-deadline.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useStaff } from "@/hooks/use-staff";
 import { Button } from "@/components/ui/button";
@@ -66,7 +68,7 @@ type Order = {
   id: string; order_number: number; customer_name: string; phone: string; mode: string; address: string | null; city: string | null;
   postal_code?: string | null; delivery_lat?: number | null; delivery_lng?: number | null; zone_name?: string | null;
   slot: string; items: { name: string; qty: number; details: string[]; allergens?: string[]; size?: { name: string }; selected_options?: { id: string; name: string; price: number; group?: string }[] }[]; notes: string | null; total: number;
-  payment_method: string; payment_status?: string; status: string; source?: string; created_at: string; table_label?: string | null; room_label?: string | null; asap?: boolean; driver_id?: string | null; courier_status?: string | null;
+  payment_method: string; payment_status?: string; status: string; source?: string; created_at: string; accept_deadline?: string | null; missed_at?: string | null; table_label?: string | null; room_label?: string | null; asap?: boolean; driver_id?: string | null; courier_status?: string | null;
 };
 
 type PrintLog = { id: string; kinds: string; status: string; reprint: boolean; auto: boolean; created_at: string };
@@ -286,6 +288,7 @@ function Kitchen() {
   }, [isStaff, rid, load]);
 
   // Rappel sonore tant qu'il reste des commandes non acceptées
+  const expireCheck = useServerFn(checkOrderDeadline);
   const pending = orders.filter((o) => o.status === "new" || o.status === "pending_approval").length;
   useEffect(() => {
     return startKitchenReminder(sound, ordersRef.current, () => {
@@ -544,6 +547,7 @@ function Kitchen() {
                         <p className="text-xs text-muted-foreground">{o.source === "kiosk" ? "BORNE · " : o.source === "phone" ? "TÉLÉPHONE IA · " : ""}{o.mode === "delivery" ? "Livraison" : o.mode === "dine_in" ? (o.room_label ? `ROOM SERVICE · CHAMBRE ${o.room_label}` : o.table_label ? `Sur place · TABLE ${o.table_label}` : "Sur place") : "À emporter"}</p>
                       </div>
                     </div>
+                    {c.s === "new" && o.accept_deadline && !o.missed_at && <AcceptCountdown className="mt-3" deadline={o.accept_deadline} label="Temps restant pour accepter" onExpire={() => { void expireCheck({ data: { orderId: o.id } }).then((r) => { if (r.expired) toast.error(`Commande n° ${o.order_number} manquée : délai de 4 minutes dépassé.`); }).finally(() => load()); }} />}
                     {o.mode === "delivery" && <KitchenDeliveryInfo order={o} origin={deliveryConfig?.origin} />}
                     <ul className="mt-3 space-y-1.5 border-t border-border pt-3">
                       {o.items.map((it, i) => (

@@ -64,6 +64,7 @@ import { Route as AuthenticatedEspaceSlugReglagesRouteImport } from './routes/_a
 import { Route as AuthenticatedEspaceSlugReservationsRouteImport } from './routes/_authenticated/espace.$slug.reservations'
 import { Route as AuthenticatedEspaceSlugStatistiquesRouteImport } from './routes/_authenticated/espace.$slug.statistiques'
 import { Route as ApiPublicEmbedStatusSlugRouteImport } from './routes/api/public/embed-status/$slug'
+import { Route as ApiPublicJobsExpireOrdersRouteImport } from './routes/api/public/jobs/expire-orders'
 import { Route as ApiPublicPushMessageRouteImport } from './routes/api/public/push/message'
 import { Route as ApiPublicPushStaffMessagesRouteImport } from './routes/api/public/push/staff-messages'
 import { Route as ApiPublicRestaurantBannerIdRouteImport } from './routes/api/public/restaurant-banner/$id'
@@ -367,6 +368,12 @@ const ApiPublicEmbedStatusSlugRoute =
     path: '/api/public/embed-status/$slug',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicJobsExpireOrdersRoute =
+  ApiPublicJobsExpireOrdersRouteImport.update({
+    id: '/api/public/jobs/expire-orders',
+    path: '/api/public/jobs/expire-orders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicPushMessageRoute = ApiPublicPushMessageRouteImport.update({
   id: '/api/public/push/message',
   path: '/api/public/push/message',
@@ -451,6 +458,7 @@ export interface FileRoutesByFullPath {
   '/espace/$slug/reservations': typeof AuthenticatedEspaceSlugReservationsRoute
   '/espace/$slug/statistiques': typeof AuthenticatedEspaceSlugStatistiquesRoute
   '/api/public/embed-status/$slug': typeof ApiPublicEmbedStatusSlugRoute
+  '/api/public/jobs/expire-orders': typeof ApiPublicJobsExpireOrdersRoute
   '/api/public/push/message': typeof ApiPublicPushMessageRoute
   '/api/public/push/staff-messages': typeof ApiPublicPushStaffMessagesRoute
   '/api/public/restaurant-banner/$id': typeof ApiPublicRestaurantBannerIdRoute
@@ -510,6 +518,7 @@ export interface FileRoutesByTo {
   '/espace/$slug/reservations': typeof AuthenticatedEspaceSlugReservationsRoute
   '/espace/$slug/statistiques': typeof AuthenticatedEspaceSlugStatistiquesRoute
   '/api/public/embed-status/$slug': typeof ApiPublicEmbedStatusSlugRoute
+  '/api/public/jobs/expire-orders': typeof ApiPublicJobsExpireOrdersRoute
   '/api/public/push/message': typeof ApiPublicPushMessageRoute
   '/api/public/push/staff-messages': typeof ApiPublicPushStaffMessagesRoute
   '/api/public/restaurant-banner/$id': typeof ApiPublicRestaurantBannerIdRoute
@@ -573,6 +582,7 @@ export interface FileRoutesById {
   '/_authenticated/espace/$slug/reservations': typeof AuthenticatedEspaceSlugReservationsRoute
   '/_authenticated/espace/$slug/statistiques': typeof AuthenticatedEspaceSlugStatistiquesRoute
   '/api/public/embed-status/$slug': typeof ApiPublicEmbedStatusSlugRoute
+  '/api/public/jobs/expire-orders': typeof ApiPublicJobsExpireOrdersRoute
   '/api/public/push/message': typeof ApiPublicPushMessageRoute
   '/api/public/push/staff-messages': typeof ApiPublicPushStaffMessagesRoute
   '/api/public/restaurant-banner/$id': typeof ApiPublicRestaurantBannerIdRoute
@@ -636,6 +646,7 @@ export interface FileRouteTypes {
     | '/espace/$slug/reservations'
     | '/espace/$slug/statistiques'
     | '/api/public/embed-status/$slug'
+    | '/api/public/jobs/expire-orders'
     | '/api/public/push/message'
     | '/api/public/push/staff-messages'
     | '/api/public/restaurant-banner/$id'
@@ -695,6 +706,7 @@ export interface FileRouteTypes {
     | '/espace/$slug/reservations'
     | '/espace/$slug/statistiques'
     | '/api/public/embed-status/$slug'
+    | '/api/public/jobs/expire-orders'
     | '/api/public/push/message'
     | '/api/public/push/staff-messages'
     | '/api/public/restaurant-banner/$id'
@@ -757,6 +769,7 @@ export interface FileRouteTypes {
     | '/_authenticated/espace/$slug/reservations'
     | '/_authenticated/espace/$slug/statistiques'
     | '/api/public/embed-status/$slug'
+    | '/api/public/jobs/expire-orders'
     | '/api/public/push/message'
     | '/api/public/push/staff-messages'
     | '/api/public/restaurant-banner/$id'
@@ -785,6 +798,7 @@ export interface RootRouteChildren {
   ApiPublicMollieWebhookRoute: typeof ApiPublicMollieWebhookRoute
   ApiPublicVersionRoute: typeof ApiPublicVersionRoute
   ApiPublicEmbedStatusSlugRoute: typeof ApiPublicEmbedStatusSlugRoute
+  ApiPublicJobsExpireOrdersRoute: typeof ApiPublicJobsExpireOrdersRoute
   ApiPublicPushMessageRoute: typeof ApiPublicPushMessageRoute
   ApiPublicPushStaffMessagesRoute: typeof ApiPublicPushStaffMessagesRoute
   ApiPublicRestaurantBannerIdRoute: typeof ApiPublicRestaurantBannerIdRoute
@@ -1179,6 +1193,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicEmbedStatusSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/jobs/expire-orders': {
+      id: '/api/public/jobs/expire-orders'
+      path: '/api/public/jobs/expire-orders'
+      fullPath: '/api/public/jobs/expire-orders'
+      preLoaderRoute: typeof ApiPublicJobsExpireOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/push/message': {
       id: '/api/public/push/message'
       path: '/api/public/push/message'
@@ -1338,6 +1359,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicMollieWebhookRoute: ApiPublicMollieWebhookRoute,
   ApiPublicVersionRoute: ApiPublicVersionRoute,
   ApiPublicEmbedStatusSlugRoute: ApiPublicEmbedStatusSlugRoute,
+  ApiPublicJobsExpireOrdersRoute: ApiPublicJobsExpireOrdersRoute,
   ApiPublicPushMessageRoute: ApiPublicPushMessageRoute,
   ApiPublicPushStaffMessagesRoute: ApiPublicPushStaffMessagesRoute,
   ApiPublicRestaurantBannerIdRoute: ApiPublicRestaurantBannerIdRoute,

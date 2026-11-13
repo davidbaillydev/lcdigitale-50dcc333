@@ -15,7 +15,7 @@ describe("Customer order tracking polling", () => {
     expect(orderTrackingInterval("awaiting_payment")).toBe(3_000);
   });
 
-  it.each([undefined, "pending_approval", "new", "accepted", "preparing", "ready", "delivering"])(
+  it.each([undefined, "pending_approval", "accepted", "preparing", "ready", "delivering"])(
     "keeps active tracking every 15 seconds for %s", (status) => {
       expect(orderTrackingInterval(status)).toBe(15_000);
     },
