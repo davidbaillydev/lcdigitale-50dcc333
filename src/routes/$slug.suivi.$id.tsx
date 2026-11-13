@@ -22,6 +22,10 @@ import { fmtTime } from "@/lib/shop";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/$slug/suivi/$id")({
+  validateSearch: (search: Record<string, unknown>): { access?: string; back?: string } => ({
+    ...(typeof search["access"] === "string" && search["access"].length <= 1000 ? { access: search["access"] } : {}),
+    ...(typeof search["back"] === "string" && search["back"].length <= 300 ? { back: search["back"] } : {}),
+  }),
   head: () => ({
     meta: [
       { title: "Suivi de commande — LC Digitale" },

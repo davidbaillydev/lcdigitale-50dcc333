@@ -35,6 +35,7 @@ import { useOrderingState } from "@/hooks/use-orders-paused";
 import { OrderingBanners } from "@/components/OrderingBanners";
 import { useEmbedMode, orderSource, isEmbedded, embedReturnTo, openTop, pendingOrderKey } from "@/lib/embed";
 import { featuresOf } from "@/lib/features";
+import { orderTrackingSearch, orderTrackingReturnUrl } from "@/lib/order-tracking-link";
 
 export const Route = createFileRoute("/$slug/commande")({
   head: () => ({
@@ -78,7 +79,7 @@ function Checkout() {
   const proOk = !pro || (bill.company.trim().length >= 2 && /^\d{9}$/.test(bill.siren) && bill.address.trim().length >= 3 && /^\d{5}$/.test(bill.postalCode) && !!bill.city.trim());
   const infoFn = useServerFn(onlinePaymentInfo);
   const [online, setOnline] = useState<{ stripe: string | null; paypal: boolean; lyra: boolean; mollie: boolean }>({ stripe: null, paypal: false, lyra: false, mollie: false });
-  const [payment, setPayment] = useState<{ id: string; clientSecret: string; back?: string | undefined } | null>(null);
+  const [payment, setPayment] = useState<{ id: string; access: string; clientSecret: string; back?: string | undefined } | null>(null);
   const [promo, setPromo] = useState<{ d: AppliedDiscount | null; code?: string | undefined }>({ d: null });
   const onSiteOk = restaurant.config.payments?.on_site !== false;
   const embed = useEmbedMode(restaurant.slug, featuresOf(restaurant.enabled_features).embed);
@@ -184,7 +185,7 @@ function Checkout() {
         },
       });
       if (embedded && (res.clientSecret || res.redirectUrl || res.form)) { try { safeSession.set(pendingOrderKey(restaurant.slug), res.id); } catch { /* */ } }
-      if (res.clientSecret) { setPayment({ id: res.id, clientSecret: res.clientSecret, back: back?.returnTo }); return; }
+      if (res.clientSecret) { setPayment({ id: res.id, access: res.access, clientSecret: res.clientSecret, back: back?.returnTo }); return; }
       if (res.redirectUrl) {
         leaving = true;
         if (!embedded) { window.location.assign(res.redirectUrl); return; }
@@ -206,7 +207,7 @@ function Checkout() {
       }
       track("completed", "Commande validée", res.id);
       clear();
-      navigate({ to: "/$slug/suivi/$id", params: { slug: restaurant.slug, id: res.id } });
+      navigate({ to: "/$slug/suivi/$id", params: { slug: restaurant.slug, id: res.id }, search: orderTrackingSearch(res.access, back?.returnTo) });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erreur lors de la commande");
     } finally {
@@ -407,7 +408,7 @@ function Checkout() {
             <div className="mt-4">
               <Suspense fallback={<p className="py-6 text-center text-sm text-muted-foreground">Chargement du paiement sécurisé…</p>}>
               <StripePayment publishableKey={online.stripe} clientSecret={payment.clientSecret} label={`Payer ${euro(total)}`}
-                returnUrl={`${window.location.origin}/${restaurant.slug}/suivi/${payment.id}${payment.back ? `?back=${encodeURIComponent(payment.back)}` : ""}`} onCancel={() => setPayment(null)} /></Suspense>
+                returnUrl={orderTrackingReturnUrl(window.location.origin, restaurant.slug, payment.id, payment.access, payment.back)} onCancel={() => setPayment(null)} /></Suspense>
             </div>
           ) : (<>
             <label className="mt-4 flex min-h-11 items-start gap-3 text-sm">

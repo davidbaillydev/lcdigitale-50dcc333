@@ -240,7 +240,7 @@ async function createCalculatedOrder(supabaseAdmin: Awaited<typeof import("@/int
     const { grantAccess, issueAccessToken } = await import("./customer-access.server");
     grantAccess("order", row.id);
     const access = issueAccessToken("order", row.id);
-    const base = { id: row.id, order_number: row.order_number, clientSecret: null as string | null, redirectUrl: null as string | null, form: null as { action: string; fields: Record<string, string> } | null };
+    const base = { id: row.id, order_number: row.order_number, access, clientSecret: null as string | null, redirectUrl: null as string | null, form: null as { action: string; fields: Record<string, string> } | null };
     if (provider === "paypal" || provider === "lyra" || provider === "mollie") {
       const res = await startOnlinePayment(provider, { id: row.id, order_number: row.order_number, total: Number(row.total), restaurant_id: r.id,
         currency: currencyOf(r), email: data.email || null }, r.name, `${data.origin}/${r.slug}/suivi/${row.id}?access=${encodeURIComponent(access)}`, data.mode);
