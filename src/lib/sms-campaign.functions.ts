@@ -54,11 +54,18 @@ export const createSmsCampaign = createServerFn({ method: "POST" }).middleware([
   });
 
 export const testSmsCampaign = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ sender: smsDraftSchema.shape.sender, body: smsDraftSchema.shape.body, phone: z.string().max(30) }).parse(d))
+  .inputValidator((d: unknown) => z.object({ restaurantId: z.string().uuid(), sender: smsDraftSchema.shape.sender, body: smsDraftSchema.shape.body, phone: z.string().max(30) }).parse(d))
   .handler(async ({ data, context }) => {
     await agency(context);
     const phone = smsPhone(data.phone.startsWith("+") || data.phone.startsWith("00") ? data.phone : "", "FR");
     if (!phone) throw new Error("Indiquez un numéro de test international (+33…).");
+    // Tests may only reach a known internal number: the restaurant's own phone or the agency user's account phone.
+    const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
+    const [rest, user] = await Promise.all([db.from("restaurants").select("phone,config").eq("id", data.restaurantId).maybeSingle(), db.auth.admin.getUserById(context.userId)]);
+    if (rest.error || !rest.data) throw new Error("Restaurant introuvable.");
+    const country = (rest.data.config as { country?: string } | null)?.country ?? "FR";
+    const allowed = [rest.data.phone, user.data?.user?.phone ? `+${user.data.user.phone.replace(/^\+/, "")}` : null].filter((v): v is string => !!v).map((v) => smsPhone(v, country)).filter(Boolean);
+    if (!allowed.includes(phone)) throw new Error("Le SMS test ne peut être envoyé qu'au téléphone du restaurant ou à celui de votre compte.");
     const content = smsContent(`[TEST] ${data.body}`);
     const response = await provider("/transactionalSMS/send", { recipient: phone, sender: data.sender, content, type: "marketing", unicodeEnabled: smsMetrics(content).unicode });
     if (!response.ok) throw new Error(await failure(response));

@@ -48,7 +48,7 @@ function Page() {
     setConfirm(null); setBusy(true); setProgress(0);
     try {
       if (current === "test") {
-        await test({ data: { sender, body, phone } });
+        await test({ data: { restaurantId: rid, sender, body, phone } });
         toast.success("SMS test accepté par Brevo. Réception à vérifier sur le téléphone.");
       } else if (current === "save") {
         await create({ data: { ...draft, campaignId: crypto.randomUUID() } });
@@ -94,7 +94,7 @@ function Page() {
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground" aria-live="polite"><span>{metrics.characters} caractères, STOP inclus</span><span>{metrics.segments} SMS / destinataire</span><span>{metrics.unicode ? "Unicode" : "GSM"}</span></div>
           <div className="rounded-md border border-border bg-muted p-4"><p className="whitespace-pre-wrap break-words text-sm">{smsPreview(body)}</p></div>
           <p className="text-sm text-muted-foreground">STOP obligatoire. SMS payants selon les crédits Brevo ; horaires marketing et désinscriptions appliqués par Brevo.</p>
-          <div className="flex flex-wrap gap-2"><Input aria-label="Téléphone de test" className="min-w-0 flex-1" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Téléphone test : +33…" /><Button variant="outline" className="min-h-11" disabled={busy || !smsDraftSchema.shape.sender.safeParse(sender).success || !smsDraftSchema.shape.body.safeParse(body).success || !phone} onClick={() => setConfirm("test")}><FlaskConical />Test</Button></div>
+          <div className="flex flex-wrap gap-2"><Input aria-label="Téléphone de test" className="min-w-0 flex-1" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Tél. du restaurant ou de votre compte : +33…" /><Button variant="outline" className="min-h-11" disabled={busy || !smsDraftSchema.shape.sender.safeParse(sender).success || !smsDraftSchema.shape.body.safeParse(body).success || !phone} onClick={() => setConfirm("test")}><FlaskConical />Test</Button></div>
           <Button className="min-h-12 w-full" disabled={busy || !valid} onClick={() => setConfirm("save")}><Plus />Enregistrer la campagne</Button>
         </section>
       </div>
