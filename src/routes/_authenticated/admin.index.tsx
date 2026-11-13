@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { ArrowDown, ArrowUp, BarChart3, BookOpen, ChefHat, ChevronDown, Contact, Copy, Globe, GripVertical, ExternalLink, FileText, Landmark, LogOut, Mail, MoreHorizontal, Pencil, Plus, QrCode, Search, Settings, ShieldCheck, ShoppingBag, Tablet, Trash2, Users, Wallet, X } from "lucide-react";
+import { ArrowDown, ArrowUp, BarChart3, BookOpen, ChefHat, ChevronDown, Contact, Copy, Globe, GripVertical, ExternalLink, FileText, Landmark, LogOut, Mail, MessageSquare, MoreHorizontal, Pencil, Plus, QrCode, Search, Settings, ShieldCheck, ShoppingBag, Tablet, Trash2, Users, Wallet, X } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
@@ -144,6 +144,7 @@ function Console() {
             <DropdownMenuItem asChild><Link to="/admin/qrcodes"><QrCode />QR codes</Link></DropdownMenuItem>
           </AgencyMenu>
           <AgencyMenu label="Finance & Ventes" icon={<Landmark />}>
+            <DropdownMenuItem asChild><Link to="/admin/sms"><MessageSquare />Campagnes SMS</Link></DropdownMenuItem>
             <DropdownMenuItem asChild><Link to="/espace/tableau-de-bord"><BarChart3 />Ventes & statistiques</Link></DropdownMenuItem>
             <DropdownMenuItem asChild><Link to="/admin/statistiques"><ShoppingBag />Conversion & abandons</Link></DropdownMenuItem>
             <DropdownMenuItem asChild><Link to="/espace/factures"><FileText />Factures</Link></DropdownMenuItem>

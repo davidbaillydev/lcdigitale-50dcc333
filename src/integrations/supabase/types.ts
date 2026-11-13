@@ -1905,6 +1905,106 @@ export type Database = {
           },
         ]
       }
+      restaurant_sms_campaigns: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string
+          customer_ids: string[]
+          error: string | null
+          id: string
+          name: string
+          remaining_ids: string[]
+          restaurant_id: string
+          sender: string
+          sent: number
+          sent_phones: string[]
+          skipped: number
+          state: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by: string
+          customer_ids: string[]
+          error?: string | null
+          id: string
+          name: string
+          remaining_ids?: string[]
+          restaurant_id: string
+          sender: string
+          sent?: number
+          sent_phones?: string[]
+          skipped?: number
+          state?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string
+          customer_ids?: string[]
+          error?: string | null
+          id?: string
+          name?: string
+          remaining_ids?: string[]
+          restaurant_id?: string
+          sender?: string
+          sent?: number
+          sent_phones?: string[]
+          skipped?: number
+          state?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_sms_campaigns_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurant_sms_deliveries: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          customer_id: string | null
+          error: string | null
+          id: string
+          message_id: string | null
+          phone: string
+          state: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          customer_id?: string | null
+          error?: string | null
+          id?: string
+          message_id?: string | null
+          phone: string
+          state?: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          customer_id?: string | null
+          error?: string | null
+          id?: string
+          message_id?: string | null
+          phone?: string
+          state?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_sms_deliveries_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "restaurant_sms_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurant_voice_calls: {
         Row: {
           call_id: string

@@ -302,6 +302,20 @@
       "when": 1794424174611,
       "tag": "0042_restrict_order_update_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1794560166280,
+      "tag": "0043_agency_sms_campaigns",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1794560439652,
+      "tag": "0044_sms_immutable_recipient_snapshot",
+      "breakpoints": true
     }
   ]
 }

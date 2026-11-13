@@ -43,6 +43,7 @@ import { Route as AuthenticatedAdminGainsRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminInalterabiliteRouteImport } from './routes/_authenticated/admin.inalterabilite'
 import { Route as AuthenticatedAdminLicencesRouteImport } from './routes/_authenticated/admin.licences'
 import { Route as AuthenticatedAdminQrcodesRouteImport } from './routes/_authenticated/admin.qrcodes'
+import { Route as AuthenticatedAdminSmsRouteImport } from './routes/_authenticated/admin.sms'
 import { Route as AuthenticatedAdminStatistiquesRouteImport } from './routes/_authenticated/admin.statistiques'
 import { Route as AuthenticatedEspaceIndexRouteImport } from './routes/_authenticated/espace.index'
 import { Route as AuthenticatedEspaceFacturesRouteImport } from './routes/_authenticated/espace.factures'
@@ -245,6 +246,11 @@ const AuthenticatedAdminQrcodesRoute =
     path: '/qrcodes',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminSmsRoute = AuthenticatedAdminSmsRouteImport.update({
+  id: '/sms',
+  path: '/sms',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedAdminStatistiquesRoute =
   AuthenticatedAdminStatistiquesRouteImport.update({
     id: '/statistiques',
@@ -424,6 +430,7 @@ export interface FileRoutesByFullPath {
   '/admin/inalterabilite': typeof AuthenticatedAdminInalterabiliteRoute
   '/admin/licences': typeof AuthenticatedAdminLicencesRoute
   '/admin/qrcodes': typeof AuthenticatedAdminQrcodesRoute
+  '/admin/sms': typeof AuthenticatedAdminSmsRoute
   '/admin/statistiques': typeof AuthenticatedAdminStatistiquesRoute
   '/espace/factures': typeof AuthenticatedEspaceFacturesRoute
   '/espace/tableau-de-bord': typeof AuthenticatedEspaceTableauDeBordRoute
@@ -482,6 +489,7 @@ export interface FileRoutesByTo {
   '/admin/inalterabilite': typeof AuthenticatedAdminInalterabiliteRoute
   '/admin/licences': typeof AuthenticatedAdminLicencesRoute
   '/admin/qrcodes': typeof AuthenticatedAdminQrcodesRoute
+  '/admin/sms': typeof AuthenticatedAdminSmsRoute
   '/admin/statistiques': typeof AuthenticatedAdminStatistiquesRoute
   '/espace/factures': typeof AuthenticatedEspaceFacturesRoute
   '/espace/tableau-de-bord': typeof AuthenticatedEspaceTableauDeBordRoute
@@ -544,6 +552,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/inalterabilite': typeof AuthenticatedAdminInalterabiliteRoute
   '/_authenticated/admin/licences': typeof AuthenticatedAdminLicencesRoute
   '/_authenticated/admin/qrcodes': typeof AuthenticatedAdminQrcodesRoute
+  '/_authenticated/admin/sms': typeof AuthenticatedAdminSmsRoute
   '/_authenticated/admin/statistiques': typeof AuthenticatedAdminStatistiquesRoute
   '/_authenticated/espace/factures': typeof AuthenticatedEspaceFacturesRoute
   '/_authenticated/espace/tableau-de-bord': typeof AuthenticatedEspaceTableauDeBordRoute
@@ -606,6 +615,7 @@ export interface FileRouteTypes {
     | '/admin/inalterabilite'
     | '/admin/licences'
     | '/admin/qrcodes'
+    | '/admin/sms'
     | '/admin/statistiques'
     | '/espace/factures'
     | '/espace/tableau-de-bord'
@@ -664,6 +674,7 @@ export interface FileRouteTypes {
     | '/admin/inalterabilite'
     | '/admin/licences'
     | '/admin/qrcodes'
+    | '/admin/sms'
     | '/admin/statistiques'
     | '/espace/factures'
     | '/espace/tableau-de-bord'
@@ -725,6 +736,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/inalterabilite'
     | '/_authenticated/admin/licences'
     | '/_authenticated/admin/qrcodes'
+    | '/_authenticated/admin/sms'
     | '/_authenticated/admin/statistiques'
     | '/_authenticated/espace/factures'
     | '/_authenticated/espace/tableau-de-bord'
@@ -1020,6 +1032,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminQrcodesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/sms': {
+      id: '/_authenticated/admin/sms'
+      path: '/sms'
+      fullPath: '/admin/sms'
+      preLoaderRoute: typeof AuthenticatedAdminSmsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/statistiques': {
       id: '/_authenticated/admin/statistiques'
       path: '/statistiques'
@@ -1208,6 +1227,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminInalterabiliteRoute: typeof AuthenticatedAdminInalterabiliteRoute
   AuthenticatedAdminLicencesRoute: typeof AuthenticatedAdminLicencesRoute
   AuthenticatedAdminQrcodesRoute: typeof AuthenticatedAdminQrcodesRoute
+  AuthenticatedAdminSmsRoute: typeof AuthenticatedAdminSmsRoute
   AuthenticatedAdminStatistiquesRoute: typeof AuthenticatedAdminStatistiquesRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
@@ -1223,6 +1243,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminInalterabiliteRoute: AuthenticatedAdminInalterabiliteRoute,
   AuthenticatedAdminLicencesRoute: AuthenticatedAdminLicencesRoute,
   AuthenticatedAdminQrcodesRoute: AuthenticatedAdminQrcodesRoute,
+  AuthenticatedAdminSmsRoute: AuthenticatedAdminSmsRoute,
   AuthenticatedAdminStatistiquesRoute: AuthenticatedAdminStatistiquesRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
