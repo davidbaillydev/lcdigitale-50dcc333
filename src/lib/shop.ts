@@ -32,6 +32,7 @@ export type Restaurant = {
     autoAccept?: boolean;
     /** Réception des commandes suspendue (site, borne, QR, téléphone) */
     ordersPaused?: boolean;
+    ordersResumeAt?: string;
     orderSound?: import("./order-sound").OrderSound;
     printing?: Partial<import("./ticket").PrintingConfig>;
     modes?: { pickup?: boolean; delivery?: boolean; dine_in?: boolean };

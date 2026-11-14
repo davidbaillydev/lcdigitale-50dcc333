@@ -136,13 +136,23 @@ export const toggleOrdersPaused = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: ok } = await context.supabase.rpc("can_access_restaurant", { _user_id: context.userId, _restaurant_id: data.restaurantId });
     if (!ok) throw new Error("Accès refusé");
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: cur, error: e1 } = await supabaseAdmin.from("restaurants").select("config").eq("id", data.restaurantId).single();
-    if (e1 || !cur) throw new Error("Restaurant introuvable");
-    const config = { ...((cur.config as Record<string, unknown>) ?? {}), ordersPaused: data.paused };
-    const { error } = await supabaseAdmin.from("restaurants").update({ config: config as never }).eq("id", data.restaurantId);
+    const { data: config, error } = await context.supabase.rpc("set_orders_paused", { _restaurant_id: data.restaurantId, _paused: data.paused });
     if (error) throw new Error(error.message);
-    return { paused: data.paused };
+    return { paused: data.paused, resumeAt: (config as { ordersResumeAt?: string } | null)?.ordersResumeAt ?? null };
+  });
+
+/** Historique privé, limité aux membres de cet établissement. */
+export const getOrdersAvailabilityHistory = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ restaurantId: z.string().uuid(), before: z.string().datetime().optional() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: ok } = await context.supabase.rpc("can_access_restaurant", { _user_id: context.userId, _restaurant_id: data.restaurantId });
+    if (!ok) throw new Error("Accès refusé");
+    let query = context.supabase.from("restaurant_order_availability_audit").select("id, action, actor_email, occurred_at, resume_at").eq("restaurant_id", data.restaurantId).order("occurred_at", { ascending: false }).limit(50);
+    if (data.before) query = query.lt("occurred_at", data.before);
+    const { data: rows, error } = await query;
+    if (error) throw new Error(error.message);
+    return rows ?? [];
   });
 
 /** Interrupteurs des emails automatiques (gérant ou agence). */

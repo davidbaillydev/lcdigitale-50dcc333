@@ -1750,6 +1750,44 @@ export type Database = {
           },
         ]
       }
+      restaurant_order_availability_audit: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_user_id: string | null
+          id: string
+          occurred_at: string
+          restaurant_id: string
+          resume_at: string | null
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_user_id?: string | null
+          id?: string
+          occurred_at?: string
+          restaurant_id: string
+          resume_at?: string | null
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_user_id?: string | null
+          id?: string
+          occurred_at?: string
+          restaurant_id?: string
+          resume_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_order_availability_audit_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurant_payment_providers: {
         Row: {
           credentials: Json
@@ -2361,6 +2399,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      next_order_service: {
+        Args: { _now: string; _opening: Json }
+        Returns: string
+      }
       pos_append_jet: {
         Args: {
           _actor: string
@@ -2413,6 +2455,11 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      resume_due_order_availability: { Args: never; Returns: number }
+      set_orders_paused: {
+        Args: { _paused: boolean; _restaurant_id: string }
+        Returns: Json
       }
       void_pos_sale: {
         Args: {
