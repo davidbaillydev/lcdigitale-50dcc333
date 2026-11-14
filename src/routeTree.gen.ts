@@ -36,6 +36,7 @@ import { Route as SlugSuiviIdRouteImport } from './routes/$slug.suivi.$id'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminSlugRouteImport } from './routes/_authenticated/admin.$slug'
 import { Route as AuthenticatedAdminAdministrateursRouteImport } from './routes/_authenticated/admin.administrateurs'
+import { Route as AuthenticatedAdminCampagnesEmailRouteImport } from './routes/_authenticated/admin.campagnes-email'
 import { Route as AuthenticatedAdminClientsRouteImport } from './routes/_authenticated/admin.clients'
 import { Route as AuthenticatedAdminCommandeTestRouteImport } from './routes/_authenticated/admin.commande-test'
 import { Route as AuthenticatedAdminEmailsRouteImport } from './routes/_authenticated/admin.emails'
@@ -204,6 +205,12 @@ const AuthenticatedAdminAdministrateursRoute =
   AuthenticatedAdminAdministrateursRouteImport.update({
     id: '/administrateurs',
     path: '/administrateurs',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminCampagnesEmailRoute =
+  AuthenticatedAdminCampagnesEmailRouteImport.update({
+    id: '/campagnes-email',
+    path: '/campagnes-email',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminClientsRoute =
@@ -430,6 +437,7 @@ export interface FileRoutesByFullPath {
   '/$slug/suivi/$id': typeof SlugSuiviIdRoute
   '/admin/$slug': typeof AuthenticatedAdminSlugRoute
   '/admin/administrateurs': typeof AuthenticatedAdminAdministrateursRoute
+  '/admin/campagnes-email': typeof AuthenticatedAdminCampagnesEmailRoute
   '/admin/clients': typeof AuthenticatedAdminClientsRoute
   '/admin/commande-test': typeof AuthenticatedAdminCommandeTestRoute
   '/admin/emails': typeof AuthenticatedAdminEmailsRoute
@@ -490,6 +498,7 @@ export interface FileRoutesByTo {
   '/$slug/suivi/$id': typeof SlugSuiviIdRoute
   '/admin/$slug': typeof AuthenticatedAdminSlugRoute
   '/admin/administrateurs': typeof AuthenticatedAdminAdministrateursRoute
+  '/admin/campagnes-email': typeof AuthenticatedAdminCampagnesEmailRoute
   '/admin/clients': typeof AuthenticatedAdminClientsRoute
   '/admin/commande-test': typeof AuthenticatedAdminCommandeTestRoute
   '/admin/emails': typeof AuthenticatedAdminEmailsRoute
@@ -554,6 +563,7 @@ export interface FileRoutesById {
   '/$slug/suivi/$id': typeof SlugSuiviIdRoute
   '/_authenticated/admin/$slug': typeof AuthenticatedAdminSlugRoute
   '/_authenticated/admin/administrateurs': typeof AuthenticatedAdminAdministrateursRoute
+  '/_authenticated/admin/campagnes-email': typeof AuthenticatedAdminCampagnesEmailRoute
   '/_authenticated/admin/clients': typeof AuthenticatedAdminClientsRoute
   '/_authenticated/admin/commande-test': typeof AuthenticatedAdminCommandeTestRoute
   '/_authenticated/admin/emails': typeof AuthenticatedAdminEmailsRoute
@@ -618,6 +628,7 @@ export interface FileRouteTypes {
     | '/$slug/suivi/$id'
     | '/admin/$slug'
     | '/admin/administrateurs'
+    | '/admin/campagnes-email'
     | '/admin/clients'
     | '/admin/commande-test'
     | '/admin/emails'
@@ -678,6 +689,7 @@ export interface FileRouteTypes {
     | '/$slug/suivi/$id'
     | '/admin/$slug'
     | '/admin/administrateurs'
+    | '/admin/campagnes-email'
     | '/admin/clients'
     | '/admin/commande-test'
     | '/admin/emails'
@@ -741,6 +753,7 @@ export interface FileRouteTypes {
     | '/$slug/suivi/$id'
     | '/_authenticated/admin/$slug'
     | '/_authenticated/admin/administrateurs'
+    | '/_authenticated/admin/campagnes-email'
     | '/_authenticated/admin/clients'
     | '/_authenticated/admin/commande-test'
     | '/_authenticated/admin/emails'
@@ -997,6 +1010,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAdministrateursRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/campagnes-email': {
+      id: '/_authenticated/admin/campagnes-email'
+      path: '/campagnes-email'
+      fullPath: '/admin/campagnes-email'
+      preLoaderRoute: typeof AuthenticatedAdminCampagnesEmailRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/clients': {
       id: '/_authenticated/admin/clients'
       path: '/clients'
@@ -1241,6 +1261,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminSlugRoute: typeof AuthenticatedAdminSlugRoute
   AuthenticatedAdminAdministrateursRoute: typeof AuthenticatedAdminAdministrateursRoute
+  AuthenticatedAdminCampagnesEmailRoute: typeof AuthenticatedAdminCampagnesEmailRoute
   AuthenticatedAdminClientsRoute: typeof AuthenticatedAdminClientsRoute
   AuthenticatedAdminCommandeTestRoute: typeof AuthenticatedAdminCommandeTestRoute
   AuthenticatedAdminEmailsRoute: typeof AuthenticatedAdminEmailsRoute
@@ -1257,6 +1278,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminSlugRoute: AuthenticatedAdminSlugRoute,
   AuthenticatedAdminAdministrateursRoute:
     AuthenticatedAdminAdministrateursRoute,
+  AuthenticatedAdminCampagnesEmailRoute: AuthenticatedAdminCampagnesEmailRoute,
   AuthenticatedAdminClientsRoute: AuthenticatedAdminClientsRoute,
   AuthenticatedAdminCommandeTestRoute: AuthenticatedAdminCommandeTestRoute,
   AuthenticatedAdminEmailsRoute: AuthenticatedAdminEmailsRoute,

@@ -145,6 +145,7 @@ function Console() {
           </AgencyMenu>
           <AgencyMenu label="Finance & Ventes" icon={<Landmark />}>
             <DropdownMenuItem asChild><Link to="/admin/sms"><MessageSquare />Campagnes SMS</Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Link to="/admin/campagnes-email"><Mail />Campagnes e-mail</Link></DropdownMenuItem>
             <DropdownMenuItem asChild><Link to="/espace/tableau-de-bord"><BarChart3 />Ventes & statistiques</Link></DropdownMenuItem>
             <DropdownMenuItem asChild><Link to="/admin/statistiques"><ShoppingBag />Conversion & abandons</Link></DropdownMenuItem>
             <DropdownMenuItem asChild><Link to="/espace/factures"><FileText />Factures</Link></DropdownMenuItem>
