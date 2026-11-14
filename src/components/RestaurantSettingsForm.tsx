@@ -71,6 +71,7 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
   const [busy, setBusy] = useState(false);
   const [confirmOnlineOff, setConfirmOnlineOff] = useState(false);
   const [confirmOnlineOn, setConfirmOnlineOn] = useState(false);
+  const [confirmPreauthOn, setConfirmPreauthOn] = useState(false);
   const activeGroup = useSettingsGroup();
   const [savedSettings, setSavedSettings] = useState(() => JSON.stringify(initialSettings(restaurant)));
   const unit = currencyUnit(s.config.currency ?? "EUR");
@@ -241,7 +242,7 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
                 </select>
                 {s.config.payments.onlineDeliveryOnly && !s.config.payments.on_site && <p role="alert" className="text-sm text-destructive">Le retrait ne dispose d'aucun paiement accepté. Activez le paiement en mains propres ou choisissez tous les modes.</p>}
               </div>
-              <Toggle label="Pré-autorisation bancaire (empreinte CB)" hint="Carte bancaire uniquement (Mollie). Le montant est bloqué à la commande et débité seulement quand vous cliquez « Accepter ». En cas de refus, d'annulation ou de dépassement des 4 minutes, l'empreinte est relâchée sans débit." checked={s.config.payments.preauth === true} onChange={(v) => cfg({ payments: { ...s.config.payments, preauth: v } })} />
+              <Toggle label="Pré-autorisation bancaire (empreinte CB)" hint="Carte bancaire uniquement (Mollie). Le montant est bloqué à la commande et débité seulement quand vous cliquez « Accepter ». En cas de refus, d'annulation ou de dépassement des 4 minutes, l'empreinte est relâchée sans débit." checked={s.config.payments.preauth === true} onChange={(v) => { if (v) setConfirmPreauthOn(true); else cfg({ payments: { ...s.config.payments, preauth: false } }); }} />
               <p className="pt-1 text-sm text-muted-foreground">Le paiement en ligne par carte sur le site s'active en connectant un prestataire (Stripe, Mollie, PayPal ou Lyra) dans la section « Prestataires de paiement » ci-dessous.</p>
             </div>
           </div>
@@ -306,6 +307,29 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
           <AlertDialogFooter>
             <AlertDialogCancel className="min-h-12">Annuler</AlertDialogCancel>
             <AlertDialogAction className="min-h-12 bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => cfg({ payments: { ...s.config.payments, online: false }, modes: { ...s.config.modes, delivery: false } })}>Confirmer et désactiver les livraisons</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={confirmPreauthOn} onOpenChange={setConfirmPreauthOn}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Activer l'empreinte bancaire ?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>Cette option est désactivée par défaut. Avant de l'activer pour ce restaurant, vérifiez les points suivants :</p>
+                <ul className="list-disc space-y-1 pl-5">
+                  <li>Le paiement en ligne sera limité à la carte bancaire (Mollie) : les autres moyens de paiement en ligne ne seront plus proposés.</li>
+                  <li>Le montant est bloqué sur la carte du client à la commande, puis débité uniquement quand la cuisine clique « Accepter ».</li>
+                  <li>En cas de refus, d'annulation ou de 4 minutes sans réponse, l'empreinte est relâchée automatiquement, sans débit pour le client.</li>
+                  <li>Accepter ou refuser une commande avec empreinte nécessite une connexion internet.</li>
+                </ul>
+                <p>N'oubliez pas d'enregistrer les réglages après confirmation.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="min-h-12">Annuler</AlertDialogCancel>
+            <AlertDialogAction className="min-h-12" onClick={() => cfg({ payments: { ...s.config.payments, preauth: true } })}>Activer l'empreinte bancaire</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
