@@ -11,6 +11,7 @@ import { pushSupported, needsInstallForPush, VAPID_PUBLIC_KEY } from "@/lib/push
 import { registerStaffPush, removeStaffPush } from "@/lib/staff-push.functions";
 import { storeStaffAlertDevice } from "@/lib/staff-alert-device";
 import { isNewOrderAlert, type AlertOrder } from "@/lib/order-alert";
+import { consumeAvailabilityNotifications } from "@/lib/availability-notifications.functions";
 
 export function ProfessionalAlerts() {
   const { restaurants, user } = useStaff();
@@ -23,6 +24,45 @@ export function ProfessionalAlerts() {
   const [busy, setBusy] = useState(false);
   const register = useServerFn(registerStaffPush);
   const remove = useServerFn(removeStaffPush);
+  const consumeResumes = useServerFn(consumeAvailabilityNotifications);
+  const resumeIds = restaurants.filter((r) => r.role === "manager" || r.role === "agency").map((r) => r.id).join(",");
+  useEffect(() => {
+    if (!user || !resumeIds) return;
+    let running = false;
+    let disposed = false;
+    const read = async () => {
+      if (running || disposed || document.visibilityState === "hidden") return;
+      running = true;
+      try {
+        const notifications = await consumeResumes();
+        for (const notification of notifications) {
+          toast.success(`${notification.restaurant_name} · Les commandes ont repris automatiquement`, {
+            id: notification.id,
+            duration: 12000,
+            description: new Date(notification.occurred_at).toLocaleString("fr-FR", { timeZone: "Europe/Paris", dateStyle: "short", timeStyle: "short" }) + " (Paris)",
+            action: { label: "Ouvrir la cuisine", onClick: () => { window.location.assign(`/espace/${notification.restaurant_slug}`); } },
+          });
+        }
+      } catch { /* Pending notifications remain available after a failed read. */ }
+      finally { running = false; }
+    };
+    const channel = supabase.channel(`availability-notifications-${user.id}`);
+    for (const id of resumeIds.split(",")) {
+      channel.on("postgres_changes", { event: "UPDATE", schema: "public", table: "restaurants", filter: `id=eq.${id}` }, () => void read());
+    }
+    channel.subscribe((status) => { if (status === "SUBSCRIBED") void read(); });
+    void read();
+    window.addEventListener("focus", read);
+    window.addEventListener("online", read);
+    document.addEventListener("visibilitychange", read);
+    return () => {
+      disposed = true;
+      window.removeEventListener("focus", read);
+      window.removeEventListener("online", read);
+      document.removeEventListener("visibilitychange", read);
+      void supabase.removeChannel(channel);
+    };
+  }, [user?.id, resumeIds, consumeResumes]);
   useEffect(() => {
     const start = () => { audio.current ??= new AudioContext(); void audio.current.resume().then(() => setSoundOn(true)).catch(() => {}); };
     window.addEventListener("lc-professional-sound-start", start);

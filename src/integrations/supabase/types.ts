@@ -1332,6 +1332,48 @@ export type Database = {
           },
         ]
       }
+      restaurant_availability_notifications: {
+        Row: {
+          audit_id: string
+          id: string
+          occurred_at: string
+          read_at: string | null
+          restaurant_id: string
+          user_id: string
+        }
+        Insert: {
+          audit_id: string
+          id?: string
+          occurred_at: string
+          read_at?: string | null
+          restaurant_id: string
+          user_id: string
+        }
+        Update: {
+          audit_id?: string
+          id?: string
+          occurred_at?: string
+          read_at?: string | null
+          restaurant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_availability_notifications_audit_id_fkey"
+            columns: ["audit_id"]
+            isOneToOne: false
+            referencedRelation: "restaurant_order_availability_audit"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restaurant_availability_notifications_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurant_campaign_waves: {
         Row: {
           created_at: string
@@ -2348,6 +2390,16 @@ export type Database = {
           _user_id: string
         }
         Returns: Json
+      }
+      consume_availability_notifications: {
+        Args: never
+        Returns: {
+          id: string
+          occurred_at: string
+          restaurant_id: string
+          restaurant_name: string
+          restaurant_slug: string
+        }[]
       }
       delete_agency_restaurant: {
         Args: { _confirmation: string; _id: string }

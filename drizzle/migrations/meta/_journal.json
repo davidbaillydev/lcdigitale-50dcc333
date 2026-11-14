@@ -337,6 +337,20 @@
       "when": 1794660383420,
       "tag": "0047_orders_pause_audit_resume",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1794663406849,
+      "tag": "0048_automatic_resume_notifications",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1794663520086,
+      "tag": "0049_resume_notifications_explicit_grants",
+      "breakpoints": true
     }
   ]
 }
