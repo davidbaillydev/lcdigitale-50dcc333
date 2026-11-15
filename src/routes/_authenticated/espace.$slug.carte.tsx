@@ -3,7 +3,7 @@ import { Crumbs } from "@/components/Crumbs";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
-import { ArrowDown, ArrowRightLeft, ArrowUp, Copy, Eye, EyeOff, FileUp, FlaskConical, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowRightLeft, ArrowUp, Copy, Eye, EyeOff, FileUp, FlaskConical, GripVertical, Plus, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useStaff } from "@/hooks/use-staff";
 import { loadMenu, saveMenu } from "@/lib/menu-admin.functions";
@@ -81,6 +81,8 @@ function MenuEditor() {
   const [candidate, setCandidate] = useState<Category[] | null>(null);
   const [importSummary, setImportSummary] = useState<string | null>(null);
   const [simulation, setSimulation] = useState(false);
+  const [dragCat, setDragCat] = useState<number | null>(null);
+  const [dragOverCat, setDragOverCat] = useState<number | null>(null);
 
   useEffect(() => {
     if (!canManage || !r) return;
@@ -130,6 +132,14 @@ function MenuEditor() {
     setItem(ci, ii, { translations: { ...it.translations, [l]: { ...cur, [k]: v || (k === "name" ? "" : undefined) } } });
   };
   const missing = missingTranslations(menu).items.length;
+  /** Réordonne les catégories par glisser-déposer : retire la catégorie source puis l'insère à la position cible. */
+  const reorderCat = (from: number, to: number) => {
+    if (from === to || from < 0 || to < 0 || from >= menu.length || to >= menu.length) return;
+    const next = [...menu];
+    const [c] = next.splice(from, 1);
+    next.splice(to, 0, c!);
+    update(next);
+  };
   const mergedCandidate = candidate ? mergeMenu(menu, candidate) : null;
 
   const importFile = async (file?: File) => {
@@ -225,13 +235,27 @@ function MenuEditor() {
 
         {r && <OptionGroupsPanel restaurantId={r.id} data={opt.data} reload={opt.reload} />}
 
-        <div className="mt-6 space-y-3">
+        {menu.length > 1 && <p className="mt-6 flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary"><GripVertical className="h-5 w-5 shrink-0" /> Astuce : attrapez la poignée ⋮⋮ d'une catégorie et glissez-la pour changer son ordre.</p>}
+        <div className="mt-3 space-y-3">
           {menu.map((c, ci) => (
-            <section key={c.id} className="rounded-xl border border-border bg-card">
-              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 p-3 sm:flex sm:flex-wrap">
+            <section key={c.id}
+              onDragOver={(e) => { if (dragCat !== null) { e.preventDefault(); setDragOverCat(ci); } }}
+              onDragLeave={() => setDragOverCat((cur) => (cur === ci ? null : cur))}
+              onDrop={(e) => { e.preventDefault(); if (dragCat !== null) { reorderCat(dragCat, ci); toast.success(`Catégorie « ${c.label} » déplacée — pensez à enregistrer la carte`); } setDragCat(null); setDragOverCat(null); }}
+              className={`rounded-xl border bg-card transition-shadow ${dragOverCat === ci && dragCat !== null && dragCat !== ci ? "border-primary ring-2 ring-primary/60" : "border-border"} ${dragCat === ci ? "opacity-60" : ""}`}>
+              <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 p-3 sm:flex sm:flex-wrap">
+                <span
+                  draggable
+                  onDragStart={(e) => { setDragCat(ci); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", c.id); }}
+                  onDragEnd={() => { setDragCat(null); setDragOverCat(null); }}
+                  title="Glisser pour déplacer cette catégorie"
+                  aria-label={`Glisser pour déplacer la catégorie ${c.label}`}
+                  className="flex h-11 w-9 cursor-grab items-center justify-center rounded-md border border-primary/50 bg-primary/15 text-primary active:cursor-grabbing">
+                  <GripVertical className="h-5 w-5" />
+                </span>
                 <Input value={c.label} onChange={(e) => setCat(ci, { label: e.target.value })} className="min-w-0 font-semibold sm:max-w-xs" aria-label="Nom de la catégorie" />
                 <span className="text-sm text-muted-foreground">{c.items.length} plat(s) · {c.items.filter((i) => i.image).length} photo(s)</span>
-                <div className="col-span-2 flex justify-end gap-1 sm:ml-auto">
+                <div className="col-span-3 flex justify-end gap-1 sm:ml-auto">
                   <Button size="icon" variant="ghost" onClick={() => update(move(menu, ci, -1))} aria-label="Monter"><ArrowUp /></Button>
                   <Button size="icon" variant="ghost" onClick={() => update(move(menu, ci, 1))} aria-label="Descendre"><ArrowDown /></Button>
                   <Button size="icon" variant="ghost" title="Dupliquer la catégorie et ses plats" aria-label={`Dupliquer la catégorie ${c.label}`} onClick={() => {
@@ -264,15 +288,20 @@ function MenuEditor() {
                           {it.removable === undefined && <p className="text-xs text-muted-foreground">Les ingrédients de la description seront proposés au retrait ; tout le reste du plat n'est pas modifiable.</p>}
                         </div>
                         <label className="flex items-center gap-2 text-xs font-semibold">TVA <select className="min-h-10 rounded-md border border-input bg-background px-2 text-sm" value={it.vatRate ?? ""} onChange={(e) => setItem(ci, ii, { vatRate: e.target.value ? (Number(e.target.value) as 5.5 | 10 | 20) : undefined })}><option value="">Taux par défaut</option><option value="5.5">5,5 % (vente à emporter différée)</option><option value="10">10 % (restauration)</option><option value="20">20 % (alcools)</option></select></label>
-                        <div><p className="mb-1 text-xs font-semibold">Allergènes (14 allergènes INCO) · {it.allergens === undefined ? <span className="text-destructive">non renseignés</span> : it.allergens.length ? `${it.allergens.length} coché(s)` : "aucun"} {it.allergens === undefined && <button type="button" className="underline" onClick={() => setItem(ci, ii, { allergens: [] })}>Marquer « aucun allergène »</button>}</p><AllergenPicker value={it.allergens ?? []} onChange={(v) => setItem(ci, ii, { allergens: v })} /></div>
-                        <details className="rounded-md border border-border p-2"><summary className="cursor-pointer text-xs font-semibold">Traductions · {FOREIGN_LANGS.filter((l) => it.translations?.[l]?.name).length}/3</summary>
-                          <div className="mt-2 space-y-3">{FOREIGN_LANGS.map((l) => <div key={l} className="space-y-1"><p className="text-xs font-semibold text-muted-foreground">{LANG_NAMES[l]}</p>
-                            <Input value={it.translations?.[l]?.name ?? ""} placeholder={it.name} onChange={(e) => setTr(ci, ii, l, "name", e.target.value)} aria-label={`Nom en ${LANG_NAMES[l]}`} />
-                            {it.desc && <Textarea rows={2} value={it.translations?.[l]?.description ?? ""} placeholder={it.desc} onChange={(e) => setTr(ci, ii, l, "description", e.target.value)} aria-label={`Description en ${LANG_NAMES[l]}`} />}</div>)}</div>
-                        </details>
                         <ItemOptionsEditor restaurantId={r!.id} productId={it.id} data={opt.data} reload={opt.reload} />
                         {it.options?.some((g) => g.id.startsWith("tpl-")) && <TemplateOptionsEditor options={it.options} onChange={(options) => setItem(ci, ii, { options })} />}
                         {!!it.options?.length && <p className="text-xs text-muted-foreground">Options conservées : {it.options.map((o) => o.label).join(" · ")}</p>}
+                        <div className="space-y-2 rounded-md border border-dashed border-border p-2">
+                          <p className="text-xs font-semibold text-muted-foreground">Détails du plat · allergènes et langues, dépliez pour modifier</p>
+                          <details className="rounded-md border border-border p-2"><summary className="cursor-pointer text-xs font-semibold">Allergènes (14 allergènes INCO) · {it.allergens === undefined ? <span className="text-destructive">non renseignés</span> : it.allergens.length ? `${it.allergens.length} coché(s)` : "aucun"}</summary>
+                            <div className="mt-2">{it.allergens === undefined && <button type="button" className="mb-2 text-xs font-semibold underline" onClick={() => setItem(ci, ii, { allergens: [] })}>Marquer « aucun allergène »</button>}<AllergenPicker value={it.allergens ?? []} onChange={(v) => setItem(ci, ii, { allergens: v })} /></div>
+                          </details>
+                          <details className="rounded-md border border-border p-2"><summary className="cursor-pointer text-xs font-semibold">Traductions · {FOREIGN_LANGS.filter((l) => it.translations?.[l]?.name).length}/3</summary>
+                            <div className="mt-2 space-y-3">{FOREIGN_LANGS.map((l) => <div key={l} className="space-y-1"><p className="text-xs font-semibold text-muted-foreground">{LANG_NAMES[l]}</p>
+                              <Input value={it.translations?.[l]?.name ?? ""} placeholder={it.name} onChange={(e) => setTr(ci, ii, l, "name", e.target.value)} aria-label={`Nom en ${LANG_NAMES[l]}`} />
+                              {it.desc && <Textarea rows={2} value={it.translations?.[l]?.description ?? ""} placeholder={it.desc} onChange={(e) => setTr(ci, ii, l, "description", e.target.value)} aria-label={`Description en ${LANG_NAMES[l]}`} />}</div>)}</div>
+                          </details>
+                        </div>
                       </div>
                       <div>
                         <Input type="number" step={moneyDecimals(currency) ? "0.1" : "50"} min="0" value={it.price} onChange={(e) => setItem(ci, ii, { price: Math.max(0, Number(e.target.value)) })} aria-label="Prix" />
