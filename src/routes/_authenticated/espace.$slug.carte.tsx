@@ -3,17 +3,19 @@ import { Crumbs } from "@/components/Crumbs";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
-import { ArrowDown, ArrowUp, Copy, Eye, EyeOff, FileUp, FlaskConical, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowRightLeft, ArrowUp, Copy, Eye, EyeOff, FileUp, FlaskConical, Plus, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useStaff } from "@/hooks/use-staff";
 import { loadMenu, saveMenu } from "@/lib/menu-admin.functions";
 import { analyzeMenu } from "@/lib/menu-import.functions";
 import { readMenuFile } from "@/lib/menu-import";
 import { mergeMenu, menuMergeSummaryText } from "@/lib/menu-merge";
+import { moveMenuItem } from "@/lib/menu-move";
 import { baseCategories } from "@/lib/catalogs";
 import { removableChoices, type Category, type MenuItem } from "@/lib/menu";
 import { ThemeToggle } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { AllergenBadges, AllergenPicker } from "@/components/Allergens";
@@ -276,10 +278,26 @@ function MenuEditor() {
                         <Input type="number" step={moneyDecimals(currency) ? "0.1" : "50"} min="0" value={it.price} onChange={(e) => setItem(ci, ii, { price: Math.max(0, Number(e.target.value)) })} aria-label="Prix" />
                         <span className="text-xs text-muted-foreground">Prix {currencyUnit(currency)}</span>
                       </div>
-                      <div className="flex items-start gap-1">
+                      <div className="col-span-2 flex flex-wrap items-start justify-end gap-1 lg:col-span-1">
                         <Button size="sm" variant={soldOut.has(it.id) ? "destructive" : "outline"} className="min-h-10" onClick={async () => { const on = !soldOut.has(it.id); try { await setSoldOut(r!.id, it.id, on); toast.success(on ? `${it.name} : épuisé` : `${it.name} : disponible`); } catch { toast.error("Modification impossible"); } }} title="Effet immédiat sur le site, la borne et le menu QR, sans enregistrer la carte"><PackageX /> {soldOut.has(it.id) ? "Épuisé" : "Marquer épuisé"}</Button>
                         <Button size="icon" variant="ghost" onClick={() => setItem(ci, ii, { hidden: !it.hidden })} aria-label={it.hidden ? "Afficher" : "Masquer"} title={it.hidden ? "Indisponible — cliquer pour afficher" : "Masquer (rupture)"}>{it.hidden ? <EyeOff /> : <Eye />}</Button>
                         <Button size="icon" variant="ghost" onClick={() => setCat(ci, { items: move(c.items, ii, -1) })} aria-label="Monter"><ArrowUp /></Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="icon" variant="ghost" disabled={menu.length < 2} title={menu.length < 2 ? "Ajoutez une autre catégorie pour déplacer ce plat" : "Déplacer vers une autre catégorie"} aria-label={`Déplacer le plat ${it.name}`}><ArrowRightLeft /></Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="max-w-[calc(100vw-2rem)]">
+                            <DropdownMenuLabel>Catégorie de destination</DropdownMenuLabel>
+                            {menu.filter((destination) => destination.id !== c.id).map((destination) => (
+                              <DropdownMenuItem key={destination.id} className="min-h-12 whitespace-normal break-words" onSelect={() => {
+                                const next = moveMenuItem(menu, c.id, it.id, destination.id);
+                                if (next === menu) return;
+                                update(next); setOpen(destination.id);
+                                toast.success(`« ${it.name} » déplacé vers « ${destination.label} » — pensez à enregistrer la carte`);
+                              }}>{destination.label}</DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                         <Button size="icon" variant="ghost" title="Dupliquer le plat" aria-label={`Dupliquer le plat ${it.name}`} onClick={() => {
                           const copy: MenuItem = { ...it, id: uid(it.id), name: `${it.name} (copie)`, image: undefined };
                           setCat(ci, { items: [...c.items.slice(0, ii + 1), copy, ...c.items.slice(ii + 1)] }); toast.success(`« ${it.name} » dupliqué — pensez à enregistrer la carte`);
