@@ -1,0 +1,1695 @@
+{
+  "menu": [
+    {
+      "id": "import-cat-1",
+      "items": [
+        {
+          "id": "import-item-2",
+          "desc": "Viande au choix.",
+          "name": "Simple — 1 viande",
+          "price": 7.5,
+          "builder": false,
+          "allergens": [
+            "gluten"
+          ]
+        },
+        {
+          "id": "import-item-28",
+          "desc": "Viandes au choix.",
+          "name": "Maxi — 2 viandes",
+          "price": 10.5,
+          "allergens": [
+            "gluten"
+          ]
+        },
+        {
+          "id": "import-item-29",
+          "desc": "Viandes au choix.",
+          "name": "XXL — 3 viandes",
+          "price": 15,
+          "allergens": [
+            "gluten"
+          ]
+        }
+      ],
+      "label": "Tacos à composer"
+    },
+    {
+      "id": "import-cat-3",
+      "items": [
+        {
+          "id": "import-item-4",
+          "desc": "Pain naan.",
+          "name": "Sandwich — 1 viande",
+          "price": 7.5,
+          "builder": false,
+          "allergens": [
+            "gluten"
+          ]
+        }
+      ],
+      "label": "Sandwichs"
+    },
+    {
+      "id": "import-cat-19",
+      "items": [
+        {
+          "id": "import-item-21",
+          "desc": "Frites + boisson 33 cl au choix.",
+          "name": "6 Tenders",
+          "price": 9,
+          "builder": false,
+          "allergens": [
+            "gluten"
+          ]
+        }
+      ],
+      "label": "Tex Mex"
+    },
+    {
+      "id": "import-cat-31",
+      "items": [
+        {
+          "id": "import-item-32",
+          "desc": "Légumes maison et riz.",
+          "name": "Poulet tandoori",
+          "price": 15,
+          "allergens": []
+        }
+      ],
+      "label": "Les assiettes"
+    }
+  ],
+  "options": {
+    "links": [
+      {
+        "id": "7df5a68e-b4a5-adcc-5fc2-d9f12ab59804",
+        "group_id": "9604a3bc-ffd3-0c26-e939-96f2564ad2d0",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "product_id": "import-item-2",
+        "variant_id": null,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "f0ea968b-eb3e-a03d-c90d-ac91aa7f3f2a",
+        "group_id": "011233e4-507f-3c53-169f-7cc2f944a578",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "product_id": "import-item-2",
+        "variant_id": null,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "437b4e5d-7b5f-ddeb-a675-7dc2004f11a0",
+        "group_id": "6c339854-3516-2080-1f31-aeb926f67f8d",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "product_id": "import-item-2",
+        "variant_id": null,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "d0072468-0bee-2326-7657-421af4b3c47b",
+        "group_id": "b6c1a1ae-5380-0819-0848-b0f604132164",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "product_id": "import-item-2",
+        "variant_id": null,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "017474c2-208b-bcf2-db54-fd3edec9fd3d",
+        "group_id": "785fd505-7f81-59d5-7db1-47b5bf3a8b45",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "product_id": "import-item-2",
+        "variant_id": null,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "c7cf4267-4ce0-4f9a-d1a6-21d983bb6c36",
+        "group_id": "967cb187-a2f9-cd9d-9793-d99b850e8f0b",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "product_id": "import-item-2",
+        "variant_id": null,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "956c636d-f0ca-d599-e75d-e45c4d2adebe",
+        "group_id": "6ae5e103-7af7-012c-26a7-b0b3bec97b14",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "product_id": "import-item-21",
+        "variant_id": null,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "65f904a3-1d30-a00f-e11f-9070cfebc0d6",
+        "group_id": "967cb187-a2f9-cd9d-9793-d99b850e8f0b",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "product_id": "import-item-21",
+        "variant_id": null,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "1bf36e97-1fa5-94db-fb51-0c98570083e4",
+        "group_id": "a5639557-4ec3-50a9-144a-2ed8d1974eb3",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "product_id": "import-item-28",
+        "variant_id": null,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "30ae59c7-aedf-9145-989e-b3bff270b956",
+        "group_id": "b6c1a1ae-5380-0819-0848-b0f604132164",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "product_id": "import-item-28",
+        "variant_id": null,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "27086c27-f1c1-0051-e629-88fb511b1b8d",
+        "group_id": "6c339854-3516-2080-1f31-aeb926f67f8d",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "product_id": "import-item-28",
+        "variant_id": null,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "00648a0a-9a98-9a54-3baf-6c696b1df896",
+        "group_id": "011233e4-507f-3c53-169f-7cc2f944a578",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "product_id": "import-item-28",
+        "variant_id": null,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "8708b05a-140c-0324-1e2f-7ee9a9206312",
+        "group_id": "785fd505-7f81-59d5-7db1-47b5bf3a8b45",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "product_id": "import-item-28",
+        "variant_id": null,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "b88641f8-f0d2-c089-a9e4-b16259b328c2",
+        "group_id": "967cb187-a2f9-cd9d-9793-d99b850e8f0b",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "product_id": "import-item-28",
+        "variant_id": null,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "06c045e3-9bc5-32b7-1d7d-7b1386aa55a6",
+        "group_id": "f42f0278-d2ef-69a3-ba7f-5bf41fc7e079",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "product_id": "import-item-29",
+        "variant_id": null,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "d58c4d3d-e31f-d0de-1856-2fe7d972e132",
+        "group_id": "b6c1a1ae-5380-0819-0848-b0f604132164",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "product_id": "import-item-29",
+        "variant_id": null,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "4ab620dd-86ca-e902-2f01-619ba42e0457",
+        "group_id": "6c339854-3516-2080-1f31-aeb926f67f8d",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "product_id": "import-item-29",
+        "variant_id": null,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "33a04c27-cf58-0fef-1231-2f188c2dd6b2",
+        "group_id": "967cb187-a2f9-cd9d-9793-d99b850e8f0b",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "product_id": "import-item-29",
+        "variant_id": null,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "219d497d-039c-b4cc-0f58-375e69b387f2",
+        "group_id": "011233e4-507f-3c53-169f-7cc2f944a578",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "product_id": "import-item-29",
+        "variant_id": null,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "6913ec64-1c04-f09b-5beb-3c940ab252b7",
+        "group_id": "785fd505-7f81-59d5-7db1-47b5bf3a8b45",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "product_id": "import-item-29",
+        "variant_id": null,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "e6dd10ab-8304-b647-1c47-ad99f32dc13b",
+        "group_id": "27667645-16ce-35fe-d2cc-317fd18f8dc2",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "product_id": "import-item-32",
+        "variant_id": null,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "5d622816-b40b-545a-8490-a5d746660aa8",
+        "group_id": "967cb187-a2f9-cd9d-9793-d99b850e8f0b",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "product_id": "import-item-32",
+        "variant_id": null,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "70494b37-f208-0f46-8d09-a7ed59b5f118",
+        "group_id": "6ae5e103-7af7-012c-26a7-b0b3bec97b14",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "product_id": "import-item-4",
+        "variant_id": "546fce9e-f56a-f7f4-d613-0276b7c079af",
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "68beb542-269b-de9e-4b16-6487cc6a7428",
+        "group_id": "b6d2d11e-4cc2-a554-cf08-b285576258d6",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "product_id": "import-item-4",
+        "variant_id": null,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "f6a19e88-3e08-9525-fa20-b731738d7913",
+        "group_id": "9604a3bc-ffd3-0c26-e939-96f2564ad2d0",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "product_id": "import-item-4",
+        "variant_id": null,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "16de674d-e12c-defb-48a2-0e0037923add",
+        "group_id": "967cb187-a2f9-cd9d-9793-d99b850e8f0b",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "product_id": "import-item-4",
+        "variant_id": null,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      }
+    ],
+    "groups": [
+      {
+        "id": "b6c1a1ae-5380-0819-0848-b0f604132164",
+        "name": "Sauces Fromagère (maison)",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 0,
+        "is_required": true,
+        "max_selection": 1,
+        "min_selection": 1,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "9604a3bc-ffd3-0c26-e939-96f2564ad2d0",
+        "name": "Une Viandes au choix",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 1,
+        "is_required": true,
+        "max_selection": 1,
+        "min_selection": 1,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "967cb187-a2f9-cd9d-9793-d99b850e8f0b",
+        "name": "Sauces au choix",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 2,
+        "is_required": false,
+        "max_selection": 2,
+        "min_selection": 0,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "785fd505-7f81-59d5-7db1-47b5bf3a8b45",
+        "name": "Boissons (Extra)",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 3,
+        "is_required": false,
+        "max_selection": 5,
+        "min_selection": 0,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "011233e4-507f-3c53-169f-7cc2f944a578",
+        "name": "Gratinage Tacos",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 4,
+        "is_required": false,
+        "max_selection": 5,
+        "min_selection": 0,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "6c339854-3516-2080-1f31-aeb926f67f8d",
+        "name": "Extra Fromages",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 5,
+        "is_required": false,
+        "max_selection": 5,
+        "min_selection": 0,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "a5639557-4ec3-50a9-144a-2ed8d1974eb3",
+        "name": "Deux Viandes au choix",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 6,
+        "is_required": true,
+        "max_selection": 2,
+        "min_selection": 2,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "f42f0278-d2ef-69a3-ba7f-5bf41fc7e079",
+        "name": "Trois  Viandes au choix",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 7,
+        "is_required": true,
+        "max_selection": 3,
+        "min_selection": 3,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "b6d2d11e-4cc2-a554-cf08-b285576258d6",
+        "name": "Choix du Pain",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 8,
+        "is_required": true,
+        "max_selection": 1,
+        "min_selection": 1,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "6ae5e103-7af7-012c-26a7-b0b3bec97b14",
+        "name": "Boissons",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 9,
+        "is_required": true,
+        "max_selection": 1,
+        "min_selection": 1,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "27667645-16ce-35fe-d2cc-317fd18f8dc2",
+        "name": "Suppléments pain",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 12,
+        "is_required": false,
+        "max_selection": 2,
+        "min_selection": 0,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      }
+    ],
+    "items": [
+      {
+        "id": "bb8464e9-8dc6-ad6b-3637-ee0436c5e4e7",
+        "name": "Coca-cola 33 cl",
+        "price": 0.0,
+        "group_id": "6ae5e103-7af7-012c-26a7-b0b3bec97b14",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 0,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "6604acde-878b-9d1d-0cb7-ca539e3894e3",
+        "name": "Coca-zéro  33cl",
+        "price": 0.0,
+        "group_id": "6ae5e103-7af7-012c-26a7-b0b3bec97b14",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 1,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "ec7888d7-5f60-0ce7-2883-ea39ab97ec50",
+        "name": "Sprite 33 cl",
+        "price": 0.0,
+        "group_id": "6ae5e103-7af7-012c-26a7-b0b3bec97b14",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 2,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "a743407d-4389-7383-cd6f-591ae80c1a56",
+        "name": "Fanta dragon 33 cl",
+        "price": 0.0,
+        "group_id": "6ae5e103-7af7-012c-26a7-b0b3bec97b14",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 3,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "ef559020-265e-8d7c-8d7e-7145ec530c73",
+        "name": "Fanta Citron 33 cl",
+        "price": 0.0,
+        "group_id": "6ae5e103-7af7-012c-26a7-b0b3bec97b14",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 4,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "80e0e54c-b2cb-6fc4-5ee8-92d7f0267256",
+        "name": "Fanta orange 33 cl",
+        "price": 0.0,
+        "group_id": "6ae5e103-7af7-012c-26a7-b0b3bec97b14",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 5,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "19e8752c-60f4-f9fa-2b78-e62f56b1387a",
+        "name": "Perrier 33 cl",
+        "price": 0.0,
+        "group_id": "6ae5e103-7af7-012c-26a7-b0b3bec97b14",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 6,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "714e91bd-6b67-2f88-f27d-c8e96c362369",
+        "name": "Lipton 33 cl",
+        "price": 0.0,
+        "group_id": "6ae5e103-7af7-012c-26a7-b0b3bec97b14",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 7,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "2a98d2a1-818e-7b14-e320-6867a1515c25",
+        "name": "Oasis tropicale 33 cl",
+        "price": 0.0,
+        "group_id": "6ae5e103-7af7-012c-26a7-b0b3bec97b14",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 8,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "444424ba-54d2-89de-8058-e1ed50ce83d8",
+        "name": "Oasis pomme cassis 33 cl",
+        "price": 0.0,
+        "group_id": "6ae5e103-7af7-012c-26a7-b0b3bec97b14",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 9,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "fb5242e9-5937-304d-d1c6-f43cb866fe9f",
+        "name": "Cristaline 33 cl",
+        "price": 0.0,
+        "group_id": "6ae5e103-7af7-012c-26a7-b0b3bec97b14",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 10,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "569ee954-9792-3f1d-cad4-4e6197ed4fc2",
+        "name": "Orangina 33 cl",
+        "price": 0.0,
+        "group_id": "6ae5e103-7af7-012c-26a7-b0b3bec97b14",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 11,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "0dcdf033-827e-b80b-b8ef-8cc2655ffd48",
+        "name": "Tropico 33cl",
+        "price": 0.0,
+        "group_id": "6ae5e103-7af7-012c-26a7-b0b3bec97b14",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 12,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "6116321b-bc58-8ea6-f382-ed35670548c5",
+        "name": "Hawaï 33 cl",
+        "price": 0.0,
+        "group_id": "6ae5e103-7af7-012c-26a7-b0b3bec97b14",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 13,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "513b675f-ee24-0259-471d-4a53573bca8e",
+        "name": "Seven up mojito",
+        "price": 0.0,
+        "group_id": "6ae5e103-7af7-012c-26a7-b0b3bec97b14",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 14,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "ca8bf831-cf23-601e-d0c2-9076ef6feff9",
+        "name": "Seven up citron",
+        "price": 0.0,
+        "group_id": "6ae5e103-7af7-012c-26a7-b0b3bec97b14",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 15,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "135220db-4eb8-476c-f728-e31772d25769",
+        "name": "Seven up Cherry",
+        "price": 0.0,
+        "group_id": "6ae5e103-7af7-012c-26a7-b0b3bec97b14",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 16,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "692df28f-89de-8127-3658-92097b7e1bf6",
+        "name": "Seven up cocktail",
+        "price": 0.0,
+        "group_id": "6ae5e103-7af7-012c-26a7-b0b3bec97b14",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 17,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "0c71a244-13aa-4f06-31d4-a5cfa081435e",
+        "name": "Ice tea",
+        "price": 0.0,
+        "group_id": "6ae5e103-7af7-012c-26a7-b0b3bec97b14",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 18,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "1038804b-bd80-9fdc-174c-ed4a2e62eadf",
+        "name": "Fuze tea",
+        "price": 0.0,
+        "group_id": "6ae5e103-7af7-012c-26a7-b0b3bec97b14",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 19,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "0d027cda-399e-fe87-6dc4-af6c892c7025",
+        "name": "Schweppes",
+        "price": 0.0,
+        "group_id": "6ae5e103-7af7-012c-26a7-b0b3bec97b14",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 20,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "c19b0188-ac7b-92e7-4da3-1c1c73427e75",
+        "name": "Dada Fraise",
+        "price": 0.0,
+        "group_id": "6ae5e103-7af7-012c-26a7-b0b3bec97b14",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 21,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "97b6ebec-328f-c88d-92db-f2243107f9c6",
+        "name": "Dada melons",
+        "price": 0.0,
+        "group_id": "6ae5e103-7af7-012c-26a7-b0b3bec97b14",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 22,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "4a5afb6c-f7b5-3f5d-a231-6474867f4ecf",
+        "name": "Dada Litchi",
+        "price": 0.0,
+        "group_id": "6ae5e103-7af7-012c-26a7-b0b3bec97b14",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 23,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "d00c08af-2b63-f6be-f549-8253da918639",
+        "name": "Dada mangue",
+        "price": 0.0,
+        "group_id": "6ae5e103-7af7-012c-26a7-b0b3bec97b14",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 24,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "dec1edf2-57f1-40df-a306-11f7d9a4603c",
+        "name": "Capri sun",
+        "price": 0.0,
+        "group_id": "6ae5e103-7af7-012c-26a7-b0b3bec97b14",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 25,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "84b2334e-6740-4c07-5732-778c323e1942",
+        "name": "Naan Nature",
+        "price": 0.0,
+        "group_id": "b6d2d11e-4cc2-a554-cf08-b285576258d6",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 0,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "c49ecdec-9413-d7ff-bf70-f4577d21f91b",
+        "name": "Pain rond",
+        "price": 0.0,
+        "group_id": "b6d2d11e-4cc2-a554-cf08-b285576258d6",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 1,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "2de0c19a-4f70-7290-aaa3-17cfab3b5990",
+        "name": "Galette",
+        "price": 0.0,
+        "group_id": "b6d2d11e-4cc2-a554-cf08-b285576258d6",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 2,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "16e1e6fb-fd62-5fb3-3f09-c7815ffbffc0",
+        "name": "Naan Fromage",
+        "price": 0.0,
+        "group_id": "b6d2d11e-4cc2-a554-cf08-b285576258d6",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 3,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "c39b6e86-506e-1462-f083-e309011fd794",
+        "name": "Oui",
+        "price": 0.0,
+        "group_id": "b6c1a1ae-5380-0819-0848-b0f604132164",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 0,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "20fd53a6-092e-7e48-e883-b5525d90e474",
+        "name": "Non",
+        "price": 0.0,
+        "group_id": "b6c1a1ae-5380-0819-0848-b0f604132164",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 1,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "60b0e917-e8b1-4a54-3aad-5db68bea3d25",
+        "name": "Kebab",
+        "price": 0.0,
+        "group_id": "9604a3bc-ffd3-0c26-e939-96f2564ad2d0",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 0,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "ca8d635a-d4cd-6005-4e7b-7454fda2ef6a",
+        "name": "Kefta",
+        "price": 0.0,
+        "group_id": "9604a3bc-ffd3-0c26-e939-96f2564ad2d0",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 1,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "772fb2d5-e5ad-8d0f-ae10-345b3262c0a3",
+        "name": "Poulet tikka",
+        "price": 0.0,
+        "group_id": "9604a3bc-ffd3-0c26-e939-96f2564ad2d0",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 2,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "c7c2a253-5c44-3649-8467-18d215a9aa10",
+        "name": "Tenders",
+        "price": 0.0,
+        "group_id": "9604a3bc-ffd3-0c26-e939-96f2564ad2d0",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 3,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "84712c67-005f-13e6-f5d8-ccd7c959c25b",
+        "name": "Steak",
+        "price": 0.0,
+        "group_id": "9604a3bc-ffd3-0c26-e939-96f2564ad2d0",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 4,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "2339c384-8b26-4c12-8e8a-20730cccdea7",
+        "name": "Merguez",
+        "price": 0.0,
+        "group_id": "9604a3bc-ffd3-0c26-e939-96f2564ad2d0",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 5,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "9711f043-f5cc-9f07-ee05-e537bfe5e315",
+        "name": "Falafel",
+        "price": 0.0,
+        "group_id": "9604a3bc-ffd3-0c26-e939-96f2564ad2d0",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 6,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "0f80d88d-1970-b610-f4b5-36ac8b96861e",
+        "name": "Cordon bleu",
+        "price": 0.0,
+        "group_id": "9604a3bc-ffd3-0c26-e939-96f2564ad2d0",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 7,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "e92ccc83-cb8d-a87b-409c-dbabf2860dea",
+        "name": "Nuggets",
+        "price": 0.0,
+        "group_id": "9604a3bc-ffd3-0c26-e939-96f2564ad2d0",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 8,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "c9735ed4-b618-85c7-75c0-76ef1f74953d",
+        "name": "Fish",
+        "price": 0.0,
+        "group_id": "9604a3bc-ffd3-0c26-e939-96f2564ad2d0",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 9,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "51b1753d-7fda-5d7c-d132-9a382e63bb06",
+        "name": "Algérienne",
+        "price": 0.0,
+        "group_id": "967cb187-a2f9-cd9d-9793-d99b850e8f0b",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 0,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "bcee9ec8-f45b-07b2-eefd-907888984b52",
+        "name": "Curry",
+        "price": 0.0,
+        "group_id": "967cb187-a2f9-cd9d-9793-d99b850e8f0b",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 1,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "e0d688f7-daf5-02b6-c47e-a509daa1746a",
+        "name": "Andalouse",
+        "price": 0.0,
+        "group_id": "967cb187-a2f9-cd9d-9793-d99b850e8f0b",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 2,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "03496f13-dac3-d566-d7b5-2ec02d9a8d3a",
+        "name": "Blanche",
+        "price": 0.0,
+        "group_id": "967cb187-a2f9-cd9d-9793-d99b850e8f0b",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 3,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "34ee0394-f6e2-1b60-a946-abac0c536c70",
+        "name": "Mayonnaise",
+        "price": 0.0,
+        "group_id": "967cb187-a2f9-cd9d-9793-d99b850e8f0b",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 4,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "ea0aae3e-b7f3-1e91-8b59-0fb208606eeb",
+        "name": "Ketchup",
+        "price": 0.0,
+        "group_id": "967cb187-a2f9-cd9d-9793-d99b850e8f0b",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 5,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "7b672d78-f555-eeb2-efcb-27ca527edcf1",
+        "name": "Biggy",
+        "price": 0.0,
+        "group_id": "967cb187-a2f9-cd9d-9793-d99b850e8f0b",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 6,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "453044e1-4bd0-514c-0f18-76318b05fdc2",
+        "name": "Burger",
+        "price": 0.0,
+        "group_id": "967cb187-a2f9-cd9d-9793-d99b850e8f0b",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 7,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "b67384d2-16f6-834f-f4ae-2eb23b160ce6",
+        "name": "Harissa",
+        "price": 0.0,
+        "group_id": "967cb187-a2f9-cd9d-9793-d99b850e8f0b",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 8,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "a9354334-0f3d-eedc-a127-93f7574c88de",
+        "name": "Barbecue",
+        "price": 0.0,
+        "group_id": "967cb187-a2f9-cd9d-9793-d99b850e8f0b",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 9,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "3cf9268c-f478-508d-4d51-5459a46d3d91",
+        "name": "Samouraï",
+        "price": 0.0,
+        "group_id": "967cb187-a2f9-cd9d-9793-d99b850e8f0b",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 10,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "7cbac129-d9a5-a346-1034-918d80dbc77a",
+        "name": "Brésiliènne",
+        "price": 0.0,
+        "group_id": "967cb187-a2f9-cd9d-9793-d99b850e8f0b",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 11,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "78abb915-4ade-b860-859a-591690aa93e9",
+        "name": "Naan nature",
+        "price": 1.5,
+        "group_id": "27667645-16ce-35fe-d2cc-317fd18f8dc2",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 0,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "290fa9e8-7ae4-9543-c61b-f5b2d4987c99",
+        "name": "Naan fromage",
+        "price": 2.0,
+        "group_id": "27667645-16ce-35fe-d2cc-317fd18f8dc2",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 1,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "73b5f57f-55c6-21ca-c7a1-d91a6cc8d755",
+        "name": "Kebab",
+        "price": 0.0,
+        "group_id": "a5639557-4ec3-50a9-144a-2ed8d1974eb3",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 0,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "17292c34-3de3-f9d3-2511-14e3676b0b6a",
+        "name": "Kefta",
+        "price": 0.0,
+        "group_id": "a5639557-4ec3-50a9-144a-2ed8d1974eb3",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 1,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "0d6cbb2b-aa8f-4189-4b54-631095f59b57",
+        "name": "Poulet tikka",
+        "price": 0.0,
+        "group_id": "a5639557-4ec3-50a9-144a-2ed8d1974eb3",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 2,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "6df46fc2-d3f7-7c7f-4d10-db27e335df8e",
+        "name": "Tenders",
+        "price": 0.0,
+        "group_id": "a5639557-4ec3-50a9-144a-2ed8d1974eb3",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 3,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "6a6d9367-bdec-a92a-853b-ea9676e81377",
+        "name": "Steak",
+        "price": 0.0,
+        "group_id": "a5639557-4ec3-50a9-144a-2ed8d1974eb3",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 4,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "6db99b84-022e-b182-794d-ec25bce69ee1",
+        "name": "Merguez",
+        "price": 0.0,
+        "group_id": "a5639557-4ec3-50a9-144a-2ed8d1974eb3",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 5,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "aea90371-609e-7a2e-d985-3ed9b9b89f40",
+        "name": "Falafel",
+        "price": 0.0,
+        "group_id": "a5639557-4ec3-50a9-144a-2ed8d1974eb3",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 6,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "be0b7a01-bea1-787e-0133-1c964823c3c2",
+        "name": "Cordon bleu",
+        "price": 0.0,
+        "group_id": "a5639557-4ec3-50a9-144a-2ed8d1974eb3",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 7,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "00b5a8f3-4161-f72c-c75a-b5747085a3df",
+        "name": "Nuggets",
+        "price": 0.0,
+        "group_id": "a5639557-4ec3-50a9-144a-2ed8d1974eb3",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 8,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "cb024ea3-e0dc-e086-a712-f4cb77900dec",
+        "name": "Fish",
+        "price": 0.0,
+        "group_id": "a5639557-4ec3-50a9-144a-2ed8d1974eb3",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 9,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "511c3737-cb77-3d54-e7f6-8e9e6f683236",
+        "name": "Kebab",
+        "price": 0.0,
+        "group_id": "f42f0278-d2ef-69a3-ba7f-5bf41fc7e079",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 0,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "56a00b23-2760-795f-aae9-eebc180f4dd0",
+        "name": "Kefta",
+        "price": 0.0,
+        "group_id": "f42f0278-d2ef-69a3-ba7f-5bf41fc7e079",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 1,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "6c9170df-b919-374f-af2f-a5569d88a6a6",
+        "name": "Poulet tikka",
+        "price": 0.0,
+        "group_id": "f42f0278-d2ef-69a3-ba7f-5bf41fc7e079",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 2,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "a6482c98-7b45-71cd-4668-0227d33151e5",
+        "name": "Tenders",
+        "price": 0.0,
+        "group_id": "f42f0278-d2ef-69a3-ba7f-5bf41fc7e079",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 3,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "3f301bfa-c165-b842-ddd6-a69a046f4502",
+        "name": "Steak",
+        "price": 0.0,
+        "group_id": "f42f0278-d2ef-69a3-ba7f-5bf41fc7e079",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 4,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "e12268f1-4c85-e644-2862-53c75ba94787",
+        "name": "Merguez",
+        "price": 0.0,
+        "group_id": "f42f0278-d2ef-69a3-ba7f-5bf41fc7e079",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 5,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "addb1237-eb60-c22a-860b-4ffbb1b8d629",
+        "name": "Falafel",
+        "price": 0.0,
+        "group_id": "f42f0278-d2ef-69a3-ba7f-5bf41fc7e079",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 6,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "873d71ef-2744-82dd-1863-3d8bd38df45c",
+        "name": "Cordon bleu",
+        "price": 0.0,
+        "group_id": "f42f0278-d2ef-69a3-ba7f-5bf41fc7e079",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 7,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "031937bd-fd1a-b8e4-1036-26d59379b6c2",
+        "name": "Nuggets",
+        "price": 0.0,
+        "group_id": "f42f0278-d2ef-69a3-ba7f-5bf41fc7e079",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 8,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "44ffc8c0-676e-8b78-f5c3-2cef6a8c2089",
+        "name": "Fish",
+        "price": 0.0,
+        "group_id": "f42f0278-d2ef-69a3-ba7f-5bf41fc7e079",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 9,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "bed0ad8e-3103-e5a5-751b-d120d5832f0a",
+        "name": "Coca-cola 33 cl",
+        "price": 0.0,
+        "group_id": "785fd505-7f81-59d5-7db1-47b5bf3a8b45",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 0,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "9eafac41-24af-1f05-53e7-ea2aacae94f6",
+        "name": "Coca-zéro  33cl",
+        "price": 0.0,
+        "group_id": "785fd505-7f81-59d5-7db1-47b5bf3a8b45",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 1,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "38666400-3e43-0345-5c15-c293303a14c6",
+        "name": "Sprite 33 cl",
+        "price": 0.0,
+        "group_id": "785fd505-7f81-59d5-7db1-47b5bf3a8b45",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 2,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "1f9c81df-9092-2e15-c76e-0ffd5c4f2f65",
+        "name": "Fanta dragon 33 cl",
+        "price": 0.0,
+        "group_id": "785fd505-7f81-59d5-7db1-47b5bf3a8b45",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 3,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "b705466c-90b5-8fb0-20b7-6c2f52fa9a5c",
+        "name": "Fanta Citron 33 cl",
+        "price": 0.0,
+        "group_id": "785fd505-7f81-59d5-7db1-47b5bf3a8b45",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 4,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "ab694df6-c2b3-ee54-cd7d-6fabb749af45",
+        "name": "Fanta orange 33 cl",
+        "price": 0.0,
+        "group_id": "785fd505-7f81-59d5-7db1-47b5bf3a8b45",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 5,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "c923294d-01d7-6c1b-8cd1-a5051872d047",
+        "name": "Perrier 33 cl",
+        "price": 0.0,
+        "group_id": "785fd505-7f81-59d5-7db1-47b5bf3a8b45",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 6,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "9b98bb8f-145d-36fc-a4e8-7bca9d6131b5",
+        "name": "Lipton 33 cl",
+        "price": 0.0,
+        "group_id": "785fd505-7f81-59d5-7db1-47b5bf3a8b45",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 7,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "99698d9d-f840-6442-70c1-02e77d72b501",
+        "name": "Oasis tropicale 33 cl",
+        "price": 0.0,
+        "group_id": "785fd505-7f81-59d5-7db1-47b5bf3a8b45",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 8,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "ff85a334-9f9a-6cad-21e8-5d5e42d5dff0",
+        "name": "Oasis pomme cassis 33 cl",
+        "price": 0.0,
+        "group_id": "785fd505-7f81-59d5-7db1-47b5bf3a8b45",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 9,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "f445ad33-2f25-7373-b313-ee5e72b3b191",
+        "name": "Cristaline 33 cl",
+        "price": 0.0,
+        "group_id": "785fd505-7f81-59d5-7db1-47b5bf3a8b45",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 10,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "b282b461-1535-dbac-0100-a475d20053e3",
+        "name": "Orangina 33 cl",
+        "price": 0.0,
+        "group_id": "785fd505-7f81-59d5-7db1-47b5bf3a8b45",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 11,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "53373e86-592b-b4f0-08ef-bf01a32da219",
+        "name": "Tropico 33cl",
+        "price": 0.0,
+        "group_id": "785fd505-7f81-59d5-7db1-47b5bf3a8b45",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 12,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "ff28fba0-458a-158b-3607-7ba1520c39ea",
+        "name": "Hawaï 33 cl",
+        "price": 0.0,
+        "group_id": "785fd505-7f81-59d5-7db1-47b5bf3a8b45",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 13,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "353efe3b-72ee-30af-0a09-d9041c7cd6b7",
+        "name": "Seven up mojito",
+        "price": 0.0,
+        "group_id": "785fd505-7f81-59d5-7db1-47b5bf3a8b45",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 14,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "508dd007-bb3d-d4c1-4f62-5a725f5dee5a",
+        "name": "Seven up citron",
+        "price": 0.0,
+        "group_id": "785fd505-7f81-59d5-7db1-47b5bf3a8b45",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 15,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "92033424-c250-f31c-688e-9e75d3f3d651",
+        "name": "Seven up Cherry",
+        "price": 0.0,
+        "group_id": "785fd505-7f81-59d5-7db1-47b5bf3a8b45",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 16,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "2334b55d-df42-0a24-2570-877629e50d85",
+        "name": "Seven up cocktail",
+        "price": 0.0,
+        "group_id": "785fd505-7f81-59d5-7db1-47b5bf3a8b45",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 17,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "f970ff64-8f27-2579-41d3-4d9c4080cf19",
+        "name": "Ice tea",
+        "price": 0.0,
+        "group_id": "785fd505-7f81-59d5-7db1-47b5bf3a8b45",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 18,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "d1265e96-9a10-8706-1367-f83b01a283e1",
+        "name": "Fuze tea",
+        "price": 0.0,
+        "group_id": "785fd505-7f81-59d5-7db1-47b5bf3a8b45",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 19,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "d1180956-0f82-ede9-ee1a-ebd4439538af",
+        "name": "Schweppes",
+        "price": 0.0,
+        "group_id": "785fd505-7f81-59d5-7db1-47b5bf3a8b45",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 20,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "4912accc-6bea-8870-cd89-9120db3aae9c",
+        "name": "Dada Fraise",
+        "price": 0.0,
+        "group_id": "785fd505-7f81-59d5-7db1-47b5bf3a8b45",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 21,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "ee316dc4-2189-6aab-25c5-41cedd550beb",
+        "name": "Dada melons",
+        "price": 0.0,
+        "group_id": "785fd505-7f81-59d5-7db1-47b5bf3a8b45",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 22,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "172ed4e5-485b-666a-e1f1-c0d011c6283d",
+        "name": "Dada Litchi",
+        "price": 0.0,
+        "group_id": "785fd505-7f81-59d5-7db1-47b5bf3a8b45",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 23,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "78b7b913-20ff-9df6-0608-904494ed5cac",
+        "name": "Dada mangue",
+        "price": 0.0,
+        "group_id": "785fd505-7f81-59d5-7db1-47b5bf3a8b45",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 24,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "3ae2aeab-b46e-ae43-e05d-ae8bc8fab93d",
+        "name": "Capri sun",
+        "price": 0.0,
+        "group_id": "785fd505-7f81-59d5-7db1-47b5bf3a8b45",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 25,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "27ed0706-bc6f-f28b-f5d9-30b385824dac",
+        "name": "Bacon",
+        "price": 0.0,
+        "group_id": "6c339854-3516-2080-1f31-aeb926f67f8d",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 0,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "31abea8f-87a9-a764-3f52-5c6f401d1bbb",
+        "name": "Cheddar",
+        "price": 0.0,
+        "group_id": "6c339854-3516-2080-1f31-aeb926f67f8d",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 1,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "67049354-7d49-88d4-ecaa-6b649887d84d",
+        "name": "Chèvre",
+        "price": 0.0,
+        "group_id": "6c339854-3516-2080-1f31-aeb926f67f8d",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 2,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "e53b9f88-e30f-3705-c687-ee6f591d9f1a",
+        "name": "Raclette",
+        "price": 0.0,
+        "group_id": "6c339854-3516-2080-1f31-aeb926f67f8d",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 3,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "3fb4dcb4-58d8-90ed-4190-e0e0df642377",
+        "name": "Vache qui rit",
+        "price": 0.0,
+        "group_id": "6c339854-3516-2080-1f31-aeb926f67f8d",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 4,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "a9ee1f2f-9298-41d0-a44e-430c31dccf2e",
+        "name": "Emmental",
+        "price": 0.0,
+        "group_id": "6c339854-3516-2080-1f31-aeb926f67f8d",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 5,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "3b2d5d0a-963d-7339-54e0-b7857a956e27",
+        "name": "Cheddar + Oignon frit",
+        "price": 0.0,
+        "group_id": "011233e4-507f-3c53-169f-7cc2f944a578",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 0,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "384457c7-ee85-607d-ac59-2a3d0ca269ab",
+        "name": "Chèvre + Miel",
+        "price": 0.0,
+        "group_id": "011233e4-507f-3c53-169f-7cc2f944a578",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 1,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "563d79d9-654c-d7c0-a329-79ddc71380ea",
+        "name": "Emmental + Lardon",
+        "price": 0.0,
+        "group_id": "011233e4-507f-3c53-169f-7cc2f944a578",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 2,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "186868d1-29de-3136-0de5-80de762ec9bc",
+        "name": "Emmental + Bacon",
+        "price": 0.0,
+        "group_id": "011233e4-507f-3c53-169f-7cc2f944a578",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 3,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "9685a80c-2f32-ab8c-a2d8-48dc27ec4447",
+        "name": "Mozzarella",
+        "price": 0.0,
+        "group_id": "011233e4-507f-3c53-169f-7cc2f944a578",
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "sort_order": 4,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      }
+    ],
+    "variants": [
+      {
+        "id": "a5e8b5d0-b9df-2adb-bf59-f26dae86f6f0",
+        "name": "Seul",
+        "price": 7.5,
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "is_default": true,
+        "product_id": "import-item-2",
+        "sort_order": 0,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "5dbc3f47-a530-1e59-af38-fa7486f4f526",
+        "name": "Avec frites",
+        "price": 8.5,
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "is_default": false,
+        "product_id": "import-item-2",
+        "sort_order": 1,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "4e4a27be-5e6a-475f-66c9-a6ba0930e45b",
+        "name": "Menu (frites + boisson)",
+        "price": 9.5,
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "is_default": false,
+        "product_id": "import-item-2",
+        "sort_order": 2,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "0740cc38-40b1-fef5-4ba5-8ef8833e2bac",
+        "name": "Seul",
+        "price": 10.5,
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "is_default": true,
+        "product_id": "import-item-28",
+        "sort_order": 0,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "5e6c04eb-ffaf-81d2-28a9-7a529ddafa9d",
+        "name": "Avec frites",
+        "price": 11.5,
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "is_default": false,
+        "product_id": "import-item-28",
+        "sort_order": 1,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "bd828d34-991e-40c7-68e3-47e77eaa847a",
+        "name": "Menu (frites + boisson)",
+        "price": 12.5,
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "is_default": false,
+        "product_id": "import-item-28",
+        "sort_order": 2,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "eda7d2d7-dd32-376e-b4c0-0b8dcab3f795",
+        "name": "Seul",
+        "price": 15.0,
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "is_default": true,
+        "product_id": "import-item-29",
+        "sort_order": 0,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "e5c7f510-0387-0ae3-bccf-e108460fe182",
+        "name": "Avec frites",
+        "price": 16.0,
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "is_default": false,
+        "product_id": "import-item-29",
+        "sort_order": 1,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "09078486-4a02-cff9-6782-5f9a45b63fe9",
+        "name": "Menu (frites + boisson)",
+        "price": 17.0,
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "is_default": false,
+        "product_id": "import-item-29",
+        "sort_order": 2,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "ea78d1ae-03b1-030d-ceff-9b86d7ecdd5e",
+        "name": "Seul",
+        "price": 15.0,
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "is_default": true,
+        "product_id": "import-item-32",
+        "sort_order": 0,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "09a22fc0-5904-2c19-011a-03be22ea50d1",
+        "name": "Menu + boisson",
+        "price": 16.0,
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "is_default": false,
+        "product_id": "import-item-32",
+        "sort_order": 1,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "ed3f3709-d57e-ed73-6cfe-599870f5a6f0",
+        "name": "Seul",
+        "price": 7.5,
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "is_default": true,
+        "product_id": "import-item-4",
+        "sort_order": 0,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "5ba169ca-7778-c773-2808-a416cffbb49f",
+        "name": "Avec frites",
+        "price": 8.5,
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "is_default": false,
+        "product_id": "import-item-4",
+        "sort_order": 1,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      },
+      {
+        "id": "546fce9e-f56a-f7f4-d613-0276b7c079af",
+        "name": "Menu (frites + boisson)",
+        "price": 9.5,
+        "created_at": "2026-11-15T20:10:50.68943+00:00",
+        "is_default": false,
+        "product_id": "import-item-4",
+        "sort_order": 2,
+        "is_available": true,
+        "restaurant_id": "b83a5f73-ad20-4e90-b4a1-e0ee8eef651e"
+      }
+    ]
+  }
+}
