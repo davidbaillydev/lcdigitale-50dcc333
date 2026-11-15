@@ -1,7 +1,8 @@
 import { useMoney } from "@/lib/money-context";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Clock, MapPin, Bike, ShoppingBag, Phone } from "lucide-react";
+import { Clock, MapPin, Bike, ShoppingBag, Phone, ShieldAlert, ChevronRight } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RestaurantBanner } from "@/components/RestaurantBanner";
 import { getRestaurant } from "@/lib/restaurants.functions";
 import { type MenuItem , fromPrice } from "@/lib/menu";
@@ -15,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { AllergenBadges, AllergenPicker } from "@/components/Allergens";
 import { safeFor } from "@/lib/allergens";
 import { useTable } from "@/lib/table";
-import { catLabel, itemText, LANG_LABELS, UI, useMenuLang, type Lang } from "@/lib/i18n";
+import { catLabel, itemText, UI, useMenuLang } from "@/lib/i18n";
 import { EmbedBar } from "@/components/EmbedBar";
 import { useOrderingState } from "@/hooks/use-orders-paused";
 import { OrderingBanners } from "@/components/OrderingBanners";
@@ -57,7 +58,7 @@ function MenuPage() {
 
   return (
     <div className={`min-h-screen ${embed ? "pb-6" : "pb-24"}`}>
-      {embed ? <EmbedBar hideCart={view} /> : <SiteHeader hideCart={view} />}
+      {embed ? <EmbedBar hideCart={view} /> : <SiteHeader hideCart={view} lang={lang} onLang={setLang} />}
       {!view && <OrderingBanners state={atTable ? { ...ordering, onlineOff: false, showClosed: false } : ordering} />}
       {table && <p className="bg-primary px-4 py-2 text-center font-semibold text-primary-foreground" role="status">Table {table} · commandez ici, nous vous servons à table</p>}
       {!table && qr.room && <p className="bg-primary px-4 py-2 text-center font-semibold text-primary-foreground" role="status">Room service · Chambre {qr.room}</p>}
@@ -86,24 +87,36 @@ function MenuPage() {
         </div>
       </section>
 
-      <nav className="sticky top-[61px] z-30 border-b border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl gap-2 overflow-x-auto px-4 py-3">
-          <div className="flex shrink-0 overflow-hidden rounded-full border border-border" role="group" aria-label="Langue de la carte">
-            {(Object.keys(LANG_LABELS) as Lang[]).map((l) => <button key={l} onClick={() => setLang(l)} aria-pressed={lang === l} className={`px-2.5 py-1.5 text-xs font-bold ${lang === l ? "bg-primary text-primary-foreground" : "hover:text-primary"}`}>{LANG_LABELS[l]}</button>)}
+      <nav className="sticky top-[61px] z-30 border-b-2 border-primary/40 bg-background/95 shadow-md backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-2.5">
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className={`flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-bold ${excluded.length ? "border-primary bg-primary text-primary-foreground" : "border-border hover:border-primary hover:text-primary"}`} aria-label="Filtre allergènes">
+                <ShieldAlert className="h-4 w-4" /><span className="hidden sm:inline">Allergènes</span>{excluded.length > 0 && <span>({excluded.length})</span>}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-[min(92vw,26rem)]">
+              <p className="font-semibold">{ui.allergies}</p>
+              <div className="mt-3"><AllergenPicker value={excluded} onChange={setExcluded} /></div>
+              {excluded.length > 0 && <button className="mt-2 text-sm underline" onClick={() => setExcluded([])}>Tout réafficher</button>}
+              <p className="mt-2 text-xs text-muted-foreground">Les plats dont les allergènes ne sont pas renseignés sont aussi masqués. Informations déclarées par le restaurant. En cas d'allergie sévère, contactez-le avant de commander.</p>
+            </PopoverContent>
+          </Popover>
+          <div className="relative min-w-0 flex-1">
+            <div className="flex snap-x snap-mandatory gap-2 overflow-x-auto scroll-px-4 py-1 pr-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Catégories (glissez pour voir la suite)">
+              {shown.map((c) => (
+                <a key={c.id} href={`#${c.id}`} className="shrink-0 snap-start rounded-full border-2 border-primary/50 bg-primary/10 px-4 py-1.5 text-sm font-semibold shadow-sm transition hover:border-primary hover:bg-primary hover:text-primary-foreground">{catLabel(c, lang)}</a>
+              ))}
+            </div>
+            <div aria-hidden className="pointer-events-none absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-background to-transparent" />
+            <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 flex w-12 items-center justify-end bg-gradient-to-l from-background via-background/80 to-transparent">
+              <ChevronRight className="h-5 w-5 animate-pulse text-primary" />
+            </div>
           </div>
-          {shown.map((c) => (
-            <a key={c.id} href={`#${c.id}`} className="shrink-0 rounded-full border border-border px-3 py-1.5 text-sm hover:border-primary hover:text-primary">{catLabel(c, lang)}</a>
-          ))}
         </div>
       </nav>
 
       <main className="mx-auto max-w-6xl space-y-14 px-4 py-10">
-        <details className="rounded-xl border border-border bg-card p-4" open={excluded.length > 0}>
-          <summary className="cursor-pointer font-semibold">{ui.allergies} {excluded.length > 0 && <span className="text-primary">({excluded.length} exclu{excluded.length > 1 ? "s" : ""})</span>}</summary>
-          <div className="mt-3"><AllergenPicker value={excluded} onChange={setExcluded} /></div>
-          {excluded.length > 0 && <button className="mt-2 text-sm underline" onClick={() => setExcluded([])}>Tout réafficher</button>}
-          <p className="mt-2 text-xs text-muted-foreground">Les plats dont les allergènes ne sont pas renseignés sont aussi masqués. Informations déclarées par le restaurant. En cas d'allergie sévère, contactez-le avant de commander.</p>
-        </details>
         {!catalog.categories.length && <p className="py-10 text-center text-muted-foreground">{ui.soon}</p>}
         {excluded.length > 0 && !shown.length && <p className="py-10 text-center text-muted-foreground">Aucun plat sans ces allergènes.</p>}
         {shown.map((c) => (
