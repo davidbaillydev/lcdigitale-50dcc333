@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ThemeToggle } from "@/lib/theme";
+import { isValidLoginCode, LOGIN_CODE_MAX_LENGTH } from "@/lib/login-code";
 
 export const Route = createFileRoute("/connexion")({
   head: () => ({
@@ -33,6 +34,9 @@ function Login() {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
+    if (!forgot && otp && !isValidLoginCode(code)) {
+      return toast.error("Saisissez le code complet à 6 ou 8 chiffres fourni par l'agence.");
+    }
     setBusy(true);
     if (forgot) {
       const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/reset-password` });
@@ -97,8 +101,9 @@ function Login() {
             </div>
             {!forgot && otp && (
               <div className="space-y-2">
-                <Label htmlFor="otp">Code à 6 chiffres</Label>
-                <Input id="otp" inputMode="numeric" autoComplete="one-time-code" maxLength={6} required value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} />
+                <Label htmlFor="otp">Code de connexion</Label>
+                <Input id="otp" inputMode="numeric" autoComplete="one-time-code" maxLength={LOGIN_CODE_MAX_LENGTH} pattern="([0-9]{6}|[0-9]{8})" aria-describedby="otp-hint" required value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} />
+                <p id="otp-hint" className="text-sm text-muted-foreground">Saisissez les 6 ou 8 chiffres du code fourni par l'agence.</p>
               </div>
             )}
             {!forgot && !otp && (
@@ -109,9 +114,9 @@ function Login() {
             )}
             <Button className="min-h-12 w-full" disabled={busy}>{forgot ? "Recevoir le lien" : "Se connecter"}</Button>
             {!forgot && (
-              <button type="button" className="min-h-12 w-full text-sm text-muted-foreground underline" onClick={() => setOtp(!otp)}>
+              <Button type="button" variant="link" className="min-h-12 w-full text-sm text-muted-foreground underline" onClick={() => setOtp(!otp)}>
                 {otp ? "Se connecter avec un mot de passe" : "Se connecter avec un code"}
-              </button>
+              </Button>
             )}
             <button type="button" className="min-h-12 w-full text-sm text-muted-foreground underline" onClick={() => { setForgot(!forgot); setOtp(false); }}>
               {forgot ? "Retour à la connexion" : "Mot de passe oublié ?"}

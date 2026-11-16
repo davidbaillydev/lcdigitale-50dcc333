@@ -124,7 +124,7 @@ function Team() {
             <span className="col-span-2 min-w-0 break-words font-medium sm:mr-auto">{u.email}</span>
             <label className="flex items-center gap-2 text-sm">Cuisine <Switch checked={u.roles.includes("kitchen")} onCheckedChange={(v) => toggle(u.id, "kitchen", v)} /></label>
             <Button size="sm" variant="ghost" onClick={() => copyLink(u.id)} title="Lien d'activation à partager (SMS, WhatsApp…)"><Link2 /> Lien</Button>
-            <Button size="sm" variant="ghost" onClick={() => makeCode(u.id)} title="Code de connexion à 6 chiffres"><KeyRound /> Code</Button>
+            <Button size="sm" variant="ghost" onClick={() => makeCode(u.id)} title="Code de connexion à usage unique"><KeyRound /> Code</Button>
             <label className="flex items-center gap-2 text-sm">Gérant <Switch checked={u.roles.includes("manager")} onCheckedChange={(v) => toggle(u.id, "manager", v)} /></label>
             <div className="col-span-2 grid w-full gap-3 border-t border-border pt-3 sm:grid-cols-3">
               {(Object.entries(notificationRoleLabels) as [NotificationRole, string][]).map(([role, label]) => (
