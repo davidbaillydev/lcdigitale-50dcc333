@@ -64,17 +64,18 @@ export function ProfessionalAlerts() {
     };
   }, [user?.id, resumeIds, consumeResumes]);
   useEffect(() => {
-    const start = () => { audio.current ??= new AudioContext(); void audio.current.resume().then(() => setSoundOn(true)).catch(() => {}); };
+    // « Démarrer avec le son » (cuisine) active aussi les notifications en arrière-plan.
+    const start = () => { if (latestEnable.current.active) { audio.current ??= new AudioContext(); void audio.current.resume().then(() => setSoundOn(true)).catch(() => {}); } else void latestEnable.current.run(true); };
     window.addEventListener("lc-professional-sound-start", start);
     return () => window.removeEventListener("lc-professional-sound-start", start);
   }, []);
-  const enable = async () => {
+  const enable = async (silent = false) => {
     setBusy(true);
     try {
       audio.current ??= new AudioContext();
       await audio.current.resume();
       const current = restaurants.find((r) => path.split("/")[2] === r.slug) ?? restaurants[0];
-      playOrderSound(audio.current, orderSoundOf(current?.config));
+      if (!silent) playOrderSound(audio.current, orderSoundOf(current?.config));
       setSoundOn(true);
       if (!pushSupported() || needsInstallForPush()) { toast.info("Son activé ici. Pour les notifications sur iPhone/iPad, ajoutez l'application à l'écran d'accueil."); return; }
       if (window.top !== window.self) { toast.info("Son activé ici. Ouvrez l'application dans son propre onglet pour autoriser les notifications."); return; }
@@ -101,6 +102,7 @@ export function ProfessionalAlerts() {
     } catch { toast.error("Son activé ici ; notifications indisponibles. Réessayez depuis l'application publiée et vérifiez les autorisations de votre appareil."); }
     finally { setBusy(false); }
   };
+  const latestEnable = useRef({ active, run: enable }); latestEnable.current = { active, run: enable };
   const disable = async () => {
     try {
       const id = device.current ?? localStorage.getItem("lc-staff-push-id");
@@ -153,5 +155,17 @@ export function ProfessionalAlerts() {
     channel.subscribe();
     return () => { void supabase.removeChannel(channel); };
   }, [soundOn, ids, user?.id]);
-  return <Button variant={active ? "secondary" : "outline"} size="icon" className="size-11 shrink-0" aria-label={active ? "Désactiver les alertes commandes" : "Activer le son et les notifications commandes"} title={active ? "Désactiver les alertes commandes" : "Activer le son et les notifications commandes"} disabled={busy || !restaurants.length} onClick={() => void (active ? disable() : enable())}>{active ? <Bell /> : <BellOff />}</Button>;
+  const bell = <Button variant={active ? "secondary" : "outline"} size="icon" className="size-11 shrink-0" aria-label={active ? "Désactiver les alertes commandes" : "Activer le son et les notifications commandes"} title={active ? "Désactiver les alertes commandes" : "Activer le son et les notifications commandes"} disabled={busy || !restaurants.length} onClick={() => void (active ? disable() : enable())}>{active ? <Bell /> : <BellOff />}</Button>;
+  const onKitchen = restaurants.some((r) => path.replace(/\/$/, "") === `/espace/${r.slug}`);
+  const banner = !!user && restaurants.length > 0 && !soundOn && !active && !onKitchen;
+  return <>
+    {bell}
+    {banner && (
+      <div role="alert" className="fixed inset-x-3 bottom-3 z-50 mx-auto flex max-w-xl flex-col gap-3 rounded-lg border-2 border-primary bg-card p-4 text-card-foreground shadow-lg sm:flex-row sm:items-center">
+        <BellOff className="hidden size-6 shrink-0 text-primary sm:block" />
+        <p className="flex-1 text-sm"><strong>Son des commandes désactivé.</strong> Activez-le pour être alerté de chaque nouvelle commande, même application en arrière-plan.</p>
+        <Button size="lg" className="min-h-12" disabled={busy} onClick={() => void enable()}><Bell /> Activer le son</Button>
+      </div>
+    )}
+  </>;
 }
