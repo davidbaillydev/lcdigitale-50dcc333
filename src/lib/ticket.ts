@@ -326,21 +326,29 @@ export async function printTickets(o: TicketOrder, kinds: TicketKind[], shopIn: 
   return printBrowser(o, kinds, shopIn, width, fields);
 }
 
-function printBrowser(o: TicketOrder, kinds: TicketKind[], shop: TicketShop | string, width: TicketWidth, fields?: TicketFieldsIn): Promise<boolean> {
+/** Un travail d'impression par ticket : les pilotes thermiques coupent le papier en fin de travail. */
+async function printBrowser(o: TicketOrder, kinds: TicketKind[], shop: TicketShop | string, width: TicketWidth, fields?: TicketFieldsIn): Promise<boolean> {
+  let ok = true;
+  for (const k of kinds) ok = (await printHtmlJob(ticketHtml(o, k, width, shop, fields))) && ok;
+  return ok;
+}
+
+function printHtmlJob(html: string): Promise<boolean> {
   return new Promise((resolve) => {
     try {
-      const html = kinds.map((k) => ticketHtml(o, k, width, shop, fields)).join("");
-      const body = html.replace(/<\/body><\/html><!doctype html><html><head>[\s\S]*?<body>/g, '<div style="page-break-before:always"></div>');
       const fr = document.createElement("iframe");
       fr.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0";
       document.body.appendChild(fr);
       const d = fr.contentDocument;
       const w = fr.contentWindow;
       if (!d || !w) { fr.remove(); return resolve(false); }
-      d.open(); d.write(body); d.close();
+      d.open(); d.write(html); d.close();
       setTimeout(() => {
-        try { w.focus(); w.print(); resolve(true); } catch { resolve(false); }
+        let ok = true;
+        try { w.focus(); w.print(); } catch { ok = false; }
         setTimeout(() => fr.remove(), 60_000);
+        // Laisse le spouleur clôturer le travail (et couper) avant le ticket suivant.
+        setTimeout(() => resolve(ok), 800);
       }, 250);
     } catch { resolve(false); }
   });
