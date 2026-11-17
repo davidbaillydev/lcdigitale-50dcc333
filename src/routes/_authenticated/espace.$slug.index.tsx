@@ -15,8 +15,7 @@ import { useKitchenFullscreen } from "@/hooks/use-kitchen-fullscreen";
 import { useWakeLock } from "@/hooks/use-wake-lock";
 import { useKioskLock } from "@/hooks/use-kiosk-lock";
 import { ticketOptions, printTickets, printingDefaults, printingFields, autoPrintKinds, autoPrintLabel, useTicketWidth, type PrintingConfig, type TicketKind } from "@/lib/ticket";
-import { hasKitchenPin } from "@/lib/kitchen-pin.functions";
-import { KitchenLock } from "@/components/KitchenLock";
+import { KitchenAccessGate } from "@/components/KitchenAccessGate";
 import { PrinterSetup } from "@/components/PrinterSetup";
 import { StockDialog } from "@/components/StockDialog";
 import { issueInvoice } from "@/lib/invoice.functions";
@@ -81,7 +80,7 @@ const COLS = [
   { s: "ready", label: "Prêtes", next: "done", action: "Terminée" },
 ] as const;
 
-function Kitchen() {
+function Kitchen({ onLock, pinEnabled }: { onLock: () => void; pinEnabled: boolean }) {
   const { slug } = Route.useParams();
   const { loading, user, restaurants } = useStaff();
   const restaurant = restaurants.find((r) => r.slug === slug);
@@ -164,30 +163,6 @@ function Kitchen() {
   const [customMinutes, setCustomMinutes] = useState("");
   const timing = timingOf({ config: (restaurant?.config ?? {}) as Restaurant["config"] });
   const audio = useRef<AudioContext | null>(null);
-  const checkPin = useServerFn(hasKitchenPin);
-  const [pinEnabled, setPinEnabled] = useState(false);
-  const [locked, setLocked] = useState(false);
-  const setLock = useCallback((v: boolean) => {
-    setLocked(v);
-    if (rid) { if (v) sessionStorage.setItem(`kitchen-lock-${rid}`, "1"); else sessionStorage.removeItem(`kitchen-lock-${rid}`); }
-  }, [rid]);
-  useEffect(() => {
-    if (!rid) return;
-    checkPin({ data: { restaurantId: rid } }).then((r) => {
-      setPinEnabled(r.enabled);
-      if (r.enabled && sessionStorage.getItem(`kitchen-lock-${rid}`)) setLocked(true);
-    }).catch(() => {});
-  }, [rid, checkPin]);
-  // Verrouillage automatique après 5 minutes sans interaction
-  useEffect(() => {
-    if (!pinEnabled || locked) return;
-    let t = setTimeout(() => setLock(true), 5 * 60_000);
-    const reset = () => { clearTimeout(t); t = setTimeout(() => setLock(true), 5 * 60_000); };
-    const evs = ["pointerdown", "keydown"] as const;
-    evs.forEach((e) => window.addEventListener(e, reset));
-    return () => { clearTimeout(t); evs.forEach((e) => window.removeEventListener(e, reset)); };
-  }, [pinEnabled, locked, setLock]);
-
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/connexion" }); }, [loading, user, navigate]);
 
@@ -415,7 +390,7 @@ function Kitchen() {
           aria-label={wake.active ? "Écran maintenu allumé, désactiver" : "Empêcher la mise en veille"} onClick={wake.toggle}>
           {wake.active ? <Sun className="animate-pulse" /> : <MoonStar />}<span>{wake.active ? "Écran actif" : wake.wanted ? "Veille non bloquée" : "Anti-veille"}</span>
         </Button>
-        {pinEnabled && <Button variant="secondary" onClick={() => setLock(true)}><Lock /> Verrouiller</Button>}
+        {pinEnabled && <Button variant="secondary" onClick={onLock}><Lock /> Verrouiller</Button>}
         <div className="flex min-h-14 items-center justify-center gap-2 rounded-md border border-border"><ThemeToggle className="!w-14" /><span className="text-sm">Affichage</span></div>
         <Button variant="ghost" className="text-foreground" onClick={() => supabase.auth.signOut()} aria-label="Déconnexion"><LogOut />Déconnexion</Button>
         </div>
@@ -612,8 +587,7 @@ function Kitchen() {
           );
         })}
       </div>
-      {rid && <KitchenHistory restaurantId={rid} open={historyOpen && !locked} onClose={() => setHistoryOpen(false)} shop={{ name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null, slug, customDomains: (restaurant?.config as Restaurant["config"] | null)?.customDomains, optionData: ticketOptionData, origin: deliveryConfig?.origin, ...ticketVatShop }} width={printing.width} fields={printingFields(printing)} onPrint={(order, kinds) => doPrint(order as Order, kinds)} />}
-      {locked && rid && <KitchenLock restaurantId={rid} name={restaurant?.name ?? ""} onUnlock={() => setLock(false)} />}
+      {rid && <KitchenHistory restaurantId={rid} open={historyOpen} onClose={() => setHistoryOpen(false)} shop={{ name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null, slug, customDomains: (restaurant?.config as Restaurant["config"] | null)?.customDomains, optionData: ticketOptionData, origin: deliveryConfig?.origin, ...ticketVatShop }} width={printing.width} fields={printingFields(printing)} onPrint={(order, kinds) => doPrint(order as Order, kinds)} />}
       <TicketPreviewDialog
         order={preview?.order ?? null}
         kinds={preview?.kinds ?? ["kitchen"]}
@@ -642,5 +616,9 @@ function InvoiceButton({ orderId }: { orderId: string }) {
 
 function Gated() {
   const { slug } = Route.useParams();
-  return <FeatureGate slug={slug} feature="kds"><Kitchen /></FeatureGate>;
+  const { loading, restaurants } = useStaff();
+  const restaurant = restaurants.find((r) => r.slug === slug);
+  if (loading) return <p role="status" className="p-6">Chargement…</p>;
+  if (!restaurant) return <p role="alert" className="p-6">Accès refusé</p>;
+  return <FeatureGate slug={slug} feature="kds"><KitchenAccessGate key={restaurant.id} restaurantId={restaurant.id} name={restaurant.name}>{(onLock, pinEnabled) => <Kitchen onLock={onLock} pinEnabled={pinEnabled} />}</KitchenAccessGate></FeatureGate>;
 }

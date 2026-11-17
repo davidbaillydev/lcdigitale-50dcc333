@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { GeoZone, LatLng } from "@/lib/geo";
+import { zoneTooltip } from "@/lib/map-tooltip";
 
 type Marker = { id: string; at: LatLng; label: string; color?: string; popup?: string };
 type Props = {
@@ -48,9 +49,9 @@ export default function ZoneMap({ center, zones = [], selectedId, draft, markers
     for (const z of zones) {
       const sel = z.id === selectedId;
       const style = { color: sel ? "#007af5" : "#64748b", weight: sel ? 3 : 2, fillOpacity: sel ? 0.25 : 0.1 };
-      if (z.type === "circle" && z.center && z.radiusKm) { L.circle(z.center, { ...style, radius: z.radiusKm * 1000 }).bindTooltip(z.name).addTo(g); bounds.push(z.center); }
+      if (z.type === "circle" && z.center && z.radiusKm) { L.circle(z.center, { ...style, radius: z.radiusKm * 1000 }).bindTooltip(zoneTooltip(z.name)).addTo(g); bounds.push(z.center); }
       if (z.type === "polygon" && z.points?.length) {
-        (z.points.length >= 3 ? L.polygon(z.points, style) : L.polyline(z.points, style)).bindTooltip(z.name).addTo(g);
+        (z.points.length >= 3 ? L.polygon(z.points, style) : L.polyline(z.points, style)).bindTooltip(zoneTooltip(z.name)).addTo(g);
         if (sel) z.points.forEach((p) => L.circleMarker(p, { radius: 4, color: "#007af5" }).addTo(g));
         bounds.push(...z.points);
       }

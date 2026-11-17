@@ -17,7 +17,8 @@ export const hasKitchenPin = createServerFn({ method: "GET" })
     const { data: ok } = await context.supabase.rpc("can_access_restaurant", { _user_id: context.userId, _restaurant_id: data.restaurantId });
     if (!ok) throw new Error("Accès refusé");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: row } = await supabaseAdmin.from("restaurant_kitchen_pins").select("restaurant_id").eq("restaurant_id", data.restaurantId).maybeSingle();
+    const { data: row, error } = await supabaseAdmin.from("restaurant_kitchen_pins").select("restaurant_id").eq("restaurant_id", data.restaurantId).maybeSingle();
+    if (error) throw new Error("Impossible de vérifier l'accès cuisine");
     return { enabled: !!row };
   });
 
