@@ -161,7 +161,7 @@ function Kitchen() {
   useKioskLock();
   const soundRef = useRef(false); soundRef.current = sound;
   const [acceptFor, setAcceptFor] = useState<Order | null>(null);
-  const [customTime, setCustomTime] = useState("");
+  const [customMinutes, setCustomMinutes] = useState("");
   const timing = timingOf({ config: (restaurant?.config ?? {}) as Restaurant["config"] });
   const audio = useRef<AudioContext | null>(null);
   const checkPin = useServerFn(hasKitchenPin);
@@ -309,22 +309,16 @@ function Kitchen() {
 
   /** Accepter : heure prévue fixée par le délai par défaut, ou choisie dans la modale (mode manuel). */
   const accept = (o: Order) => {
-    if (timing.prepMode === "manual") { setCustomTime(""); setAcceptFor(o); return; }
+    if (timing.prepMode === "manual") { setCustomMinutes(""); setAcceptFor(o); return; }
     void move(o, "accepted", o.asap ? new Date(Date.now() + timing.defaultPrep * 60000).toISOString() : undefined);
   };
   const confirmAccept = (minutes?: number) => {
     const o = acceptFor; if (!o) return;
-    let slot: string;
-    if (minutes) {
-      const ready = Date.now() + minutes * 60000;
-      // A scheduled order is never moved earlier than the time the customer chose.
-      slot = new Date(o.asap ? ready : Math.max(ready, new Date(o.slot).getTime())).toISOString();
-    }
-    else {
-      const [h, m] = customTime.split(":").map(Number); const d = new Date(); d.setHours(h ?? 0, m ?? 0, 0, 0);
-      if (d.getTime() < Date.now()) { toast.error("Choisissez une heure à venir"); return; }
-      slot = d.toISOString();
-    }
+    const mins = minutes ?? Number(customMinutes);
+    if (!Number.isInteger(mins) || mins < 1 || mins > 480) { toast.error("Indiquez un nombre de minutes entre 1 et 480"); return; }
+    const ready = Date.now() + mins * 60000;
+    // A scheduled order is never moved earlier than the time the customer chose.
+    const slot = new Date(o.asap ? ready : Math.max(ready, new Date(o.slot).getTime())).toISOString();
     setAcceptFor(null); void move(o, "accepted", slot);
   };
 
@@ -473,15 +467,15 @@ function Kitchen() {
           {acceptFor && !acceptFor.asap && <Button size="lg" className="h-auto min-h-14 w-full whitespace-normal py-3 text-center leading-snug text-base sm:text-lg" onClick={() => { const o = acceptFor; setAcceptFor(null); void move(o, "accepted"); }}><Clock className="h-5 w-5" />Garder l'heure demandée par le client ({fmtTime(acceptFor.slot)})</Button>}
           {acceptFor && !acceptFor.asap && <p className="text-sm text-muted-foreground">Commande programmée : les délais ci-dessous ne l'avanceront jamais avant {fmtTime(acceptFor.slot)}.</p>}
           <div className="rounded-xl border-2 border-primary/60 bg-primary/5 p-3">
-            <Label htmlFor="accept-time" className="flex items-center gap-2 text-sm font-semibold sm:text-base"><Clock className="h-4 w-4 shrink-0 text-primary sm:h-5 sm:w-5" /> Choisir l'heure précise</Label>
+            <Label htmlFor="accept-minutes" className="flex items-center gap-2 text-sm font-semibold sm:text-base"><Clock className="h-4 w-4 shrink-0 text-primary sm:h-5 sm:w-5" /> Saisir le nombre de minutes</Label>
             <div className="mt-2 flex items-end gap-2">
-              <Input id="accept-time" type="time" className="h-14 min-w-0 flex-1 text-center text-xl font-semibold sm:text-2xl" value={customTime} onChange={(e) => setCustomTime(e.target.value)} />
-              <Button size="lg" className="h-14 shrink-0 whitespace-nowrap px-3 text-base sm:px-6 sm:text-lg" disabled={!customTime} onClick={() => confirmAccept()}><Check /> Valider</Button>
+              <Input id="accept-minutes" type="number" inputMode="numeric" min={1} max={480} placeholder="Ex. 25" className="h-14 min-w-0 flex-1 text-center text-xl font-semibold sm:text-2xl" value={customMinutes} onChange={(e) => setCustomMinutes(e.target.value)} />
+              <Button size="lg" className="h-14 shrink-0 whitespace-nowrap px-3 text-base sm:px-6 sm:text-lg" disabled={!customMinutes} onClick={() => confirmAccept()}><Check /> Valider</Button>
             </div>
           </div>
           <p className="text-sm text-muted-foreground">Ou un délai rapide :</p>
           <div className="grid grid-cols-3 gap-2">
-            {[15, 30, 45].map((m) => <Button key={m} variant="outline" size="lg" className="h-12 min-h-12 px-1 text-base sm:h-14 sm:min-h-14 sm:text-lg" onClick={() => confirmAccept(m)}>+{m} min</Button>)}
+            {[10, 15, 20].map((m) => <Button key={m} variant="outline" size="lg" className="h-12 min-h-12 px-1 text-base sm:h-14 sm:min-h-14 sm:text-lg" onClick={() => confirmAccept(m)}>+{m} min</Button>)}
           </div>
         </DialogContent>
       </Dialog>

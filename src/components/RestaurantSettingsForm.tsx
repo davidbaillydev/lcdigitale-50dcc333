@@ -146,7 +146,7 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
         {!s.config.timing.asap && !s.config.timing.scheduled && <p role="alert" className="text-sm text-destructive">Activez au moins une des deux options.</p>}
         <p className="mt-4 text-sm font-semibold">À l'acceptation en cuisine</p>
         <div className="mt-2 grid gap-2 sm:grid-cols-2">
-          {([["auto", "Délai par défaut", "Heure prévue = acceptation + délai"], ["manual", "Délai à chaque commande", "La cuisine choisit +15/+30/+45 min ou une heure"]] as const).map(([v, t, h]) => (
+          {([["auto", "Délai par défaut", "Heure prévue = acceptation + délai"], ["manual", "Délai à chaque commande", "La cuisine choisit +10/+15/+20 min ou saisit un nombre de minutes"]] as const).map(([v, t, h]) => (
             <button key={v} type="button" aria-pressed={s.config.timing.prepMode === v} onClick={() => cfg({ timing: { ...s.config.timing, prepMode: v } })}
               className={"min-h-12 rounded-lg border p-3 text-left " + (s.config.timing.prepMode === v ? "border-primary bg-primary/10" : "border-border")}>
               <span className="block font-medium">{t}</span><span className="block text-sm text-muted-foreground">{h}</span>
