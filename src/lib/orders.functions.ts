@@ -357,7 +357,7 @@ export const createKioskOrder = createServerFn({ method: "POST" })
         ...(cardOnly || qr ? { payment_status: "pending" } : {}),
         status: cardOnly || qr ? "awaiting_payment" : r.config.autoAccept ? "accepted" : "new",
       })
-      .select("id, order_number, total")
+      .select("id, order_number, total, mode, slot, asap, created_at, items, notes, subtotal, discount, promo_code, delivery_fee, service_fee, payment_method, payment_status, customer_name, currency, table_label, source, is_test")
       .single();
     if (error) {
       console.error(error);

@@ -32,6 +32,8 @@ import { assertItemAvailable, isItemAvailable, itemScheduleLabel } from "@/lib/s
 import { useMenuClock } from "@/hooks/use-menu-clock";
 import { Button } from "@/components/ui/button";
 import { KioskSwitchDialog } from "@/components/KioskSwitchDialog";
+import { printKioskReceipt } from "@/lib/kiosk-print";
+import type { TicketOrder } from "@/lib/ticket";
 import { useLongPress } from "@/hooks/use-long-press";
 
 export const Route = createFileRoute("/$slug/borne")({
@@ -60,6 +62,14 @@ function Kiosk() {
   const kioskPaused = useOrdersPaused(restaurant);
   const send = useServerFn(createKioskOrder);
   const [step, setStep] = useState<Step>("welcome");
+  // Commandes créées sur cette borne, pour imprimer le ticket client à la validation.
+  const tickets = useRef(new Map<number, TicketOrder>());
+  const printReceipt = (n: number, paid: boolean) => {
+    const o = tickets.current.get(n); if (!o) return;
+    tickets.current.delete(n);
+    const cfg = restaurant.config as { customDomains?: string[] } | null;
+    void printKioskReceipt(o, { name: restaurant.name, address: restaurant.address ?? null, phone: restaurant.phone ?? null, slug: restaurant.slug, customDomains: cfg?.customDomains, catalog }, paid);
+  };
   useEffect(() => { if (step === "cart") track("checkout_started", "Panier borne"); else if (step === "pay") track("checkout_started", "Choix du paiement borne"); else if (step === "welcome") resetSession(); }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
   const [mode, setMode] = useState<Mode>("dine_in");
   const [cat, setCat] = useState(catalog.categories[0]?.id ?? "");
@@ -113,7 +123,7 @@ function Kiosk() {
     const t = setInterval(async () => {
       try {
         const r = await pollQr({ data: { orderId: qr.id } });
-        if (r.status === "paid") { track("completed", "Paiement QR validé", qr.id); setResult({ n: qr.n, total: qr.total, pay: "card_paid" }); setQr(null); setStep("done"); }
+        if (r.status === "paid") { track("completed", "Paiement QR validé", qr.id); printReceipt(qr.n, true); setResult({ n: qr.n, total: qr.total, pay: "card_paid" }); setQr(null); setStep("done"); }
         else if (r.status === "failed") setQrFailed(true);
       } catch { /* réessai */ }
     }, 2000);
@@ -130,7 +140,7 @@ function Kiosk() {
       last.current = Date.now();
       try {
         const r = await pollCard({ data: { orderId: pending.id, kioskId } });
-        if (r.status === "paid") { track("completed", "Paiement TPE validé", pending.id); setResult({ n: pending.n, total: pending.total, pay: "card_paid" }); setPending(null); setStep("done"); }
+        if (r.status === "paid") { track("completed", "Paiement TPE validé", pending.id); printReceipt(pending.n, true); setResult({ n: pending.n, total: pending.total, pay: "card_paid" }); setPending(null); setStep("done"); }
         else if (r.status === "failed") setCardState("failed");
       } catch { /* réessai au prochain tour */ }
     }, 2000);
@@ -153,7 +163,7 @@ function Kiosk() {
     const t = setInterval(() => {
       if (step === "welcome") return;
       if (step === "qr") {
-        if (qr && Date.now() - qr.started > 180_000) { const o = qr; setQr(null); void cancelQr(o.id).then((paid) => { if (paid) { setResult({ n: o.n, total: o.total, pay: "card_paid" }); setStep("done"); } else reset(); }); }
+        if (qr && Date.now() - qr.started > 180_000) { const o = qr; setQr(null); void cancelQr(o.id).then((paid) => { if (paid) { printReceipt(o.n, true); setResult({ n: o.n, total: o.total, pay: "card_paid" }); setStep("done"); } else reset(); }); }
         return;
       }
       if (step === "terminal") {
@@ -174,6 +184,7 @@ function Kiosk() {
     setBusy(true); setError(null);
     try {
       const row = await send({ data: { restaurant: restaurant.slug, mode, payment_method: "qr", ...(promo.code ? { promo_code: promo.code } : {}), lines: lines.map((l) => ({ itemId: l.itemId, qty: l.qty, sel: l.sel })) } });
+      tickets.current.set(row.order_number, row as unknown as TicketOrder);
       try {
         const { url } = await startQr({ data: { orderId: row.id, origin: window.location.origin } });
         const { default: QRCode } = await import("qrcode");
@@ -194,6 +205,7 @@ function Kiosk() {
     setBusy(true); setError(null);
     try {
       const row = await send({ data: { restaurant: restaurant.slug, mode, payment_method, ...(promo.code ? { promo_code: promo.code } : {}), lines: lines.map((l) => ({ itemId: l.itemId, qty: l.qty, sel: l.sel })) } });
+      tickets.current.set(row.order_number, row as unknown as TicketOrder);
       if (payment_method === "card_terminal" && (terminal || cardOnly)) track("payment_pending", "Paiement TPE"); else track("completed", "Commande comptoir validée", row.id);
       clear(); last.current = Date.now();
       if (payment_method === "card_terminal" && (terminal || cardOnly)) {
@@ -207,6 +219,7 @@ function Kiosk() {
         }
       }
       if (payment_method === "card_terminal" && terminal) track("completed", "Carte au comptoir", row.id);
+      printReceipt(row.order_number, false);
       setResult({ n: row.order_number, total: Number(row.total), pay: payment_method });
       setStep("done");
     } catch (e) {
@@ -400,7 +413,7 @@ function Kiosk() {
             <p className="font-display text-6xl">Paiement non abouti</p>
             <p className="text-2xl text-muted-foreground">Votre commande n'a pas été envoyée en cuisine.</p>
           </>)}
-          <button onClick={async () => { const o = qr; setQr(null); const paid = await cancelQr(o.id); if (paid) { setResult({ n: o.n, total: o.total, pay: "card_paid" }); setStep("done"); } else reset(); }}
+          <button onClick={async () => { const o = qr; setQr(null); const paid = await cancelQr(o.id); if (paid) { printReceipt(o.n, true); setResult({ n: o.n, total: o.total, pay: "card_paid" }); setStep("done"); } else reset(); }}
             className="rounded-xl bg-muted px-8 py-5 text-xl font-semibold">{qrFailed ? "Retour à l'accueil" : "Annuler la commande"}</button>
         </div>
       )}
@@ -422,7 +435,7 @@ function Kiosk() {
                 <button onClick={async () => { await abandon({ data: { orderId: pending.id } }).catch(() => {}); setPending(null); reset(); }}
                   className="rounded-xl bg-muted px-8 py-5 text-xl font-semibold">Abandonner la commande</button>
               ) : (
-              <button onClick={() => { setResult({ n: pending.n, total: pending.total, pay: "card_terminal" }); setPending(null); setStep("done"); }}
+              <button onClick={() => { printReceipt(pending.n, false); setResult({ n: pending.n, total: pending.total, pay: "card_terminal" }); setPending(null); setStep("done"); }}
                 className="rounded-xl bg-muted px-8 py-5 text-xl font-semibold">Payer au comptoir</button>
               )}
             </div>
@@ -457,7 +470,7 @@ function Kiosk() {
       )}
       {item && <KioskItem item={item} image={itemImage(item, catalog.categories)?.src} onClose={() => setItem(null)} onAdd={(sel, q) => { add(item.id, sel, q); setItem(null); }} />}
 
-      {switchOpen && <KioskSwitchDialog restaurantId={restaurant.id} config={restaurant.config} current={kioskId} onPick={pickKiosk} onClose={() => { held.current = false; setSwitchOpen(false); }} />}
+      {switchOpen && <KioskSwitchDialog restaurantId={restaurant.id} config={restaurant.config} current={kioskId} shop={{ name: restaurant.name, address: restaurant.address ?? null, phone: restaurant.phone ?? null, slug: restaurant.slug }} onPick={pickKiosk} onClose={() => { held.current = false; setSwitchOpen(false); }} />}
       {warn && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80">
           <div className="rounded-2xl border border-border bg-card p-12 text-center">

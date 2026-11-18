@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { sampleOrder, useTicketWidth, type TicketShop, type TicketWidth } from "@/lib/ticket";
 import { ticketEscpos } from "@/lib/escpos";
 import {
-  bridgeHealth, DEFAULT_BRIDGE, detectBluetooth, detectUsb, discoverNetwork, getPrinter, isAndroid, savePrinter, sendToPrinter, support,
+  bridgeHealth, DEFAULT_BRIDGE, detectBluetooth, detectUsb, discoverNetwork, getPrinter, isAndroid, type PrinterScope, savePrinter, sendToPrinter, support,
   type PrinterConfig, type PrinterType,
 } from "@/lib/printer";
 
@@ -21,7 +21,7 @@ const TYPES: { t: PrinterType; label: string; hint: string; icon: typeof Wifi }[
 const RAWBT_DRAFT: PrinterConfig = { type: "rawbt", name: "RawBT (Android)" };
 
 /** Ajout, détection, test et validation de l'imprimante de cet appareil. */
-export function PrinterSetup({ shop, width: defaultWidth, compact }: { shop: TicketShop; width: TicketWidth; compact?: boolean }) {
+export function PrinterSetup({ shop, width: defaultWidth, compact, scope = "kitchen" }: { shop: TicketShop; width: TicketWidth; compact?: boolean; scope?: PrinterScope }) {
   const [open, setOpen] = useState(false);
   const [current, setCurrent] = useState<PrinterConfig | null>(null);
   const [type, setType] = useState<PrinterType>("bluetooth");
@@ -39,7 +39,7 @@ export function PrinterSetup({ shop, width: defaultWidth, compact }: { shop: Tic
   const reset = (t: PrinterType) => { setType(t); setDraft(t === "rawbt" ? RAWBT_DRAFT : null); setMsg(null); setTested(false); setFound([]); };
   useEffect(() => {
     if (!open) return;
-    const cur = getPrinter(); setCurrent(cur);
+    const cur = getPrinter(scope); setCurrent(cur);
     const s = support(); setSup(s);
     reset(cur?.type ?? (isAndroid() ? "rawbt" : s.bluetooth ? "bluetooth" : "network"));
   }, [open]);
@@ -64,12 +64,12 @@ export function PrinterSetup({ shop, width: defaultWidth, compact }: { shop: Tic
     if (!d) throw new Error("Détectez d'abord l'imprimante.");
     if (d.type === "network" && !/^[\w.-]+$/.test(host)) throw new Error("Adresse IP invalide.");
     setDraft(d);
-    await sendToPrinter(d, ticketEscpos(sampleOrder(), "kitchen", width, shop));
+    await sendToPrinter(d, ticketEscpos(sampleOrder(), scope === "kiosk" ? "receipt" : "kitchen", width, shop));
     setTested(true);
     setMsg({ ok: true, text: d.type === "rawbt" ? "Ticket envoyé à RawBT. S'il est bien sorti, validez l'imprimante." : "Ticket de test envoyé. S'il est bien sorti, validez l'imprimante." });
   });
-  const validate = () => { if (!draft) return; const p = { ...draft, width }; savePrinter(p); setCurrent(p); setMsg({ ok: true, text: `Imprimante enregistrée sur cet appareil (format ${width} mm mémorisé). Les tickets partiront directement, sans fenêtre d'impression.` }); };
-  const remove = () => { savePrinter(null); setCurrent(null); setMsg({ ok: true, text: "Imprimante retirée : retour à l'impression par le navigateur." }); };
+  const validate = () => { if (!draft) return; const p = { ...draft, width }; savePrinter(p, scope); setCurrent(p); setMsg({ ok: true, text: `Imprimante enregistrée sur cet appareil (format ${width} mm mémorisé). Les tickets partiront directement, sans fenêtre d'impression.` }); };
+  const remove = () => { savePrinter(null, scope); setCurrent(null); setMsg({ ok: true, text: "Imprimante retirée : retour à l'impression par le navigateur." }); };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

@@ -3,19 +3,22 @@
 export type PrinterType = "bluetooth" | "usb" | "network" | "rawbt";
 export type PrinterConfig = { type: PrinterType; name: string; host?: string; port?: number; bridgeUrl?: string; baud?: number; width?: 58 | 80 };
 
-const KEY = "lc-direct-printer";
+export type PrinterScope = "kitchen" | "kiosk";
+/** Cuisine/caisse et borne ont chacune leur imprimante, même sur un appareil partagé. */
+const KEYS: Record<PrinterScope, string> = { kitchen: "lc-direct-printer", kiosk: "lc-kiosk-printer" };
 const BT_SERVICES = [
   "000018f0-0000-1000-8000-00805f9b34fb", "e7810a71-73ae-499d-8c15-faa9aef0c3f2", "49535343-fe7d-4ae5-8fa9-9fafd205e455",
   "0000ff00-0000-1000-8000-00805f9b34fb", "0000ffe0-0000-1000-8000-00805f9b34fb", "0000fee7-0000-1000-8000-00805f9b34fb",
 ];
 export const DEFAULT_BRIDGE = "http://localhost:9180";
 
-export function getPrinter(): PrinterConfig | null {
+export function getPrinter(scope: PrinterScope = "kitchen"): PrinterConfig | null {
   if (typeof window === "undefined") return null;
-  try { return JSON.parse(localStorage.getItem(KEY) ?? "null"); } catch { return null; }
+  try { return JSON.parse(localStorage.getItem(KEYS[scope]) ?? "null"); } catch { return null; }
 }
-export function savePrinter(p: PrinterConfig | null) {
-  const prev = getPrinter();
+export function savePrinter(p: PrinterConfig | null, scope: PrinterScope = "kitchen") {
+  const KEY = KEYS[scope];
+  const prev = getPrinter(scope);
   if (!p || !prev || prev.type !== p.type || prev.name !== p.name || prev.host !== p.host || prev.port !== p.port) resetConnections(p);
   if (p) localStorage.setItem(KEY, JSON.stringify(p)); else localStorage.removeItem(KEY);
 }

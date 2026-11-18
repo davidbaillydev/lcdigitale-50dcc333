@@ -4,6 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { verifyKioskSwitchPin } from "@/lib/kitchen-pin.functions";
 import { kioskChoices } from "@/lib/kiosk-switch";
 import { cn } from "@/lib/utils";
+import { PrinterSetup } from "@/components/PrinterSetup";
+import type { TicketShop } from "@/lib/ticket";
 
 /**
  * Choix de la borne active sur cet appareil (ouvert par appui long) : numéro + libellé.
@@ -15,6 +17,7 @@ export function KioskSwitchDialog(props: {
   current: string | null;
   onPick: (id: string | null) => void;
   onClose: () => void;
+  shop: TicketShop;
 }) {
   const [unlocked, setUnlocked] = useState(false);
   if (!unlocked) return <PinGate restaurantId={props.restaurantId} onClose={props.onClose} onOk={() => setUnlocked(true)} />;
@@ -58,7 +61,7 @@ function PinGate({ restaurantId, onOk, onClose }: { restaurantId: string; onOk: 
   );
 }
 
-function Switcher({ config, current, onPick, onClose }: { config: unknown; current: string | null; onPick: (id: string | null) => void; onClose: () => void }) {
+function Switcher({ config, current, onPick, onClose, shop }: { config: unknown; current: string | null; onPick: (id: string | null) => void; onClose: () => void; shop: TicketShop }) {
   const [other, setOther] = useState("");
   const choices = kioskChoices(config);
   return (
@@ -91,6 +94,11 @@ function Switcher({ config, current, onPick, onClose }: { config: unknown; curre
           </span>
         </label>
         <p className="mt-2 text-lg text-muted-foreground">Lettres, chiffres ou tirets. Une borne sans numéro utilise le terminal du restaurant.</p>
+        <section className="mt-8 rounded-2xl border-2 border-border bg-card p-5">
+          <p className="text-2xl font-semibold">Imprimante de la borne</p>
+          <p className="mb-3 text-lg text-muted-foreground">Séparée de l'imprimante cuisine/caisse. Le ticket client s'imprime automatiquement à chaque commande validée.</p>
+          <PrinterSetup shop={shop} width={80} compact scope="kiosk" />
+        </section>
       </div>
       <div className="mt-6 flex gap-4">
         {current && <button onClick={() => onPick(null)} className="flex-1 rounded-2xl bg-muted py-6 text-2xl font-semibold">Retirer le numéro</button>}
