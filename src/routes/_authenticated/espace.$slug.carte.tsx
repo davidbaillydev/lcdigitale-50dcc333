@@ -289,7 +289,7 @@ function MenuEditor() {
                         </div>
                         <label className="flex items-center gap-2 text-xs font-semibold">TVA <select className="min-h-10 rounded-md border border-input bg-background px-2 text-sm" value={it.vatRate ?? ""} onChange={(e) => setItem(ci, ii, { vatRate: e.target.value ? (Number(e.target.value) as 5.5 | 10 | 20) : undefined })}><option value="">Taux par défaut</option><option value="5.5">5,5 % (vente à emporter différée)</option><option value="10">10 % (restauration)</option><option value="20">20 % (alcools)</option></select></label>
                         <ItemOptionsEditor restaurantId={r!.id} productId={it.id} data={opt.data} reload={opt.reload} />
-                        {it.options?.some((g) => g.id.startsWith("tpl-")) && <TemplateOptionsEditor options={it.options} onChange={(options) => setItem(ci, ii, { options })} />}
+                        {!!it.options?.length && <TemplateOptionsEditor options={it.options} onChange={(options) => setItem(ci, ii, { options })} />}
                         {!!it.options?.length && <p className="text-xs text-muted-foreground">Options conservées : {it.options.map((o) => o.label).join(" · ")}</p>}
                         <div className="space-y-2 rounded-md border border-dashed border-border p-2">
                           <p className="text-xs font-semibold text-muted-foreground">Détails du plat · allergènes et langues, dépliez pour modifier</p>
