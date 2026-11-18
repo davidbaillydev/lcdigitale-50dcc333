@@ -104,3 +104,12 @@ describe("identification affichée de la borne", () => {
     expect(kioskIdentity(config, "<*>")).toBeNull();
   });
 });
+
+import { kioskAccess } from "@/lib/kiosk-readers";
+describe("activation des bornes", () => {
+  const cfg = { kioskReaders: [{ id: "1", label: "A", reader: "" }, { id: "2", label: "B", reader: "", active: false }] };
+  it("borne active par défaut", () => expect(kioskAccess(cfg, "1")).toBe("ok"));
+  it("borne désactivée refusée", () => expect(kioskAccess(cfg, "2")).toBe("disabled"));
+  it("borne non déclarée refusée", () => { expect(kioskAccess(cfg, "9")).toBe("unknown"); expect(kioskAccess(cfg, null)).toBe("unknown"); });
+  it("aucune borne déclarée : fonctionnement historique", () => expect(kioskAccess({}, null)).toBe("ok"));
+});

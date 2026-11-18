@@ -1,6 +1,6 @@
 // Identification des bornes : chaque borne peut avoir son propre TPE physique.
 // Pur et sans dépendance : utilisé par la borne (navigateur) et par le serveur.
-export type KioskReader = { id: string; label: string; reader: string };
+export type KioskReader = { id: string; label: string; reader: string; active: boolean };
 
 /** Un TPE par borne est optionnel : une borne sans lecteur encaisse au comptoir ou par QR code. */
 export const KIOSK_READER_MAX = 80;
@@ -27,7 +27,7 @@ export function kioskReadersOf(config: unknown): KioskReader[] {
     const id = normalizeKioskId((k as KioskReader)?.id);
     if (!id) return [];
     const reader = normalizeKioskReader((k as KioskReader)?.reader);
-    return [{ id, label: String((k as KioskReader).label ?? "").slice(0, 40) || `Borne ${id}`, reader }];
+    return [{ id, label: String((k as KioskReader).label ?? "").slice(0, 40) || `Borne ${id}`, reader, active: (k as KioskReader)?.active !== false }];
   });
 }
 
@@ -50,4 +50,18 @@ export function kioskIdentity(config: unknown, kioskId: string | null | undefine
   const label = String(raw?.label ?? "").trim().slice(0, 40);
   const repeated = !label || label.toLowerCase() === `borne ${id}` || label.toLowerCase() === id;
   return { id, label, text: repeated ? `Borne ${id}` : `${label} · Borne ${id}` };
+}
+
+export type KioskAccess = "ok" | "disabled" | "unknown";
+/**
+ * Droit de commander depuis une borne. Aucune borne déclarée = fonctionnement historique (autorisé).
+ * Dès qu’au moins une borne est déclarée, l’identifiant doit exister et être actif (absent = actif).
+ */
+export function kioskAccess(config: unknown, kioskId: string | null | undefined): KioskAccess {
+  const list = kioskReadersOf(config);
+  if (!list.length) return "ok";
+  const id = normalizeKioskId(kioskId);
+  const k = id ? list.find((x) => x.id === id) : undefined;
+  if (!k) return "unknown";
+  return k.active ? "ok" : "disabled";
 }

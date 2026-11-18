@@ -282,8 +282,20 @@ const kioskSchema = z.object({
   payment_method: z.enum(["counter", "card_terminal", "qr"]),
   customer_name: z.string().trim().max(40).optional(),
   promo_code: z.string().trim().max(30).optional(),
+  kiosk_id: z.string().max(20).nullish(),
   lines: orderSchema.shape.lines,
 });
+
+/** État d’une borne (public) : la borne interroge régulièrement pour se bloquer si l’agence la désactive. */
+export const kioskStatus = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ restaurant: z.string().max(40), kioskId: z.string().max(20).nullish() }).parse(d))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: r } = await supabaseAdmin.from("restaurants").select("config").eq("slug", data.restaurant).eq("active", true).maybeSingle();
+    if (!r) return { access: "unknown" as const };
+    const { kioskAccess } = await import("./kiosk-readers");
+    return { access: kioskAccess(r.config, data.kioskId) };
+  });
 
 /** Commande passée depuis la borne en restaurant : préparation immédiate, paiement au comptoir/TPE */
 export const createKioskOrder = createServerFn({ method: "POST" })
@@ -297,6 +309,10 @@ export const createKioskOrder = createServerFn({ method: "POST" })
     { const ft = featuresOf(r.enabled_features);
       if (!ft.borne) throw new Error("La borne n'est pas activée pour ce restaurant.");
       if (data.payment_method === "counter" && !ft.borne_cash_payment) throw new Error("Le paiement au comptoir n'est pas accepté sur la borne."); }
+    { const { kioskAccess } = await import("./kiosk-readers");
+      const access = kioskAccess(r.config, data.kiosk_id);
+      if (access === "disabled") throw new Error("Cette borne est temporairement indisponible. Merci de commander au comptoir.");
+      if (access === "unknown") throw new Error("Cette borne n’est pas reconnue. Merci de commander au comptoir."); }
     const cardOnly = kioskCardOnly(r);
     const qr = data.payment_method === "qr";
     if ((qr || cardOnly) && !legacyPaymentsSupported(r)) throw new Error("Les paiements connectés ne sont pas encore disponibles dans cette devise.");

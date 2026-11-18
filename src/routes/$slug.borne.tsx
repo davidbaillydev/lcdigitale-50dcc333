@@ -15,9 +15,9 @@ import { cn } from "@/lib/utils";
 import { AllergenBadges, AllergenInfo, AllergenPicker } from "@/components/Allergens";
 import { safeFor } from "@/lib/allergens";
 import { useCart } from "@/lib/cart";
-import { createKioskOrder } from "@/lib/orders.functions";
+import { createKioskOrder, kioskStatus } from "@/lib/orders.functions";
 import { abandonKioskQr, kioskQrAvailable, kioskQrStatus, startKioskQrPayment } from "@/lib/payments.functions";
-import { kioskIdentity, normalizeKioskId } from "@/lib/kiosk-readers";
+import { kioskAccess, kioskIdentity, normalizeKioskId, type KioskAccess } from "@/lib/kiosk-readers";
 import { applyKioskId } from "@/lib/kiosk-switch";
 import { abandonKioskOrder, cancelKioskPayment, kioskPaymentStatus, kioskTerminalAvailable, startKioskCardPayment } from "@/lib/payments.functions";
 import { activeGroups, adjustChoice, fromPrice, selectedExtras, selectionLines, groupCost, REMOVE_KEY, removableChoices, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
@@ -103,6 +103,16 @@ function Kiosk() {
   }, [restaurant.slug]);
   // Nom et numéro de la borne active, affichés à l'écran pour la repérer sur place
   const kiosk = kioskIdentity(restaurant.config, kioskId);
+  // Désactivation à distance par l’agence : vérifiée au démarrage puis toutes les 20 s (et refusée côté serveur)
+  const statusFn = useServerFn(kioskStatus);
+  const [access, setAccess] = useState<KioskAccess>("ok");
+  useEffect(() => { setAccess(kioskAccess(restaurant.config, kioskId)); }, [restaurant.config, kioskId]);
+  useEffect(() => {
+    let alive = true;
+    const check = () => statusFn({ data: { restaurant: restaurant.slug, kioskId } }).then((r) => { if (alive) setAccess(r.access); }).catch(() => {});
+    check(); const t = setInterval(check, 20_000);
+    return () => { alive = false; clearInterval(t); };
+  }, [statusFn, restaurant.slug, kioskId]);
   // Changer de borne sur place : appui long sur la pastille ou sur l'écran d'accueil
   const [switchOpen, setSwitchOpen] = useState(false);
   const held = useRef(false);
@@ -186,7 +196,7 @@ function Kiosk() {
   const payQr = async () => {
     setBusy(true); setError(null);
     try {
-      const row = await send({ data: { restaurant: restaurant.slug, mode, payment_method: "qr", ...(promo.code ? { promo_code: promo.code } : {}), lines: lines.map((l) => ({ itemId: l.itemId, qty: l.qty, sel: l.sel })) } });
+      const row = await send({ data: { restaurant: restaurant.slug, mode, payment_method: "qr", kiosk_id: kioskId, ...(promo.code ? { promo_code: promo.code } : {}), lines: lines.map((l) => ({ itemId: l.itemId, qty: l.qty, sel: l.sel })) } });
       tickets.current.set(row.order_number, row as unknown as TicketOrder);
       try {
         const { url } = await startQr({ data: { orderId: row.id, origin: window.location.origin } });
@@ -207,7 +217,7 @@ function Kiosk() {
   const pay = async (payment_method: "counter" | "card_terminal") => {
     setBusy(true); setError(null);
     try {
-      const row = await send({ data: { restaurant: restaurant.slug, mode, payment_method, ...(promo.code ? { promo_code: promo.code } : {}), lines: lines.map((l) => ({ itemId: l.itemId, qty: l.qty, sel: l.sel })) } });
+      const row = await send({ data: { restaurant: restaurant.slug, mode, payment_method, kiosk_id: kioskId, ...(promo.code ? { promo_code: promo.code } : {}), lines: lines.map((l) => ({ itemId: l.itemId, qty: l.qty, sel: l.sel })) } });
       tickets.current.set(row.order_number, row as unknown as TicketOrder);
       if (payment_method === "card_terminal" && (terminal || cardOnly)) track("payment_pending", "Paiement TPE"); else track("completed", "Commande comptoir validée", row.id);
       clear(); last.current = Date.now();
@@ -234,6 +244,15 @@ function Kiosk() {
 
   return (
     <div className="fixed inset-0 z-50 flex select-none flex-col overflow-hidden bg-background text-foreground touch-manipulation">
+      {access !== "ok" && !switchOpen && (
+        <div role="alert" {...longPress} className="fixed inset-0 z-[70] flex flex-col items-center justify-center gap-6 bg-background p-10 text-center">
+          <BrandLogo src={restaurant.logo_url} name={restaurant.name} className="h-32 w-32 object-contain" />
+          <Monitor className="h-16 w-16 text-muted-foreground" />
+          <p className="text-5xl font-bold">Borne temporairement indisponible</p>
+          <p className="max-w-2xl text-2xl text-muted-foreground">{access === "disabled" ? "Cette borne a été désactivée." : "Cette borne n’est pas reconnue."} Merci de passer votre commande au comptoir.</p>
+          {kiosk && <p className="text-xl text-muted-foreground">{kiosk.text}</p>}
+        </div>
+      )}
       {step === "welcome" && (
         <div className="absolute right-5 top-5 z-[60]"><ThemeToggle className="h-14 w-14" /></div>
       )}

@@ -89,7 +89,7 @@ export const kioskReaderField = z
 export const kioskReadersInput = z.object({
   restaurantId: z.string().uuid(),
   kiosks: z
-    .array(z.object({ id: z.string().max(20), label: z.string().max(40), reader: kioskReaderField }))
+    .array(z.object({ id: z.string().max(20), label: z.string().max(40), reader: kioskReaderField, active: z.boolean().optional().default(true) }))
     .max(20),
 });
 
