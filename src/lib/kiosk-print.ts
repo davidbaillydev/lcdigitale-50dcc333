@@ -1,4 +1,4 @@
-// Ticket client imprimé par la borne dès que la commande est validée, sur l'imprimante propre à la borne.
+// Ticket client imprimé par la borne uniquement à la demande du client, sur l'imprimante propre à la borne.
 import type { TicketOrder, TicketShop } from "./ticket";
 
 /** Imprime le ticket client si une imprimante borne est configurée sur cet appareil ; jamais de fenêtre d'impression. */

@@ -96,7 +96,7 @@ function Switcher({ config, current, onPick, onClose, shop }: { config: unknown;
         <p className="mt-2 text-lg text-muted-foreground">Lettres, chiffres ou tirets. Une borne sans numéro utilise le terminal du restaurant.</p>
         <section className="mt-8 rounded-2xl border-2 border-border bg-card p-5">
           <p className="text-2xl font-semibold">Imprimante de la borne</p>
-          <p className="mb-3 text-lg text-muted-foreground">Séparée de l'imprimante cuisine/caisse. Le ticket client s'imprime automatiquement à chaque commande validée.</p>
+          <p className="mb-3 text-lg text-muted-foreground">Séparée de l'imprimante cuisine/caisse. À la fin de sa commande, le client choisit s'il souhaite imprimer son ticket.</p>
           <PrinterSetup shop={shop} width={80} compact scope="kiosk" />
         </section>
       </div>
