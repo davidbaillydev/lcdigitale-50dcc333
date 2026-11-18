@@ -2,6 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { customDomainLocation, customDomainPath } from "./lib/custom-domain-path";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -77,7 +78,8 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
-// Domaines personnalisés : la racine d'un domaine propre à un restaurant ouvre directement sa page.
+// Domaines personnalisés : la racine et les chemins courts publics ouvrent directement le restaurant.
+// Les routes globales et les assets ne provoquent ni recherche en base ni redirection.
 const PLATFORM_HOSTS = /(^|\.)(lcdigitale\.fr|lovable\.app|lovableproject\.com)$|^(localhost|127\.0\.0\.1)$/i;
 const KNOWN_DOMAINS: Record<string, string> = { "commande.woknsushi.com": "woknsushi" };
 const domainCache = new Map<string, { slug: string | null; at: number }>();
@@ -97,14 +99,16 @@ async function slugForHost(host: string): Promise<string | null> {
   return slug;
 }
 
-async function customDomainRedirect(request: Request): Promise<Response | null> {
+export async function customDomainRedirect(request: Request): Promise<Response | null> {
   const url = new URL(request.url);
-  if (url.pathname !== "/" || (request.method !== "GET" && request.method !== "HEAD")) return null;
+  if ((request.method !== "GET" && request.method !== "HEAD") || customDomainPath(url.pathname) === null) return null;
   const host = url.hostname.toLowerCase().replace(/^www\./, "");
   if (PLATFORM_HOSTS.test(host)) return null;
   const slug = await slugForHost(host);
   if (!slug) return null;
-  return new Response(null, { status: 302, headers: { Location: `/${slug}${url.search}` } });
+  const location = customDomainLocation(url, slug);
+  if (!location) return null;
+  return new Response(null, { status: 302, headers: { Location: location } });
 }
 
 export default {
