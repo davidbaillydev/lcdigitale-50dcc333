@@ -272,7 +272,7 @@ function TerminalChoice({ restaurantId }: { restaurantId: string }) {
   );
 }
 
-/** Une borne = un TPE physique. Sans identifiant de borne, le lecteur ci-dessus est utilisé. */
+/** Une borne = un TPE physique facultatif. Sans identifiant de borne, le lecteur ci-dessus est utilisé. */
 function KioskReaders({ restaurantId, initial, onSaved }: { restaurantId: string; initial: { id: string; label: string; reader: string }[]; onSaved: () => void }) {
   const save = useServerFn(setKioskReaders);
   const [rows, setRows] = useState(initial);
@@ -285,16 +285,17 @@ function KioskReaders({ restaurantId, initial, onSaved }: { restaurantId: string
   };
   return (
     <div className="mt-4 space-y-2 border-t border-border pt-3">
-      <p className="font-semibold">Un TPE par borne</p>
+      <p className="font-semibold">Un TPE par borne (facultatif)</p>
       <p className="text-sm text-muted-foreground">Ouvrez chaque borne une fois avec son adresse dédiée (ex. …/borne?borne=1) : elle s'en souvient et envoie le montant à son propre lecteur. Ensuite, pour changer de borne sur place, appuyez 1,5 s sur l'écran d'accueil de la borne ou sur sa pastille « Borne … » puis saisissez le code PIN des bornes (obligatoire, les clients ne peuvent donc pas changer la borne). Le nom saisi s'affiche sur l'écran de la borne pour la reconnaître sur place. Le paiement au comptoir et par QR code ne change pas.</p>
       {rows.map((k, i) => (
         <div key={i} className="grid gap-2 sm:grid-cols-[6rem_1fr_1fr_auto]">
           <Input aria-label="Identifiant de la borne" placeholder="1" value={k.id} onChange={(e) => upd(i, "id", e.target.value)} />
           <Input aria-label="Nom de la borne" placeholder="Borne entrée" value={k.label} onChange={(e) => upd(i, "label", e.target.value)} />
-          <Input aria-label="Identifiant du lecteur" placeholder="tmr_… / term_… / lecteur SumUp" value={k.reader} onChange={(e) => upd(i, "reader", e.target.value)} />
+          <Input aria-label="Identifiant du lecteur de la borne (facultatif)" placeholder="Laisser vide si la borne n'a pas de TPE" value={k.reader} onChange={(e) => upd(i, "reader", e.target.value)} />
           <Button variant="outline" className="h-10" onClick={() => setRows((r) => r.filter((_, j) => j !== i))}>Retirer</Button>
         </div>
       ))}
+      <p className="text-sm text-muted-foreground">Sans identifiant de lecteur, la borne encaisse au comptoir ou par QR code.</p>
       <div className="flex flex-wrap gap-2">
         <Button variant="secondary" disabled={rows.length >= 20} onClick={() => setRows((r) => [...r, { id: String(r.length + 1), label: `Borne ${r.length + 1}`, reader: "" }])}>Ajouter une borne</Button>
         <Button disabled={busy} onClick={submit}>Enregistrer les bornes</Button>

@@ -7,7 +7,7 @@ import { admin, assertManager, assertOrdersOpen, getRow } from "./shared";
 import { sumup, sumupForRestaurant } from "./sumup";
 import { stripeCall } from "./stripe";
 import { mollieCall, mollieForRestaurant } from "./mollie";
-import { kioskReadersOf, normalizeKioskId, readerForKiosk } from "../kiosk-readers";
+import { KIOSK_READER_MAX, KIOSK_READER_PATTERN, kioskReadersOf, normalizeKioskId, readerForKiosk } from "../kiosk-readers";
 
 // ───────────── TPE Cloud de la borne (Stripe Terminal, Mollie POS ou SumUp Solo) ─────────────
 export const TERMINALS = ["stripe", "mollie", "sumup"] as const;
@@ -76,10 +76,26 @@ export const setKioskTerminal = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-/** Lecteurs propres à chaque borne (agence) : la borne ouverte avec ?borne=<id> utilise son lecteur. */
+/** Lecteurs propres à chaque borne (agence) : la borne ouverte avec ?borne=<id> utilise son lecteur.
+ *  Le lecteur est optionnel : une borne sans TPE encaisse au comptoir ou par QR code. */
+export const kioskReaderField = z
+  .string()
+  .trim()
+  .max(KIOSK_READER_MAX)
+  .regex(KIOSK_READER_PATTERN, "Identifiant du lecteur : lettres, chiffres et tirets seulement")
+  .nullish()
+  .transform((v) => v ?? "");
+
+export const kioskReadersInput = z.object({
+  restaurantId: z.string().uuid(),
+  kiosks: z
+    .array(z.object({ id: z.string().max(20), label: z.string().max(40), reader: kioskReaderField }))
+    .max(20),
+});
+
 export const setKioskReaders = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ restaurantId: z.string().uuid(), kiosks: z.array(z.object({ id: z.string().max(20), label: z.string().max(40), reader: z.string().trim().min(3).max(80).regex(/^[A-Za-z0-9_-]+$/) })).max(20) }).parse(d))
+  .inputValidator((d: unknown) => kioskReadersInput.parse(d))
   .handler(async ({ data, context }) => {
     await assertManager(context.supabase, context.userId, data.restaurantId);
     const kiosks = data.kiosks.map((k) => ({ ...k, id: normalizeKioskId(k.id) ?? "" }));

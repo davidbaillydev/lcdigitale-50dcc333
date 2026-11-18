@@ -2,6 +2,10 @@
 // Pur et sans dépendance : utilisé par la borne (navigateur) et par le serveur.
 export type KioskReader = { id: string; label: string; reader: string };
 
+/** Un TPE par borne est optionnel : une borne sans lecteur encaisse au comptoir ou par QR code. */
+export const KIOSK_READER_MAX = 80;
+export const KIOSK_READER_PATTERN = /^[A-Za-z0-9_-]*$/;
+
 /** Identifiant de borne lisible dans l'URL (?borne=2) : lettres, chiffres, tirets. */
 export function normalizeKioskId(v: unknown): string | null {
   if (typeof v !== "string") return null;
@@ -9,21 +13,29 @@ export function normalizeKioskId(v: unknown): string | null {
   return s || null;
 }
 
+/** Identifiant du lecteur tel que saisi par l'agence ; "" = aucun TPE propre à cette borne. */
+export function normalizeKioskReader(v: unknown): string {
+  if (typeof v !== "string") return "";
+  return v.trim().slice(0, KIOSK_READER_MAX);
+}
+
+/** Bornes déclarées, avec ou sans TPE propre (reader = "" quand la borne n'a pas de terminal). */
 export function kioskReadersOf(config: unknown): KioskReader[] {
   const list = (config as { kioskReaders?: unknown } | null)?.kioskReaders;
   if (!Array.isArray(list)) return [];
   return list.flatMap((k) => {
     const id = normalizeKioskId((k as KioskReader)?.id);
-    const reader = typeof (k as KioskReader)?.reader === "string" ? (k as KioskReader).reader.trim() : "";
-    return id && reader ? [{ id, label: String((k as KioskReader).label ?? "").slice(0, 40) || `Borne ${id}`, reader }] : [];
+    if (!id) return [];
+    const reader = normalizeKioskReader((k as KioskReader)?.reader);
+    return [{ id, label: String((k as KioskReader).label ?? "").slice(0, 40) || `Borne ${id}`, reader }];
   });
 }
 
-/** Lecteur propre à la borne ; null = lecteur par défaut du restaurant (fonctionnement actuel). */
+/** Lecteur propre à la borne ; null = lecteur par défaut du restaurant (fonctionnement actuel) ou borne sans TPE. */
 export function readerForKiosk(config: unknown, kioskId: string | null | undefined): string | null {
   const id = normalizeKioskId(kioskId);
   if (!id) return null;
-  return kioskReadersOf(config).find((k) => k.id === id)?.reader ?? null;
+  return kioskReadersOf(config).find((k) => k.id === id)?.reader || null;
 }
 
 /**

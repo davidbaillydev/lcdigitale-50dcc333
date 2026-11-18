@@ -1,7 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { kioskIdentity, normalizeKioskId, readerForKiosk } from "@/lib/kiosk-readers";
+import {
+  kioskIdentity,
+  kioskReadersOf,
+  normalizeKioskId,
+  normalizeKioskReader,
+  readerForKiosk,
+} from "@/lib/kiosk-readers";
+import { kioskChoices } from "@/lib/kiosk-switch";
+import { kioskReadersInput } from "@/lib/payments/terminal";
 
 const config = { kioskReaders: [{ id: "1", label: "Entrée", reader: "tmr_A" }, { id: "2", label: "Terrasse", reader: "tmr_B" }] };
+const RID = "3f2b6c1a-9d4e-4a7b-8c5d-1e2f3a4b5c6d";
 
 describe("un TPE par borne", () => {
   it("chaque borne déclenche son propre lecteur", () => {
@@ -17,6 +26,64 @@ describe("un TPE par borne", () => {
     expect(normalizeKioskId(" Borne-2 ")).toBe("borne-2");
     expect(normalizeKioskId("<x>")).toBe("x");
     expect(normalizeKioskId("")).toBeNull();
+  });
+});
+
+describe("borne sans TPE (comptoir ou QR code)", () => {
+  const mixed = {
+    kioskReaders: [
+      { id: "1", label: "Entrée", reader: "tmr_A" },
+      { id: "2", label: "Terrasse" },
+      { id: "3", label: "Caisse", reader: "   " },
+    ],
+  };
+  it("les bornes sans lecteur restent déclarées et visibles", () => {
+    expect(kioskReadersOf(mixed).map((k) => k.id)).toEqual(["1", "2", "3"]);
+    expect(kioskReadersOf(mixed).map((k) => k.reader)).toEqual(["tmr_A", "", ""]);
+  });
+  it("une borne sans lecteur ne déclenche aucun TPE propre", () => {
+    expect(readerForKiosk(mixed, "2")).toBeNull();
+    expect(readerForKiosk(mixed, "3")).toBeNull();
+    expect(readerForKiosk(mixed, "1")).toBe("tmr_A");
+  });
+  it("la borne sans TPE s'affiche et se choisit normalement", () => {
+    expect(kioskIdentity({ kioskReaders: [{ id: "5", label: "Comptoir" }] }, "5")?.text).toBe("Comptoir · Borne 5");
+    expect(kioskChoices({ kioskReaders: [{ id: "5", label: "Comptoir" }, { id: "6", label: "Borne 6" }] })).toEqual([
+      { id: "5", label: "Comptoir" },
+      { id: "6", label: "" },
+    ]);
+  });
+  it("nettoie l'identifiant de lecteur saisi", () => {
+    expect(normalizeKioskReader("  tmr_A  ")).toBe("tmr_A");
+    expect(normalizeKioskReader(undefined)).toBe("");
+    expect(normalizeKioskReader(null)).toBe("");
+    expect(normalizeKioskReader("x".repeat(100))).toHaveLength(80);
+  });
+});
+
+describe("enregistrement des bornes", () => {
+  it("accepte le lecteur vide ou omis", () => {
+    const parsed = kioskReadersInput.parse({
+      restaurantId: RID,
+      kiosks: [
+        { id: "1", label: "Entrée", reader: "" },
+        { id: "2", label: "Terrasse" },
+        { id: "3", label: "Caisse", reader: null },
+      ],
+    });
+    expect(parsed.kiosks.map((k) => k.reader)).toEqual(["", "", ""]);
+    expect(parsed.kiosks.map((k) => k.id)).toEqual(["1", "2", "3"]);
+  });
+  it("accepte un lecteur valide et la liste vide", () => {
+    expect(kioskReadersInput.parse({ restaurantId: RID, kiosks: [{ id: "1", label: "Entrée", reader: "tmr_A" }] }).kiosks.map((k) => k.reader)).toEqual(["tmr_A"]);
+    expect(kioskReadersInput.parse({ restaurantId: RID, kiosks: [] }).kiosks).toEqual([]);
+  });
+  it("refuse un lecteur mal formé ou trop long", () => {
+    expect(() => kioskReadersInput.parse({ restaurantId: RID, kiosks: [{ id: "1", label: "E", reader: "tmr bad!" }] })).toThrow();
+    expect(() => kioskReadersInput.parse({ restaurantId: RID, kiosks: [{ id: "1", label: "E", reader: "x".repeat(81) }] })).toThrow();
+  });
+  it("refuse un restaurant inconnu", () => {
+    expect(() => kioskReadersInput.parse({ restaurantId: "pas-un-identifiant", kiosks: [{ id: "1", label: "E", reader: "" }] })).toThrow();
   });
 });
 
