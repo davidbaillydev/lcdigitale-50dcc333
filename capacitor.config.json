@@ -3,9 +3,12 @@
   "appName": "LC Cuisine",
   "webDir": "dist/client",
   "server": {
-    "url": "https://lcdigitale.lovable.app/espace",
-    "cleartext": false,
-    "allowNavigation": ["lcdigitale.lovable.app", "*.lcdigitale.fr", "commande.*"]
+    "url": "https://restaurant.lcdigitale.fr",
+    "cleartext": true,
+    "allowNavigation": ["*"]
   },
-  "android": { "allowMixedContent": false, "backgroundColor": "#000000" }
+  "android": {
+    "allowMixedContent": true,
+    "backgroundColor": "#141210"
+  }
 }
