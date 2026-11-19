@@ -70,7 +70,8 @@ describe("file locale borne", () => {
     q.enqueue(input()); const job = q.getSnapshot()[0]; if (!job) throw new Error("missing job");
     const jobs = [job, { ...job, key: "2", state: "printing" as const }, { ...job, key: "3", state: "printed" as const }, { ...job, key: "4", state: "failed" as const }];
     const retry = vi.fn(); render(<KioskPrintQueuePanel jobs={jobs} onRetry={retry} />);
-    fireEvent.click(screen.getByRole("button", { name: "Tickets 3 en attente" }));
+    expect(screen.getByText("3 en attente")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Tickets/ })).toBeNull();
     expect(screen.getAllByRole("status").map((n) => n.textContent)).toEqual(["Échec", "Imprimé", "Impression…", "En attente"]);
     expect(screen.getAllByRole("button", { name: "Réessayer" })).toHaveLength(2);
     fireEvent.click(screen.getAllByRole("button", { name: "Réessayer" })[0] as HTMLElement);

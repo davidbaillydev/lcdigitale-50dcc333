@@ -6,6 +6,10 @@ import { kioskChoices } from "@/lib/kiosk-switch";
 import { cn } from "@/lib/utils";
 import { PrinterSetup } from "@/components/PrinterSetup";
 import type { TicketShop } from "@/lib/ticket";
+import { KioskPrintQueuePanel } from "@/components/KioskPrintQueuePanel";
+import type { KioskPrintJob } from "@/lib/kiosk-print-queue";
+
+type PrintQueueProps = { jobs: KioskPrintJob[]; onRetry: (key: string) => void; error?: string | null };
 
 /**
  * Choix de la borne active sur cet appareil (ouvert par appui long) : numéro + libellé.
@@ -18,6 +22,7 @@ export function KioskSwitchDialog(props: {
   onPick: (id: string | null) => void;
   onClose: () => void;
   shop: TicketShop;
+  printQueue?: PrintQueueProps;
 }) {
   const [unlocked, setUnlocked] = useState(false);
   if (!unlocked) return <PinGate restaurantId={props.restaurantId} onClose={props.onClose} onOk={() => setUnlocked(true)} />;
@@ -61,7 +66,7 @@ function PinGate({ restaurantId, onOk, onClose }: { restaurantId: string; onOk: 
   );
 }
 
-function Switcher({ config, current, onPick, onClose, shop }: { config: unknown; current: string | null; onPick: (id: string | null) => void; onClose: () => void; shop: TicketShop }) {
+function Switcher({ config, current, onPick, onClose, shop, printQueue }: { config: unknown; current: string | null; onPick: (id: string | null) => void; onClose: () => void; shop: TicketShop; printQueue?: PrintQueueProps }) {
   const [other, setOther] = useState("");
   const choices = kioskChoices(config);
   return (
@@ -99,6 +104,7 @@ function Switcher({ config, current, onPick, onClose, shop }: { config: unknown;
           <p className="mb-3 text-lg text-muted-foreground">Séparée de l'imprimante cuisine/caisse. À la fin de sa commande, le client choisit s'il souhaite imprimer son ticket.</p>
           <PrinterSetup shop={shop} width={80} compact scope="kiosk" />
         </section>
+        {printQueue && <KioskPrintQueuePanel {...printQueue} />}
       </div>
       <div className="mt-6 flex gap-4">
         {current && <button onClick={() => onPick(null)} className="flex-1 rounded-2xl bg-muted py-6 text-2xl font-semibold">Retirer le numéro</button>}

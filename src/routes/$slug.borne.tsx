@@ -34,7 +34,6 @@ import { Button } from "@/components/ui/button";
 import { KioskSwitchDialog } from "@/components/KioskSwitchDialog";
 import { KioskReceiptChoice } from "@/components/KioskReceiptChoice";
 import { deviceKioskQueue, type KioskPrintQueue, type KioskPrintJob } from "@/lib/kiosk-print-queue";
-import { KioskPrintQueuePanel } from "@/components/KioskPrintQueuePanel";
 import type { TicketOrder } from "@/lib/ticket";
 import { useLongPress } from "@/hooks/use-long-press";
 
@@ -272,7 +271,6 @@ function Kiosk() {
           {kiosk && <p className="text-xl text-muted-foreground">{kiosk.text}</p>}
         </div>
       )}
-      <KioskPrintQueuePanel jobs={printJobs} error={queueError} onRetry={(key) => { void queue.current?.retry(key).catch(() => setQueueError("Impossible d’enregistrer la relance sur cette tablette.")); }} />
       {step === "welcome" && (
         <div className="absolute right-5 top-5 z-[60]"><ThemeToggle className="h-14 w-14" /></div>
       )}
@@ -511,7 +509,7 @@ function Kiosk() {
       )}
       {item && <KioskItem item={item} image={itemImage(item, catalog.categories)?.src} onClose={() => setItem(null)} onAdd={(sel, q) => { add(item.id, sel, q); setItem(null); }} />}
 
-      {switchOpen && <KioskSwitchDialog restaurantId={restaurant.id} config={restaurant.config} current={kioskId} shop={{ name: restaurant.name, address: restaurant.address ?? null, phone: restaurant.phone ?? null, slug: restaurant.slug }} onPick={pickKiosk} onClose={() => { held.current = false; setSwitchOpen(false); }} />}
+      {switchOpen && <KioskSwitchDialog restaurantId={restaurant.id} config={restaurant.config} current={kioskId} shop={{ name: restaurant.name, address: restaurant.address ?? null, phone: restaurant.phone ?? null, slug: restaurant.slug }} printQueue={{ jobs: printJobs, error: queueError, onRetry: (key) => { void queue.current?.retry(key).catch(() => setQueueError("Impossible d’enregistrer la relance sur cette tablette.")); } }} onPick={pickKiosk} onClose={() => { held.current = false; setSwitchOpen(false); }} />}
       {warn && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80">
           <div className="rounded-2xl border border-border bg-card p-12 text-center">
