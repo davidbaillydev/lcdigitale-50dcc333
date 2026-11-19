@@ -3,7 +3,7 @@
   "appName": "LC Cuisine",
   "webDir": "dist/client",
   "server": {
-    "url": "https://restaurant.lcdigitale.fr",
+    "url": "https://restaurant.lcdigitale.fr/espace",
     "cleartext": true,
     "allowNavigation": ["*"]
   },

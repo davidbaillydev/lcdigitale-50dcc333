@@ -10,7 +10,7 @@ const manifest = readFileSync("android/app/src/main/AndroidManifest.xml", "utf8"
 
 describe("affichage de l'application cuisine Android", () => {
   it("ouvre le site de la plateforme et permet toute navigation interne", () => {
-    expect(config.server.url).toBe("https://restaurant.lcdigitale.fr");
+    expect(config.server.url).toBe("https://restaurant.lcdigitale.fr/espace");
     expect(config.server.allowNavigation).toEqual(["*"]);
   });
 
