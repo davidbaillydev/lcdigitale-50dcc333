@@ -1,6 +1,6 @@
 // Encodeur ESC/POS : transforme une commande en octets pour imprimante thermique.
 import { moneyDecimals } from "./money";
-import { ticketMoney } from "./ticket";
+import { ticketMoney, kioskTicketLines, type KioskTicketContext } from "./ticket";
 import { allergenLabel } from "./allergens";
 import { ticketLegalLines, vatRateLabel } from "./ticket-vat";
 import { receiptIntegrityLines, receiptTenderLines, ticketVat, isPaid, isPreorder, itemTitle, modeLabel, payLabel, settlementNote, ticketCustomer, ticketDeliveryLines, ticketFields, ticketOptions, ticketTiming, ticketTotals, ticketWebsite, type TicketFieldsIn, type TicketKind, type TicketOrder, type TicketShop, type TicketWidth } from "./ticket";
@@ -48,7 +48,7 @@ function wrap(s: string, cols: number): string[] {
 }
 const lr = (l: string, r: string, cols: number) => { const sp = cols - l.length - r.length; return sp > 0 ? l + " ".repeat(sp) + r : `${l} ${r}`; };
 
-export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidth, shop: TicketShop, fieldsIn?: TicketFieldsIn): Uint8Array {
+export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidth, shop: TicketShop, fieldsIn?: TicketFieldsIn, kioskContext?: KioskTicketContext): Uint8Array {
   const currency = o.currency ?? "EUR";
   const eur = (n: unknown) => ticketMoney(n, currency);
   const cols = width === 80 ? 48 : 32;
@@ -66,6 +66,12 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
   (isPreorder(kind, o) ? e.bold(true).line("BON DE PRE-COMMANDE").line("A REGLER EN CAISSE").bold(false) : e.line(kind === "kitchen" ? "TICKET CUISINE" : "TICKET CLIENT")).line(hr);
   e.bold(true).size(2, 2).line(`N° ${kind === "receipt" ? o.pos_receipt_number ?? o.order_number : o.order_number}`).size(1, 1).align(0);
   if (kind === "receipt" && o.pos_receipt_number != null) e.line(`Commande n° ${o.order_number}`);
+  const identity = kioskTicketLines(o, kind, kioskContext);
+  if (identity.length) {
+    e.align(1).bold(true).size(1, 2);
+    identity.forEach((s) => wrap(s.replace(/œ/g, "oe").replace(/Œ/g, "OE"), cols).forEach((l) => e.line(l)));
+    e.size(1, 1).align(0);
+  }
   e.inverse(true);
   wrap(payLabel(o.payment_method, isPaid(o), o.is_test), cols).forEach((l) => e.line(l.padEnd(cols)));
   e.inverse(false).line().inverse(true).line(lr(timing.label, timing.value, cols)).inverse(false).line().inverse(true);

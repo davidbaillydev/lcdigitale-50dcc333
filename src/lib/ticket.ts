@@ -14,6 +14,14 @@ export const itemTitle = (it: { name: string; size?: { name: string } | null }) 
 
 export type TicketWidth = 80 | 58;
 export type TicketKind = "kitchen" | "receipt";
+export type KioskTicketContext = { id: string | null; label?: string };
+export function kioskTicketLines(o: TicketOrder, kind: TicketKind, context?: KioskTicketContext): string[] {
+  if (o.source !== "kiosk" || kind !== "receipt" || !context) return [];
+  const clean = (s: string) => s.replace(/[\x00-\x1f\x7f]/g, " ").trim();
+  const title = context.id ? `BORNE ${clean(context.id).toUpperCase()}` : "BORNE — CETTE TABLETTE";
+  const label = clean(context.label ?? "");
+  return label && label.toUpperCase() !== title ? [title, label] : [title];
+}
 export type TicketOrder = {
   currency?: Currency;
   pos_receipt_number?: number | null;
@@ -221,7 +229,7 @@ export function useTicketWidth(fallback: TicketWidth): [TicketWidth, (w: TicketW
   return [w, setTicketWidth];
 }
 
-export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth, shopIn: TicketShop | string, fieldsIn?: TicketFieldsIn) {
+export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth, shopIn: TicketShop | string, fieldsIn?: TicketFieldsIn, kioskContext?: KioskTicketContext) {
   const shop = typeof shopIn === "string" ? { name: shopIn } : shopIn;
   const currency = o.currency ?? "EUR";
   const eur = (n: unknown) => ticketMoney(n, currency);
@@ -268,6 +276,7 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
   </style></head><body>
     <div class="c">${kind === "kitchen" ? "TICKET CUISINE" : isPreorder(kind, o) ? "BON DE PRÉ-COMMANDE - À RÉGLER EN CAISSE" : "TICKET CLIENT"}</div>
     <hr><div class="c xl">N° ${kind === "receipt" ? o.pos_receipt_number ?? o.order_number : o.order_number}</div>
+    ${kioskTicketLines(o, kind, kioskContext).map((l) => `<div class="c l">${esc(l)}</div>`).join("")}
     ${kind === "receipt" && o.pos_receipt_number != null ? `<div class="c">Commande n° ${o.order_number}</div>` : ""}
     <div class="band">${payLabel(o.payment_method, isPaid(o), o.is_test)}</div>
     <div class="band row"><span>${esc(timing.label)}</span><span>${esc(timing.value)}</span></div>

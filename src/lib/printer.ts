@@ -118,7 +118,7 @@ async function sendNetwork(p: PrinterConfig, data: Uint8Array) {
 // ---- RawBT (Android) : serveur local, sinon intent / schéma d'URL ----
 export const RAWBT_URL = "http://localhost:40213/";
 export const isAndroid = () => typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
-async function sendRawbt(data: Uint8Array) {
+async function sendRawbt(data: Uint8Array, requireConfirmation = false) {
   const b = b64(data);
   try {
     const r = await fetch(RAWBT_URL, {
@@ -127,6 +127,7 @@ async function sendRawbt(data: Uint8Array) {
     });
     if (r.ok) return;
   } catch { /* serveur local inactif ou bloqué : repli sur l'intent */ }
+  if (requireConfirmation) throw new Error("RawBT : envoi non confirmé. Activez le serveur local de l’imprimante.");
   const url = isAndroid()
     ? `intent:base64,${b}#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;`
     : `rawbt:data:application/octet-stream;base64,${b}`;
@@ -135,9 +136,9 @@ async function sendRawbt(data: Uint8Array) {
   document.body.appendChild(a); a.click(); a.remove();
 }
 
-export async function sendToPrinter(p: PrinterConfig, data: Uint8Array) {
+export async function sendToPrinter(p: PrinterConfig, data: Uint8Array, requireConfirmation = false) {
   if (p.type === "bluetooth") return sendBluetooth(data);
   if (p.type === "usb") return sendUsb(data, p.baud);
-  if (p.type === "rawbt") return sendRawbt(data);
+  if (p.type === "rawbt") return sendRawbt(data, requireConfirmation);
   return sendNetwork(p, data);
 }

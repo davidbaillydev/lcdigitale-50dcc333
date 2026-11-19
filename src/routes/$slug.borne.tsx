@@ -33,7 +33,8 @@ import { useMenuClock } from "@/hooks/use-menu-clock";
 import { Button } from "@/components/ui/button";
 import { KioskSwitchDialog } from "@/components/KioskSwitchDialog";
 import { KioskReceiptChoice } from "@/components/KioskReceiptChoice";
-import { printKioskReceipt } from "@/lib/kiosk-print";
+import { deviceKioskQueue, type KioskPrintQueue, type KioskPrintJob } from "@/lib/kiosk-print-queue";
+import { KioskPrintQueuePanel } from "@/components/KioskPrintQueuePanel";
 import type { TicketOrder } from "@/lib/ticket";
 import { useLongPress } from "@/hooks/use-long-press";
 
@@ -65,12 +66,30 @@ function Kiosk() {
   const [step, setStep] = useState<Step>("welcome");
   // Commandes créées sur cette borne, conservées jusqu'au choix du client sur l'écran final.
   const tickets = useRef(new Map<number, TicketOrder>());
+  const queue = useRef<KioskPrintQueue | null>(null);
+  const [printJobs, setPrintJobs] = useState<KioskPrintJob[]>([]);
+  const [queueError, setQueueError] = useState<string | null>(null);
+  useEffect(() => {
+    try {
+      const q = deviceKioskQueue(restaurant.slug); queue.current = q;
+      const sync = () => setPrintJobs(q.getSnapshot());
+      sync(); const unsubscribe = q.subscribe(sync);
+      void q.drain().catch(() => setQueueError("Impossible d’enregistrer la file sur cette tablette. Aucune nouvelle impression lancée."));
+      return () => { unsubscribe(); queue.current = null; };
+    } catch { setQueueError("File locale indisponible sur cette tablette. Vérifiez l’autorisation de stockage avant de réessayer."); }
+    return undefined;
+  }, [restaurant.slug]);
   const printReceipt = async (n: number, paid: boolean) => {
     const o = tickets.current.get(n); if (!o) return false;
+    const q = queue.current;
+    const orderId = (o as TicketOrder & { id?: string }).id;
+    if (!q || !orderId) { setQueueError("Impossible de conserver ce ticket sur la tablette. Merci de prévenir le personnel."); return false; }
     const cfg = restaurant.config as { customDomains?: string[] } | null;
-    const printed = await printKioskReceipt(o, { name: restaurant.name, address: restaurant.address ?? null, phone: restaurant.phone ?? null, slug: restaurant.slug, customDomains: cfg?.customDomains, catalog }, paid);
-    if (printed) tickets.current.delete(n);
-    return printed;
+    try {
+      const key = q.enqueue({ orderId, kiosk: { id: kioskId, label: kiosk?.label ?? "" }, order: o, shop: { name: restaurant.name, address: restaurant.address ?? null, phone: restaurant.phone ?? null, slug: restaurant.slug, customDomains: cfg?.customDomains }, paid });
+      setQueueError(null);
+      return await q.retry(key);
+    } catch { setQueueError("Ticket non enregistré : le stockage de cette tablette est indisponible. Aucune nouvelle impression lancée."); return false; }
   };
   useEffect(() => { if (step === "cart") track("checkout_started", "Panier borne"); else if (step === "pay") track("checkout_started", "Choix du paiement borne"); else if (step === "welcome") resetSession(); }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
   const [mode, setMode] = useState<Mode>("dine_in");
@@ -253,6 +272,7 @@ function Kiosk() {
           {kiosk && <p className="text-xl text-muted-foreground">{kiosk.text}</p>}
         </div>
       )}
+      <KioskPrintQueuePanel jobs={printJobs} error={queueError} onRetry={(key) => { void queue.current?.retry(key).catch(() => setQueueError("Impossible d’enregistrer la relance sur cette tablette.")); }} />
       {step === "welcome" && (
         <div className="absolute right-5 top-5 z-[60]"><ThemeToggle className="h-14 w-14" /></div>
       )}
