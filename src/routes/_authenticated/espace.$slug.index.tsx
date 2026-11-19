@@ -13,6 +13,7 @@ import { EMPTY_OPTIONS, loadOptionData } from "@/lib/menu-options";
 import { AlertTriangle, ArrowLeft, ArrowRight, Bell, BellOff, Bike, Check, ChefHat, Clock, Lock, LogOut, Maximize, Minimize, MoonStar, PanelTopClose, PanelTopOpen, Phone, Printer, Settings, History, ShoppingBag, Store, Sun, Users, Volume2, VolumeX, WifiOff } from "lucide-react";
 import { useKitchenFullscreen } from "@/hooks/use-kitchen-fullscreen";
 import { useWakeLock } from "@/hooks/use-wake-lock";
+import { nativeKitchen } from "@/lib/native-kitchen";
 import { useKioskLock } from "@/hooks/use-kiosk-lock";
 import { ticketOptions, printTickets, printingDefaults, printingFields, autoPrintKinds, autoPrintLabel, useTicketWidth, type PrintingConfig, type TicketKind } from "@/lib/ticket";
 import { KitchenAccessGate } from "@/components/KitchenAccessGate";
@@ -251,6 +252,7 @@ function Kitchen({ onLock, pinEnabled }: { onLock: () => void; pinEnabled: boole
         }
         if ((p.eventType === "INSERT" && n.status !== "awaiting_payment") || becamePaid) {
           toast.success(n.status === "pending_approval" ? `Nouvelle commande ${n.table_label ? `Table ${n.table_label}` : n.room_label ? `Chambre ${n.room_label}` : "libre-service"} · à valider` : `Nouvelle commande n° ${n.order_number}`, n.status === "pending_approval" ? { duration: 15000 } : undefined);
+          if (soundRef.current) void nativeKitchen()?.ring().catch(() => {});
           if (audio.current && soundRef.current) { const ctx = audio.current; void ctx.resume().then(() => beep(ctx)).catch(() => {}); }
           if (printRef.current.auto && n.status !== "pending_approval" && !deferred.current.has(n.id)) void printRef.current.doPrint(p.new as Order, printRef.current.kinds, true);
         }
@@ -268,6 +270,7 @@ function Kitchen({ onLock, pinEnabled }: { onLock: () => void; pinEnabled: boole
   const pending = orders.filter((o) => o.status === "new" || o.status === "pending_approval").length;
   useEffect(() => {
     return startKitchenReminder(sound, ordersRef.current, () => {
+      void nativeKitchen()?.ring().catch(() => {});
       const ctx = audio.current;
       if (ctx) void ctx.resume().then(() => beep(ctx)).catch(() => {});
     }, ringRef.current.repeatSeconds * 1000);

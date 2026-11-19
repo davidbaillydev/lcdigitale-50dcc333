@@ -1,6 +1,11 @@
 {
-  "appId": "app.lcdigitale.commande",
-  "appName": "LC Digitale",
+  "appId": "fr.lcdigitale.cuisine",
+  "appName": "LC Cuisine",
   "webDir": "dist/client",
-  "server": { "url": "https://lcdigitale.lovable.app", "cleartext": false }
+  "server": {
+    "url": "https://lcdigitale.lovable.app/espace",
+    "cleartext": false,
+    "allowNavigation": ["lcdigitale.lovable.app", "*.lcdigitale.fr", "commande.*"]
+  },
+  "android": { "allowMixedContent": false, "backgroundColor": "#000000" }
 }

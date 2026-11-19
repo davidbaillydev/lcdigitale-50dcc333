@@ -1,5 +1,6 @@
 // Imprimante directe (ESC/POS) mémorisée par appareil : Bluetooth, USB/série, ou réseau Wi-Fi/Ethernet via le pont LC Print.
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { nativeKitchen } from "@/lib/native-kitchen";
 export type PrinterType = "bluetooth" | "usb" | "network" | "rawbt";
 export type PrinterConfig = { type: PrinterType; name: string; host?: string; port?: number; bridgeUrl?: string; baud?: number; width?: 58 | 80 };
 
@@ -108,6 +109,8 @@ export async function discoverNetwork(url: string): Promise<{ host: string; port
   return (await r.json()).printers ?? [];
 }
 async function sendNetwork(p: PrinterConfig, data: Uint8Array) {
+  const native = nativeKitchen();
+  if (native && p.host) return native.print({ host: p.host, port: p.port ?? 9100, data: b64(data) }); // appli Android : TCP direct, sans pont
   const r = await fetch(`${(p.bridgeUrl || DEFAULT_BRIDGE).replace(/\/$/, "")}/print`, {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ host: p.host, port: p.port ?? 9100, data: b64(data) }), signal: AbortSignal.timeout(10000),

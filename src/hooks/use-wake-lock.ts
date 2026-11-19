@@ -1,3 +1,4 @@
+import { nativeKitchen } from "@/lib/native-kitchen";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type Sentinel = { released: boolean; release: () => Promise<void>; addEventListener: (t: "release", cb: () => void) => void };
@@ -18,6 +19,8 @@ export function useWakeLock(opts: { always?: boolean } = {}) {
   const busy = useRef(false);
 
   const acquire = useCallback(async () => {
+    const native = nativeKitchen();
+    if (native) { await native.keepAwake({ on: true }).catch(() => {}); setActive(true); return true; }
     const nav = navigator as WakeNav;
     if (!nav.wakeLock) { setSupported(false); return false; }
     if (busy.current || (ref.current && !ref.current.released) || document.visibilityState !== "visible") return !!ref.current;
@@ -32,11 +35,11 @@ export function useWakeLock(opts: { always?: boolean } = {}) {
 
   useEffect(() => {
     if (!always) setWanted(localStorage.getItem("kds-wake") === "1");
-    setSupported(Boolean((navigator as WakeNav).wakeLock));
+    setSupported(Boolean((navigator as WakeNav).wakeLock) || !!nativeKitchen());
   }, [always]);
 
   useEffect(() => {
-    if (!wanted) { void ref.current?.release(); ref.current = null; setActive(false); return; }
+    if (!wanted) { void nativeKitchen()?.keepAwake({ on: false }).catch(() => {}); void ref.current?.release(); ref.current = null; setActive(false); return; }
     void acquire();
     const retry = () => { if (!ref.current || ref.current.released) void acquire(); };
     const onVis = () => { if (document.visibilityState === "visible") retry(); };

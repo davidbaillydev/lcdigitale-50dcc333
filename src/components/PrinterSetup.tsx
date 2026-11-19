@@ -11,6 +11,7 @@ import {
   bridgeHealth, DEFAULT_BRIDGE, detectBluetooth, detectUsb, discoverNetwork, getPrinter, isAndroid, type PrinterScope, savePrinter, sendToPrinter, support,
   type PrinterConfig, type PrinterType,
 } from "@/lib/printer";
+import { isNativeKitchen, localSubnet, nativeKitchen } from "@/lib/native-kitchen";
 
 const TYPES: { t: PrinterType; label: string; hint: string; icon: typeof Wifi }[] = [
   { t: "rawbt", label: "RawBT (Android)", hint: "Toutes marques d'imprimantes, via l'application RawBT sur tablette Android.", icon: Smartphone },
@@ -51,6 +52,12 @@ export function PrinterSetup({ shop, width: defaultWidth, compact, scope = "kitc
   const detect = () => run(async () => {
     if (type === "bluetooth") { const name = await detectBluetooth(); setDraft({ type, name }); setMsg({ ok: true, text: `${name} détectée et connectée.` }); }
     else if (type === "usb") { const name = await detectUsb(); setDraft({ type, name, baud: 9600 }); setMsg({ ok: true, text: `${name} autorisée.` }); }
+    else if (type === "network" && nativeKitchen()) {
+      const subnet = localSubnet(host) ?? localSubnet(window.prompt("Début de l'adresse du réseau (ex. 192.168.1)") ?? "");
+      if (!subnet) throw new Error("Réseau local invalide : saisissez par ex. 192.168.1");
+      const list = (await nativeKitchen()!.discover({ subnet })).printers.map((h) => ({ host: h, port: 9100 })); setFound(list);
+      setMsg(list.length ? { ok: true, text: `${list.length} imprimante(s) trouvée(s) sur le réseau.` } : { ok: false, text: "Aucune imprimante trouvée. Saisissez son adresse IP (imprimée sur sa page de test)." });
+    }
     else if (type === "network") {
       await bridgeHealth(bridge).catch(() => { setBridgeOk(false); throw new Error("Pont LC Print introuvable sur cet ordinateur. Lancez-le puis réessayez."); });
       setBridgeOk(true);
@@ -126,7 +133,7 @@ export function PrinterSetup({ shop, width: defaultWidth, compact, scope = "kitc
           </ol>
         ) : (
           <>
-            {type === "network" && (
+            {type === "network" && !isNativeKitchen() && (
               <div className="space-y-2">
                 <Label htmlFor="bridge">Adresse du pont LC Print</Label>
                 <Input id="bridge" value={bridge} onChange={(e) => { setBridge(e.target.value); setBridgeOk(null); }} />
