@@ -203,6 +203,7 @@ export type Database = {
       }
       kiosk_licenses: {
         Row: {
+          archived_at: string | null
           ends_on: string
           id: string
           kiosk_id: string
@@ -215,6 +216,7 @@ export type Database = {
           updated_by: string
         }
         Insert: {
+          archived_at?: string | null
           ends_on: string
           id?: string
           kiosk_id: string
@@ -227,6 +229,7 @@ export type Database = {
           updated_by: string
         }
         Update: {
+          archived_at?: string | null
           ends_on?: string
           id?: string
           kiosk_id?: string
@@ -2416,9 +2419,26 @@ export type Database = {
         }
         Returns: string
       }
+      agency_remove_licensed_kiosk: {
+        Args: { _confirmation: string; _kiosk: string; _restaurant: string }
+        Returns: undefined
+      }
       agency_save_kiosk_readers: {
         Args: { _kiosks: Json; _restaurant: string }
         Returns: undefined
+      }
+      agency_save_licensed_kiosk: {
+        Args: {
+          _kiosk: string
+          _label: string
+          _notes: string
+          _previous: string
+          _reader: string
+          _restaurant: string
+          _starts: string
+          _status: string
+        }
+        Returns: string
       }
       agency_set_kiosk_active: {
         Args: { _active: boolean; _kiosk: string; _restaurant: string }

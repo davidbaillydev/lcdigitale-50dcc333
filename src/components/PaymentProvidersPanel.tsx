@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { hasKioskPin, setKioskPin } from "@/lib/kitchen-pin.functions";
-import { getKioskTerminal, listMolliePayments, startMollieConnect, disconnectMollie, setKioskTerminal, setKioskReaders, testKioskTerminal, listPaymentProviders, pairSumupReader, savePaymentProvider, testLyra, testMollie, testPaypal, testStripe, testSumup, testCinetpay, type Provider } from "@/lib/payments.functions";
+import { getKioskTerminal, listMolliePayments, startMollieConnect, disconnectMollie, setKioskTerminal, testKioskTerminal, listPaymentProviders, pairSumupReader, savePaymentProvider, testLyra, testMollie, testPaypal, testStripe, testSumup, testCinetpay, type Provider } from "@/lib/payments.functions";
 
 const MODES: Partial<Record<Provider, { options: [string, string][]; hint?: string }>> = {
   cinetpay: { options: [["sandbox", "Sandbox / Test"], ["production", "Production"]], hint: "Le mode Test conserve les identifiants sans appeler la production. La connexion se vérifie en Production avec une transaction existante." },
@@ -13,6 +13,8 @@ const MODES: Partial<Record<Provider, { options: [string, string][]; hint?: stri
   mollie: { options: [["test", "Test (aucun vrai paiement)"], ["live", "Production"]], hint: "Seule la clé du mode choisi est utilisée pour encaisser et rembourser." },
   lyra: { options: [["TEST", "Test"], ["PRODUCTION", "Production"]], hint: "Utilisez la clé correspondant au mode (back-office Lyra → Paramétrage → Boutique → Clés)." },
 };
+import { Link } from "@tanstack/react-router";
+import { ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -258,8 +260,8 @@ function TerminalChoice({ restaurantId }: { restaurantId: string }) {
   };
   return (
     <div className="rounded-lg border border-border p-4">
-      <p className="text-xl font-semibold">TPE Cloud de la borne</p>
-      <p className="text-sm text-muted-foreground">Lecteur qui reçoit le montant quand le client choisit « Carte » sur la borne. Renseignez son identifiant dans la carte du prestataire ci-dessous.</p>
+      <p className="text-xl font-semibold">Prestataire TPE et lecteur par défaut</p>
+      <p className="text-sm text-muted-foreground">Choisissez le prestataire commun aux bornes. Le lecteur ci-dessous reste le lecteur par défaut du restaurant ; les lecteurs dédiés se règlent dans Bornes & licences.</p>
       <div className="mt-3 flex flex-wrap gap-2">
         <Button variant={data && !data.terminal ? "default" : "secondary"} onClick={() => void choose(null)}>Automatique</Button>
         {(["stripe", "mollie", "sumup"] as const).map((k) => (
@@ -267,43 +269,7 @@ function TerminalChoice({ restaurantId }: { restaurantId: string }) {
         ))}
       </div>
       <p className="mt-2 text-sm">{data?.active ? `Lecteur prêt : ${TERMINAL_LABELS[data.active]}` : "Aucun lecteur prêt : la carte se paiera au comptoir."}</p>
-      {data && <KioskReaders restaurantId={restaurantId} initial={data.kiosks} onSaved={() => void refetch()} />}
-    </div>
-  );
-}
-
-/** Une borne = un TPE physique facultatif. Sans identifiant de borne, le lecteur ci-dessus est utilisé. */
-function KioskReaders({ restaurantId, initial, onSaved }: { restaurantId: string; initial: { id: string; label: string; reader: string; active: boolean }[]; onSaved: () => void }) {
-  const save = useServerFn(setKioskReaders);
-  const [rows, setRows] = useState(initial);
-  const [busy, setBusy] = useState(false);
-  const upd = (i: number, k: "id" | "label" | "reader", v: string) => setRows((r) => r.map((x, j) => (j === i ? { ...x, [k]: v } : x)));
-  const submit = async () => {
-    setBusy(true);
-    try { await save({ data: { restaurantId, kiosks: rows } }); toast.success("Bornes enregistrées"); onSaved(); }
-    catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
-  };
-  return (
-    <div className="mt-4 space-y-2 border-t border-border pt-3">
-      <p className="font-semibold">Un TPE par borne (facultatif)</p>
-      <p className="text-sm text-muted-foreground">Ouvrez chaque borne une fois avec son adresse dédiée (ex. …/borne?borne=1) : elle s'en souvient et envoie le montant à son propre lecteur. Ensuite, pour changer de borne sur place, appuyez 1,5 s sur l'écran d'accueil de la borne ou sur sa pastille « Borne … » puis saisissez le code PIN des bornes (obligatoire, les clients ne peuvent donc pas changer la borne). Le nom saisi s'affiche sur l'écran de la borne pour la reconnaître sur place. Le paiement au comptoir et par QR code ne change pas.</p>
-      {rows.map((k, i) => (
-        <div key={i} className="grid items-center gap-2 sm:grid-cols-[6rem_1fr_1fr_auto_auto]">
-          <Input aria-label="Identifiant de la borne" placeholder="1" value={k.id} onChange={(e) => upd(i, "id", e.target.value)} />
-          <Input aria-label="Nom de la borne" placeholder="Borne entrée" value={k.label} onChange={(e) => upd(i, "label", e.target.value)} />
-          <Input aria-label="Identifiant du lecteur de la borne (facultatif)" placeholder="Laisser vide si la borne n'a pas de TPE" value={k.reader} onChange={(e) => upd(i, "reader", e.target.value)} />
-          <label className="flex h-10 items-center gap-2 text-sm font-medium">
-            <Switch aria-label={`Borne ${k.id} active`} checked={k.active !== false} onCheckedChange={(v) => setRows((r) => r.map((x, j) => (j === i ? { ...x, active: v } : x)))} />
-            {k.active !== false ? "Active" : "Désactivée"}
-          </label>
-          <Button variant="outline" className="h-10" onClick={() => setRows((r) => r.filter((_, j) => j !== i))}>Retirer</Button>
-        </div>
-      ))}
-      <p className="text-sm text-muted-foreground">Sans identifiant de lecteur, la borne encaisse au comptoir ou par QR code. Une borne désactivée affiche « indisponible » sous 20 s et toute commande y est refusée. Dès qu’une borne est déclarée, seules les bornes listées et actives peuvent commander.</p>
-      <div className="flex flex-wrap gap-2">
-        <Button variant="secondary" disabled={rows.length >= 20} onClick={() => setRows((r) => [...r, { id: String(r.length + 1), label: `Borne ${r.length + 1}`, reader: "", active: true }])}>Ajouter une borne</Button>
-        <Button disabled={busy} onClick={submit}>Enregistrer les bornes</Button>
-      </div>
+      <div className="mt-4 space-y-3 border-t pt-4"><p className="font-semibold">Gestion centralisée des bornes</p><p className="text-sm text-muted-foreground">Noms, identifiants, lecteurs TPE, suspensions et licences se gèrent désormais au même endroit. Le paiement au comptoir et par QR code reste disponible sans lecteur dédié.</p><Button asChild variant="outline" className="min-h-12"><Link to="/admin/licences" search={{ restaurant: restaurantId }}><ArrowUpRight />Gérer les bornes & licences</Link></Button></div>
     </div>
   );
 }

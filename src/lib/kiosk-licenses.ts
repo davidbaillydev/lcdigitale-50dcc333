@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { KIOSK_READER_MAX, KIOSK_READER_PATTERN } from "./kiosk-readers";
 
 export const KIOSK_ANNUAL_HT_CENTS = 40000;
 export const licenseSchema = z.object({
@@ -14,6 +15,13 @@ export const billingSchema = z.object({
   if ((v.status === "invoiced" || v.status === "paid") && !v.invoiceReference) ctx.addIssue({ code: "custom", message: "Référence de facture requise", path: ["invoiceReference"] });
   if (v.status === "paid" && !v.paidOn) ctx.addIssue({ code: "custom", message: "Date de règlement requise", path: ["paidOn"] });
 });
+export const kioskDetailsSchema = licenseSchema.extend({
+  previousKioskId: z.string().regex(/^[a-z0-9-]{1,20}$/).nullable(),
+  reader: z.string().trim().max(KIOSK_READER_MAX).regex(KIOSK_READER_PATTERN).nullish().transform((v) => v ?? ""),
+});
+export const removeKioskSchema = z.object({
+  restaurantId: z.string().uuid(), kioskId: z.string().regex(/^[a-z0-9-]{1,20}$/), confirmation: z.string(),
+}).refine((v) => v.confirmation === v.kioskId, { message: "Saisissez l’identifiant exact de la borne", path: ["confirmation"] });
 export function annualEnd(start: string): string {
   const date = z.string().date().parse(start);
   const parsed = new Date(`${date}T12:00:00Z`);

@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { annualEnd, annualTotal, billingSchema, KIOSK_ANNUAL_HT_CENTS, licenseSchema } from "./kiosk-licenses";
+import { annualEnd, annualTotal, billingSchema, KIOSK_ANNUAL_HT_CENTS, licenseSchema, kioskDetailsSchema, removeKioskSchema } from "./kiosk-licenses";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -67,4 +67,23 @@ export const registerLicensedKiosk = createServerFn({ method: "POST" }).middlewa
     const { data: id, error } = await context.supabase.rpc("agency_register_kiosk", { _restaurant: data.restaurantId, _kiosk: data.kioskId, _label: data.label, _starts: data.startsOn });
     if (error || !id) throw new Error("Ajout impossible : vérifiez que l’identifiant est disponible (maximum 20 bornes).");
     return { id };
+  });
+export const saveLicensedKioskDetails = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+  .inputValidator((v: unknown) => kioskDetailsSchema.parse(v))
+  .handler(async ({ data, context }) => {
+    await agency(context.supabase, context.userId);
+    const { data: id, error } = await context.supabase.rpc("agency_save_licensed_kiosk", {
+      _restaurant: data.restaurantId, _previous: data.previousKioskId as string, _kiosk: data.kioskId,
+      _label: data.label, _reader: data.reader, _starts: data.startsOn, _status: data.status, _notes: data.notes,
+    });
+    if (error || !id) throw new Error("Enregistrement impossible : identifiant déjà utilisé ou borne archivée. Actualisez puis réessayez.");
+    return { id };
+  });
+export const removeLicensedKiosk = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+  .inputValidator((v: unknown) => removeKioskSchema.parse(v))
+  .handler(async ({ data, context }) => {
+    await agency(context.supabase, context.userId);
+    const { error } = await context.supabase.rpc("agency_remove_licensed_kiosk", { _restaurant: data.restaurantId, _kiosk: data.kioskId, _confirmation: data.confirmation });
+    if (error) throw new Error("Suppression impossible : vérifiez la confirmation et actualisez la liste.");
+    return { ok: true };
   });

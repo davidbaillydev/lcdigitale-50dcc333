@@ -3,7 +3,7 @@ import { kioskReadersOf } from "./kiosk-readers";
 
 export type KioskDashboardData = {
   restaurants: { id: string; name: string; slug: string; city: string | null; active: boolean; logo_url: string | null; config: unknown }[];
-  licenses: { id: string; restaurant_id: string; kiosk_id: string; label: string; starts_on: string; ends_on: string; status: string }[];
+  licenses: { id: string; restaurant_id: string; kiosk_id: string; label: string; starts_on: string; ends_on: string; status: string; archived_at?: string | null }[];
   billing: { license_id: string; starts_on: string; ends_on: string; status: string; due_on: string | null }[];
 };
 export function kioskPayment(data: KioskDashboardData, license: KioskDashboardData["licenses"][number] | undefined) {
@@ -14,7 +14,7 @@ export function kioskPayment(data: KioskDashboardData, license: KioskDashboardDa
 export function kioskRestaurantRows(data: KioskDashboardData) {
   return data.restaurants.map((restaurant) => {
     const declared = kioskReadersOf(restaurant.config);
-    const licenses = data.licenses.filter((l) => l.restaurant_id === restaurant.id);
+    const licenses = data.licenses.filter((l) => l.restaurant_id === restaurant.id && !l.archived_at);
     const all = [...declared, ...licenses.filter((l) => !declared.some((k) => k.id === l.kiosk_id)).map((l) => ({ id: l.kiosk_id, label: l.label || `Borne ${l.kiosk_id}`, active: false, reader: "" }))];
     const kiosks = all.map((k) => {
       const license = licenses.find((l) => l.kiosk_id === k.id);

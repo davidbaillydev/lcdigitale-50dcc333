@@ -386,6 +386,13 @@
       "when": 1795199096553,
       "tag": "0054_kiosk_settings_authenticated_audit",
       "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1795212625497,
+      "tag": "0055_centralized_kiosk_management",
+      "breakpoints": true
     }
   ]
 }

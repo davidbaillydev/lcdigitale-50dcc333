@@ -59,7 +59,7 @@ export type KioskAccess = "ok" | "disabled" | "unknown";
  */
 export function kioskAccess(config: unknown, kioskId: string | null | undefined): KioskAccess {
   const list = kioskReadersOf(config);
-  if (!list.length) return "ok";
+  if (!list.length) return Array.isArray((config as { kioskReaders?: unknown } | null)?.kioskReaders) ? "unknown" : "ok";
   const id = normalizeKioskId(kioskId);
   const k = id ? list.find((x) => x.id === id) : undefined;
   if (!k) return "unknown";
