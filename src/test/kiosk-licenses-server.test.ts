@@ -4,7 +4,7 @@ vi.mock("@/integrations/supabase/auth-middleware", () => ({ requireSupabaseAuth:
 vi.mock("@tanstack/react-start", () => ({ createServerFn: () => {
   const builder = { middleware: () => builder, inputValidator: () => builder, handler: (h: unknown) => h }; return builder;
 } }));
-import { getKioskLicenses, prepareKioskBilling, saveKioskBilling, saveKioskLicense } from "@/lib/kiosk-licenses.functions";
+import { getKioskLicenses, prepareKioskBilling, saveKioskBilling, saveKioskLicense, registerLicensedKiosk, setLicensedKioskActive } from "@/lib/kiosk-licenses.functions";
 const context = { userId: "agency", supabase: { rpc: mocks.rpc, from: mocks.from } };
 type Handler = (arg: { context: typeof context; data?: unknown }) => Promise<unknown>;
 beforeEach(() => {
@@ -14,7 +14,7 @@ beforeEach(() => {
   mocks.single.mockResolvedValue({ data: { id: "license" }, error: null });
 });
 describe("licences agence serveur", () => {
-  it.each([getKioskLicenses, prepareKioskBilling, saveKioskBilling, saveKioskLicense])("refuse tout accès non agence", async (fn) => {
+  it.each([getKioskLicenses, prepareKioskBilling, saveKioskBilling, saveKioskLicense, registerLicensedKiosk, setLicensedKioskActive])("refuse tout accès non agence", async (fn) => {
     mocks.rpc.mockResolvedValue({ data: false, error: null });
     await expect((fn as unknown as Handler)({ context, data: {} })).rejects.toThrow("Réservé");
     expect(mocks.from).not.toHaveBeenCalled();
@@ -29,5 +29,14 @@ describe("licences agence serveur", () => {
     const q = { error: null }; mocks.upsert.mockResolvedValue(q);
     await (prepareKioskBilling as unknown as Handler)({ context, data: { licenseId: "license", amount: 1 } });
     expect(mocks.upsert).toHaveBeenCalledWith({ license_id: "license", starts_on: "2026-11-03", ends_on: "2027-11-03", amount_ht_cents: 40000, updated_by: "agency" }, { onConflict: "license_id,starts_on,ends_on", ignoreDuplicates: true });
+  });
+  it("suspend uniquement la borne demandée via la commande atomique", async () => {
+    await (setLicensedKioskActive as unknown as Handler)({ context, data: { restaurantId: "restaurant", kioskId: "2", active: false } });
+    expect(mocks.rpc).toHaveBeenLastCalledWith("agency_set_kiosk_active", { _restaurant: "restaurant", _kiosk: "2", _active: false });
+    expect(mocks.from).not.toHaveBeenCalled();
+  });
+  it("crée borne et licence sans lecteur ni prix fourni par le client", async () => {
+    await (registerLicensedKiosk as unknown as Handler)({ context, data: { restaurantId: "restaurant", kioskId: "3", label: "Entrée", startsOn: "2026-11-20", amount: 1, reader: "" } });
+    expect(mocks.rpc).toHaveBeenLastCalledWith("agency_register_kiosk", { _restaurant: "restaurant", _kiosk: "3", _label: "Entrée", _starts: "2026-11-20" });
   });
 });

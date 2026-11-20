@@ -365,6 +365,13 @@
       "when": 1795172727587,
       "tag": "0051_delivery_only_accept_deadline",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1795198450235,
+      "tag": "0052_agency_individual_kiosk_controls",
+      "breakpoints": true
     }
   ]
 }

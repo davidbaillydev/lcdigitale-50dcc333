@@ -12,7 +12,7 @@ async function agency(client: SupabaseClient<Database>, userId: string) {
 export const getKioskLicenses = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
   await agency(context.supabase, context.userId);
   const [rs, ls, bs] = await Promise.all([
-    context.supabase.from("restaurants").select("id,name,slug,logo_url,config").order("name"),
+    context.supabase.from("restaurants").select("id,name,city,active,slug,logo_url,config").order("name"),
     context.supabase.from("kiosk_licenses").select("*").order("kiosk_id"),
     context.supabase.from("kiosk_license_billing").select("*").order("created_at", { ascending: false }),
   ]);
@@ -41,3 +41,20 @@ export const saveKioskBilling = createServerFn({ method: "POST" }).middleware([r
   if (error || !row) throw new Error("Facturation non enregistrée");
   return row;
 });
+
+export const setLicensedKioskActive = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+  .inputValidator((v: unknown) => z.object({ restaurantId: z.string().uuid(), kioskId: z.string().regex(/^[a-z0-9-]{1,20}$/), active: z.boolean() }).parse(v))
+  .handler(async ({ data, context }) => {
+    await agency(context.supabase, context.userId);
+    const { error } = await context.supabase.rpc("agency_set_kiosk_active", { _restaurant: data.restaurantId, _kiosk: data.kioskId, _active: data.active });
+    if (error) throw new Error("Impossible de modifier cette borne. Actualisez puis réessayez.");
+    return { ok: true };
+  });
+export const registerLicensedKiosk = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+  .inputValidator((v: unknown) => licenseSchema.pick({ restaurantId: true, kioskId: true, label: true, startsOn: true }).parse(v))
+  .handler(async ({ data, context }) => {
+    await agency(context.supabase, context.userId);
+    const { data: id, error } = await context.supabase.rpc("agency_register_kiosk", { _restaurant: data.restaurantId, _kiosk: data.kioskId, _label: data.label, _starts: data.startsOn });
+    if (error || !id) throw new Error("Ajout impossible : vérifiez que l’identifiant est disponible (maximum 20 bornes).");
+    return { id };
+  });

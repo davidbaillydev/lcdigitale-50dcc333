@@ -2371,6 +2371,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      agency_register_kiosk: {
+        Args: {
+          _kiosk: string
+          _label: string
+          _restaurant: string
+          _starts: string
+        }
+        Returns: string
+      }
+      agency_set_kiosk_active: {
+        Args: { _active: boolean; _kiosk: string; _restaurant: string }
+        Returns: undefined
+      }
       approved_restaurant_test_cleanup: {
         Args: { _id: string }
         Returns: boolean
