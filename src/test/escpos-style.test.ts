@@ -41,12 +41,12 @@ describe("ESC/POS hardware style", () => {
     it(`large doubles items, choices, extras, notes and key information at ${width}mm`, () => {
       const b = ticketEscpos(order, "kitchen", width, { name: "Test" }, printingFields(printingDefaults({ textSize: "large" })));
       const printed = lines(b);
-      for (const token of ["Poulet", "Ketchup", "Cheddar", "Sans", "sauce", "EMPORTER"]) {
+      for (const token of ["Poulet", "Ketchup", "Cheddar", "Sans", "sauce"]) {
         const line = printed.find((l) => l.text.includes(token));
         expect(line, token).toBeDefined();
-        expect(line?.size, token).toBe(0x11);
+        expect(line?.size, token).toBe(0x01);
       }
-      for (const line of printed.filter((l) => l.size === 0x11)) expect(line.text.length).toBeLessThanOrEqual(width === 80 ? 24 : 16);
+      for (const line of printed.filter((l) => l.size === 0x01)) expect(line.text.length).toBeLessThanOrEqual(width === 80 ? 48 : 32);
       for (const line of printed.filter((l) => (l.size & 1) === 1)) expect(line.spacing).toBe(60);
       expect(printed.find((l) => l.text.includes("Articles:"))?.spacing).toBe(30);
       expect(has(b, [0x1b, 0x32])).toBe(true);

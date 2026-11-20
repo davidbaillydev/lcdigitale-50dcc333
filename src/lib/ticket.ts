@@ -72,8 +72,8 @@ export const TICKET_FONTS: Record<TicketFont, string> = {
 };
 /** Taille de base du texte HTML (px) selon le rouleau et la taille choisie. */
 export function ticketFontSize(width: TicketWidth, size: TicketTextSize = "normal") {
-  const base = width === 80 ? 15 : 12;
-  return size === "large" ? base + 3 : size === "compact" ? base - 2 : base;
+  const base = width === 80 ? 16 : 13;
+  return size === "large" ? base + 2 : size === "compact" ? base - 2 : base;
 }
 /** Tickets à imprimer automatiquement au déclencheur configuré. */
 export function autoPrintKinds(p: Pick<PrintingConfig, "autoKitchen" | "autoReceipt">): TicketKind[] {
@@ -272,7 +272,7 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
     .note { border: 3px double #000; padding: 6px; margin-top: 8px; font-weight: bold; font-size: ${big + 1}px; background: #fff; }
     .box { border: 2px solid #000; padding: 6px; margin-top: 6px; display: flex; justify-content: space-around; font-weight: bold; }
     .ck { display: inline-block; width: 1em; height: 1em; border: 2px solid #000; vertical-align: -2px; margin-right: 4px; text-align: center; line-height: .9em; }
-    .band { background: var(--ticket-ink); color: var(--ticket-paper); padding: 7px 6px; margin: 8px 0; font-size: ${fieldsIn?.textSize === "compact" ? big : big + 2}px; line-height: 1.4; font-weight: bold; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    .band { background: var(--ticket-ink); color: var(--ticket-paper); padding: 3px 8px; margin: 6px 0; border-radius: 2px; font-size: ${big}px; line-height: 1.35; font-weight: 600; letter-spacing: .03em; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
     .band.row { align-items: start; }
     .vat { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: ${big - 2}px; } .vat th, .vat td { text-align: right; padding: 1px 2px; } .vat th:first-child, .vat td:first-child { text-align: left; } .vat th { border-bottom: 1px solid #000; } .vat .tot td { border-top: 1px solid #000; font-weight: bold; }
     .sig { margin-top: 14px; border-bottom: 1px dotted #000; height: 1.4em; }

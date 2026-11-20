@@ -60,7 +60,7 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
   const compact = fieldsIn?.textSize === "compact";
   const fontB = compact || fieldsIn?.font === "condensed";
   const cols = fontB ? (width === 80 ? 64 : 42) : (width === 80 ? 48 : 32);
-  const itemCols = large ? Math.floor(cols / 2) : cols;
+  const itemCols = cols; // grand format = double hauteur seulement, aucun mot coupé
   const f = ticketFields(kind, fieldsIn);
   const totals = ticketTotals(o, shop);
   const timing = ticketTiming(o);
@@ -79,13 +79,16 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
     identity.forEach((s) => wrap(s.replace(/œ/g, "oe").replace(/Œ/g, "OE"), cols).forEach((l) => e.line(l)));
     e.size(1, 1).align(0);
   }
-  e.size(large ? 2 : 1, compact ? 1 : 2).bold(true).inverse(true);
-  wrap(payLabel(o.payment_method, isPaid(o), o.is_test), itemCols).forEach((l) => e.line(l.padEnd(itemCols)));
-  e.inverse(false).line().inverse(true);
-  wrap(lr(timing.label, timing.value, itemCols), itemCols).forEach((l) => e.line(l.padEnd(itemCols)));
-  e.inverse(false).line().inverse(true);
-  wrap(modeLabel(o.mode) + (o.source === "kiosk" ? " - BORNE" : o.source === "phone" ? " - TEL IA" : "") + (o.table_label ? ` - TABLE ${o.table_label}` : "") + (o.room_label ? ` - CHAMBRE ${o.room_label}` : ""), itemCols).forEach((l) => e.line(l.padEnd(itemCols)));
-  e.inverse(false).bold(false).size(1, 1).line();
+  // Bandes noires fines : une seule hauteur, marge intérieure, ligne vide entre chaque.
+  const band = (text: string) => {
+    wrap(text, cols - 2).forEach((l) => e.inverse(true).line(` ${l}`.padEnd(cols)).inverse(false));
+    e.raw(0x1b, 0x4a, 12); // petit espace aéré sous la bande
+  };
+  e.align(0).bold(true);
+  band(modeLabel(o.mode) + (o.source === "kiosk" ? " - BORNE" : o.source === "phone" ? " - TEL IA" : "") + (o.table_label ? ` - TABLE ${o.table_label}` : "") + (o.room_label ? ` - CHAMBRE ${o.room_label}` : ""));
+  band(lr(timing.label, timing.value, cols - 2));
+  band(payLabel(o.payment_method, isPaid(o), o.is_test));
+  e.bold(false).line();
   if (f.customer && ticketCustomer(o).length) {
     e.bold(true).line("Informations clients:").bold(false);
     for (const [label, value] of ticketCustomer(o)) {
@@ -94,7 +97,7 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
     }
   }
   for (const l of ticketDeliveryLines(o, shop)) {
-    if (large) e.size(2, 2);
+    if (large) e.size(1, 2);
     const lines = wrap(l, itemCols);
     if (l.startsWith("Adresse:")) { e.bold(true); lines.forEach((x) => e.line(x)); e.bold(false); }
     else lines.forEach((x) => e.line(x));
@@ -102,11 +105,11 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
   }
   e.align(0).line().bold(true).line("Articles:").bold(false);
   for (const it of o.items) {
-    e.bold(true); if (large) e.size(2, 2);
+    e.bold(true); if (large) e.size(1, 2);
     const right = f.prices && it.total != null ? eur(it.total) : "";
     const names = wrap(`${it.qty}x ${itemTitle(it)}`, Math.max(1, itemCols - right.length - 1));
     names.forEach((name, i) => e.line(i === 0 ? lr(name, right, itemCols) : name));
-    e.bold(!compact);
+    e.bold(false);
     if (f.options) for (const d of ticketOptions(it, { ...shop, currency })) wrap(d, itemCols - 2).forEach((l) => e.line(`  ${l}`));
     if (large) e.size(1, 1);
     e.bold(false);
@@ -117,7 +120,7 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
   if (f.allergens && kind === "kitchen" && allAlg.length) { e.line(hr).bold(true); wrap(`ALLERGENES COMMANDE : ${allAlg.map(allergenLabel).join(", ")}`, cols).forEach((l) => e.line(l)); e.bold(false); }
   if (f.notes && o.notes) {
     const border = "=".repeat(itemCols);
-    e.line(hr).bold(true).size(large ? 2 : 1, 2).line(border);
+    e.line(hr).bold(true).size(1, large ? 2 : 1).line(border);
     wrap(`! REMARQUE CLIENT : ${o.notes}`, itemCols).forEach((l) => e.line(l));
     e.line(border).size(1, 1).bold(false);
   }
@@ -128,7 +131,7 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
   if (f.prices && Number(o.discount) > 0) e.line(lr(`Remise${o.promo_code ? ` ${o.promo_code}` : ""}`, `-${eur(o.discount)}`, cols));
   const vatRows = ticketVat(o, shop);
   if (f.prices) for (const v of vatRows) e.line(lr(`TVA (${vatRateLabel(v.rate)} incluse)`, eur(v.vat), cols));
-  if (f.prices) e.bold(true).size(large ? 2 : 1, 2).line(lr("TOTAL", eur(totals.total), itemCols)).size(1, 1).bold(false);
+  if (f.prices) e.bold(true).size(1, 2).line(lr("TOTAL", eur(totals.total), itemCols)).size(1, 1).bold(false);
   if (kind === "receipt") receiptTenderLines(o).forEach((l) => e.line(l));
   if (kind === "receipt") receiptIntegrityLines(o).forEach((l) => wrap(l, cols).forEach((line) => e.line(line)));
   if (f.prices && kind === "receipt" && vatRows.length) {
@@ -139,7 +142,7 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
     for (const v of vatRows) e.line(row(vatRateLabel(v.rate).replace(" ", ""), n(v.ht), n(v.vat), n(v.ttc)));
     if (vatRows.length > 1) e.bold(true).line(row("Total", n(vatRows.reduce((s, v) => s + v.ht, 0)), n(totals.vat), n(totals.total))).bold(false);
   }
-  if (f.paid) { const p = isPaid(o); e.line(hr).align(1).bold(true).size(1, 2).line(`[${p ? "X" : " "}] PAYE    [${p ? " " : "X"}] IMPAYE`).size(1, 1).bold(false).line(hr).align(0); }
+  if (f.paid) { const p = isPaid(o); e.line(hr).align(1).bold(true).line(`[${p ? "X" : " "}] PAYE    [${p ? " " : "X"}] IMPAYE`).bold(false).line(hr).align(0); }
   if (f.qc && kind === "kitchen") { e.line(hr).bold(true).line("CONTROLE EMBALLAGE").bold(false).line("[ ] Articles conformes").line("[ ] Tous les articles").line("[ ] Couverts / sauces").line("").line("Visa : " + ".".repeat(Math.max(4, cols - 7))); }
   if (kind === "receipt") { e.line(hr).align(1).bold(true); wrap(settlementNote(o).replace(/—/g, "-"), cols).forEach((l) => e.line(l)); e.bold(false).line("Merci de votre commande !"); }
   e.line(hr).align(1).bold(true).line("Commande en ligne:");

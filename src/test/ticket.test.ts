@@ -180,7 +180,7 @@ describe("ticket text size and font", () => {
     expect(ticketHtml(order, "kitchen", 80, "W", { font: "condensed" })).toContain(TICKET_FONTS.condensed);
   });
   it("enlarges item titles on ESC/POS only in large mode", () => {
-    const dbl = [0x1d, 0x21, 0x11].join(",");
+    const dbl = [0x1d, 0x21, 0x01].join(",");
     const count = (b: Uint8Array) => Array.from(b).join(",").split(dbl).length;
     expect(count(ticketEscpos(order, "kitchen", 80, { name: "W" }, { textSize: "large" }))).toBeGreaterThan(count(ticketEscpos(order, "kitchen", 80, { name: "W" })));
   });
