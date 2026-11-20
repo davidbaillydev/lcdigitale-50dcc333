@@ -192,8 +192,8 @@ function ProviderCard({ restaurantId, p, onChange }: { restaurantId: string; p: 
             {p.provider === "lyra" && (
               <Button variant="secondary" disabled={busy} onClick={() => run(async () => {
                 const r = await testL({ data: { restaurantId } });
-                setResult({ ok: true, msg: `Plateforme joignable (${r.gateway}) · mode ${r.mode === "PRODUCTION" ? "Production" : "Test"}. La clé sera validée par la banque au premier paiement : faites une commande test.` });
-              })}>Tester la connexion</Button>
+                setResult({ ok: true, msg: `Configuration vérifiée (${r.gateway}) · mode ${r.mode === "PRODUCTION" ? "Production" : "Test"}. Aucun contact bancaire effectué. La connexion et la clé seront validées au premier paiement : faites une commande test.` });
+              })}>Vérifier la configuration</Button>
             )}
             {p.provider === "mollie" && (
               <Button variant="secondary" disabled={busy} onClick={() => run(async () => {

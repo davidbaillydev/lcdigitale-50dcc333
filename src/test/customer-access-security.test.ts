@@ -18,6 +18,7 @@ import { startKioskCardPayment, kioskPaymentStatus, cancelKioskPayment, abandonK
 import { startKioskQrPayment, kioskQrStatus, abandonKioskQr } from "@/lib/payments/kiosk-qr";
 import { confirmOnlinePayment } from "@/lib/payments/online";
 import { verifyKioskSwitchPin } from "@/lib/kitchen-pin.functions";
+import { checkOrderDeadline } from "@/lib/order-deadline.functions";
 const id = "00000000-0000-4000-8000-000000000001";
 const other = "00000000-0000-4000-8000-000000000002";
 type Call = (args: { data: unknown }) => Promise<unknown>;
@@ -52,6 +53,7 @@ describe("Private public-endpoint authorization", () => {
     ["terminal abandon", abandonKioskOrder, { orderId: id }, "kiosk"], ["QR start", startKioskQrPayment, { orderId: id, origin: "https://restaurant.lcdigitale.fr" }, "kiosk"],
     ["QR status", kioskQrStatus, { orderId: id }, "kiosk"], ["QR abandon", abandonKioskQr, { orderId: id }, "kiosk"],
     ["online confirmation", confirmOnlinePayment, { orderId: id }, "order"],
+    ["deadline cancellation", checkOrderDeadline, { orderId: id }, "order"],
   ];
   it.each(endpoints)("%s refuses missing and cross-record authorization before database access", async (_name, fn, data, scope) => {
     await expect((fn as Call)({ data })).rejects.toThrow("Accès refusé");

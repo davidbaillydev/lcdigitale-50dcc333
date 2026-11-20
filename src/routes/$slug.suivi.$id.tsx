@@ -156,7 +156,7 @@ function Tracking() {
             ))}
           </div>
         )}
-        {data.status === "new" && hasAcceptanceDeadline(data) && data.accept_deadline && <AcceptCountdown className="mt-4" deadline={data.accept_deadline} label="En attente de validation par le restaurant" onExpire={() => { void expireCheck({ data: { orderId: data.id } }).finally(() => refetch()); }} />}
+        {data.status === "new" && hasAcceptanceDeadline(data) && data.accept_deadline && <AcceptCountdown className="mt-4" deadline={data.accept_deadline} label="En attente de validation par le restaurant" onExpire={() => { const access = trackingAccess(data.id); void expireCheck({ data: { orderId: data.id, ...(access ? { access } : {}) } }).catch(() => null).finally(() => refetch()); }} />}
         {!data.is_test && !["done", "cancelled"].includes(data.status) && <PushOptIn orderId={data.id} />}
         {!data.is_test && currency === "EUR" && ["accepted", "preparing", "ready", "delivering", "done"].includes(data.status) && <InvoiceDownload orderId={data.id} />}
         {!data.is_test && data.review_url && (data.status === "ready" || data.status === "done") && (

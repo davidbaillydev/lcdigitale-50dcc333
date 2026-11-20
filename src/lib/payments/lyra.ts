@@ -29,9 +29,8 @@ export const testLyra = createServerFn({ method: "POST" })
     await assertManager(context.supabase, context.userId, data.restaurantId);
     const l = await lyraForRestaurant(data.restaurantId, false);
     if (!l) throw new Error("Enregistrez d'abord l'identifiant boutique et la clé.");
-    let reachable = false;
-    try { reachable = (await fetch(l.gateway, { method: "GET" })).status < 500; } catch { reachable = false; }
-    if (!reachable) throw new Error("La plateforme de paiement ne répond pas : vérifiez son adresse.");
+    // Configuration-only check: never fetch a caller-configured gateway.
+    if (!/^\d{8}$/.test(l.siteId) || !/^https:\/\/[a-z0-9.-]+\/vads-payment\/?$/i.test(l.gateway)) throw new Error("Configuration de plateforme invalide.");
     return { mode: l.mode, gateway: l.gateway };
   });
 

@@ -106,7 +106,7 @@ function Checkout() {
     if (!o) setWhen("later"); else if (!timingOf(restaurant).scheduled) setWhen("asap");
   }, [mode, restaurant]);
   const loadFn = useServerFn(deliverySlotLoad);
-  const [load, setLoad] = useState<{ limit: number | null; minutes: number; counts: Record<string, number> } | null>(null);
+  const [load, setLoad] = useState<{ minutes: number; full: Record<string, boolean> } | null>(null);
   useEffect(() => {
     if (mode !== "delivery") { setLoad(null); return; }
     let alive = true;
@@ -114,7 +114,7 @@ function Checkout() {
     run(); const t = setInterval(run, 30_000);
     return () => { alive = false; clearInterval(t); };
   }, [mode, restaurant.slug, loadFn]);
-  const isFullSlot = (iso: string) => mode === "delivery" && !!load && load.limit !== null && (load.counts[capacityBucket(iso, load.minutes)] ?? 0) >= load.limit;
+  const isFullSlot = (iso: string) => mode === "delivery" && !!load && load.full[capacityBucket(iso, load.minutes)] === true;
   const freeSlots = useMemo(() => slots.filter((s) => !isFullSlot(s)), [slots, load, mode]); // eslint-disable-line react-hooks/exhaustive-deps
   const asapFull = openNow && isFullSlot(asapSlot(restaurant, mode));
   useEffect(() => {

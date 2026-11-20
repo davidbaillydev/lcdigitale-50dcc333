@@ -185,10 +185,10 @@ export const deliverySlotLoad = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: r } = await supabaseAdmin.from("restaurants").select("id, delivery").eq("slug", data.slug.toLowerCase()).eq("active", true).maybeSingle();
-    if (!r) return { limit: null as number | null, minutes: 30, counts: {} as Record<string, number> };
-    const { deliveryLoad } = await import("./delivery-capacity.server");
+    if (!r) return { minutes: 30, full: {} as Record<string, boolean> };
+    const { deliveryLoad, publicDeliveryAvailability } = await import("./delivery-capacity.server");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return deliveryLoad(supabaseAdmin, r as any);
+    return publicDeliveryAvailability(await deliveryLoad(supabaseAdmin, r as any));
   });
 
 /** Gérant : plafond de livraisons par créneau. */

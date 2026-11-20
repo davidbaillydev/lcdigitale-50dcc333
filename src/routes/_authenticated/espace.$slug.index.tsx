@@ -29,7 +29,7 @@ import { retryPosSync } from "@/lib/pos.functions";
 import { toast } from "sonner";
 import { hasAcceptanceDeadline } from "@/lib/order-acceptance";
 import { AcceptCountdown } from "@/components/AcceptCountdown";
-import { checkOrderDeadline } from "@/lib/order-deadline.functions";
+import { checkStaffOrderDeadline } from "@/lib/order-deadline.functions";
 import { acceptPreauthOrder, releasePreauthOrder } from "@/lib/preauth.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useStaff } from "@/hooks/use-staff";
@@ -284,7 +284,7 @@ function Kitchen({ onLock, pinEnabled }: { onLock: () => void; pinEnabled: boole
   }, [isStaff, rid, load, autoPrint]);
 
   // Rappel sonore tant qu'il reste des commandes non acceptées
-  const expireCheck = useServerFn(checkOrderDeadline);
+  const expireCheck = useServerFn(checkStaffOrderDeadline);
   const pending = orders.filter((o) => o.status === "new" || o.status === "pending_approval").length;
   useEffect(() => {
     return startKitchenReminder(sound, ordersRef.current, () => {

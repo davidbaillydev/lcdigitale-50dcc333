@@ -15,3 +15,8 @@ export async function deliveryLoad(admin: any, r: Pick<Restaurant, "id" | "deliv
 }
 export const isFull = (load: Awaited<ReturnType<typeof deliveryLoad>>, iso: string) =>
   load.limit !== null && (load.counts[capacityBucket(iso, load.minutes)] ?? 0) >= load.limit;
+
+/** Public availability exposes only full slots, never volumes or driver capacity. */
+export function publicDeliveryAvailability(load: Awaited<ReturnType<typeof deliveryLoad>>) {
+  return { minutes: load.minutes, full: Object.fromEntries(Object.entries(load.counts).filter(([, count]) => load.limit !== null && count >= load.limit).map(([bucket]) => [bucket, true])) as Record<string, boolean> };
+}
