@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { demoKioskActive, kioskDemoData, kioskPayment, kioskRestaurantRows } from "@/lib/kiosk-dashboard";
+import { demoKioskActive, kioskDemoData, kioskPayment, kioskRestaurantRows, kioskUrl } from "@/lib/kiosk-dashboard";
 import { kioskAccess, kioskReadersOf } from "@/lib/kiosk-readers";
 
 describe("parc des bornes et licences", () => {
@@ -33,6 +33,14 @@ describe("parc des bornes et licences", () => {
     expect(unpaid).toHaveLength(2);
     expect(unpaid.every((k) => k.active)).toBe(true);
     expect(unpaid.every((k) => k.reader === "")).toBe(true);
+  });
+  it("construit l'adresse dédiée de chaque borne avec son identifiant", () => {
+    expect(kioskUrl("https://lcdigitale.lovable.app", "tacos-house", "1")).toBe("https://lcdigitale.lovable.app/tacos-house/borne?borne=1");
+    expect(kioskUrl("https://commande.frenchpouletbraise.com/", "french-poulet-braise", "borne-2")).toBe("https://commande.frenchpouletbraise.com/french-poulet-braise/borne?borne=borne-2");
+  });
+  it("chaque restaurant du parc expose un slug pour le lien de ses bornes", () => {
+    const data = kioskDemoData("2026-11-20");
+    expect(data.restaurants.every((r) => typeof r.slug === "string" && r.slug.length > 0)).toBe(true);
   });
   it("la fiche présente le libellé enregistré dans la licence", () => {
     const data = kioskDemoData("2026-11-20");

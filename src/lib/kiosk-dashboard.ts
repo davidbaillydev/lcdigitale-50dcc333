@@ -2,7 +2,7 @@ import { annualEnd } from "./kiosk-licenses";
 import { kioskReadersOf } from "./kiosk-readers";
 
 export type KioskDashboardData = {
-  restaurants: { id: string; name: string; city: string | null; active: boolean; logo_url: string | null; config: unknown }[];
+  restaurants: { id: string; name: string; slug: string; city: string | null; active: boolean; logo_url: string | null; config: unknown }[];
   licenses: { id: string; restaurant_id: string; kiosk_id: string; label: string; starts_on: string; ends_on: string; status: string }[];
   billing: { license_id: string; starts_on: string; ends_on: string; status: string; due_on: string | null }[];
 };
@@ -23,10 +23,14 @@ export function kioskRestaurantRows(data: KioskDashboardData) {
     return { restaurant, kiosks, unpaid: kiosks.filter((k) => k.payment.status === "invoiced").length };
   });
 }
+/** Adresse dédiée d'une borne, à copier ou flasher depuis le tableau des licences. */
+export function kioskUrl(origin: string, slug: string, kioskId: string) {
+  return `${origin.replace(/\/+$/, "")}/${encodeURIComponent(slug)}/borne?borne=${encodeURIComponent(kioskId)}`;
+}
 /** Demo records never enter live restaurants, billing, or kiosk configuration. */
 export function kioskDemoData(today: string): KioskDashboardData {
   const names = [["Le Comptoir Toulousain", "Toulouse", 3], ["Maison du Poulet", "Blagnac", 2], ["Bistro des Halles", "Colomiers", 4]] as const;
-  const restaurants = names.map(([name, city, count], i) => ({ id: `demo-${i}`, name, city, active: true, logo_url: null, config: { kioskReaders: Array.from({ length: count }, (_, j) => ({ id: String(j + 1), label: `Borne ${j + 1} · ${["Entrée", "Comptoir", "Terrasse", "Étage"][j]}`, reader: "", active: true })) } }));
+  const restaurants = names.map(([name, city, count], i) => ({ id: `demo-${i}`, name, slug: `demo-${name.toLocaleLowerCase("fr").replaceAll(" ", "-")}`, city, active: true, logo_url: null, config: { kioskReaders: Array.from({ length: count }, (_, j) => ({ id: String(j + 1), label: `Borne ${j + 1} · ${["Entrée", "Comptoir", "Terrasse", "Étage"][j]}`, reader: "", active: true })) } }));
   const licenses = restaurants.flatMap((r) => kioskReadersOf(r.config).map((k) => ({ id: `DEMO-${r.id.slice(-1)}-${k.id}`, restaurant_id: r.id, kiosk_id: k.id, label: k.label, status: "active", starts_on: today, ends_on: annualEnd(today) })));
   const billing = licenses.map((l, i) => ({ license_id: l.id, starts_on: l.starts_on, ends_on: l.ends_on, status: i === 1 || i === 5 ? "invoiced" : "paid", due_on: i === 1 || i === 5 ? today : l.ends_on }));
   return { restaurants, licenses, billing };
