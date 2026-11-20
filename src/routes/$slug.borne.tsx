@@ -302,14 +302,14 @@ function Kiosk() {
       )}
 
       {step !== "welcome" && step !== "done" && (
-        <header className="flex items-center justify-between gap-4 border-b border-border px-6 py-4">
-          <button onClick={reset} className="rounded-xl bg-muted px-6 py-4 text-xl font-semibold">Annuler</button>
-          <p className="flex items-center gap-3 font-display text-4xl text-primary"><BrandLogo src={restaurant.logo_url} name={restaurant.name} className="h-12 w-12 object-contain" />{restaurant.name}{kiosk && <span {...longPress} title="Appui long : changer de borne" className="rounded-full bg-muted px-4 py-2 font-sans text-lg font-semibold text-muted-foreground">{kiosk.text}</span>}</p>
-          <div className="flex items-center gap-3">
-            <ThemeToggle className="rounded-xl p-4" />
+        <header className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-border px-4 py-3 lg:gap-4 lg:px-6 lg:py-4">
+          <button onClick={reset} className="shrink-0 rounded-xl bg-muted px-4 py-4 text-lg font-semibold lg:px-6 lg:text-xl">Annuler</button>
+          <p className="flex min-w-0 items-center gap-3 font-display text-3xl text-primary lg:text-4xl"><BrandLogo src={restaurant.logo_url} name={restaurant.name} className="h-11 w-11 shrink-0 object-contain lg:h-12 lg:w-12" /><span className="truncate">{restaurant.name}</span>{kiosk && <span {...longPress} title="Appui long : changer de borne" className="shrink-0 rounded-full bg-muted px-4 py-2 font-sans text-lg font-semibold text-muted-foreground">{kiosk.text}</span>}</p>
+          <div className="flex shrink-0 items-center gap-2 lg:gap-3">
+            <ThemeToggle className="rounded-xl p-3 lg:p-4" />
             <div className="flex rounded-xl bg-muted p-1 text-lg font-semibold">
               {([["dine_in", "Sur place"], ["pickup", "À emporter"]] as const).map(([m, l]) => (
-                <button key={m} onClick={() => setMode(m)} className={cn("rounded-lg px-5 py-3", mode === m && "bg-primary text-primary-foreground")}>{l}</button>
+                <button key={m} onClick={() => setMode(m)} className={cn("whitespace-nowrap rounded-lg px-3 py-3 lg:px-5", mode === m && "bg-primary text-primary-foreground")}>{l}</button>
               ))}
             </div>
           </div>
@@ -319,35 +319,35 @@ function Kiosk() {
       {kioskPaused && <OrderingBanners kiosk state={{ restaurant, paused: true, onlineOff: false, showClosed: false }} />}
       {step === "menu" && (
         <div className="flex min-h-0 flex-1">
-          <nav className="w-60 shrink-0 xl:w-72 2xl:w-80 overflow-y-auto border-r border-border p-3">
-            <button onClick={() => setAllergyOpen(true)} className={cn("mb-4 flex w-full items-center justify-center gap-2 rounded-xl border-2 px-4 py-5 text-xl font-semibold", excluded.length ? "border-primary bg-primary/10 text-primary" : "border-border")}>⚠ Sans allergènes{excluded.length ? ` (${excluded.length})` : ""}</button>
+          <nav lang="fr" className="w-44 shrink-0 lg:w-60 xl:w-72 2xl:w-80 overflow-y-auto border-r border-border p-3">
+            <button onClick={() => setAllergyOpen(true)} className={cn("mb-3 flex w-full items-center justify-center gap-2 rounded-xl border-2 px-2 py-4 text-base font-semibold lg:px-4 lg:py-5 lg:text-xl", excluded.length ? "border-primary bg-primary/10 text-primary" : "border-border")}>⚠ Sans allergènes{excluded.length ? ` (${excluded.length})` : ""}</button>
             {catalog.categories.map((c) => (
               <button key={c.id} onClick={() => setCat(c.id)}
-                className={cn("mb-2 block w-full rounded-xl px-4 py-5 text-left text-xl font-semibold", c.id === cat ? "bg-primary text-primary-foreground" : "bg-card")}>
+                className={cn("mb-2 block w-full rounded-xl px-3 py-4 text-left text-lg font-semibold leading-tight break-words hyphens-auto lg:px-4 lg:py-5 lg:text-xl", c.id === cat ? "bg-primary text-primary-foreground" : "bg-card")}>
                 {c.label}
               </button>
             ))}
           </nav>
-          <main className="min-h-0 flex-1 overflow-y-auto p-5">
+          <main className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4 lg:p-5">
             <div className="mb-4 flex items-center justify-between gap-4 border-b border-border pb-3">
-              <h2 className="font-display text-5xl">{category?.label}</h2>
+              <h2 className="font-display text-4xl lg:text-5xl">{category?.label}</h2>
             </div>
             {category?.note && <p className="mb-4 text-lg text-muted-foreground">{category.note}</p>}
             {excluded.length > 0 && category && !category.items.length && <p className="py-10 text-center text-2xl text-muted-foreground">Aucun plat de cette catégorie sans ces allergènes.</p>}
-            <div className="grid grid-cols-2 gap-4 pb-32 lg:grid-cols-3 2xl:grid-cols-4 min-[2200px]:grid-cols-5">
+            <div className="grid grid-cols-2 gap-3 pb-36 lg:gap-4 lg:grid-cols-3 2xl:grid-cols-4 min-[2200px]:grid-cols-5">
               {category?.items.map((it) => (
                 <button key={it.id} disabled={kioskPaused} onClick={() => kioskPaused ? undefined : !isItemAvailable(it) || it.options?.length || it.allergens?.length ? setItem(it) : add(it.id, {}, 1)}
-                  className="flex min-h-40 flex-col justify-between overflow-hidden rounded-2xl border-2 border-border bg-card p-5 text-left active:border-primary">
-                  {it.image && <img src={it.image} alt={it.name} loading="lazy" className="-mx-5 -mt-5 mb-3 aspect-[4/3] w-[calc(100%+2.5rem)] max-w-none object-cover" />}
+                  className="flex min-h-40 min-w-0 flex-col justify-between overflow-hidden rounded-2xl border-2 border-border bg-card p-4 text-left lg:p-5 active:border-primary">
+                  {it.image && <img src={it.image} alt={it.name} loading="lazy" className="-mx-4 -mt-4 mb-3 aspect-[4/3] w-[calc(100%+2rem)] lg:-mx-5 lg:-mt-5 lg:w-[calc(100%+2.5rem)] max-w-none object-cover" />}
                   <span>
-                    <span className="block text-2xl font-semibold leading-tight">{it.name}</span>
+                    <span className="block text-xl font-semibold leading-tight lg:text-2xl">{it.name}</span>
                     {it.desc && <span className="mt-1 line-clamp-2 block text-base text-muted-foreground">{it.desc}</span>}
                     <AllergenBadges ids={it.allergens} className="mt-2" />
                     {it.schedule && <span className="mt-2 block text-base font-semibold text-primary">{now && !isItemAvailable(it, now) ? "Disponible : " : ""}{itemScheduleLabel(it.schedule)}</span>}
                   </span>
-                  <span className="mt-3 flex items-center justify-between">
-                    <span className="font-display text-3xl text-primary">{fromPrice(it) != null ? `dès ${euro(fromPrice(it)!)}` : euro(it.price)}</span>
-                    <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground">{now && !isItemAvailable(it, now) ? <span className="text-xs">Horaires</span> : <Plus className="h-8 w-8" />}</span>
+                  <span className="mt-3 flex items-center justify-between gap-2">
+                    <span className="min-w-0 whitespace-nowrap font-display text-2xl text-primary lg:text-3xl">{fromPrice(it) != null ? `dès ${euro(fromPrice(it)!)}` : euro(it.price)}</span>
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary lg:h-14 lg:w-14 text-primary-foreground">{now && !isItemAvailable(it, now) ? <span className="text-xs">Horaires</span> : <Plus className="h-8 w-8" />}</span>
                   </span>
                 </button>
               ))}
@@ -358,7 +358,7 @@ function Kiosk() {
 
       {step === "menu" && count > 0 && (
         <button onClick={() => setStep("cart")}
-          className="absolute bottom-6 right-6 flex items-center gap-5 rounded-2xl bg-accent px-10 py-6 font-display text-4xl text-accent-foreground shadow-2xl">
+          className="absolute inset-x-4 bottom-4 flex items-center justify-center gap-4 rounded-2xl bg-accent px-6 py-5 font-display text-3xl lg:inset-x-auto lg:bottom-6 lg:right-6 lg:gap-5 lg:px-10 lg:py-6 lg:text-4xl text-accent-foreground shadow-2xl">
           <ShoppingBag className="h-10 w-10" /> Panier ({count}) · {euro(subtotal)}
         </button>
       )}
