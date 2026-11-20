@@ -260,19 +260,19 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
     body { overflow-wrap: anywhere; }
     .row { display: flex; justify-content: space-between; gap: 4px; margin-top: 4px; }
     .row > :first-child { min-width: 0; } .row > span:last-child { flex-shrink: 0; white-space: nowrap; }
-    .item { font-size: ${big + 1}px; font-weight: bold; }
+    .item { font-size: ${big + 2}px; font-weight: bold; margin-top: 10px; }
     .cat { margin-top: 8px; font-size: ${big - 3}px; }
-    .det { padding-left: 10px; font-size: ${big - 1}px; }
+    .det { padding-left: 10px; font-size: ${big}px; font-weight: ${fieldsIn?.textSize === "compact" ? 400 : 600}; line-height: 1.4; }
     .addr { border: 2px solid var(--ticket-ink); padding: 4px 6px; margin-top: 6px; font-weight: bold; font-size: ${big + 1}px; }
     .customer { display: grid; grid-template-columns: auto minmax(0,1fr); gap: 2px 8px; }
-    .customer .value { text-align: right; } .section { margin: 12px 0 4px; font-weight: bold; }
+    .customer .value { text-align: right; font-weight: bold; } .section { margin: 12px 0 4px; font-weight: bold; }
     .promo { border: 1px solid var(--ticket-ink); padding: 10px 5px; margin: 12px 0; text-align: center; font-weight: bold; }
     hr { border: 0; border-top: 1px dashed #000; margin: 6px 0; }
     .alg { padding-left: 10px; font-size: ${big - 2}px; font-weight: bold; }
     .note { border: 3px double #000; padding: 6px; margin-top: 8px; font-weight: bold; font-size: ${big + 1}px; background: #fff; }
     .box { border: 2px solid #000; padding: 6px; margin-top: 6px; display: flex; justify-content: space-around; font-weight: bold; }
     .ck { display: inline-block; width: 1em; height: 1em; border: 2px solid #000; vertical-align: -2px; margin-right: 4px; text-align: center; line-height: .9em; }
-    .band { background: var(--ticket-ink); color: var(--ticket-paper); padding: 4px; margin: 8px 0; font-weight: bold; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    .band { background: var(--ticket-ink); color: var(--ticket-paper); padding: 7px 6px; margin: 8px 0; font-size: ${fieldsIn?.textSize === "compact" ? big : big + 2}px; line-height: 1.4; font-weight: bold; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
     .band.row { align-items: start; }
     .vat { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: ${big - 2}px; } .vat th, .vat td { text-align: right; padding: 1px 2px; } .vat th:first-child, .vat td:first-child { text-align: left; } .vat th { border-bottom: 1px solid #000; } .vat .tot td { border-top: 1px solid #000; font-weight: bold; }
     .sig { margin-top: 14px; border-bottom: 1px dotted #000; height: 1.4em; }
