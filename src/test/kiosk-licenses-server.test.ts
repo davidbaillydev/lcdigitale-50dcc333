@@ -1,20 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ rpc: vi.fn(), from: vi.fn(), upsert: vi.fn(), single: vi.fn() }));
+const mocks = vi.hoisted(() => ({ rpc: vi.fn(), from: vi.fn(), upsert: vi.fn(), single: vi.fn(), eq: vi.fn(), range: vi.fn() }));
 vi.mock("@/integrations/supabase/auth-middleware", () => ({ requireSupabaseAuth: {} }));
 vi.mock("@tanstack/react-start", () => ({ createServerFn: () => {
   const builder = { middleware: () => builder, inputValidator: () => builder, handler: (h: unknown) => h }; return builder;
 } }));
-import { getKioskLicenses, prepareKioskBilling, saveKioskBilling, saveKioskLicense, registerLicensedKiosk, setLicensedKioskActive } from "@/lib/kiosk-licenses.functions";
+import { getKioskAudit, getKioskLicenses, prepareKioskBilling, saveKioskBilling, saveKioskLicense, registerLicensedKiosk, setLicensedKioskActive } from "@/lib/kiosk-licenses.functions";
 const context = { userId: "agency", supabase: { rpc: mocks.rpc, from: mocks.from } };
 type Handler = (arg: { context: typeof context; data?: unknown }) => Promise<unknown>;
 beforeEach(() => {
   vi.resetAllMocks(); mocks.rpc.mockResolvedValue({ data: true, error: null });
-  const q = { select: () => q, eq: () => q, single: mocks.single, upsert: mocks.upsert };
+  const q = { select: () => q, eq: mocks.eq, order: () => q, range: mocks.range, single: mocks.single, upsert: mocks.upsert };
+  mocks.eq.mockReturnValue(q);
+  mocks.range.mockResolvedValue({ data: [{ id: "audit", active: false, actor_email: "agency@example.test" }], count: 21, error: null });
   mocks.from.mockReturnValue(q); mocks.upsert.mockReturnValue(q);
   mocks.single.mockResolvedValue({ data: { id: "license" }, error: null });
 });
 describe("licences agence serveur", () => {
-  it.each([getKioskLicenses, prepareKioskBilling, saveKioskBilling, saveKioskLicense, registerLicensedKiosk, setLicensedKioskActive])("refuse tout accès non agence", async (fn) => {
+  it.each([getKioskAudit, getKioskLicenses, prepareKioskBilling, saveKioskBilling, saveKioskLicense, registerLicensedKiosk, setLicensedKioskActive])("refuse tout accès non agence", async (fn) => {
     mocks.rpc.mockResolvedValue({ data: false, error: null });
     await expect((fn as unknown as Handler)({ context, data: {} })).rejects.toThrow("Réservé");
     expect(mocks.from).not.toHaveBeenCalled();
@@ -38,5 +40,16 @@ describe("licences agence serveur", () => {
   it("crée borne et licence sans lecteur ni prix fourni par le client", async () => {
     await (registerLicensedKiosk as unknown as Handler)({ context, data: { restaurantId: "restaurant", kioskId: "3", label: "Entrée", startsOn: "2026-11-20", amount: 1, reader: "" } });
     expect(mocks.rpc).toHaveBeenLastCalledWith("agency_register_kiosk", { _restaurant: "restaurant", _kiosk: "3", _label: "Entrée", _starts: "2026-11-20" });
+  });
+  it("filtre le journal par restaurant et lit 20 événements par page", async () => {
+    const result = await (getKioskAudit as unknown as Handler)({ context, data: { restaurantId: "restaurant", page: 1 } });
+    expect(mocks.from).toHaveBeenCalledWith("kiosk_activation_audit");
+    expect(mocks.eq).toHaveBeenCalledWith("restaurant_id", "restaurant");
+    expect(mocks.range).toHaveBeenCalledWith(20, 39);
+    expect(result).toEqual({ rows: [{ id: "audit", active: false, actor_email: "agency@example.test" }], total: 21 });
+  });
+  it("ne présente pas un journal vide si sa lecture échoue", async () => {
+    mocks.range.mockResolvedValue({ data: null, count: null, error: { message: "denied" } });
+    await expect((getKioskAudit as unknown as Handler)({ context, data: { restaurantId: null, page: 0 } })).rejects.toThrow("Impossible de charger le journal");
   });
 });

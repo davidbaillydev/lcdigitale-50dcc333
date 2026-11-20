@@ -18,7 +18,7 @@ export function kioskRestaurantRows(data: KioskDashboardData) {
     const all = [...declared, ...licenses.filter((l) => !declared.some((k) => k.id === l.kiosk_id)).map((l) => ({ id: l.kiosk_id, label: l.label || `Borne ${l.kiosk_id}`, active: false, reader: "" }))];
     const kiosks = all.map((k) => {
       const license = licenses.find((l) => l.kiosk_id === k.id);
-      return { ...k, declared: declared.some((d) => d.id === k.id), license, payment: kioskPayment(data, license) };
+      return { ...k, label: license?.label || k.label, declared: declared.some((d) => d.id === k.id), license, payment: kioskPayment(data, license) };
     });
     return { restaurant, kiosks, unpaid: kiosks.filter((k) => k.payment.status === "invoiced").length };
   });

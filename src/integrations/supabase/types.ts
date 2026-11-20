@@ -109,6 +109,42 @@ export type Database = {
           },
         ]
       }
+      kiosk_activation_audit: {
+        Row: {
+          active: boolean
+          actor_email: string | null
+          actor_user_id: string | null
+          id: string
+          kiosk_id: string
+          kiosk_label: string
+          occurred_at: string
+          restaurant_id: string
+          restaurant_name: string
+        }
+        Insert: {
+          active: boolean
+          actor_email?: string | null
+          actor_user_id?: string | null
+          id?: string
+          kiosk_id: string
+          kiosk_label: string
+          occurred_at?: string
+          restaurant_id: string
+          restaurant_name: string
+        }
+        Update: {
+          active?: boolean
+          actor_email?: string | null
+          actor_user_id?: string | null
+          id?: string
+          kiosk_id?: string
+          kiosk_label?: string
+          occurred_at?: string
+          restaurant_id?: string
+          restaurant_name?: string
+        }
+        Relationships: []
+      }
       kiosk_license_billing: {
         Row: {
           amount_ht_cents: number
@@ -2379,6 +2415,10 @@ export type Database = {
           _starts: string
         }
         Returns: string
+      }
+      agency_save_kiosk_readers: {
+        Args: { _kiosks: Json; _restaurant: string }
+        Returns: undefined
       }
       agency_set_kiosk_active: {
         Args: { _active: boolean; _kiosk: string; _restaurant: string }

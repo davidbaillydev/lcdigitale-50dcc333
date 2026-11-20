@@ -11,15 +11,18 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ThemeToggle } from "@/lib/theme";
 import { KioskLicenseDashboard } from "@/components/KioskLicenseDashboard";
+import { KioskAuditJournal } from "@/components/KioskAuditJournal";
 import { demoKioskActive, kioskDemoData, kioskRestaurantRows } from "@/lib/kiosk-dashboard";
 import { annualEnd } from "@/lib/kiosk-licenses";
 import { kioskReadersOf } from "@/lib/kiosk-readers";
-import { getKioskLicenses, prepareKioskBilling, saveKioskBilling, saveKioskLicense, registerLicensedKiosk, setLicensedKioskActive } from "@/lib/kiosk-licenses.functions";
+import { getKioskAudit, getKioskLicenses, prepareKioskBilling, saveKioskBilling, saveKioskLicense, registerLicensedKiosk, setLicensedKioskActive } from "@/lib/kiosk-licenses.functions";
 
-type SearchState = { q?: string; unpaid?: boolean; restaurant?: string; demo?: boolean };
+type SearchState = { q?: string; unpaid?: boolean; restaurant?: string; demo?: boolean; auditPage?: number };
 const options = queryOptions({ queryKey: ["agency-kiosk-licenses"], queryFn: () => getKioskLicenses() });
+const auditOptions = (restaurant: string, page: number) => queryOptions({ queryKey: ["agency-kiosk-audit", restaurant, page], queryFn: () => getKioskAudit({ data: { restaurantId: restaurant === "all" || restaurant.startsWith("demo-") ? null : restaurant, page } }) });
 export const Route = createFileRoute("/_authenticated/admin/licences")({
-  validateSearch: (s: Record<string, unknown>): SearchState => ({ q: typeof s["q"] === "string" ? s["q"] : "", unpaid: s["unpaid"] === true || s["unpaid"] === "true", restaurant: typeof s["restaurant"] === "string" ? s["restaurant"] : "all", demo: s["demo"] === true || s["demo"] === "true" }),
+  validateSearch: (s: Record<string, unknown>): SearchState => ({ q: typeof s["q"] === "string" ? s["q"] : "", unpaid: s["unpaid"] === true || s["unpaid"] === "true", restaurant: typeof s["restaurant"] === "string" ? s["restaurant"] : "all", demo: s["demo"] === true || s["demo"] === "true", auditPage: Math.max(0, Math.min(100000, Math.floor(Number(s["auditPage"]) || 0))) }),
+  loaderDeps: ({ search }) => ({ restaurant: search.restaurant ?? "all", page: search.auditPage ?? 0 }),
   errorComponent: ({ error }) => <main className="p-6" role="alert">Impossible de charger les licences : {error instanceof Error ? error.message : "Réessayez ultérieurement."}</main>,
   notFoundComponent: () => <main className="p-6">Page de licences introuvable.</main>,
   head: () => ({ meta: [
@@ -29,7 +32,7 @@ export const Route = createFileRoute("/_authenticated/admin/licences")({
     { property: "og:description", content: "Licences annuelles et suivi des factures par restaurant et par borne." },
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }, { name: "robots", content: "noindex" },
   ] }),
-  loader: ({ context }) => context.queryClient.ensureQueryData(options), component: Page,
+  loader: ({ context, deps }) => Promise.all([context.queryClient.ensureQueryData(options), context.queryClient.ensureQueryData(auditOptions(deps.restaurant, deps.page))]), component: Page,
 });
 type Data = Awaited<ReturnType<typeof getKioskLicenses>>;
 type License = Data["licenses"][number];
@@ -44,7 +47,8 @@ function Page() {
   const { data, refetch, isFetching } = useSuspenseQuery(options);
   const search = Route.useSearch(), navigate = useNavigate({ from: Route.fullPath });
   const restaurant = search.restaurant ?? "all";
-  const setRestaurant = (value: string) => void navigate({ search: (prev) => ({ ...prev, restaurant: value }) });
+  const setRestaurant = (value: string) => void navigate({ search: (prev) => ({ ...prev, restaurant: value, auditPage: 0 }) });
+  const { data: audit, refetch: refetchAudit } = useSuspenseQuery(auditOptions(restaurant, search.auditPage ?? 0));
   const [demoData, setDemoData] = useState(() => kioskDemoData(data.today));
   const source = search.demo ? demoData : data;
   const [toggleBusy, setToggleBusy] = useState<string | null>(null);
@@ -54,7 +58,7 @@ function Page() {
     if (search.demo) { setDemoData((prev) => demoKioskActive(prev, restaurantId, kioskId, active)); return; }
     const key = `${restaurantId}:${kioskId}`;
     setToggleBusy(key); setOverrides({ [key]: active });
-    try { await toggle({ data: { restaurantId, kioskId, active } }); await refetch(); toast.success(active ? "Borne réactivée" : "Borne suspendue"); }
+    try { await toggle({ data: { restaurantId, kioskId, active } }); await Promise.all([refetch(), refetchAudit()]); toast.success(active ? "Borne réactivée" : "Borne suspendue"); }
     catch (e) { toast.error(e instanceof Error ? e.message : "Modification impossible"); }
     finally { setOverrides({}); setToggleBusy(null); }
   };
@@ -68,7 +72,7 @@ function Page() {
   const rs = (id: string) => data.restaurants.find((r) => r.id === id);
   const action = async (fn: () => Promise<unknown>, success: string) => {
     setBusy(true);
-    try { await fn(); await refetch(); toast.success(success); return true; }
+    try { await fn(); await Promise.all([refetch(), refetchAudit()]); toast.success(success); return true; }
     catch (e) { toast.error(e instanceof Error ? e.message : "Enregistrement impossible"); return false; }
     finally { setBusy(false); }
   };
@@ -123,11 +127,11 @@ function Page() {
   };
   return <main className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6">
     <div className="flex items-center gap-3"><Crumbs page="Bornes & licences" /><span className="mr-auto" /><ThemeToggle /></div>
-    <header className="flex flex-wrap items-end gap-4"><div className="mr-auto min-w-0"><p className="text-sm font-semibold text-primary">Console agence / Parc de bornes</p><h1 className="mt-2 text-4xl sm:text-5xl">Bornes & licences</h1><p className="mt-3 text-muted-foreground">400 € HT / an / borne active</p></div><Button variant="outline" className="h-12" onClick={() => void refetch()} disabled={isFetching || !!search.demo}><RefreshCw />Actualiser</Button><Button className="h-12" onClick={() => newLicense()} disabled={!source.restaurants.length}><Plus />Ajouter une borne</Button></header>
+    <header className="flex flex-wrap items-end gap-4"><div className="mr-auto min-w-0"><p className="text-sm font-semibold text-primary">Console agence / Parc de bornes</p><h1 className="mt-2 text-4xl sm:text-5xl">Bornes & licences</h1><p className="mt-3 text-muted-foreground">400 € HT / an / borne active</p></div><Button variant="outline" className="h-12" onClick={() => void Promise.all([refetch(), refetchAudit()])} disabled={isFetching || !!search.demo}><RefreshCw />Actualiser</Button><Button className="h-12" onClick={() => newLicense()} disabled={!source.restaurants.length}><Plus />Ajouter une borne</Button></header>
     <div className="flex flex-wrap items-center gap-2 border-b pb-4"><Button variant={!search.demo ? "default" : "ghost"} className="h-12" onClick={() => void navigate({ search: (prev) => ({ ...prev, demo: false, restaurant: "all" }) })}>Parc réel</Button><Button variant={search.demo ? "default" : "ghost"} className="h-12" onClick={() => void navigate({ search: (prev) => ({ ...prev, demo: true, restaurant: "all" }) })}>Démonstration · 3 restaurants</Button><p className="ml-auto text-xs text-muted-foreground">{search.demo ? "Données fictives · aucune borne réelle modifiée" : "Règlements déclarés · aucun blocage automatique"}</p></div>
     <div className="flex flex-wrap gap-4"><div className="relative min-w-0 flex-1 basis-64"><Search className="absolute left-3 top-4 size-4 text-muted-foreground" /><Input aria-label="Rechercher un restaurant ou une ville" className="h-12 pl-10" placeholder="Rechercher un restaurant, une ville…" value={search.q ?? ""} onChange={(e) => void navigate({ search: (prev) => ({ ...prev, q: e.target.value }), replace: true })} /></div><select aria-label="Restaurant" className={selectClass + " sm:max-w-60"} value={restaurant} onChange={(e) => setRestaurant(e.target.value)}><option value="all">Tous les restaurants</option>{source.restaurants.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}</select><Button variant={search.unpaid ? "default" : "outline"} aria-pressed={!!search.unpaid} className="h-12" onClick={() => void navigate({ search: (prev) => ({ ...prev, unpaid: !prev.unpaid }) })}>Licences impayées <span className="tabular-nums">{rowCount.reduce((n, r) => n + r.unpaid, 0)}</span></Button></div>
     <KioskLicenseDashboard data={source} search={search.q ?? ""} unpaidOnly={!!search.unpaid} restaurantId={restaurant} busy={toggleBusy} overrides={overrides} onToggle={(r, k, a) => void changeKiosk(r, k, a)} onAdd={(r) => newLicense(r)} onEdit={openEdit} onBilling={openBilling} />
-    {!search.demo && <p className="border-l-2 border-primary pl-4 text-xs text-muted-foreground">Règlements renseignés par l’agence, sans confirmation bancaire. Une suspension est toujours une action manuelle et concerne uniquement la borne sélectionnée.</p>}
+    {!search.demo && <><p className="border-l-2 border-primary pl-4 text-xs text-muted-foreground">Règlements renseignés par l’agence, sans confirmation bancaire. Une suspension est toujours une action manuelle et concerne uniquement la borne sélectionnée.</p><KioskAuditJournal data={audit} page={search.auditPage ?? 0} onPage={(page) => void navigate({ search: (prev) => ({ ...prev, auditPage: page }) })} /></>}
     {!search.demo && <section><div className="flex flex-wrap items-center gap-3"><h2 className="mr-auto text-2xl">Suivi de facturation</h2><Button variant="outline" className="h-12" onClick={exportCsv} disabled={!bills.length}><Download />Exporter CSV</Button></div><p className="mt-2 text-sm text-muted-foreground">Une ligne par borne et par période annuelle ; références des factures émises hors plateforme.</p><div className="mt-4 divide-y border-y">{bills.map((b) => { const l = licenses.find((x) => x.id === b.license_id); return <article key={b.id} className="flex flex-wrap items-center gap-4 py-4"><div className="min-w-0 flex-1"><h3 className="break-words font-semibold">{rs(l?.restaurant_id ?? "")?.name} · Borne {l?.kiosk_id}</h3><p className="text-sm text-muted-foreground">{date(b.starts_on)} → {date(b.ends_on)}</p><p className="mt-1 break-words text-sm">{billingLabels[b.status]}{b.invoice_reference && ` · ${b.invoice_reference}`}{b.due_on && ` · échéance ${date(b.due_on)}`}{b.paid_on && ` · règlement ${date(b.paid_on)}`}</p></div><p className="text-xl font-semibold tabular-nums">{money(b.amount_ht_cents)} HT</p><Button variant="outline" className="h-12" onClick={() => setBill({ ...b })}><Pencil />Suivre la facture</Button></article>; })}{!bills.length && <p className="py-8 text-muted-foreground">Aucune période de facturation préparée.</p>}</div></section>}
     <Dialog open={draft !== null} onOpenChange={(open) => { if (!open && !busy) setDraft(null); }}><DialogContent className="max-h-[90dvh] overflow-y-auto"><DialogHeader><DialogTitle>{editing ? "Modifier la licence" : "Ajouter une borne sous licence"}</DialogTitle></DialogHeader>{draft && <form className="space-y-4" onSubmit={async (e) => { e.preventDefault(); if (await submitDraft()) setDraft(null); }}>
       <div><Label htmlFor="license-restaurant">Restaurant</Label><select id="license-restaurant" className={selectClass + " mt-1"} disabled={editing || busy} value={draft.restaurantId} onChange={(e) => setDraft({ ...draft, restaurantId: e.target.value })}>{source.restaurants.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}</select></div>

@@ -372,6 +372,20 @@
       "when": 1795198450235,
       "tag": "0052_agency_individual_kiosk_controls",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1795199067101,
+      "tag": "0053_kiosk_activation_audit",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1795199096553,
+      "tag": "0054_kiosk_settings_authenticated_audit",
+      "breakpoints": true
     }
   ]
 }

@@ -101,11 +101,7 @@ export const setKioskReaders = createServerFn({ method: "POST" })
     const kiosks = data.kiosks.map((k) => ({ ...k, id: normalizeKioskId(k.id) ?? "" }));
     if (kiosks.some((k) => !k.id)) throw new Error("Chaque borne doit avoir un identifiant (lettres, chiffres ou tirets).");
     if (new Set(kiosks.map((k) => k.id)).size !== kiosks.length) throw new Error("Deux bornes ont le même identifiant.");
-    const db = await admin();
-    const { data: r } = await db.from("restaurants").select("config").eq("id", data.restaurantId).single();
-    const config = { ...(r?.config ?? {}) } as Record<string, unknown>;
-    if (kiosks.length) config["kioskReaders"] = kiosks; else delete config["kioskReaders"];
-    const { error } = await db.from("restaurants").update({ config }).eq("id", data.restaurantId);
+    const { error } = await context.supabase.rpc("agency_save_kiosk_readers", { _restaurant: data.restaurantId, _kiosks: kiosks });
     if (error) throw new Error("Enregistrement impossible");
     return { ok: true };
   });

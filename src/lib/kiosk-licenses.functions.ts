@@ -9,6 +9,16 @@ async function agency(client: SupabaseClient<Database>, userId: string) {
   const { data, error } = await client.rpc("has_role", { _user_id: userId, _role: "admin" });
   if (error || data !== true) throw new Error("Réservé à l’agence");
 }
+export const getKioskAudit = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
+  .inputValidator((v: unknown) => z.object({ restaurantId: z.string().uuid().nullable(), page: z.number().int().min(0).max(100000) }).parse(v))
+  .handler(async ({ data, context }) => {
+    await agency(context.supabase, context.userId);
+    let query = context.supabase.from("kiosk_activation_audit").select("*", { count: "exact" });
+    if (data.restaurantId) query = query.eq("restaurant_id", data.restaurantId);
+    const { data: rows, error, count } = await query.order("occurred_at", { ascending: false }).order("id", { ascending: false }).range(data.page * 20, data.page * 20 + 19);
+    if (error) throw new Error("Impossible de charger le journal des bornes");
+    return { rows: rows ?? [], total: count ?? 0 };
+  });
 export const getKioskLicenses = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
   await agency(context.supabase, context.userId);
   const [rs, ls, bs] = await Promise.all([

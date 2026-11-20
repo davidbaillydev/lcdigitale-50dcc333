@@ -34,4 +34,11 @@ describe("parc des bornes et licences", () => {
     expect(unpaid.every((k) => k.active)).toBe(true);
     expect(unpaid.every((k) => k.reader === "")).toBe(true);
   });
+  it("la fiche présente le libellé enregistré dans la licence", () => {
+    const data = kioskDemoData("2026-11-20");
+    const first = data.licenses[0];
+    if (!first) throw new Error("Licence manquante");
+    first.label = "Nouvel emplacement";
+    expect(kioskRestaurantRows(data)[0]?.kiosks[0]?.label).toBe("Nouvel emplacement");
+  });
 });
