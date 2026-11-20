@@ -27,6 +27,7 @@ import { RefundBadge, RefundButton } from "@/components/RefundButton";
 import { PosSyncStatus } from "@/components/PosSyncStatus";
 import { retryPosSync } from "@/lib/pos.functions";
 import { toast } from "sonner";
+import { hasAcceptanceDeadline } from "@/lib/order-acceptance";
 import { AcceptCountdown } from "@/components/AcceptCountdown";
 import { checkOrderDeadline } from "@/lib/order-deadline.functions";
 import { acceptPreauthOrder, releasePreauthOrder } from "@/lib/preauth.functions";
@@ -48,6 +49,7 @@ import { KitchenHistory } from "@/components/KitchenHistory";
 import { KitchenDeliveryInfo } from "@/components/KitchenDeliveryInfo";
 import { orderSoundOf, playOrderSound } from "@/lib/order-sound";
 import { useLiveRestaurant } from "@/hooks/use-orders-paused";
+import { KitchenAutoPrintClaims, shouldAutoPrint } from "@/lib/kitchen-print-trigger";
 
 export const Route = createFileRoute("/_authenticated/espace/$slug/")({
   head: () => ({
@@ -122,7 +124,7 @@ function Kitchen({ onLock, pinEnabled }: { onLock: () => void; pinEnabled: boole
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [moving, setMoving] = useState<string | null>(null);
-  const printingBase = printingDefaults((restaurant?.config as { printing?: Partial<PrintingConfig> } | null)?.printing);
+  const printingBase = printingDefaults((liveSound.config as { printing?: Partial<PrintingConfig> } | null)?.printing);
   const [deviceWidth, setDeviceWidth] = useTicketWidth(printingBase.width);
   // Mode rush : force l'impression auto du ticket de caisse sur cet appareil (mémorisé localement).
   const rushKey = `lc-rush-receipt:${slug}`;
@@ -150,7 +152,15 @@ function Kitchen({ onLock, pinEnabled }: { onLock: () => void; pinEnabled: boole
     }
     if (!ok) toast.error(`Impression du ticket n° ${o.order_number} échouée`);
   }, [restaurant, rid, logs, printing.width, printing.kitchen, printing.textSize, printing.font, slug, ticketOptionData, queryClient, ticketLegal, deliveryConfig?.origin]);
-  const printRef = useRef({ auto: false, kinds: [] as TicketKind[], doPrint }); printRef.current = { auto: autoPrintKinds(printing).length > 0, kinds: autoPrintKinds(printing), doPrint };
+  const printRef = useRef({ printing, doPrint }); printRef.current = { printing, doPrint };
+  const autoClaims = useRef({ rid, claims: new KitchenAutoPrintClaims() });
+  if (autoClaims.current.rid !== rid) autoClaims.current = { rid, claims: new KitchenAutoPrintClaims() };
+  const autoPrint = useCallback((o: Order, event: "arrival" | "acceptance") => {
+    const current = printRef.current;
+    if (!shouldAutoPrint(current.printing.trigger, event, o.status)) return;
+    const kinds = autoClaims.current.claims.take(o.id, autoPrintKinds(current.printing));
+    if (kinds.length) void current.doPrint(o, kinds, true);
+  }, []);
   const [sound, setSound] = useState(false);
   const [started, setStarted] = useState(false);
   const [serviceMode, setServiceMode] = useState(true);
@@ -206,8 +216,13 @@ function Kitchen({ onLock, pinEnabled }: { onLock: () => void; pinEnabled: boole
     const res = await flushOutbox(localStorage, rid, async (c) => {
       let update = supabase.from("orders").update({ status: c.status, ...(c.slot ? { slot: c.slot } : {}), ...(c.courier_status ? { courier_status: c.courier_status, courier_at: c.courier_at ?? c.at } : {}), updated_at: new Date().toISOString() }).eq("id", c.orderId).eq("restaurant_id", rid);
       if (c.courier_status) update = update.eq("mode", "delivery").eq("status", "ready").or("courier_status.is.null,courier_status.in.(assigned,en_route)");
-      const { data: rows, error } = await update.select("id");
-      if (!error && rows?.length) { notifyRef.current({ data: { orderId: c.orderId, origin: window.location.origin } }).catch(() => {}); return "ok"; }
+      const { data: rows, error } = await update.select("*");
+      const saved = rows?.[0];
+      if (!error && saved) {
+        if (c.status === "accepted") autoPrint(saved as unknown as Order, "acceptance");
+        if (c.status === "new") autoPrint(saved as unknown as Order, "arrival");
+        notifyRef.current({ data: { orderId: c.orderId, origin: window.location.origin } }).catch(() => {}); return "ok";
+      }
       if (!error) return "rejected";
       return isNetworkError(error) ? "network" : "rejected";
     });
@@ -215,7 +230,7 @@ function Kitchen({ onLock, pinEnabled }: { onLock: () => void; pinEnabled: boole
     if (res.sent) toast.success(`${res.sent} changement${res.sent > 1 ? "s" : ""} synchronisé${res.sent > 1 ? "s" : ""}`);
     if (res.rejected) toast.error(`${res.rejected} changement${res.rejected > 1 ? "s" : ""} refusé${res.rejected > 1 ? "s" : ""} par le serveur`);
     await load();
-  }, [rid, load]);
+  }, [rid, load, autoPrint]);
   useEffect(() => {
     setOnline(navigator.onLine);
     const up = () => { setOnline(true); void sync(); };
@@ -233,12 +248,14 @@ function Kitchen({ onLock, pinEnabled }: { onLock: () => void; pinEnabled: boole
       .channel(`orders-kitchen-${rid}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `restaurant_id=eq.${rid}` }, (p) => {
         const n = p.new as Order;
+        const previousStatus = (p.old as Partial<Order>).status ?? ordersRef.current.find((x) => x.id === n.id)?.status;
+        if (n.status === "accepted" && (p.eventType === "INSERT" || previousStatus !== "accepted")) autoPrint(n, "acceptance");
         const becamePaid = p.eventType === "UPDATE" && n.status !== "awaiting_payment" && (n.payment_method === "online" || n.payment_method === "card_terminal") && (n.payment_status === "paid" || n.payment_status === "authorized") && !ordersRef.current.some((x) => x.id === n.id);
         // Borne + TPE : le ticket attend l'issue du paiement (Payé, ou bon de pré-commande si échec)
         const kioskCard = n.source === "kiosk" && n.payment_method === "card_terminal";
         if (p.eventType === "UPDATE" && kioskCard && deferred.current.has(n.id) && (n.payment_status === "paid" || n.payment_status === "failed")) {
           deferred.current.delete(n.id);
-          if (printRef.current.auto) void printRef.current.doPrint(n, printRef.current.kinds, true);
+          autoPrint(n, "arrival");
         }
         if (p.eventType === "INSERT" && kioskCard && n.payment_status !== "paid" && n.status !== "awaiting_payment") {
           deferred.current.add(n.id);
@@ -247,15 +264,16 @@ function Kitchen({ onLock, pinEnabled }: { onLock: () => void; pinEnabled: boole
             const cur = ordersRef.current.find((x) => x.id === n.id) as (Order & { payment_ref?: string | null }) | undefined;
             if (cur?.payment_ref) return; // paiement TPE en cours
             deferred.current.delete(n.id);
-            if (printRef.current.auto) void printRef.current.doPrint(cur ?? n, printRef.current.kinds, true);
+            autoPrint(cur ?? n, "arrival");
           }, 8000);
         }
         if ((p.eventType === "INSERT" && n.status !== "awaiting_payment") || becamePaid) {
           toast.success(n.status === "pending_approval" ? `Nouvelle commande ${n.table_label ? `Table ${n.table_label}` : n.room_label ? `Chambre ${n.room_label}` : "libre-service"} · à valider` : `Nouvelle commande n° ${n.order_number}`, n.status === "pending_approval" ? { duration: 15000 } : undefined);
           if (soundRef.current) void nativeKitchen()?.ring().catch(() => {});
           if (audio.current && soundRef.current) { const ctx = audio.current; void ctx.resume().then(() => beep(ctx)).catch(() => {}); }
-          if (printRef.current.auto && n.status !== "pending_approval" && !deferred.current.has(n.id)) void printRef.current.doPrint(p.new as Order, printRef.current.kinds, true);
+          if (!deferred.current.has(n.id)) autoPrint(n, "arrival");
         }
+        if (p.eventType === "UPDATE" && previousStatus === "pending_approval" && n.status === "new") autoPrint(n, "arrival");
         load();
       })
       .subscribe((status) => {
@@ -263,7 +281,7 @@ function Kitchen({ onLock, pinEnabled }: { onLock: () => void; pinEnabled: boole
         else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") { setLive(false); wasDown = true; }
       });
     return () => { supabase.removeChannel(ch); };
-  }, [isStaff, rid, load]);
+  }, [isStaff, rid, load, autoPrint]);
 
   // Rappel sonore tant qu'il reste des commandes non acceptées
   const expireCheck = useServerFn(checkOrderDeadline);
@@ -314,7 +332,12 @@ function Kitchen({ onLock, pinEnabled }: { onLock: () => void; pinEnabled: boole
       // Empreinte CB : capture à l'acceptation, libération au refus (serveur uniquement, jamais hors-ligne)
       if (!navigator.onLine) { toast.error("Connexion requise pour débiter ou relâcher l'empreinte bancaire."); return; }
       try {
-        if (status === "accepted") { await acceptPreauth({ data: { orderId: o.id, ...(slot ? { slot } : {}) } }); toast.success("Paiement débité, commande acceptée."); }
+        if (status === "accepted") {
+          await acceptPreauth({ data: { orderId: o.id, ...(slot ? { slot } : {}) } });
+          const { data: saved } = await supabase.from("orders").select("*").eq("id", o.id).eq("restaurant_id", rid ?? "").maybeSingle();
+          if (saved) autoPrint(saved as unknown as Order, "acceptance");
+          toast.success("Paiement débité, commande acceptée.");
+        }
         else { await releasePreauth({ data: { orderId: o.id } }); toast.success("Empreinte bancaire relâchée : aucun débit pour le client."); }
         notify({ data: { orderId: o.id, origin: window.location.origin } }).catch(() => {});
       } catch (e) { toast.error(e instanceof Error ? e.message : "Opération bancaire impossible"); }
@@ -322,9 +345,12 @@ function Kitchen({ onLock, pinEnabled }: { onLock: () => void; pinEnabled: boole
     }
     setOrders((prev) => prev.map((x) => (x.id === o.id ? { ...x, status, ...(slot ? { slot } : {}) } : x)));
     if (!navigator.onLine) { queue(o, status, slot); return; }
-    const { error } = await supabase.from("orders").update({ status, ...(slot ? { slot } : {}), updated_at: new Date().toISOString() }).eq("id", o.id);
+    const { data: saved, error } = await supabase.from("orders").update({ status, ...(slot ? { slot } : {}), updated_at: new Date().toISOString() }).eq("id", o.id).eq("restaurant_id", rid ?? "").select("*").maybeSingle();
     if (error && isNetworkError(error)) { queue(o, status, slot); return; }
     if (error) { toast.error("Mise à jour impossible"); load(); return; }
+    if (!saved) { toast.error("Commande non modifiée : affichage actualisé"); void load(); return; }
+    if (status === "accepted") autoPrint(saved as unknown as Order, "acceptance");
+    if (status === "new") autoPrint(saved as unknown as Order, "arrival");
     if (status !== "no_show") notify({ data: { orderId: o.id, origin: window.location.origin } }).catch(() => {});
     // Commande validée en cuisine (ex. QR libre-service) : envoi à la caisse si pas encore fait
     if (feat.pos_sync && (status === "accepted" || status === "new") && !(o as { pos_status?: string | null }).pos_status) posSync({ data: { orderId: o.id } }).then(() => load()).catch(() => load());
@@ -415,9 +441,9 @@ function Kitchen({ onLock, pinEnabled }: { onLock: () => void; pinEnabled: boole
         {rid && <StockDialog slug={slug} restaurantId={rid} />}
         <PrinterSetup compact width={printing.width} shop={{ name: restaurant?.name ?? "", address: restaurant?.address ?? null, phone: restaurant?.phone ?? null, slug, customDomains: (restaurant?.config as Restaurant["config"] | null)?.customDomains }} />
         <Button size="sm" variant="outline" onClick={() => setDeviceWidth(printing.width === 80 ? 58 : 80)} aria-label={`Rouleau ${printing.width} mm — basculer en ${printing.width === 80 ? 58 : 80} mm`} title="Changer le format de rouleau sur cet appareil">
-          <Printer className="h-4 w-4" />{printing.width} mm · {autoPrintLabel(printing)}
+          <Printer className="h-4 w-4" />{printing.width} mm · {autoPrintLabel(printing)} · {printing.trigger === "acceptance" ? "à l’acceptation" : "à l’arrivée"}
         </Button>
-        <Button size="sm" variant={rush ? "default" : "outline"} onClick={toggleRush} aria-pressed={rush} title="Imprime automatiquement le ticket de caisse à chaque nouvelle commande sur cet appareil">
+        <Button size="sm" variant={rush ? "default" : "outline"} onClick={toggleRush} aria-pressed={rush} title={`Ticket de caisse automatique ${printing.trigger === "acceptance" ? "à l’acceptation" : "à l’arrivée"} sur cet appareil`}>
           <Printer className="h-4 w-4" />{rush ? "Mode rush : caisse auto ✓" : "Mode rush"}
         </Button>
         </nav>
@@ -531,7 +557,7 @@ function Kitchen({ onLock, pinEnabled }: { onLock: () => void; pinEnabled: boole
                         <p className="text-xs text-muted-foreground">{o.source === "kiosk" ? "BORNE · " : o.source === "phone" ? "TÉLÉPHONE IA · " : ""}{o.mode === "delivery" ? "Livraison" : o.mode === "dine_in" ? (o.room_label ? `ROOM SERVICE · CHAMBRE ${o.room_label}` : o.table_label ? `Sur place · TABLE ${o.table_label}` : "Sur place") : "À emporter"}</p>
                       </div>
                     </div>
-                    {c.s === "new" && o.accept_deadline && !o.missed_at && <AcceptCountdown className="mt-3" deadline={o.accept_deadline} label="Temps restant pour accepter" onExpire={() => { void expireCheck({ data: { orderId: o.id } }).then((r) => { if (r.expired) toast.error(`Commande n° ${o.order_number} manquée : délai de 4 minutes dépassé.`); }).finally(() => load()); }} />}
+                    {c.s === "new" && hasAcceptanceDeadline(o) && o.accept_deadline && !o.missed_at && <AcceptCountdown className="mt-3" deadline={o.accept_deadline} label="Temps restant pour accepter" onExpire={() => { void expireCheck({ data: { orderId: o.id } }).then((r) => { if (r.expired) toast.error(`Commande n° ${o.order_number} manquée : délai de 5 minutes dépassé.`); }).finally(() => load()); }} />}
                     {o.mode === "delivery" && <KitchenDeliveryInfo order={o} origin={deliveryConfig?.origin} />}
                     <ul className="mt-3 space-y-1.5 border-t border-border pt-3">
                       {o.items.map((it, i) => (

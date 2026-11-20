@@ -29,6 +29,7 @@ class Enc {
   bold(on: boolean) { return this.raw(0x1b, 0x45, on ? 1 : 0); }
   size(w: 1 | 2, h: 1 | 2) { return this.raw(0x1d, 0x21, ((w - 1) << 4) | (h - 1)); }
   inverse(on: boolean) { return this.raw(0x1d, 0x42, on ? 1 : 0); }
+  font(b: boolean) { return this.raw(0x1b, 0x4d, b ? 1 : 0); }
 }
 
 
@@ -51,16 +52,17 @@ const lr = (l: string, r: string, cols: number) => { const sp = cols - l.length 
 export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidth, shop: TicketShop, fieldsIn?: TicketFieldsIn, kioskContext?: KioskTicketContext): Uint8Array {
   const currency = o.currency ?? "EUR";
   const eur = (n: unknown) => ticketMoney(n, currency);
-  const cols = width === 80 ? 48 : 32;
   const large = fieldsIn?.textSize === "large";
   const compact = fieldsIn?.textSize === "compact";
-  // Grand : titres d'articles en double hauteur et options en gras ; compact : interligne réduit.
-  const itemCols = cols;
+  const fontB = compact || fieldsIn?.font === "condensed";
+  const cols = fontB ? (width === 80 ? 64 : 42) : (width === 80 ? 48 : 32);
+  const itemCols = large ? Math.floor(cols / 2) : cols;
   const f = ticketFields(kind, fieldsIn);
   const totals = ticketTotals(o, shop);
   const timing = ticketTiming(o);
-  const e = new Enc().raw(0x1b, 0x40, 0x1b, 0x74, 19);
+  const e = new Enc().raw(0x1b, 0x40, 0x1b, 0x74, 19).font(fontB);
   if (compact) e.raw(0x1b, 0x33, 22); // interligne serré
+  else e.raw(0x1b, 0x32); // restore normal line spacing for every job
   const hr = "-".repeat(cols);
   e.align(1);
   (isPreorder(kind, o) ? e.bold(true).line("BON DE PRE-COMMANDE").line("A REGLER EN CAISSE").bold(false) : e.line(kind === "kitchen" ? "TICKET CUISINE" : "TICKET CLIENT")).line(hr);
@@ -72,11 +74,14 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
     identity.forEach((s) => wrap(s.replace(/œ/g, "oe").replace(/Œ/g, "OE"), cols).forEach((l) => e.line(l)));
     e.size(1, 1).align(0);
   }
+  if (large) e.size(2, 2);
   e.inverse(true);
-  wrap(payLabel(o.payment_method, isPaid(o), o.is_test), cols).forEach((l) => e.line(l.padEnd(cols)));
-  e.inverse(false).line().inverse(true).line(lr(timing.label, timing.value, cols)).inverse(false).line().inverse(true);
-  wrap(modeLabel(o.mode) + (o.source === "kiosk" ? " - BORNE" : o.source === "phone" ? " - TEL IA" : "") + (o.table_label ? ` - TABLE ${o.table_label}` : "") + (o.room_label ? ` - CHAMBRE ${o.room_label}` : ""), cols).forEach((l) => e.line(l.padEnd(cols)));
-  e.inverse(false).bold(false).line();
+  wrap(payLabel(o.payment_method, isPaid(o), o.is_test), itemCols).forEach((l) => e.line(l.padEnd(itemCols)));
+  e.inverse(false).line().inverse(true);
+  wrap(lr(timing.label, timing.value, itemCols), itemCols).forEach((l) => e.line(l));
+  e.inverse(false).line().inverse(true);
+  wrap(modeLabel(o.mode) + (o.source === "kiosk" ? " - BORNE" : o.source === "phone" ? " - TEL IA" : "") + (o.table_label ? ` - TABLE ${o.table_label}` : "") + (o.room_label ? ` - CHAMBRE ${o.room_label}` : ""), itemCols).forEach((l) => e.line(l.padEnd(itemCols)));
+  e.inverse(false).bold(false).size(1, 1).line();
   if (f.customer && ticketCustomer(o).length) {
     e.bold(true).line("Informations clients:").bold(false);
     for (const [label, value] of ticketCustomer(o)) {
@@ -85,28 +90,30 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
     }
   }
   for (const l of ticketDeliveryLines(o, shop)) {
-    const lines = wrap(l, cols);
+    if (large) e.size(2, 2);
+    const lines = wrap(l, itemCols);
     if (l.startsWith("Adresse:")) { e.bold(true); lines.forEach((x) => e.line(x)); e.bold(false); }
     else lines.forEach((x) => e.line(x));
+    e.size(1, 1);
   }
   e.align(0).line().bold(true).line("Articles:").bold(false);
   for (const it of o.items) {
-    e.bold(true); if (large) e.size(1, 2);
+    e.bold(true); if (large) e.size(2, 2);
     const right = f.prices && it.total != null ? eur(it.total) : "";
-    const names = wrap(`${it.qty}x ${itemTitle(it)}`, Math.max(8, cols - right.length - 1));
+    const names = wrap(`${it.qty}x ${itemTitle(it)}`, Math.max(1, itemCols - right.length - 1));
     names.forEach((name, i) => e.line(i === 0 ? lr(name, right, itemCols) : name));
-    if (large) e.size(1, 1);
     e.bold(large);
-    if (f.options) for (const d of ticketOptions(it, { ...shop, currency })) wrap(d, cols - 2).forEach((l) => e.line(`  ${l}`));
+    if (f.options) for (const d of ticketOptions(it, { ...shop, currency })) wrap(d, itemCols - 2).forEach((l) => e.line(`  ${l}`));
+    if (large) e.size(1, 1);
     e.bold(false);
     if (f.allergens && it.allergens?.length) { e.bold(true); wrap(`  ! ALLERGENES : ${it.allergens.map((a) => allergenLabel(a).toUpperCase()).join(", ")}`, cols).forEach((l) => e.line(l)); e.bold(false); }
   }
   const allAlg = [...new Set(o.items.flatMap((i) => i.allergens ?? []))];
   if (f.allergens && kind === "kitchen" && allAlg.length) { e.line(hr).bold(true); wrap(`ALLERGENES COMMANDE : ${allAlg.map(allergenLabel).join(", ")}`, cols).forEach((l) => e.line(l)); e.bold(false); }
   if (f.notes && o.notes) {
-    const border = "=".repeat(cols);
-    e.line(hr).bold(true).size(1, 2).line(border);
-    wrap(`! REMARQUE CLIENT : ${o.notes}`, cols).forEach((l) => e.line(l));
+    const border = "=".repeat(itemCols);
+    e.line(hr).bold(true).size(large ? 2 : 1, 2).line(border);
+    wrap(`! REMARQUE CLIENT : ${o.notes}`, itemCols).forEach((l) => e.line(l));
     e.line(border).size(1, 1).bold(false);
   }
   e.line(hr);
@@ -116,7 +123,7 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
   if (f.prices && Number(o.discount) > 0) e.line(lr(`Remise${o.promo_code ? ` ${o.promo_code}` : ""}`, `-${eur(o.discount)}`, cols));
   const vatRows = ticketVat(o, shop);
   if (f.prices) for (const v of vatRows) e.line(lr(`TVA (${vatRateLabel(v.rate)} incluse)`, eur(v.vat), cols));
-  if (f.prices) e.bold(true).size(1, 2).line(lr("TOTAL", eur(totals.total), cols)).size(1, 1).bold(false);
+  if (f.prices) e.bold(true).size(large ? 2 : 1, 2).line(lr("TOTAL", eur(totals.total), itemCols)).size(1, 1).bold(false);
   if (kind === "receipt") receiptTenderLines(o).forEach((l) => e.line(l));
   if (kind === "receipt") receiptIntegrityLines(o).forEach((l) => wrap(l, cols).forEach((line) => e.line(line)));
   if (f.prices && kind === "receipt" && vatRows.length) {

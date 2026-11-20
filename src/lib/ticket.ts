@@ -63,7 +63,8 @@ export type TicketFont = "sans" | "mono" | "condensed";
 export type TicketStyle = { textSize?: TicketTextSize; font?: TicketFont };
 /** Réglages d'affichage passés aux rendus : champs cuisine + style du texte. */
 export type TicketFieldsIn = Partial<KitchenFields> & TicketStyle;
-export type PrintingConfig = { width: TicketWidth; /** Ancien réglage global, conservé = autoKitchen || autoReceipt. */ auto: boolean; autoKitchen: boolean; autoReceipt: boolean; textSize: TicketTextSize; font: TicketFont; kitchen: KitchenFields };
+export type PrintTrigger = "arrival" | "acceptance";
+export type PrintingConfig = { width: TicketWidth; /** Ancien réglage global, conservé = autoKitchen || autoReceipt. */ auto: boolean; autoKitchen: boolean; autoReceipt: boolean; trigger: PrintTrigger; textSize: TicketTextSize; font: TicketFont; kitchen: KitchenFields };
 export const TICKET_FONTS: Record<TicketFont, string> = {
   sans: "Arial, Helvetica, sans-serif",
   mono: "'Courier New', Courier, monospace",
@@ -74,7 +75,7 @@ export function ticketFontSize(width: TicketWidth, size: TicketTextSize = "norma
   const base = width === 80 ? 15 : 12;
   return size === "large" ? base + 3 : size === "compact" ? base - 2 : base;
 }
-/** Tickets à imprimer automatiquement à l'arrivée d'une commande. */
+/** Tickets à imprimer automatiquement au déclencheur configuré. */
 export function autoPrintKinds(p: Pick<PrintingConfig, "autoKitchen" | "autoReceipt">): TicketKind[] {
   return [...(p.autoKitchen ? ["kitchen" as const] : []), ...(p.autoReceipt ? ["receipt" as const] : [])];
 }
@@ -113,6 +114,8 @@ export function printingDefaults(p?: Partial<PrintingConfig> | null): PrintingCo
     width: p?.width === 58 ? 58 : 80,
     auto: (p?.autoKitchen ?? p?.auto ?? false) || (p?.autoReceipt ?? p?.auto ?? false),
     autoKitchen: p?.autoKitchen ?? p?.auto ?? false, autoReceipt: p?.autoReceipt ?? p?.auto ?? false,
+    // Preserve existing restaurants' arrival behaviour until explicitly changed.
+    trigger: p?.trigger === "acceptance" ? "acceptance" : "arrival",
     textSize: p?.textSize === "large" || p?.textSize === "compact" ? p.textSize : "normal",
     font: p?.font === "mono" || p?.font === "condensed" ? p.font : "sans",
     kitchen: { allergens: false, options: true, notes: true, customer: true, contact: false, prices: false, paid: true, qc: false, ...(p?.kitchen ?? {}) },

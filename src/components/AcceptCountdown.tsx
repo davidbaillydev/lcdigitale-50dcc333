@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 export function remainingMs(deadline: string, now = Date.now()) { return Math.max(0, new Date(deadline).getTime() - now); }
 export function formatCountdown(ms: number) { const s = Math.ceil(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; }
 
-/** Compte à rebours d'acceptation (4 min) ; appelle onExpire une seule fois à zéro. */
+/** Compte à rebours d'acceptation (5 min) ; appelle onExpire une seule fois à zéro. */
 export function AcceptCountdown({ deadline, onExpire, label, className }: { deadline: string; onExpire?: () => void; label: string; className?: string }) {
   const [now, setNow] = useState(() => Date.now());
   const fired = useRef(false);

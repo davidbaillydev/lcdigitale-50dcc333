@@ -200,10 +200,16 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
             <select className="mt-1 h-12 w-full rounded-md border border-input bg-background px-3" value={s.config.printing.font} onChange={(e) => cfg({ printing: { ...s.config.printing, font: e.target.value as "sans" | "mono" | "condensed" } })}>
               <option value="sans">Moderne sans-serif</option><option value="mono">Classique caisse</option><option value="condensed">Condensée</option>
             </select></label>
-          <p className="text-xs text-muted-foreground sm:col-span-2">La police s'applique à l'impression navigateur ; les imprimantes thermiques directes utilisent leur police interne mais respectent la taille.</p>
+          <p className="text-xs text-muted-foreground sm:col-span-2">Thermique : police standard A, ou B pour Condensée et Compact. Grand : double largeur et hauteur pour les informations de préparation.</p>
         </div>
-        <Toggle label="Impression auto du ticket cuisine" hint="Imprime automatiquement le ticket cuisine dès qu'une commande arrive." checked={!!s.config.printing.autoKitchen} onChange={(v) => cfg({ printing: { ...s.config.printing, autoKitchen: v, auto: v || !!s.config.printing.autoReceipt } })} />
-        <Toggle label="Impression auto du ticket de caisse" hint="Imprime automatiquement le ticket de caisse dès qu'une commande arrive." checked={!!s.config.printing.autoReceipt} onChange={(v) => cfg({ printing: { ...s.config.printing, autoReceipt: v, auto: v || !!s.config.printing.autoKitchen } })} />
+        <label className="mb-3 block text-sm font-medium">Déclencheur d'impression automatique
+          <select className="mt-1 h-12 w-full rounded-md border border-input bg-background px-3" value={s.config.printing.trigger} onChange={(e) => cfg({ printing: { ...s.config.printing, trigger: e.target.value === "acceptance" ? "acceptance" : "arrival" } })}>
+            <option value="acceptance">À l'acceptation de la commande (recommandé)</option>
+            <option value="arrival">Dès l'arrivée de la commande</option>
+          </select>
+        </label>
+        <Toggle label="Impression auto du ticket cuisine" checked={!!s.config.printing.autoKitchen} onChange={(v) => cfg({ printing: { ...s.config.printing, autoKitchen: v, auto: v || !!s.config.printing.autoReceipt } })} />
+        <Toggle label="Impression auto du ticket de caisse" checked={!!s.config.printing.autoReceipt} onChange={(v) => cfg({ printing: { ...s.config.printing, autoReceipt: v, auto: v || !!s.config.printing.autoKitchen } })} />
         <p className="mt-3 text-sm font-semibold">Afficher sur le ticket cuisine</p>
         {([["allergens", "Allergènes des plats"], ["options", "Options et suppléments"], ["notes", "Notes du client"], ["customer", "Nom et téléphone du client"], ["contact", "Coordonnées du restaurant"], ["prices", "Prix, total et TVA"], ["paid", "Encadré Payé / Non payé"], ["qc", "Contrôle qualité emballage (cases + visa)"]] as const).map(([k, l]) => (
           <Toggle key={k} label={l} checked={s.config.printing.kitchen[k]} onChange={(v) => cfg({ printing: { ...s.config.printing, kitchen: { ...s.config.printing.kitchen, [k]: v } } })} />
@@ -242,7 +248,7 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
                 </select>
                 {s.config.payments.onlineDeliveryOnly && !s.config.payments.on_site && <p role="alert" className="text-sm text-destructive">Le retrait ne dispose d'aucun paiement accepté. Activez le paiement en mains propres ou choisissez tous les modes.</p>}
               </div>
-              <Toggle label="Pré-autorisation bancaire (empreinte CB)" hint="Carte bancaire uniquement (Mollie). Le montant est bloqué à la commande et débité seulement quand vous cliquez « Accepter ». En cas de refus, d'annulation ou de dépassement des 4 minutes, l'empreinte est relâchée sans débit." checked={s.config.payments.preauth === true} onChange={(v) => { if (v) setConfirmPreauthOn(true); else cfg({ payments: { ...s.config.payments, preauth: false } }); }} />
+              <Toggle label="Pré-autorisation bancaire (empreinte CB)" hint="Carte bancaire uniquement (Mollie). Le montant est bloqué à la commande et débité seulement quand vous cliquez « Accepter ». En cas de refus, d'annulation ou de dépassement des 5 minutes en livraison, l'empreinte est relâchée sans débit." checked={s.config.payments.preauth === true} onChange={(v) => { if (v) setConfirmPreauthOn(true); else cfg({ payments: { ...s.config.payments, preauth: false } }); }} />
               <p className="pt-1 text-sm text-muted-foreground">Le paiement en ligne par carte sur le site s'active en connectant un prestataire (Stripe, Mollie, PayPal ou Lyra) dans la section « Prestataires de paiement » ci-dessous.</p>
             </div>
           </div>
@@ -320,7 +326,7 @@ export function RestaurantSettingsForm({ restaurant, onSaved, agency = true }: {
                 <ul className="list-disc space-y-1 pl-5">
                   <li>Le paiement en ligne sera limité à la carte bancaire (Mollie) : les autres moyens de paiement en ligne ne seront plus proposés.</li>
                   <li>Le montant est bloqué sur la carte du client à la commande, puis débité uniquement quand la cuisine clique « Accepter ».</li>
-                  <li>En cas de refus, d'annulation ou de 4 minutes sans réponse, l'empreinte est relâchée automatiquement, sans débit pour le client.</li>
+                  <li>En cas de refus, d'annulation ou de 5 minutes sans réponse pour une livraison, l'empreinte est relâchée automatiquement, sans débit pour le client.</li>
                   <li>Accepter ou refuser une commande avec empreinte nécessite une connexion internet.</li>
                 </ul>
                 <p>N'oubliez pas d'enregistrer les réglages après confirmation.</p>

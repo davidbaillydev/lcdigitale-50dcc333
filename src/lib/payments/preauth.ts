@@ -19,10 +19,10 @@ export async function markAuthorized(o: O) {
 /** Capture (débit réel) puis acceptation atomique. Lève une erreur si le prestataire refuse. */
 export async function captureOrder(orderId: string, slot?: string) {
   const db = await admin();
-  const { data: o } = await db.from("orders").select("id, restaurant_id, status, total, payment_status, payment_ref, accept_deadline, missed_at").eq("id", orderId).maybeSingle();
+  const { data: o } = await db.from("orders").select("id, restaurant_id, mode, status, total, payment_status, payment_ref, accept_deadline, missed_at").eq("id", orderId).maybeSingle();
   if (!o) throw new Error("Commande introuvable");
   if (o.payment_status !== "authorized") throw new Error("Aucune pré-autorisation à capturer.");
-  if (o.status !== "new" || o.missed_at || (o.accept_deadline && Date.now() > new Date(o.accept_deadline).getTime() + 5000)) throw new Error("Délai d'acceptation dépassé : l'empreinte bancaire va être relâchée.");
+  if (o.status !== "new" || o.missed_at || (o.mode === "delivery" && o.accept_deadline && Date.now() >= new Date(o.accept_deadline).getTime())) throw new Error("Délai d'acceptation dépassé : l'empreinte bancaire va être relâchée.");
   const id = pid(o.payment_ref); if (!id) throw new Error("Paiement non reconnu");
   const m = await mollieForRestaurant(o.restaurant_id, false); if (!m) throw new Error("Mollie n'est plus configuré pour ce restaurant.");
   await mollieCall(m.key, `/payments/${encodeURIComponent(id)}/captures`, { description: "Commande acceptée" }, `capture_${o.id}`)

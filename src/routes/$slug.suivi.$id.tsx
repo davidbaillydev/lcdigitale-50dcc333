@@ -21,6 +21,7 @@ import { formatMoney, currencySchema } from "@/lib/money";
 import { fmtTime } from "@/lib/shop";
 import { cn } from "@/lib/utils";
 import { trackingAccess, retainTrackingAccess } from "@/lib/order-tracking-access";
+import { hasAcceptanceDeadline } from "@/lib/order-acceptance";
 import { AcceptCountdown } from "@/components/AcceptCountdown";
 import { checkOrderDeadline } from "@/lib/order-deadline.functions";
 
@@ -140,7 +141,7 @@ function Tracking() {
         {data.status === "pending_approval" ? (
           <p role="status" className="mt-6 animate-pulse rounded-lg border border-primary bg-primary/10 p-4 font-semibold">Commande transmise à l'équipe, en attente de confirmation.</p>
         ) : data.status === "cancelled" && data.missed_at ? (
-          <p role="alert" className="mt-6 rounded-lg bg-destructive/20 p-4">Le restaurant n'a pas accepté votre commande dans les 4 minutes : elle est annulée. {data.payment_method === "online" ? (data.payment_status === "paid" ? "Le remboursement est en cours de traitement." : "Votre paiement n'a pas été débité ou a été remboursé.") : "Aucun paiement n'a été encaissé."}</p>
+          <p role="alert" className="mt-6 rounded-lg bg-destructive/20 p-4">Le restaurant n'a pas accepté votre commande dans les 5 minutes : elle est annulée. {data.payment_method === "online" ? (data.payment_status === "paid" ? "Le remboursement est en cours de traitement." : "Votre paiement n'a pas été débité ou a été remboursé.") : "Aucun paiement n'a été encaissé."}</p>
         ) : data.status === "cancelled" ? (
           <p className="mt-6 rounded-lg bg-destructive/20 p-4">Cette commande a été annulée. Contactez le restaurant pour plus d'informations.</p>
         ) : (
@@ -155,7 +156,7 @@ function Tracking() {
             ))}
           </div>
         )}
-        {data.status === "new" && data.accept_deadline && <AcceptCountdown className="mt-4" deadline={data.accept_deadline} label="En attente de validation par le restaurant" onExpire={() => { void expireCheck({ data: { orderId: data.id } }).finally(() => refetch()); }} />}
+        {data.status === "new" && hasAcceptanceDeadline(data) && data.accept_deadline && <AcceptCountdown className="mt-4" deadline={data.accept_deadline} label="En attente de validation par le restaurant" onExpire={() => { void expireCheck({ data: { orderId: data.id } }).finally(() => refetch()); }} />}
         {!data.is_test && !["done", "cancelled"].includes(data.status) && <PushOptIn orderId={data.id} />}
         {!data.is_test && currency === "EUR" && ["accepted", "preparing", "ready", "delivering", "done"].includes(data.status) && <InvoiceDownload orderId={data.id} />}
         {!data.is_test && data.review_url && (data.status === "ready" || data.status === "done") && (
