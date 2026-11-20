@@ -393,6 +393,13 @@
       "when": 1795212625497,
       "tag": "0055_centralized_kiosk_management",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1795215900239,
+      "tag": "0056_enforce_menu_option_caller_access",
+      "breakpoints": true
     }
   ]
 }
