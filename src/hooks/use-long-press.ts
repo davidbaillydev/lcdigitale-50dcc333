@@ -15,8 +15,14 @@ export function useLongPress(onLongPress: () => void, ms = 1500) {
   }, []);
   const start = useCallback((e: React.PointerEvent) => {
     if (e.button !== 0 && e.pointerType === "mouse") return;
-    origin.current = { x: e.clientX, y: e.clientY };
     clear();
+    origin.current = { x: e.clientX, y: e.clientY };
+    // Keep the gesture on its trigger rather than letting an image drag or a
+    // nested welcome-screen handler take it over in Android WebView.
+    e.stopPropagation();
+    if (e.target === e.currentTarget && e.currentTarget instanceof HTMLElement && e.currentTarget.setPointerCapture) {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    }
     timer.current = window.setTimeout(() => { timer.current = null; origin.current = null; onLongPress(); }, ms);
   }, [ms, onLongPress, clear]);
   const move = useCallback((e: React.PointerEvent) => {
@@ -30,6 +36,8 @@ export function useLongPress(onLongPress: () => void, ms = 1500) {
     onPointerUp: clear,
     onPointerLeave: clear,
     onPointerCancel: clear,
+    onLostPointerCapture: clear,
+    onDragStart: (e: React.DragEvent) => e.preventDefault(),
     onContextMenu: (e: React.MouseEvent) => e.preventDefault(),
   };
 }

@@ -131,7 +131,7 @@ function Kiosk() {
     check(); const t = setInterval(check, 20_000);
     return () => { alive = false; clearInterval(t); };
   }, [statusFn, restaurant.slug, kioskId]);
-  // Changer de borne sur place : appui long sur la pastille ou sur l'écran d'accueil
+  // Réglages personnel : appui long sur le logo, la pastille ou l'écran d'accueil.
   const [switchOpen, setSwitchOpen] = useState(false);
   const held = useRef(false);
   const openSwitch = useCallback(() => { held.current = true; setSwitchOpen(true); }, []);
@@ -263,7 +263,7 @@ function Kiosk() {
   return (
     <div className="fixed inset-0 z-50 flex select-none flex-col overflow-hidden bg-background text-foreground touch-manipulation">
       {access !== "ok" && !switchOpen && (
-        <div role="alert" {...longPress} className="fixed inset-0 z-[70] flex flex-col items-center justify-center gap-6 bg-background p-10 text-center">
+        <div role="alert" {...longPress} className="fixed inset-0 z-[70] flex touch-none flex-col items-center justify-center gap-6 bg-background p-10 text-center">
           <BrandLogo src={restaurant.logo_url} name={restaurant.name} className="h-32 w-32 object-contain" />
           <Monitor className="h-16 w-16 text-muted-foreground" />
           <p className="text-5xl font-bold">Borne temporairement indisponible</p>
@@ -276,15 +276,17 @@ function Kiosk() {
       )}
       {step === "welcome" && kiosk && (
         <div {...longPress} title="Appui long : changer de borne"
-          className="absolute left-5 top-5 z-[60] flex items-center gap-3 rounded-full border border-border bg-card/90 px-6 py-3 text-2xl font-semibold text-muted-foreground">
+          className="absolute left-5 top-5 z-[60] flex touch-none items-center gap-3 rounded-full border border-border bg-card/90 px-6 py-3 text-2xl font-semibold text-muted-foreground">
           <Monitor className="h-7 w-7 text-primary" />{kiosk.text}
         </div>
       )}
       {step === "welcome" && (
-        <div role="button" tabIndex={0} {...longPress} className="relative flex flex-1 cursor-pointer flex-col items-center justify-center gap-10 overflow-hidden p-10 text-center" onClick={() => { if (held.current) { held.current = false; return; } setStep("menu"); }}>
+        <div role="button" tabIndex={0} {...longPress} className="relative flex touch-none flex-1 cursor-pointer flex-col items-center justify-center gap-10 overflow-hidden p-10 text-center" onClick={() => { if (held.current) { held.current = false; return; } setStep("menu"); }}>
           <RestaurantBanner restaurant={restaurant} />
           <div className="absolute inset-0 bg-background/75" />
-          <BrandLogo src={restaurant.logo_url} name={restaurant.name} className="relative h-40 w-40 object-contain" />
+          <Button variant="ghost" {...longPress} aria-label="Configurer la borne" title="Appui long : configurer la borne" className="relative h-40 w-40 shrink-0 touch-none select-none p-0 hover:bg-transparent">
+            <BrandLogo src={restaurant.logo_url} name={restaurant.name} className="pointer-events-none h-40 w-40 object-contain" />
+          </Button>
           <p className="relative font-display text-8xl text-primary">{restaurant.name}</p>
           <p className="relative text-3xl text-foreground">Bienvenue !</p>
           {announce && <p className="relative max-w-4xl rounded-2xl bg-accent px-10 py-5 font-display text-4xl text-accent-foreground">{announce}</p>}
@@ -304,7 +306,12 @@ function Kiosk() {
       {step !== "welcome" && step !== "done" && (
         <header className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-border px-4 py-3 lg:gap-4 lg:px-6 lg:py-4">
           <button onClick={reset} className="shrink-0 rounded-xl bg-muted px-4 py-4 text-lg font-semibold lg:px-6 lg:text-xl">Annuler</button>
-          <p className="flex min-w-0 items-center gap-3 font-display text-3xl text-primary lg:text-4xl"><BrandLogo src={restaurant.logo_url} name={restaurant.name} className="h-11 w-11 shrink-0 object-contain lg:h-12 lg:w-12" /><span className="truncate">{restaurant.name}</span>{kiosk && <span {...longPress} title="Appui long : changer de borne" className="shrink-0 rounded-full bg-muted px-4 py-2 font-sans text-lg font-semibold text-muted-foreground">{kiosk.text}</span>}</p>
+          <div className="flex min-w-0 items-center gap-3 font-display text-3xl text-primary lg:text-4xl">
+            <Button variant="ghost" {...longPress} aria-label="Configurer la borne" title="Appui long : configurer la borne" className="h-12 w-12 shrink-0 touch-none select-none p-0 hover:bg-transparent">
+              <BrandLogo src={restaurant.logo_url} name={restaurant.name} className="pointer-events-none h-11 w-11 object-contain lg:h-12 lg:w-12" />
+            </Button>
+            <span className="truncate">{restaurant.name}</span>{kiosk && <span {...longPress} title="Appui long : changer de borne" className="shrink-0 touch-none rounded-full bg-muted px-4 py-2 font-sans text-lg font-semibold text-muted-foreground">{kiosk.text}</span>}
+          </div>
           <div className="flex shrink-0 items-center gap-2 lg:gap-3">
             <ThemeToggle className="rounded-xl p-3 lg:p-4" />
             <div className="flex rounded-xl bg-muted p-1 text-lg font-semibold">
