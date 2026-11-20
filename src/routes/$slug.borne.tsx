@@ -263,10 +263,10 @@ function Kiosk() {
   return (
     <div className="fixed inset-0 z-50 flex select-none flex-col overflow-hidden bg-background text-foreground touch-manipulation">
       {access !== "ok" && !switchOpen && (
-        <div role="alert" {...longPress} className="fixed inset-0 z-[70] flex touch-none flex-col items-center justify-center gap-6 bg-background p-10 text-center">
-          <BrandLogo src={restaurant.logo_url} name={restaurant.name} className="h-32 w-32 object-contain" />
+        <div role="alert" {...longPress} className="fixed inset-0 z-[70] flex touch-none flex-col items-center justify-center gap-6 overflow-y-auto bg-background p-10 text-center short:gap-3 short:p-6">
+          <BrandLogo src={restaurant.logo_url} name={restaurant.name} className="short:h-20 short:w-20 h-32 w-32 object-contain" />
           <Monitor className="h-16 w-16 text-muted-foreground" />
-          <p className="text-5xl font-bold">Borne temporairement indisponible</p>
+          <p className="text-5xl font-bold short:text-4xl">Borne temporairement indisponible</p>
           <p className="max-w-2xl text-2xl text-muted-foreground">{access === "disabled" ? "Cette borne a été désactivée." : "Cette borne n’est pas reconnue."} Merci de passer votre commande au comptoir.</p>
           {kiosk && <p className="text-xl text-muted-foreground">{kiosk.text}</p>}
         </div>
@@ -276,27 +276,27 @@ function Kiosk() {
       )}
       {step === "welcome" && kiosk && (
         <div {...longPress} title="Appui long : changer de borne"
-          className="absolute left-5 top-5 z-[60] flex touch-none items-center gap-3 rounded-full border border-border bg-card/90 px-6 py-3 text-2xl font-semibold text-muted-foreground">
+          className="absolute left-5 top-5 z-[60] flex touch-none items-center gap-3 rounded-full border border-border bg-card/90 px-6 py-3 text-2xl font-semibold text-muted-foreground short:px-4 short:py-2 short:text-lg">
           <Monitor className="h-7 w-7 text-primary" />{kiosk.text}
         </div>
       )}
       {step === "welcome" && (
-        <div role="button" tabIndex={0} {...longPress} className="relative flex touch-none flex-1 cursor-pointer flex-col items-center justify-center gap-10 overflow-hidden p-10 text-center" onClick={() => { if (held.current) { held.current = false; return; } setStep("menu"); }}>
+        <div role="button" tabIndex={0} {...longPress} className="relative flex touch-none flex-1 cursor-pointer flex-col items-center justify-center gap-10 overflow-hidden p-10 text-center short:gap-[2.2vh] short:px-8 short:py-[3vh]" onClick={() => { if (held.current) { held.current = false; return; } setStep("menu"); }}>
           <RestaurantBanner restaurant={restaurant} />
           <div className="absolute inset-0 bg-background/75" />
-          <Button variant="ghost" {...longPress} aria-label="Configurer la borne" title="Appui long : configurer la borne" className="relative h-40 w-40 shrink-0 touch-none select-none p-0 hover:bg-transparent">
-            <BrandLogo src={restaurant.logo_url} name={restaurant.name} className="pointer-events-none h-40 w-40 object-contain" />
+          <Button variant="ghost" {...longPress} aria-label="Configurer la borne" title="Appui long : configurer la borne" className="relative h-40 w-40 short:h-[18vh] short:w-[18vh] shrink-0 touch-none select-none p-0 hover:bg-transparent">
+            <BrandLogo src={restaurant.logo_url} name={restaurant.name} className="pointer-events-none h-40 w-40 short:h-[18vh] short:w-[18vh] object-contain" />
           </Button>
-          <p className="relative font-display text-8xl text-primary">{restaurant.name}</p>
-          <p className="relative text-3xl text-foreground">Bienvenue !</p>
-          {announce && <p className="relative max-w-4xl rounded-2xl bg-accent px-10 py-5 font-display text-4xl text-accent-foreground">{announce}</p>}
-          <span className="relative animate-pulse rounded-full bg-primary px-14 py-8 font-display text-5xl text-primary-foreground">Touchez pour commander</span>
-          <div className="relative mt-6 grid w-full max-w-3xl grid-cols-2 gap-6" onClick={(e) => e.stopPropagation()}>
+          <p className="relative max-w-full break-words font-display text-8xl leading-none text-primary short:text-[8vh]">{restaurant.name}</p>
+          <p className="relative text-3xl text-foreground short:text-[3.2vh]">Bienvenue !</p>
+          {announce && <p className="relative max-w-4xl rounded-2xl bg-accent px-10 py-5 font-display text-4xl text-accent-foreground short:px-6 short:py-2 short:text-[3.5vh]">{announce}</p>}
+          <span className="relative animate-pulse rounded-full bg-primary px-14 py-8 font-display text-5xl text-primary-foreground short:px-10 short:py-[2vh] short:text-[5vh]">Touchez pour commander</span>
+          <div className="relative mt-6 grid w-full max-w-3xl grid-cols-2 gap-6 short:mt-0 short:gap-4" onClick={(e) => e.stopPropagation()}>
             {([["dine_in", "Sur place", UtensilsCrossed], ["pickup", "À emporter", ShoppingBag]] as const).filter(([m]) => restaurant.config.modes?.[m] !== false).map(([m, label, Icon]) => (
               <button key={m} onClick={() => { if (held.current) return; setMode(m); setStep("menu"); }}
-                className="flex flex-col items-center gap-4 rounded-2xl border-2 border-border bg-card p-10 active:border-primary active:bg-primary/15">
-                <Icon className="h-20 w-20 text-primary" />
-                <span className="font-display text-5xl">{label}</span>
+                className="flex flex-col items-center gap-4 rounded-2xl border-2 border-border bg-card p-10 active:border-primary active:bg-primary/15 short:flex-row short:justify-center short:gap-4 short:p-[2.5vh]">
+                <Icon className="h-20 w-20 text-primary short:h-[7vh] short:w-[7vh]" />
+                <span className="font-display text-5xl short:text-[5vh]">{label}</span>
               </button>
             ))}
           </div>
@@ -304,7 +304,7 @@ function Kiosk() {
       )}
 
       {step !== "welcome" && step !== "done" && (
-        <header className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-border px-4 py-3 lg:gap-4 lg:px-6 lg:py-4">
+        <header className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-border px-4 py-3 lg:gap-4 lg:px-6 lg:py-4 short:py-2 short:lg:py-2">
           <button onClick={reset} className="shrink-0 rounded-xl bg-muted px-4 py-4 text-lg font-semibold lg:px-6 lg:text-xl">Annuler</button>
           <div className="flex min-w-0 items-center gap-3 font-display text-3xl text-primary lg:text-4xl">
             <Button variant="ghost" {...longPress} aria-label="Configurer la borne" title="Appui long : configurer la borne" className="h-12 w-12 shrink-0 touch-none select-none p-0 hover:bg-transparent">
@@ -327,33 +327,33 @@ function Kiosk() {
       {step === "menu" && (
         <div className="flex min-h-0 flex-1">
           <nav lang="fr" className="w-44 shrink-0 lg:w-60 xl:w-72 2xl:w-80 overflow-y-auto border-r border-border p-3">
-            <button onClick={() => setAllergyOpen(true)} className={cn("mb-3 flex w-full items-center justify-center gap-2 rounded-xl border-2 px-2 py-4 text-base font-semibold lg:px-4 lg:py-5 lg:text-xl", excluded.length ? "border-primary bg-primary/10 text-primary" : "border-border")}>⚠ Sans allergènes{excluded.length ? ` (${excluded.length})` : ""}</button>
+            <button onClick={() => setAllergyOpen(true)} className={cn("mb-3 flex w-full items-center justify-center gap-2 rounded-xl border-2 px-2 py-4 short:py-3 text-base font-semibold lg:px-4 lg:py-5 lg:text-xl", excluded.length ? "border-primary bg-primary/10 text-primary" : "border-border")}>⚠ Sans allergènes{excluded.length ? ` (${excluded.length})` : ""}</button>
             {catalog.categories.map((c) => (
               <button key={c.id} onClick={() => setCat(c.id)}
-                className={cn("mb-2 block w-full rounded-xl px-3 py-4 text-left text-lg font-semibold leading-tight break-words hyphens-auto lg:px-4 lg:py-5 lg:text-xl", c.id === cat ? "bg-primary text-primary-foreground" : "bg-card")}>
+                className={cn("mb-2 block w-full rounded-xl px-3 py-4 short:py-3 text-left text-lg font-semibold leading-tight break-words hyphens-auto lg:px-4 lg:py-5 lg:text-xl", c.id === cat ? "bg-primary text-primary-foreground" : "bg-card")}>
                 {c.label}
               </button>
             ))}
           </nav>
           <main className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4 lg:p-5">
             <div className="mb-4 flex items-center justify-between gap-4 border-b border-border pb-3">
-              <h2 className="font-display text-4xl lg:text-5xl">{category?.label}</h2>
+              <h2 className="font-display text-4xl lg:text-5xl short:lg:text-4xl">{category?.label}</h2>
             </div>
             {category?.note && <p className="mb-4 text-lg text-muted-foreground">{category.note}</p>}
             {excluded.length > 0 && category && !category.items.length && <p className="py-10 text-center text-2xl text-muted-foreground">Aucun plat de cette catégorie sans ces allergènes.</p>}
-            <div className="grid grid-cols-2 gap-3 pb-36 lg:gap-4 lg:grid-cols-3 2xl:grid-cols-4 min-[2200px]:grid-cols-5">
+            <div className="grid grid-cols-2 gap-3 pb-36 short:grid-cols-3 short:pb-28 lg:gap-4 lg:grid-cols-3 short:xl:grid-cols-4 2xl:grid-cols-4 min-[2200px]:grid-cols-5">
               {category?.items.map((it) => (
                 <button key={it.id} disabled={kioskPaused} onClick={() => kioskPaused ? undefined : !isItemAvailable(it) || it.options?.length || it.allergens?.length ? setItem(it) : add(it.id, {}, 1)}
                   className="flex min-h-40 min-w-0 flex-col justify-between overflow-hidden rounded-2xl border-2 border-border bg-card p-4 text-left lg:p-5 active:border-primary">
-                  {it.image && <img src={it.image} alt={it.name} loading="lazy" className="-mx-4 -mt-4 mb-3 aspect-[4/3] w-[calc(100%+2rem)] lg:-mx-5 lg:-mt-5 lg:w-[calc(100%+2.5rem)] max-w-none object-cover" />}
+                  {it.image && <img src={it.image} alt={it.name} loading="lazy" className="-mx-4 -mt-4 mb-3 aspect-[4/3] short:aspect-[16/10] w-[calc(100%+2rem)] lg:-mx-5 lg:-mt-5 lg:w-[calc(100%+2.5rem)] max-w-none object-cover" />}
                   <span>
-                    <span className="block text-xl font-semibold leading-tight lg:text-2xl">{it.name}</span>
+                    <span className="block text-xl font-semibold leading-tight lg:text-2xl short:lg:text-xl">{it.name}</span>
                     {it.desc && <span className="mt-1 line-clamp-2 block text-base text-muted-foreground">{it.desc}</span>}
                     <AllergenBadges ids={it.allergens} className="mt-2" />
                     {it.schedule && <span className="mt-2 block text-base font-semibold text-primary">{now && !isItemAvailable(it, now) ? "Disponible : " : ""}{itemScheduleLabel(it.schedule)}</span>}
                   </span>
                   <span className="mt-3 flex items-center justify-between gap-2">
-                    <span className="min-w-0 whitespace-nowrap font-display text-2xl text-primary lg:text-3xl">{fromPrice(it) != null ? `dès ${euro(fromPrice(it)!)}` : euro(it.price)}</span>
+                    <span className="min-w-0 whitespace-nowrap font-display text-2xl text-primary lg:text-3xl short:lg:text-2xl">{fromPrice(it) != null ? `dès ${euro(fromPrice(it)!)}` : euro(it.price)}</span>
                     <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary lg:h-14 lg:w-14 text-primary-foreground">{now && !isItemAvailable(it, now) ? <span className="text-xs">Horaires</span> : <Plus className="h-8 w-8" />}</span>
                   </span>
                 </button>
@@ -365,15 +365,15 @@ function Kiosk() {
 
       {step === "menu" && count > 0 && (
         <button onClick={() => setStep("cart")}
-          className="absolute inset-x-4 bottom-4 flex items-center justify-center gap-4 rounded-2xl bg-accent px-6 py-5 font-display text-3xl lg:inset-x-auto lg:bottom-6 lg:right-6 lg:gap-5 lg:px-10 lg:py-6 lg:text-4xl text-accent-foreground shadow-2xl">
+          className="absolute inset-x-4 bottom-4 flex items-center justify-center gap-4 rounded-2xl bg-accent px-6 py-5 font-display text-3xl lg:inset-x-auto lg:bottom-6 lg:right-6 lg:gap-5 lg:px-10 lg:py-6 lg:text-4xl short:py-3 short:lg:py-4 short:lg:text-3xl text-accent-foreground shadow-2xl">
           <ShoppingBag className="h-10 w-10" /> Panier ({count}) · {euro(subtotal)}
         </button>
       )}
 
       {step === "cart" && (
-        <div className="flex min-h-0 flex-1 flex-col p-6">
-          <button onClick={() => setStep("menu")} className="mb-4 flex items-center gap-2 self-start rounded-xl bg-muted px-6 py-4 text-xl font-semibold"><ChevronLeft /> Continuer mes achats</button>
-          <h2 className="mb-4 font-display text-6xl">Mon panier</h2>
+        <div className="flex min-h-0 flex-1 flex-col p-6 short:p-4">
+          <button onClick={() => setStep("menu")} className="mb-4 short:mb-2 short:py-3 flex items-center gap-2 self-start rounded-xl bg-muted px-6 py-4 text-xl font-semibold"><ChevronLeft /> Continuer mes achats</button>
+          <h2 className="mb-4 font-display text-6xl short:mb-2 short:text-4xl">Mon panier</h2>
           <div className="min-h-0 flex-1 space-y-3 overflow-y-auto">
             {lines.length === 0 && <p className="text-2xl text-muted-foreground">Votre panier est vide.</p>}
             {lines.map((l) => {
@@ -408,15 +408,15 @@ function Kiosk() {
             </div>
           )}
           <button disabled={!count} onClick={() => setStep("pay")}
-            className="mt-6 rounded-2xl bg-accent py-8 font-display text-5xl text-accent-foreground disabled:opacity-40">
+            className="mt-6 rounded-2xl bg-accent py-8 font-display text-5xl short:mt-3 short:py-4 short:text-4xl text-accent-foreground disabled:opacity-40">
             Payer · {euro(subtotal)}
           </button>
         </div>
       )}
 
       {step === "pay" && (
-        <div className="flex flex-1 flex-col items-center justify-center gap-8 p-10">
-          <h2 className="font-display text-6xl">Comment souhaitez-vous payer ?</h2>
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-8 overflow-y-auto p-10 short:justify-start short:gap-4 short:p-6">
+          <h2 className="font-display text-6xl short:text-4xl">Comment souhaitez-vous payer ?</h2>
           <div className="w-full max-w-2xl">
             <PromoCodeField lines={promoLines(catalog, lines, unitPrice)} large slug={restaurant.slug} subtotal={subtotal} channel="kiosk" onChange={(d, code) => setPromo({ d, code })} />
           </div>
@@ -424,19 +424,19 @@ function Kiosk() {
           {serviceFee > 0 && <p className="text-2xl">{serviceFeeLabel(restaurant.config.serviceFee)} : {euro(serviceFee)}</p>}
           <p className="text-3xl">Total : <span className="font-display text-primary">{euro(toPay)}</span></p>
           <div className="grid w-full max-w-4xl grid-cols-2 gap-6">
-            {!cardOnly && restaurant.config.payments?.counter !== false && featuresOf(restaurant.enabled_features).borne_cash_payment && <button disabled={busy} onClick={() => pay("counter")} className="flex flex-col items-center gap-4 rounded-2xl border-2 border-border bg-card p-10 active:border-primary disabled:opacity-50">
-              <Banknote className="h-20 w-20 text-primary" />
-              <span className="font-display text-4xl">Payer au comptoir</span>
+            {!cardOnly && restaurant.config.payments?.counter !== false && featuresOf(restaurant.enabled_features).borne_cash_payment && <button disabled={busy} onClick={() => pay("counter")} className="flex flex-col items-center gap-4 rounded-2xl border-2 border-border bg-card p-10 short:p-5 active:border-primary disabled:opacity-50">
+              <Banknote className="short:h-12 short:w-12 h-20 w-20 text-primary" />
+              <span className="font-display text-4xl short:text-3xl">Payer au comptoir</span>
               <span className="text-lg text-muted-foreground">Espèces · Tickets resto</span>
             </button>}
-            {(cardOnly || restaurant.config.payments?.card_terminal !== false) && <button disabled={busy} onClick={() => pay("card_terminal")} className="flex flex-col items-center gap-4 rounded-2xl border-2 border-border bg-card p-10 active:border-primary disabled:opacity-50">
-              <CreditCard className="h-20 w-20 text-primary" />
-              <span className="font-display text-4xl">Carte bancaire</span>
+            {(cardOnly || restaurant.config.payments?.card_terminal !== false) && <button disabled={busy} onClick={() => pay("card_terminal")} className="flex flex-col items-center gap-4 rounded-2xl border-2 border-border bg-card p-10 short:p-5 active:border-primary disabled:opacity-50">
+              <CreditCard className="short:h-12 short:w-12 h-20 w-20 text-primary" />
+              <span className="font-display text-4xl short:text-3xl">Carte bancaire</span>
               <span className="text-lg text-muted-foreground">{terminal || cardOnly ? "Sur le terminal de la borne" : "Sur le terminal au comptoir"}</span>
             </button>}
-            {qrOn && <button disabled={busy} onClick={payQr} className="flex flex-col items-center gap-4 rounded-2xl border-2 border-border bg-card p-10 active:border-primary disabled:opacity-50">
-              <QrCode className="h-20 w-20 text-primary" />
-              <span className="font-display text-4xl">QR code</span>
+            {qrOn && <button disabled={busy} onClick={payQr} className="flex flex-col items-center gap-4 rounded-2xl border-2 border-border bg-card p-10 short:p-5 active:border-primary disabled:opacity-50">
+              <QrCode className="short:h-12 short:w-12 h-20 w-20 text-primary" />
+              <span className="font-display text-4xl short:text-3xl">QR code</span>
               <span className="text-lg text-muted-foreground">Payez avec votre téléphone · Carte, Apple Pay, Google Pay</span>
             </button>}
           </div>
@@ -504,13 +504,13 @@ function Kiosk() {
       )}
 
       {allergyOpen && (
-        <div className="absolute inset-0 z-40 flex flex-col bg-background p-8">
-          <p className="font-display text-5xl">Masquer les plats contenant…</p>
+        <div className="absolute inset-0 z-40 flex flex-col bg-background p-8 short:p-5">
+          <p className="font-display text-5xl short:text-4xl">Masquer les plats contenant…</p>
           <p className="mt-2 text-xl text-muted-foreground">Touchez vos allergènes : seuls les plats compatibles resteront affichés.</p>
-          <div className="mt-8 flex-1 overflow-y-auto"><AllergenPicker value={excluded} onChange={setExcluded} size="lg" /></div>
+          <div className="mt-8 short:mt-4 min-h-0 flex-1 overflow-y-auto"><AllergenPicker value={excluded} onChange={setExcluded} size="lg" /></div>
           <div className="flex gap-4">
-            <button onClick={() => setExcluded([])} className="flex-1 rounded-2xl bg-muted py-6 text-2xl font-semibold">Tout réafficher</button>
-            <button onClick={() => setAllergyOpen(false)} className="flex-1 rounded-2xl bg-primary py-6 text-2xl font-semibold text-primary-foreground">Voir les plats</button>
+            <button onClick={() => setExcluded([])} className="flex-1 rounded-2xl bg-muted py-6 short:py-4 text-2xl font-semibold">Tout réafficher</button>
+            <button onClick={() => setAllergyOpen(false)} className="flex-1 rounded-2xl bg-primary py-6 short:py-4 text-2xl font-semibold text-primary-foreground">Voir les plats</button>
           </div>
         </div>
       )}
@@ -557,26 +557,26 @@ function KioskItem({ item, image, onClose, onAdd }: { item: MenuItem; image: str
 
   return (
     <div className="absolute inset-0 z-40 flex flex-col bg-background">
-      <div className="flex items-center justify-between border-b border-border px-6 py-4">
-        <button onClick={stepped && step > 0 ? () => setStep(step - 1) : onClose} className="flex items-center gap-2 rounded-xl bg-muted px-6 py-4 text-xl font-semibold"><ChevronLeft /> Retour</button>
-        <p className="font-display text-4xl">{item.name}</p>
+      <div className="flex items-center justify-between border-b border-border px-6 py-4 short:py-2">
+        <button onClick={stepped && step > 0 ? () => setStep(step - 1) : onClose} className="flex items-center gap-2 rounded-xl bg-muted px-6 py-4 short:py-3 text-xl font-semibold"><ChevronLeft /> Retour</button>
+        <p className="min-w-0 truncate px-4 font-display text-4xl short:text-3xl">{item.name}</p>
         <span className="w-32" />
       </div>
       {item.schedule && <p role="status" className="px-6 py-3 text-xl font-semibold text-primary">{unavailable ? "Indisponible actuellement. Disponible : " : "Disponible : "}{itemScheduleLabel(item.schedule)} (heure de Paris)</p>}
       {stepped && <div className="flex gap-2 px-6 pt-4">{groups.map((g, i) => <div key={g.id} className={cn("h-2 flex-1 rounded-full", i <= step ? "bg-primary" : "bg-muted")} />)}</div>}
-      <div className="min-h-0 flex-1 space-y-8 overflow-y-auto p-6">
-        {image && <div className="flex items-center gap-4"><img src={image} alt={`Illustration pour ${item.name}`} loading="lazy" width={1024} height={768} className="h-32 w-44 rounded-md object-cover" />{!item.image && <span className="text-base text-muted-foreground">Photo d’illustration</span>}</div>}
-        <div className="rounded-2xl border-2 border-border p-5"><AllergenInfo ids={item.allergens} size="lg" /></div>
+      <div className="min-h-0 flex-1 space-y-8 overflow-y-auto p-6 short:space-y-5 short:px-8 short:py-4">
+        {image && <div className="flex items-center gap-4"><img src={image} alt={`Illustration pour ${item.name}`} loading="lazy" width={1024} height={768} className="h-32 w-44 short:h-24 short:w-32 rounded-md object-cover" />{!item.image && <span className="text-base text-muted-foreground">Photo d’illustration</span>}</div>}
+        <div className="rounded-2xl border-2 border-border p-5 short:p-3"><AllergenInfo ids={item.allergens} size="lg" /></div>
         {visible.map((g) => {
           const picked = sel[g.id] ?? [];
           const extra = groupCost(g, picked);
           return (
             <section key={g.id}>
               <div className="mb-3 flex items-baseline justify-between">
-                <h3 className="text-3xl font-semibold">{g.label}</h3>
+                <h3 className="text-3xl font-semibold short:text-2xl">{g.label}</h3>
                 <span className="text-lg text-muted-foreground">{g.min === g.max ? `${g.min} choix` : `${g.min ? `min ${g.min} · ` : ""}max ${g.max}`}{g.included !== undefined && g.extraPrice ? ` · ${g.included} compris, +${euro(g.extraPrice)} le supplément` : ""}{extra > 0 ? ` · +${euro(extra)}` : ""}</span>
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-3 short:grid-cols-4">
                 {g.choices.map((c) => {
                   const on = picked.includes(c.id);
                   const count = picked.filter((x) => x === c.id).length;
@@ -584,7 +584,7 @@ function KioskItem({ item, image, onClose, onAdd }: { item: MenuItem; image: str
                   return (
                     <div key={c.id} className="flex flex-col gap-2">
                     <button onClick={() => toggle(g, c.id)} disabled={c.soldOut} role={g.kind === "size" ? "radio" : "checkbox"} aria-checked={on}
-                      className={cn("flex min-h-24 items-center justify-between gap-2 rounded-xl border-2 px-4 py-4 text-left text-xl disabled:opacity-50", on ? "border-primary bg-primary/15" : "border-border bg-card")}>
+                      className={cn("flex min-h-24 short:min-h-20 items-center justify-between gap-2 rounded-xl border-2 px-4 py-4 text-left text-xl disabled:opacity-50", on ? "border-primary bg-primary/15" : "border-border bg-card")}>
                       <span>{c.label}{c.soldOut ? <span className="block text-base text-destructive">Épuisé</span> : g.kind === "size" ? <span className="block text-base text-primary">{euro(c.price ?? 0)}</span> : c.price ? <span className="block text-base text-primary">+{euro(c.price)}</span> : null}</span>
                       {on && (multi ? <span className="shrink-0 rounded-full bg-primary px-3 py-1 text-lg font-bold text-primary-foreground">x{count}</span> : <Check className="h-7 w-7 shrink-0 text-primary" />)}
                     </button>
@@ -605,15 +605,15 @@ function KioskItem({ item, image, onClose, onAdd }: { item: MenuItem; image: str
         {removable.length > 0 && (!stepped || isLast) && (
           <section>
             <div className="mb-3 flex items-baseline justify-between">
-              <h3 className="text-3xl font-semibold">Retirer un ingrédient</h3>
+              <h3 className="text-3xl font-semibold short:text-2xl">Retirer un ingrédient</h3>
               <span className="text-lg text-muted-foreground">optionnel · le reste du plat n'est pas modifiable</span>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-3 short:grid-cols-4">
               {removable.map((c) => {
                 const on = removed.includes(c.id);
                 return (
                   <button key={c.id} onClick={() => toggleRemove(c.id)} aria-pressed={on}
-                    className={cn("flex min-h-24 items-center justify-between gap-2 rounded-xl border-2 px-4 py-4 text-left text-xl", on ? "border-destructive bg-destructive/15 line-through" : "border-border bg-card")}>
+                    className={cn("flex min-h-24 short:min-h-20 items-center justify-between gap-2 rounded-xl border-2 px-4 py-4 text-left text-xl", on ? "border-destructive bg-destructive/15 line-through" : "border-border bg-card")}>
                     <span>{on ? `Sans ${c.label}` : c.label}</span>
                     {on && <Check className="h-7 w-7 shrink-0 text-destructive" />}
                   </button>
@@ -624,17 +624,17 @@ function KioskItem({ item, image, onClose, onAdd }: { item: MenuItem; image: str
         )}
       </div>
       {err && <p className="px-6 text-xl text-destructive">{err}</p>}
-      <div className="flex items-center justify-between gap-4 border-t border-border p-6">
+      <div className="flex items-center justify-between gap-4 border-t border-border p-6 short:px-8 short:py-3">
         <div className="flex items-center gap-3">
           <button onClick={() => setQ(Math.max(1, qty - 1))} className="flex h-16 w-16 items-center justify-center rounded-xl bg-muted" aria-label="Moins"><Minus className="h-8 w-8" /></button>
           <span className="w-12 text-center font-display text-4xl">{qty}</span>
           <button onClick={() => setQ(qty + 1)} className="flex h-16 w-16 items-center justify-center rounded-xl bg-muted" aria-label="Plus"><Plus className="h-8 w-8" /></button>
         </div>
         {unavailable || isLast ? (
-          <Button disabled={unavailable} onClick={submit} className="h-auto rounded-2xl px-12 py-6 font-display text-4xl">{unavailable ? "Hors créneau" : `Ajouter · ${euro(price * qty)}`}</Button>
+          <Button disabled={unavailable} onClick={submit} className="h-auto rounded-2xl px-12 py-6 short:py-4 short:text-3xl font-display text-4xl">{unavailable ? "Hors créneau" : `Ajouter · ${euro(price * qty)}`}</Button>
         ) : (
           <button disabled={(sel[groups[step]!.id] ?? []).length < groups[step]!.min} onClick={() => { setErr(null); setStep(step + 1); }}
-            className="rounded-2xl bg-primary px-12 py-6 font-display text-4xl text-primary-foreground disabled:opacity-40">Suivant · {euro(price)}</button>
+            className="rounded-2xl bg-primary px-12 py-6 short:py-4 short:text-3xl font-display text-4xl text-primary-foreground disabled:opacity-40">Suivant · {euro(price)}</button>
         )}
       </div>
     </div>

@@ -133,3 +133,5 @@ Verified on a temporary restaurant, now deactivated: upload and reload persisten
 - [x] Paiement en ligne en pré-autorisation : capture à l'acceptation, annulation si refus/annulation/délai dépassé
 - [x] Tickets : bandes noires fines et aérées, texte normal plus grand, grand format réduit sans mots coupés
 - [x] Tickets : taille normale agrandie, échelle compacte/normale/grande rééquilibrée
+- [x] Borne paysage : tous les parcours calibrés (accueil, catégories, plats, options, panier, paiement)
+- [x] Borne : vérifier iPad 4:3, Android 16:9/16:10, portrait et paysage
