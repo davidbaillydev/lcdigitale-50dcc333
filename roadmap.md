@@ -130,3 +130,4 @@ Verified on a temporary restaurant, now deactivated: upload and reload persisten
 - [x] Minuteur d'acceptation 4 min (site) : client + cuisine, manquée auto, remboursement auto, alertes
 - [x] Paiement en ligne en pré-autorisation : capture à l'acceptation, annulation si refus/annulation/délai dépassé
 - [x] Tickets : bandes noires fines et aérées, texte normal plus grand, grand format réduit sans mots coupés
+- [x] Tickets : taille normale agrandie, échelle compacte/normale/grande rééquilibrée

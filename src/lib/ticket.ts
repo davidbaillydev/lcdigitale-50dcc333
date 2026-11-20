@@ -72,8 +72,8 @@ export const TICKET_FONTS: Record<TicketFont, string> = {
 };
 /** Taille de base du texte HTML (px) selon le rouleau et la taille choisie. */
 export function ticketFontSize(width: TicketWidth, size: TicketTextSize = "normal") {
-  const base = width === 80 ? 16 : 13;
-  return size === "large" ? base + 2 : size === "compact" ? base - 2 : base;
+  const base = width === 80 ? 17 : 14;
+  return size === "large" ? base + 2 : size === "compact" ? base - 1 : base;
 }
 /** Tickets à imprimer automatiquement au déclencheur configuré. */
 export function autoPrintKinds(p: Pick<PrintingConfig, "autoKitchen" | "autoReceipt">): TicketKind[] {
@@ -255,14 +255,14 @@ export function ticketHtml(o: TicketOrder, kind: TicketKind, width: TicketWidth,
     @page { size: ${width}mm auto; margin: 0; }
     * { box-sizing: border-box; }
     :root { --ticket-ink: #000; --ticket-paper: #fff; }
-    body { width: ${width}mm; margin: 0; padding: 3mm; font: ${big}px/${fieldsIn?.textSize === "compact" ? 1.15 : 1.3} ${font}; color: var(--ticket-ink); background: var(--ticket-paper); }
+    body { width: ${width}mm; margin: 0; padding: 3mm; font: ${big}px/${fieldsIn?.textSize === "compact" ? 1.3 : 1.4} ${font}; color: var(--ticket-ink); background: var(--ticket-paper); }
     .c { text-align: center; } .xl { font-size: ${big * 2}px; font-weight: bold; } .l { font-size: ${big * 1.3}px; font-weight: bold; }
     body { overflow-wrap: anywhere; }
     .row { display: flex; justify-content: space-between; gap: 4px; margin-top: 4px; }
     .row > :first-child { min-width: 0; } .row > span:last-child { flex-shrink: 0; white-space: nowrap; }
     .item { font-size: ${big + 2}px; font-weight: bold; margin-top: 10px; }
     .cat { margin-top: 8px; font-size: ${big - 3}px; }
-    .det { padding-left: 10px; font-size: ${big}px; font-weight: ${fieldsIn?.textSize === "compact" ? 400 : 600}; line-height: 1.4; }
+    .det { padding-left: 10px; font-size: ${big}px; font-weight: ${fieldsIn?.textSize === "large" ? 600 : 400}; line-height: 1.4; }
     .addr { border: 2px solid var(--ticket-ink); padding: 4px 6px; margin-top: 6px; font-weight: bold; font-size: ${big + 1}px; }
     .customer { display: grid; grid-template-columns: auto minmax(0,1fr); gap: 2px 8px; }
     .customer .value { text-align: right; font-weight: bold; } .section { margin: 12px 0 4px; font-weight: bold; }

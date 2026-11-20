@@ -64,9 +64,9 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
   const f = ticketFields(kind, fieldsIn);
   const totals = ticketTotals(o, shop);
   const timing = ticketTiming(o);
-  const e = new Enc(compact ? 22 : 30).raw(0x1b, 0x40, 0x1b, 0x74, 19).font(fontB);
-  if (compact) e.raw(0x1b, 0x33, 22); // interligne serré
-  else e.raw(0x1b, 0x32); // restore normal line spacing for every job
+  const spacing = compact ? 26 : large ? 36 : 32; // échelle aérée et harmonieuse
+  const e = new Enc(spacing).raw(0x1b, 0x40, 0x1b, 0x74, 19).font(fontB);
+  e.raw(0x1b, 0x33, spacing);
   const hr = "-".repeat(cols);
   e.align(1);
   e.bold(true);
@@ -97,7 +97,6 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
     }
   }
   for (const l of ticketDeliveryLines(o, shop)) {
-    if (large) e.size(1, 2);
     const lines = wrap(l, itemCols);
     if (l.startsWith("Adresse:")) { e.bold(true); lines.forEach((x) => e.line(x)); e.bold(false); }
     else lines.forEach((x) => e.line(x));
@@ -109,18 +108,17 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
     const right = f.prices && it.total != null ? eur(it.total) : "";
     const names = wrap(`${it.qty}x ${itemTitle(it)}`, Math.max(1, itemCols - right.length - 1));
     names.forEach((name, i) => e.line(i === 0 ? lr(name, right, itemCols) : name));
-    e.bold(false);
+    e.size(1, 1).bold(large);
     if (f.options) for (const d of ticketOptions(it, { ...shop, currency })) wrap(d, itemCols - 2).forEach((l) => e.line(`  ${l}`));
-    if (large) e.size(1, 1);
     e.bold(false);
     if (f.allergens && it.allergens?.length) { e.bold(true); wrap(`  ! ALLERGENES : ${it.allergens.map((a) => allergenLabel(a).toUpperCase()).join(", ")}`, cols).forEach((l) => e.line(l)); e.bold(false); }
-    if (!compact) e.line();
+    e.raw(0x1b, 0x4a, compact ? 14 : 24); // respiration entre articles
   }
   const allAlg = [...new Set(o.items.flatMap((i) => i.allergens ?? []))];
   if (f.allergens && kind === "kitchen" && allAlg.length) { e.line(hr).bold(true); wrap(`ALLERGENES COMMANDE : ${allAlg.map(allergenLabel).join(", ")}`, cols).forEach((l) => e.line(l)); e.bold(false); }
   if (f.notes && o.notes) {
     const border = "=".repeat(itemCols);
-    e.line(hr).bold(true).size(1, large ? 2 : 1).line(border);
+    e.line(hr).bold(true).size(1, 1).line(border);
     wrap(`! REMARQUE CLIENT : ${o.notes}`, itemCols).forEach((l) => e.line(l));
     e.line(border).size(1, 1).bold(false);
   }

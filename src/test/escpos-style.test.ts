@@ -32,24 +32,24 @@ describe("ESC/POS hardware style", () => {
       expect(has(b, [0x1b, 0x4d, font === "condensed" ? 1 : 0])).toBe(true);
     });
   }
-  it("compact forces font B and 22-dot line spacing even with standard selected", () => {
+  it("compact forces font B with airy 26-dot line spacing even with standard selected", () => {
     const b = ticketEscpos(order, "kitchen", 58, { name: "Test" }, { font: "sans", textSize: "compact" });
     expect(has(b, [0x1b, 0x4d, 1])).toBe(true);
-    expect(has(b, [0x1b, 0x33, 22])).toBe(true);
+    expect(has(b, [0x1b, 0x33, 26])).toBe(true);
   });
   for (const width of [58, 80] as const) {
-    it(`large doubles items, choices, extras, notes and key information at ${width}mm`, () => {
+    it(`large doubles only item titles, without overflow, at ${width}mm`, () => {
       const b = ticketEscpos(order, "kitchen", width, { name: "Test" }, printingFields(printingDefaults({ textSize: "large" })));
       const printed = lines(b);
-      for (const token of ["Poulet", "Ketchup", "Cheddar", "Sans", "sauce"]) {
+      for (const token of ["Poulet"]) {
         const line = printed.find((l) => l.text.includes(token));
         expect(line, token).toBeDefined();
         expect(line?.size, token).toBe(0x01);
       }
       for (const line of printed.filter((l) => l.size === 0x01)) expect(line.text.length).toBeLessThanOrEqual(width === 80 ? 48 : 32);
       for (const line of printed.filter((l) => (l.size & 1) === 1)) expect(line.spacing).toBe(60);
-      expect(printed.find((l) => l.text.includes("Articles:"))?.spacing).toBe(30);
-      expect(has(b, [0x1b, 0x32])).toBe(true);
+      expect(printed.find((l) => l.text.includes("Articles:"))?.spacing).toBe(36);
+      expect(has(b, [0x1b, 0x33, 36])).toBe(true);
     });
   }
 });
