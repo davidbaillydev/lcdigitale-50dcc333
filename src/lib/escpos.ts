@@ -79,10 +79,13 @@ export function ticketEscpos(o: TicketOrder, kind: TicketKind, width: TicketWidt
     identity.forEach((s) => wrap(s.replace(/œ/g, "oe").replace(/Œ/g, "OE"), cols).forEach((l) => e.line(l)));
     e.size(1, 1).align(0);
   }
-  // Bandes noires fines : une seule hauteur, marge intérieure, ligne vide entre chaque.
+  // Bandes noires hautes : double hauteur (largeur normale, aucun mot coupé), espace autour.
   const band = (text: string) => {
-    wrap(text, cols - 2).forEach((l) => e.inverse(true).line(` ${l}`.padEnd(cols)).inverse(false));
-    e.raw(0x1b, 0x4a, 12); // petit espace aéré sous la bande
+    e.raw(0x1b, 0x4a, 10); // petit espace au-dessus de la bande
+    e.size(1, 2).inverse(true);
+    wrap(text, cols - 2).forEach((l) => e.line(` ${l}`.padEnd(cols)));
+    e.inverse(false).size(1, 1);
+    e.raw(0x1b, 0x4a, 16); // espace aéré sous la bande
   };
   e.align(0).bold(true);
   band(modeLabel(o.mode) + (o.source === "kiosk" ? " - BORNE" : o.source === "phone" ? " - TEL IA" : "") + (o.table_label ? ` - TABLE ${o.table_label}` : "") + (o.room_label ? ` - CHAMBRE ${o.room_label}` : ""));

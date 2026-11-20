@@ -38,6 +38,16 @@ describe("ESC/POS hardware style", () => {
     expect(has(b, [0x1b, 0x33, 26])).toBe(true);
   });
   for (const width of [58, 80] as const) {
+    it(`prints key info bands (mode, timing, payment) in double height at ${width}mm`, () => {
+      const b = ticketEscpos(order, "kitchen", width, { name: "Test" }, printingFields(printingDefaults({})));
+      const printed = lines(b);
+      for (const token of ["EMPORTER", "Paiement au comptoir", "vu pour"]) {
+        const line = printed.find((l) => l.text.includes(token));
+        expect(line, token).toBeDefined();
+        expect(line?.size, token).toBe(0x01); // double hauteur, largeur normale
+        expect(line?.text.length, token).toBeLessThanOrEqual(width === 80 ? 48 : 32);
+      }
+    });
     it(`large doubles only item titles, without overflow, at ${width}mm`, () => {
       const b = ticketEscpos(order, "kitchen", width, { name: "Test" }, printingFields(printingDefaults({ textSize: "large" })));
       const printed = lines(b);
