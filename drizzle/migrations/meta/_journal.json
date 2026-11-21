@@ -400,6 +400,13 @@
       "when": 1795215900239,
       "tag": "0056_enforce_menu_option_caller_access",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1795251904754,
+      "tag": "0057_authorize_requested_kiosk_audit_reset",
+      "breakpoints": true
     }
   ]
 }
