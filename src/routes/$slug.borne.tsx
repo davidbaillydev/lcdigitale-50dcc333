@@ -19,6 +19,7 @@ import { createKioskOrder, kioskStatus } from "@/lib/orders.functions";
 import { abandonKioskQr, kioskQrAvailable, kioskQrStatus, startKioskQrPayment } from "@/lib/payments.functions";
 import { kioskAccess, kioskIdentity, normalizeKioskId, type KioskAccess } from "@/lib/kiosk-readers";
 import { applyKioskId } from "@/lib/kiosk-switch";
+import { clearKioskDevice } from "@/lib/kiosk-device";
 import { abandonKioskOrder, cancelKioskPayment, kioskPaymentStatus, kioskTerminalAvailable, startKioskCardPayment } from "@/lib/payments.functions";
 import { activeGroups, adjustChoice, fromPrice, selectedExtras, selectionLines, groupCost, REMOVE_KEY, removableChoices, unitPrice, validateSelections, type MenuItem, type OptionGroup, type Selections } from "@/lib/menu";
 import { itemImage } from "@/lib/menu-images";
@@ -516,7 +517,10 @@ function Kiosk() {
       )}
       {item && <KioskItem item={item} image={itemImage(item, catalog.categories)?.src} onClose={() => setItem(null)} onAdd={(sel, q) => { add(item.id, sel, q); setItem(null); }} />}
 
-      {switchOpen && <KioskSwitchDialog restaurantId={restaurant.id} config={restaurant.config} current={kioskId} shop={{ name: restaurant.name, address: restaurant.address ?? null, phone: restaurant.phone ?? null, slug: restaurant.slug }} printQueue={{ jobs: printJobs, error: queueError, onRetry: (key) => { void queue.current?.retry(key).catch(() => setQueueError("Impossible d’enregistrer la relance sur cette tablette.")); } }} onPick={pickKiosk} onClose={() => { held.current = false; setSwitchOpen(false); }} />}
+      {switchOpen && <KioskSwitchDialog restaurantId={restaurant.id} config={restaurant.config} current={kioskId} shop={{ name: restaurant.name, address: restaurant.address ?? null, phone: restaurant.phone ?? null, slug: restaurant.slug }} printQueue={{ jobs: printJobs, error: queueError, onRetry: (key) => { void queue.current?.retry(key).catch(() => setQueueError("Impossible d’enregistrer la relance sur cette tablette.")); } }} resetDisabled={busy || step === "terminal" || step === "qr"} onReset={() => {
+        try { clearKioskDevice(localStorage, restaurant.slug); clear(); window.location.replace("/borne"); }
+        catch { setQueueError("Impossible d’oublier la configuration sur cette tablette."); }
+      }} onPick={pickKiosk} onClose={() => { held.current = false; setSwitchOpen(false); }} />}
       {warn && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80">
           <div className="rounded-2xl border border-border bg-card p-12 text-center">

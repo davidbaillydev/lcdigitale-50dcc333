@@ -1,6 +1,7 @@
 // Changement de borne depuis l'écran de la borne elle-même (appui long), sans retaper l'adresse.
 // kioskChoices est pur ; applyKioskId touche le navigateur (stockage local + adresse).
 import { normalizeKioskId, type KioskReader } from "./kiosk-readers";
+import { KIOSK_DEVICE_KEY, readKioskDevice, saveKioskDevice } from "./kiosk-device";
 
 /** Bornes déclarées dans les réglages, avec ou sans TPE propre : proposées au choix sur l'appareil. */
 export function kioskChoices(config: unknown): { id: string; label: string }[] {
@@ -25,6 +26,9 @@ export function applyKioskId(slug: string, id: string | null | undefined): strin
   try {
     const key = `kiosk-id:${slug}`;
     if (n) localStorage.setItem(key, n); else localStorage.removeItem(key);
+    if (readKioskDevice(localStorage)?.slug === slug) {
+      if (n) saveKioskDevice(localStorage, { slug, kioskId: n }); else localStorage.removeItem(KIOSK_DEVICE_KEY);
+    }
   } catch { /* stockage indisponible : l'adresse suffit */ }
   const url = new URL(window.location.href);
   if (n) url.searchParams.set("borne", n); else url.searchParams.delete("borne");

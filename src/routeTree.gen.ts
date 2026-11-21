@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as SlugRouteImport } from './routes/$slug'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AgenceRouteImport } from './routes/agence'
+import { Route as BorneRouteImport } from './routes/borne'
 import { Route as CommandeRouteImport } from './routes/commande'
 import { Route as ConnexionRouteImport } from './routes/connexion'
 import { Route as DesabonnementRouteImport } from './routes/desabonnement'
@@ -89,6 +90,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AgenceRoute = AgenceRouteImport.update({
   id: '/agence',
   path: '/agence',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BorneRoute = BorneRouteImport.update({
+  id: '/borne',
+  path: '/borne',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CommandeRoute = CommandeRouteImport.update({
@@ -415,6 +421,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$slug': typeof SlugRouteWithChildren
   '/agence': typeof AgenceRoute
+  '/borne': typeof BorneRoute
   '/commande': typeof CommandeRoute
   '/connexion': typeof ConnexionRoute
   '/desabonnement': typeof DesabonnementRoute
@@ -477,6 +484,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agence': typeof AgenceRoute
+  '/borne': typeof BorneRoute
   '/commande': typeof CommandeRoute
   '/connexion': typeof ConnexionRoute
   '/desabonnement': typeof DesabonnementRoute
@@ -541,6 +549,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/$slug': typeof SlugRouteWithChildren
   '/agence': typeof AgenceRoute
+  '/borne': typeof BorneRoute
   '/commande': typeof CommandeRoute
   '/connexion': typeof ConnexionRoute
   '/desabonnement': typeof DesabonnementRoute
@@ -606,6 +615,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$slug'
     | '/agence'
+    | '/borne'
     | '/commande'
     | '/connexion'
     | '/desabonnement'
@@ -668,6 +678,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/agence'
+    | '/borne'
     | '/commande'
     | '/connexion'
     | '/desabonnement'
@@ -731,6 +742,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/$slug'
     | '/agence'
+    | '/borne'
     | '/commande'
     | '/connexion'
     | '/desabonnement'
@@ -796,6 +808,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   SlugRoute: typeof SlugRouteWithChildren
   AgenceRoute: typeof AgenceRoute
+  BorneRoute: typeof BorneRoute
   CommandeRoute: typeof CommandeRoute
   ConnexionRoute: typeof ConnexionRoute
   DesabonnementRoute: typeof DesabonnementRoute
@@ -847,6 +860,13 @@ declare module '@tanstack/react-router' {
       path: '/agence'
       fullPath: '/agence'
       preLoaderRoute: typeof AgenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/borne': {
+      id: '/borne'
+      path: '/borne'
+      fullPath: '/borne'
+      preLoaderRoute: typeof BorneRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/commande': {
@@ -1366,6 +1386,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   SlugRoute: SlugRouteWithChildren,
   AgenceRoute: AgenceRoute,
+  BorneRoute: BorneRoute,
   CommandeRoute: CommandeRoute,
   ConnexionRoute: ConnexionRoute,
   DesabonnementRoute: DesabonnementRoute,

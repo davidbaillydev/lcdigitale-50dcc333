@@ -1,10 +1,13 @@
 apply plugin: 'com.android.application'
 
+def lcBorneApp = project.findProperty('lcBorneApp') == 'true'
+
 android {
     namespace "fr.lcdigitale.cuisine"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "fr.lcdigitale.cuisine"
+        applicationId lcBorneApp ? "fr.lcdigitale.borne" : "fr.lcdigitale.cuisine"
+        buildConfigField "boolean", "IS_KIOSK", lcBorneApp.toString()
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
@@ -16,6 +19,7 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    buildFeatures { buildConfig true }
     buildTypes {
         release {
             minifyEnabled false

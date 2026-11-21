@@ -25,7 +25,16 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
-        if (hasFocus && LcKitchenPlugin.fullscreenWanted) LcKitchenPlugin.immersive(this, true);
+        if (hasFocus && (BuildConfig.IS_KIOSK || LcKitchenPlugin.fullscreenWanted)) LcKitchenPlugin.immersive(this, true);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (BuildConfig.IS_KIOSK) {
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            LcKitchenPlugin.immersive(this, true);
+        }
     }
 
     /** Le site exige un moteur Chrome récent (111+) : sinon on propose la mise à jour au lieu d'une page cassée. */
@@ -39,7 +48,7 @@ public class MainActivity extends BridgeActivity {
         final String pkg = info.packageName;
         new AlertDialog.Builder(this)
             .setTitle("Mise à jour nécessaire")
-            .setMessage("Le composant « Android System WebView » de cette tablette est trop ancien (version " + major + "). Mettez-le à jour depuis le Play Store, puis relancez LC Cuisine.")
+            .setMessage("Le composant « Android System WebView » de cette tablette est trop ancien (version " + major + "). Mettez-le à jour depuis le Play Store, puis relancez " + getString(R.string.app_name) + ".")
             .setCancelable(false)
             .setPositiveButton("Mettre à jour", (d, w) -> {
                 try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + pkg))); }

@@ -5,7 +5,7 @@ vi.mock("@capacitor/core", () => ({
   registerPlugin: native.registerPlugin.mockReturnValue(native.plugin),
 }));
 import { isNativeKitchen, localSubnet, nativeKitchen } from "@/lib/native-kitchen";
-import { sendToPrinter } from "@/lib/printer";
+import { getPrinter, savePrinter, sendToPrinter } from "@/lib/printer";
 
 afterEach(() => {
   delete (window as unknown as { Capacitor?: unknown }).Capacitor;
@@ -50,6 +50,19 @@ describe("application cuisine Android", () => {
     const fetch = vi.spyOn(globalThis, "fetch");
     await expect(sendToPrinter({ type: "network", name: "x", host: "192.168.1.50" }, new Uint8Array([27, 64]))).rejects.toThrow("Imprimante indisponible");
     expect(fetch).not.toHaveBeenCalled();
+  });
+  it("partage le pont TCP avec LC Borne en gardant son imprimante séparée", async () => {
+    native.isNativePlatform.mockReturnValue(true);
+    localStorage.clear();
+    const kiosk = { type: "network" as const, name: "Borne", host: "192.168.1.60" };
+    savePrinter(kiosk, "kiosk");
+    expect(getPrinter("kitchen")).toBeNull();
+    expect(getPrinter("kiosk")).toEqual(kiosk);
+    const fetch = vi.spyOn(globalThis, "fetch");
+    await sendToPrinter(kiosk, new Uint8Array([27, 64]), true);
+    expect(native.plugin.print).toHaveBeenCalledWith({ host: "192.168.1.60", port: 9100, data: "G0A=" });
+    expect(fetch).not.toHaveBeenCalled();
+    localStorage.clear();
   });
   it("n'accepte que les réseaux locaux pour la recherche d'imprimantes", () => {
     expect(localSubnet("192.168.1.50")).toBe("192.168.1");

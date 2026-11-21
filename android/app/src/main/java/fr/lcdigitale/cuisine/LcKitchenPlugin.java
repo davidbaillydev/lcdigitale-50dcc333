@@ -52,7 +52,7 @@ public class LcKitchenPlugin extends Plugin {
 
     @PluginMethod
     public void keepAwake(PluginCall call) {
-        boolean on = call.getBoolean("on", true);
+        boolean on = BuildConfig.IS_KIOSK || call.getBoolean("on", true);
         getActivity().runOnUiThread(() -> {
             if (on) getActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             else getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -62,7 +62,7 @@ public class LcKitchenPlugin extends Plugin {
 
     @PluginMethod
     public void setFullscreen(PluginCall call) {
-        boolean on = call.getBoolean("on", true);
+        boolean on = BuildConfig.IS_KIOSK || call.getBoolean("on", true);
         getActivity().runOnUiThread(() -> { immersive(getActivity(), on); call.resolve(); });
     }
 

@@ -1,0 +1,53 @@
+name: APK Android LC Borne
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "android/**"
+      - "capacitor.borne.config.json"
+      - "scripts/prepare-android-borne.mjs"
+      - "package.json"
+      - "bun.lock"
+      - ".github/workflows/android-borne-apk.yml"
+permissions:
+  contents: write
+concurrency:
+  group: android-borne-apk
+  cancel-in-progress: false
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "21" }
+      - run: bun install
+      - name: Configuration Android LC Borne
+        run: bun scripts/prepare-android-borne.mjs
+      - name: Dossier web minimal (le site publié fournit la borne)
+        run: mkdir -p dist/client && echo '<!doctype html><title>LC Borne</title>' > dist/client/index.html
+      - run: bunx cap sync android
+      - name: Conserver la signature de mise à jour de l'APK
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: lc-borne-debug-signing-v1-${{ github.repository_id }}
+      - name: Build Gradle assembleDebug LC Borne
+        working-directory: android
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          chmod +x gradlew
+          ./gradlew assembleDebug -PlcBorneApp=true --no-daemon
+      - name: Nommer l'APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk lc-borne.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lc-borne-apk
+          path: lc-borne.apk
+      - name: Publier l'APK sur la release v1.0.0-borne
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view v1.0.0-borne >/dev/null 2>&1 || gh release create v1.0.0-borne --title "LC Borne 1.0.0" --notes "Application Android tablette borne de commande. Configuration par restaurant et PIN, impression réseau directe. APK de distribution interne."
+          gh release upload v1.0.0-borne lc-borne.apk#lc-borne.apk --clobber

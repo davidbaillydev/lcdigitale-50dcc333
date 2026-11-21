@@ -1,0 +1,14 @@
+{
+  "appId": "fr.lcdigitale.borne",
+  "appName": "LC Borne",
+  "webDir": "dist/client",
+  "server": {
+    "url": "https://restaurant.lcdigitale.fr/borne",
+    "cleartext": true,
+    "allowNavigation": ["*"]
+  },
+  "android": {
+    "allowMixedContent": true,
+    "backgroundColor": "#141210"
+  }
+}
