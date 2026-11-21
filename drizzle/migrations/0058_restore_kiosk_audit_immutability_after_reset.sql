@@ -1,0 +1,1 @@
+CREATE OR REPLACE FUNCTION public.reject_kiosk_audit_mutation() RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $function$ BEGIN RAISE EXCEPTION 'Journal des bornes immuable'; END $function$;

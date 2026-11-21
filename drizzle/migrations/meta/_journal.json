@@ -407,6 +407,13 @@
       "when": 1795251904754,
       "tag": "0057_authorize_requested_kiosk_audit_reset",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1795251986065,
+      "tag": "0058_restore_kiosk_audit_immutability_after_reset",
+      "breakpoints": true
     }
   ]
 }
